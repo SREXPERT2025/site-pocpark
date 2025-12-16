@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+/* Улучшение читаемости Markdown-контента */
+.prose {
+  max-width: 75ch;
+}
+
+/* Мобильная читаемость */
+@media (max-width: 640px) {
+  .prose {
+    line-height: 1.75;
+  }
+}
+
+/* Мини-спиннер (используется в QuizForm) */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: rgba(255,255,255,1);
+  animation: spin 0.8s linear infinite;
+}
