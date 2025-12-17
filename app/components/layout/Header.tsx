@@ -1,158 +1,145 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
-import { navigation } from '@/config/navigation';
-import { siteConfig } from '@/config/site';
+export default function Header() {
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
-type NavItem = {
-  label: string;
-  href?: string;
-  children?: { label: string; href: string }[];
-};
+  // закрытие при клике вне меню
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
 
-function ChevronDownIcon() {
+  // закрытие при переходе
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
   return (
-    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" />
-    </svg>
+    <>
+      {/* HEADER */}
+      <header className="fixed top-0 left-0 right-0 z-[1100] bg-white border-b border-slate-200">
+        <div className="max-w-[1400px] mx-auto px-6">
+          <div className="h-16 flex items-center justify-between">
+
+            {/* LOGO */}
+            <Link href="/" className="text-2xl font-extrabold text-slate-900">
+              РОСПАРК
+            </Link>
+
+            {/* NAV */}
+            <nav className="flex items-center gap-8 text-slate-700 font-medium">
+
+              {/* РЕШЕНИЯ */}
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setOpen(v => !v)}
+                  className="flex items-center gap-1 hover:text-slate-900"
+                >
+                  Решения
+                  <span className={`transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+                </button>
+
+                {open && (
+                  <div className="absolute left-0 top-full mt-3 w-[340px] rounded-xl bg-white border border-slate-200 shadow-xl p-2">
+                    <MenuItem
+                      href="/resheniya/dlya-rukovoditeley"
+                      title="Для руководителей"
+                      desc="Деньги, контроль, NOI"
+                    />
+                    <MenuItem
+                      href="/resheniya/dlya-inzhenerov"
+                      title="Для инженеров"
+                      desc="Схемы, API, интеграции"
+                    />
+                    <MenuItem
+                      href="/resheniya/dlya-sluzhby-bezopasnosti"
+                      title="Для службы безопасности"
+                      desc="Контроль проездов, архив"
+                    />
+
+                    <div className="my-2 border-t border-slate-100" />
+
+                    <MenuItem
+                      href="/resheniya/sravnenie-podhodov"
+                      title="Сравнение подходов"
+                      desc="Аренда vs коробка vs под ключ"
+                      accent
+                    />
+                  </div>
+                )}
+              </div>
+
+              <Link href="/vozmozhnosti" className="hover:text-slate-900">
+                Возможности
+              </Link>
+
+              <Link href="/oborudovanie" className="hover:text-slate-900">
+                Оборудование
+              </Link>
+
+              <Link href="/tipovye-komplekty" className="hover:text-slate-900">
+                Типовые комплекты
+              </Link>
+
+              <Link href="/keysy" className="hover:text-slate-900">
+                Кейсы
+              </Link>
+            </nav>
+
+            {/* CTA */}
+            <div className="flex items-center gap-4">
+              <a href="tel:+74993212040" className="text-sm text-slate-600">
+                +7 (499) 321-20-40
+              </a>
+              <Link
+                href="/contacts"
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
+              >
+                Получить КП
+              </Link>
+            </div>
+
+          </div>
+        </div>
+      </header>
+
+      {/* ОТСТУП ПОД FIXED HEADER */}
+      <div className="h-16" />
+    </>
   );
 }
 
-export default function Header() {
-  const pathname = usePathname();
-
-  const items = useMemo(() => navigation as NavItem[], []);
-
-  const [openKey, setOpenKey] = useState<string | null>(null);
-  const headerRef = useRef<HTMLElement | null>(null);
-
-  // Закрывать меню при переходе по страницам
-  useEffect(() => {
-    setOpenKey(null);
-  }, [pathname]);
-
-  // Закрывать меню по клику вне хедера
-  useEffect(() => {
-    function onDocMouseDown(e: MouseEvent) {
-      if (!headerRef.current) return;
-      const target = e.target as Node;
-      if (!headerRef.current.contains(target)) {
-        setOpenKey(null);
-      }
-    }
-    document.addEventListener('mousedown', onDocMouseDown);
-    return () => document.removeEventListener('mousedown', onDocMouseDown);
-  }, []);
-
-  // Закрывать по ESC
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpenKey(null);
-    }
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, []);
-
+function MenuItem({
+  href,
+  title,
+  desc,
+  accent,
+}: {
+  href: string;
+  title: string;
+  desc?: string;
+  accent?: boolean;
+}) {
   return (
-    // z-[1000] — чтобы framer-motion/контент НИКОГДА не перекрывал меню
-    <header
-      ref={headerRef as any}
-      className="sticky top-0 z-[1000] border-b bg-white/95 backdrop-blur-sm"
+    <Link
+      href={href}
+      className={`block px-4 py-3 rounded-lg hover:bg-slate-100 ${
+        accent ? 'bg-slate-50 font-semibold' : ''
+      }`}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <div className="flex items-center gap-10">
-          {/* LOGO */}
-          <Link href="/" className="text-lg font-bold text-slate-900">
-            РОСПАРК
-          </Link>
-
-          {/* NAV */}
-          <nav className="hidden items-center gap-7 md:flex">
-            {items.map((item) => {
-              const hasChildren = !!item.children?.length;
-
-              if (!hasChildren) {
-                return (
-                  <Link
-                    key={item.label}
-                    href={item.href || '#'}
-                    className="text-sm font-medium text-slate-700 hover:text-slate-900"
-                  >
-                    {item.label}
-                  </Link>
-                );
-              }
-
-              const isOpen = openKey === item.label;
-
-              return (
-                <div key={item.label} className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setOpenKey(isOpen ? null : item.label)}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-slate-700 hover:text-slate-900"
-                    aria-haspopup="menu"
-                    aria-expanded={isOpen}
-                  >
-                    {item.label}
-                    <ChevronDownIcon />
-                  </button>
-
-                  {isOpen && (
-                    <div
-                      className="absolute left-0 top-full mt-2 w-72 rounded-xl border bg-white shadow-lg"
-                      style={{ zIndex: 2000 }}
-                      role="menu"
-                    >
-                      <ul className="p-2">
-                        {item.children!.map((child) => (
-                          <li key={child.href}>
-                            <Link
-                              href={child.href}
-                              className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                              role="menuitem"
-                              onClick={() => setOpenKey(null)}
-                            >
-                              {child.label}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="flex items-center gap-6">
-          {/* CONTACTS */}
-          <div className="hidden text-right text-sm lg:block">
-            <a href={siteConfig.phoneHref} className="font-semibold text-slate-900">
-              {siteConfig.phone}
-            </a>
-            <br />
-            <a
-              href={siteConfig.emailHref}
-              className="text-slate-500 hover:text-slate-700"
-            >
-              {siteConfig.email}
-            </a>
-          </div>
-
-          {/* CTA */}
-          <Link
-            href="/quiz"
-            className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700"
-          >
-            Получить КП
-          </Link>
-        </div>
-      </div>
-    </header>
+      <div className="text-slate-900">{title}</div>
+      {desc && <div className="text-sm text-slate-500">{desc}</div>}
+    </Link>
   );
 }
