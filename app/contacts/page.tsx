@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import LeadFormSection from '../components/forms/LeadFormSection'
 
 export const metadata: Metadata = {
   title: 'Контакты — РОСПАРК',
@@ -97,6 +98,13 @@ export default function ContactsPage() {
 
         </div>
       </section>
+
+      <LeadFormSection
+        sourceSection="contacts"
+        title="Получить консультацию"
+        description="Оставьте контакты — мы уточним задачу и предложим оптимальное решение для вашего объекта."
+        submitLabel="Отправить"
+      />
     </main>
   )
 }

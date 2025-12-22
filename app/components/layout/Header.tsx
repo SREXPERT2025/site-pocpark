@@ -1,145 +1,183 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function Header() {
-  const [open, setOpen] = useState(false);
-  const pathname = usePathname();
-  const menuRef = useRef<HTMLDivElement | null>(null);
+import MobileMenu from '@/app/components/layout/MobileMenu';
+import { navigation, type NavItem } from '@/app/config/navigation';
 
-  // закрытие при клике вне меню
+export default function Header() {
+  const pathname = usePathname();
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const navRef = useRef<HTMLDivElement | null>(null);
+
+  // закрытие при клике вне навигации
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false);
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
       }
     };
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, []);
 
-  // закрытие при переходе
+  // закрытие при переходе по роуту
   useEffect(() => {
-    setOpen(false);
+    setOpenDropdown(null);
+    setMobileOpen(false);
   }, [pathname]);
 
   return (
     <>
-      {/* HEADER */}
-      <header className="fixed top-0 left-0 right-0 z-[1100] bg-white border-b border-slate-200">
-        <div className="max-w-[1400px] mx-auto px-6">
+      <header className="fixed top-0 left-0 right-0 z-[1100] bg-bg-primary border-b border-border-primary">
+        <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
           <div className="h-16 flex items-center justify-between">
-
             {/* LOGO */}
-            <Link href="/" className="text-2xl font-extrabold text-slate-900">
+            <Link href="/" className="text-lg sm:text-xl font-extrabold text-text-primary">
               РОСПАРК
             </Link>
 
-            {/* NAV */}
-            <nav className="flex items-center gap-8 text-slate-700 font-medium">
+            {/* DESKTOP NAV */}
+            <div ref={navRef} className="hidden lg:flex items-center gap-8">
+              <nav className="flex items-center gap-8 text-text-secondary font-medium">
+                {navigation.map((item) => (
+                  <DesktopNavItem
+                    key={item.label}
+                    item={item}
+                    open={openDropdown === item.label}
+                    onToggle={() => setOpenDropdown((cur) => (cur === item.label ? null : item.label))}
+                    onClose={() => setOpenDropdown(null)}
+                  />
+                ))}
+              </nav>
 
-              {/* РЕШЕНИЯ */}
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={() => setOpen(v => !v)}
-                  className="flex items-center gap-1 hover:text-slate-900"
+              {/* CTA */}
+              <div className="flex items-center gap-4">
+                <a href="tel:+74993212040" className="text-sm text-text-secondary hover:text-text-primary">
+                  +7 (499) 321-20-40
+                </a>
+                <Link
+                  href="/contacts"
+                  className="px-4 py-2 rounded-md bg-accent-primary text-white text-sm font-semibold hover:bg-state-hover transition"
                 >
-                  Решения
-                  <span className={`transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
-                </button>
-
-                {open && (
-                  <div className="absolute left-0 top-full mt-3 w-[340px] rounded-xl bg-white border border-slate-200 shadow-xl p-2">
-                    <MenuItem
-                      href="/resheniya/dlya-rukovoditeley"
-                      title="Для руководителей"
-                      desc="Деньги, контроль, NOI"
-                    />
-                    <MenuItem
-                      href="/resheniya/dlya-inzhenerov"
-                      title="Для инженеров"
-                      desc="Схемы, API, интеграции"
-                    />
-                    <MenuItem
-                      href="/resheniya/dlya-sluzhby-bezopasnosti"
-                      title="Для службы безопасности"
-                      desc="Контроль проездов, архив"
-                    />
-
-                    <div className="my-2 border-t border-slate-100" />
-
-                    <MenuItem
-                      href="/resheniya/sravnenie-podhodov"
-                      title="Сравнение подходов"
-                      desc="Аренда vs коробка vs под ключ"
-                      accent
-                    />
-                  </div>
-                )}
+                  Получить коммерческое предложение
+                </Link>
               </div>
-
-              <Link href="/vozmozhnosti" className="hover:text-slate-900">
-                Возможности
-              </Link>
-
-              <Link href="/oborudovanie" className="hover:text-slate-900">
-                Оборудование
-              </Link>
-
-              <Link href="/tipovye-komplekty" className="hover:text-slate-900">
-                Типовые комплекты
-              </Link>
-
-              <Link href="/keysy" className="hover:text-slate-900">
-                Кейсы
-              </Link>
-            </nav>
-
-            {/* CTA */}
-            <div className="flex items-center gap-4">
-              <a href="tel:+74993212040" className="text-sm text-slate-600">
-                +7 (499) 321-20-40
-              </a>
-              <Link
-                href="/contacts"
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition"
-              >
-                Получить КП
-              </Link>
             </div>
 
+            {/* MOBILE */}
+            <div className="flex items-center gap-3 lg:hidden">
+              <a href="tel:+74993212040" className="text-sm text-text-secondary">
+                +7 (499) 321-20-40
+              </a>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(true)}
+                className="inline-flex items-center justify-center rounded-md border border-border-primary bg-bg-primary p-2 text-text-primary hover:bg-bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                aria-label="Открыть меню"
+              >
+                ☰
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* ОТСТУП ПОД FIXED HEADER */}
       <div className="h-16" />
+
+      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} navItems={navigation} />
     </>
   );
 }
 
-function MenuItem({
-  href,
-  title,
-  desc,
-  accent,
+function DesktopNavItem({
+  item,
+  open,
+  onToggle,
+  onClose,
 }: {
-  href: string;
-  title: string;
-  desc?: string;
-  accent?: boolean;
+  item: NavItem;
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
 }) {
+  const hasDropdown = Boolean(item.groups?.length);
+
+  if (!hasDropdown) {
+    return (
+      <Link href={item.href ?? '#'} className="hover:text-text-primary">
+        {item.label}
+      </Link>
+    );
+  }
+
   return (
-    <Link
-      href={href}
-      className={`block px-4 py-3 rounded-lg hover:bg-slate-100 ${
-        accent ? 'bg-slate-50 font-semibold' : ''
-      }`}
-    >
-      <div className="text-slate-900">{title}</div>
-      {desc && <div className="text-sm text-slate-500">{desc}</div>}
-    </Link>
+    <div className="relative">
+      <div className="flex items-center gap-1">
+        {item.href ? (
+          <Link href={item.href} className="hover:text-text-primary">
+            {item.label}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            onClick={onToggle}
+            className="hover:text-text-primary"
+            aria-haspopup="menu"
+            aria-expanded={open}
+          >
+            {item.label}
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={onToggle}
+          className="rounded-sm px-1 text-text-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+          aria-label={`Открыть меню: ${item.label}`}
+          aria-haspopup="menu"
+          aria-expanded={open}
+        >
+          <span className={`inline-block transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+        </button>
+      </div>
+
+      {open && item.groups?.length ? (
+        <div
+          className="absolute left-0 top-full mt-3 w-[720px] rounded-md bg-bg-primary border border-border-primary shadow-md p-4"
+          role="menu"
+          aria-label={item.label}
+        >
+          <div className="grid grid-cols-2 gap-6">
+            {item.groups.map((group) => (
+              <div key={group.label}>
+                <div className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                  {group.label}
+                </div>
+                <div className="mt-3 space-y-1">
+                  {group.items.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="block rounded-md px-3 py-3 hover:bg-bg-secondary"
+                      onClick={onClose}
+                    >
+                      <div className="text-sm font-semibold text-text-primary">{link.label}</div>
+                      {link.description ? (
+                        <div className="mt-0.5 text-xs text-text-secondary">{link.description}</div>
+                      ) : null}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }

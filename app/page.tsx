@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Hero from './components/landing/Hero';
 import RoleSelector from './components/landing/RoleSelector';
 import PriceList from './components/landing/PriceList';
+import LeadFormSection from './components/forms/LeadFormSection';
 
 export default function Home() {
   return (
@@ -81,6 +82,13 @@ export default function Home() {
           </Link>
         </div>
       </section>
+
+      <LeadFormSection
+        sourceSection="home"
+        title="Получить коммерческое предложение"
+        description="Оставьте контакты — мы уточним задачу и пришлём КП/расчёт. Дублируем заявку в Email и Telegram, чтобы она не потерялась."
+        submitLabel="Получить КП"
+      />
 
     </main>
   );

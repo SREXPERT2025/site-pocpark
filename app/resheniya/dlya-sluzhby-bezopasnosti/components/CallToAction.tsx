@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import LeadForm from '@/app/components/forms/LeadForm';
 
 export default function CallToAction() {
   return (
@@ -32,6 +33,14 @@ export default function CallToAction() {
           >
             Связаться через Telegram
           </a>
+        </div>
+
+        <div className="mt-8 mx-auto max-w-xl">
+          <LeadForm
+            sourceSection="lead_cta"
+            sourcePage="/resheniya/dlya-sluzhby-bezopasnosti"
+            submitLabel="Получить консультацию"
+          />
         </div>
 
         <p className="mt-6 text-sm text-slate-400">

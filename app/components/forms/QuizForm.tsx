@@ -28,6 +28,8 @@ export default function QuizForm() {
     objectType: 'ТЦ / Бизнес-центр',
   });
 
+  const [consent, setConsent] = useState(false);
+
   const [touched, setTouched] = useState<{ phone: boolean }>({ phone: false });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -56,18 +58,25 @@ export default function QuizForm() {
       setError('Проверьте телефон.');
       return;
     }
+    if (!consent) {
+      setError('Нужно согласиться на обработку персональных данных.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/quiz', {
+      const res = await fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...formData,
-          // optional: сохраняем оригинал + нормализованное значение
+          name: formData.name,
+          phone: formData.phone,
           phoneNormalized: normalizePhone(formData.phone),
-          source: 'rospark-frontend',
-          timestamp: new Date().toISOString(),
+          objectType: formData.objectType,
+          message: 'Заявка с квиза: подготовить коммерческое предложение / расчёт. ',
+          consent,
+          sourceSection: 'quiz',
+          sourcePage: '/quiz',
         }),
       });
 
@@ -80,6 +89,7 @@ export default function QuizForm() {
       setIsSuccess(true);
       setFormData({ name: '', phone: '', objectType: 'ТЦ / Бизнес-центр' });
       setTouched({ phone: false });
+      setConsent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
     } finally {
@@ -143,6 +153,19 @@ export default function QuizForm() {
         </div>
       ) : null}
 
+      <div className="flex items-start gap-2">
+        <input
+          id="consent"
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          className="mt-1 h-4 w-4 rounded border-border-primary"
+        />
+        <label htmlFor="consent" className="text-xs text-text-secondary">
+          Я согласен на обработку персональных данных для связи по заявке.
+        </label>
+      </div>
+
       <div className="pt-2">
         <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
           <span className="inline-flex items-center gap-2">
@@ -153,7 +176,7 @@ export default function QuizForm() {
       </div>
 
       <p className="text-xs text-text-secondary">
-        Нажимая «Отправить», вы соглашаетесь на обработку персональных данных для связи по заявке.
+        Мы продублируем заявку в Email и Telegram, чтобы она не потерялась.
       </p>
     </form>
   );

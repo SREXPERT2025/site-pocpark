@@ -1,0 +1,527 @@
+.
+├── .DS_Store
+├── .gitignore
+├── .next
+│   ├── .DS_Store
+│   ├── app-build-manifest.json
+│   ├── app-path-routes-manifest.json
+│   ├── BUILD_ID
+│   ├── build-manifest.json
+│   ├── cache
+│   │   ├── .tsbuildinfo
+│   │   ├── swc
+│   │   │   └── plugins
+│   │   │       └── v7_macos_aarch64_0.106.15
+│   │   └── webpack
+│   │       ├── client-production
+│   │       │   ├── 0.pack
+│   │       │   └── index.pack
+│   │       ├── edge-server-production
+│   │       │   ├── 0.pack
+│   │       │   └── index.pack
+│   │       └── server-production
+│   │           ├── 0.pack
+│   │           └── index.pack
+│   ├── export-marker.json
+│   ├── images-manifest.json
+│   ├── next-minimal-server.js.nft.json
+│   ├── next-server.js.nft.json
+│   ├── package.json
+│   ├── prerender-manifest.json
+│   ├── react-loadable-manifest.json
+│   ├── required-server-files.json
+│   ├── routes-manifest.json
+│   ├── server
+│   │   ├── app
+│   │   │   ├── _not-found
+│   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   ├── page.js
+│   │   │   │   └── page.js.nft.json
+│   │   │   ├── _not-found.html
+│   │   │   ├── _not-found.meta
+│   │   │   ├── _not-found.rsc
+│   │   │   ├── api
+│   │   │   │   └── quiz
+│   │   │   │       ├── route.js
+│   │   │   │       └── route.js.nft.json
+│   │   │   ├── contacts
+│   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   ├── page.js
+│   │   │   │   └── page.js.nft.json
+│   │   │   ├── contacts.html
+│   │   │   ├── contacts.meta
+│   │   │   ├── contacts.rsc
+│   │   │   ├── index.html
+│   │   │   ├── index.meta
+│   │   │   ├── index.rsc
+│   │   │   ├── keysy
+│   │   │   │   ├── [slug]
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   ├── page.js
+│   │   │   │   ├── page.js.nft.json
+│   │   │   │   ├── test-keys.html
+│   │   │   │   ├── test-keys.meta
+│   │   │   │   └── test-keys.rsc
+│   │   │   ├── keysy.html
+│   │   │   ├── keysy.meta
+│   │   │   ├── keysy.rsc
+│   │   │   ├── oborudovanie
+│   │   │   │   ├── [slug]
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   ├── page.js
+│   │   │   │   ├── page.js.nft.json
+│   │   │   │   ├── parkomaty
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── parkomaty.html
+│   │   │   │   ├── parkomaty.meta
+│   │   │   │   ├── parkomaty.rsc
+│   │   │   │   ├── stoyki
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── stoyki.html
+│   │   │   │   ├── stoyki.meta
+│   │   │   │   ├── stoyki.rsc
+│   │   │   │   ├── test-oborudovanie.html
+│   │   │   │   ├── test-oborudovanie.meta
+│   │   │   │   └── test-oborudovanie.rsc
+│   │   │   ├── oborudovanie.html
+│   │   │   ├── oborudovanie.meta
+│   │   │   ├── oborudovanie.rsc
+│   │   │   ├── page_client-reference-manifest.js
+│   │   │   ├── page.js
+│   │   │   ├── page.js.nft.json
+│   │   │   ├── quiz
+│   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   ├── page.js
+│   │   │   │   └── page.js.nft.json
+│   │   │   ├── quiz.html
+│   │   │   ├── quiz.meta
+│   │   │   ├── quiz.rsc
+│   │   │   ├── resheniya
+│   │   │   │   ├── [slug]
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── biznes-centry
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── biznes-centry.html
+│   │   │   │   ├── biznes-centry.meta
+│   │   │   │   ├── biznes-centry.rsc
+│   │   │   │   ├── dlya-inzhenerov
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── dlya-inzhenerov.html
+│   │   │   │   ├── dlya-inzhenerov.meta
+│   │   │   │   ├── dlya-inzhenerov.rsc
+│   │   │   │   ├── dlya-it-direktora.html
+│   │   │   │   ├── dlya-it-direktora.meta
+│   │   │   │   ├── dlya-it-direktora.rsc
+│   │   │   │   ├── dlya-rukovoditeley
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── dlya-rukovoditeley.html
+│   │   │   │   ├── dlya-rukovoditeley.meta
+│   │   │   │   ├── dlya-rukovoditeley.rsc
+│   │   │   │   ├── dlya-rukovodstva.html
+│   │   │   │   ├── dlya-rukovodstva.meta
+│   │   │   │   ├── dlya-rukovodstva.rsc
+│   │   │   │   ├── dlya-sluzhby-bezopasnosti
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── dlya-sluzhby-bezopasnosti.html
+│   │   │   │   ├── dlya-sluzhby-bezopasnosti.meta
+│   │   │   │   ├── dlya-sluzhby-bezopasnosti.rsc
+│   │   │   │   ├── integraciya-i-api.html
+│   │   │   │   ├── integraciya-i-api.meta
+│   │   │   │   ├── integraciya-i-api.rsc
+│   │   │   │   ├── kak-my-rabotaem.html
+│   │   │   │   ├── kak-my-rabotaem.meta
+│   │   │   │   ├── kak-my-rabotaem.rsc
+│   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   ├── page.js
+│   │   │   │   ├── page.js.nft.json
+│   │   │   │   ├── sravnenie-podhodov
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── sravnenie-podhodov.html
+│   │   │   │   ├── sravnenie-podhodov.meta
+│   │   │   │   ├── sravnenie-podhodov.rsc
+│   │   │   │   ├── torgovye-centry
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── torgovye-centry.html
+│   │   │   │   ├── torgovye-centry.meta
+│   │   │   │   ├── torgovye-centry.rsc
+│   │   │   │   ├── zastroyschiki
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── zastroyschiki.html
+│   │   │   │   ├── zastroyschiki.meta
+│   │   │   │   └── zastroyschiki.rsc
+│   │   │   ├── resheniya.html
+│   │   │   ├── resheniya.meta
+│   │   │   ├── resheniya.rsc
+│   │   │   ├── robots.txt
+│   │   │   │   ├── route.js
+│   │   │   │   └── route.js.nft.json
+│   │   │   ├── robots.txt.body
+│   │   │   ├── robots.txt.meta
+│   │   │   ├── sitemap.xml
+│   │   │   │   ├── route.js
+│   │   │   │   └── route.js.nft.json
+│   │   │   ├── sitemap.xml.body
+│   │   │   ├── sitemap.xml.meta
+│   │   │   ├── vozmozhnosti
+│   │   │   │   ├── [slug]
+│   │   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   │   ├── page.js
+│   │   │   │   │   └── page.js.nft.json
+│   │   │   │   ├── abonementy-i-rfid.html
+│   │   │   │   ├── abonementy-i-rfid.meta
+│   │   │   │   ├── abonementy-i-rfid.rsc
+│   │   │   │   ├── gibkaya-tarifikaciya.html
+│   │   │   │   ├── gibkaya-tarifikaciya.meta
+│   │   │   │   ├── gibkaya-tarifikaciya.rsc
+│   │   │   │   ├── integracii-i-api.html
+│   │   │   │   ├── integracii-i-api.meta
+│   │   │   │   ├── integracii-i-api.rsc
+│   │   │   │   ├── onlain-oplata.html
+│   │   │   │   ├── onlain-oplata.meta
+│   │   │   │   ├── onlain-oplata.rsc
+│   │   │   │   ├── page_client-reference-manifest.js
+│   │   │   │   ├── page.js
+│   │   │   │   ├── page.js.nft.json
+│   │   │   │   ├── raspoznavanie-nomerov.html
+│   │   │   │   ├── raspoznavanie-nomerov.meta
+│   │   │   │   └── raspoznavanie-nomerov.rsc
+│   │   │   ├── vozmozhnosti.html
+│   │   │   ├── vozmozhnosti.meta
+│   │   │   └── vozmozhnosti.rsc
+│   │   ├── app-paths-manifest.json
+│   │   ├── chunks
+│   │   │   ├── 344.js
+│   │   │   ├── 346.js
+│   │   │   ├── 634.js
+│   │   │   ├── 682.js
+│   │   │   ├── 716.js
+│   │   │   ├── 829.js
+│   │   │   ├── 948.js
+│   │   │   └── font-manifest.json
+│   │   ├── font-manifest.json
+│   │   ├── functions-config-manifest.json
+│   │   ├── interception-route-rewrite-manifest.js
+│   │   ├── middleware-build-manifest.js
+│   │   ├── middleware-manifest.json
+│   │   ├── middleware-react-loadable-manifest.js
+│   │   ├── next-font-manifest.js
+│   │   ├── next-font-manifest.json
+│   │   ├── pages
+│   │   │   ├── _app.js
+│   │   │   ├── _app.js.nft.json
+│   │   │   ├── _document.js
+│   │   │   ├── _document.js.nft.json
+│   │   │   ├── _error.js
+│   │   │   ├── _error.js.nft.json
+│   │   │   ├── 404.html
+│   │   │   └── 500.html
+│   │   ├── pages-manifest.json
+│   │   ├── server-reference-manifest.js
+│   │   ├── server-reference-manifest.json
+│   │   └── webpack-runtime.js
+│   ├── static
+│   │   ├── B4ge3FB25n16Da9r3Rf44
+│   │   │   ├── _buildManifest.js
+│   │   │   └── _ssgManifest.js
+│   │   ├── chunks
+│   │   │   ├── 117-c86a41b869f6b521.js
+│   │   │   ├── 169-6afc553adb4bb6c5.js
+│   │   │   ├── 878-6b86f829f862eb81.js
+│   │   │   ├── 972-58c9e6f672e3e578.js
+│   │   │   ├── app
+│   │   │   │   ├── _not-found
+│   │   │   │   │   └── page-98467b0ee1cfb9b0.js
+│   │   │   │   ├── contacts
+│   │   │   │   │   └── page-6a59331609bf592f.js
+│   │   │   │   ├── keysy
+│   │   │   │   │   ├── [slug]
+│   │   │   │   │   │   └── page-0e47996805c13667.js
+│   │   │   │   │   └── page-aaf749860a2e96f4.js
+│   │   │   │   ├── layout-4ba0f981a65cad76.js
+│   │   │   │   ├── oborudovanie
+│   │   │   │   │   ├── [slug]
+│   │   │   │   │   │   └── page-eb8928a8bf981be6.js
+│   │   │   │   │   ├── page-be90c48002dead6d.js
+│   │   │   │   │   ├── parkomaty
+│   │   │   │   │   │   └── page-111a6171f39720f4.js
+│   │   │   │   │   └── stoyki
+│   │   │   │   │       └── page-06255dd310deb53c.js
+│   │   │   │   ├── page-f850a453b4669f42.js
+│   │   │   │   ├── quiz
+│   │   │   │   │   └── page-2282f096cf924275.js
+│   │   │   │   ├── resheniya
+│   │   │   │   │   ├── [slug]
+│   │   │   │   │   │   └── page-4c1d1e410ca935b8.js
+│   │   │   │   │   ├── biznes-centry
+│   │   │   │   │   │   └── page-3323e473dfaca4c1.js
+│   │   │   │   │   ├── dlya-inzhenerov
+│   │   │   │   │   │   └── page-ba3e34c305f78330.js
+│   │   │   │   │   ├── dlya-rukovoditeley
+│   │   │   │   │   │   └── page-35fac440e03ce9d2.js
+│   │   │   │   │   ├── dlya-sluzhby-bezopasnosti
+│   │   │   │   │   │   └── page-d2f3fdc67a1dc05d.js
+│   │   │   │   │   ├── page-2d6895c3ef760379.js
+│   │   │   │   │   ├── sravnenie-podhodov
+│   │   │   │   │   │   └── page-0f761b1b7956f7ef.js
+│   │   │   │   │   ├── torgovye-centry
+│   │   │   │   │   │   └── page-7a74ad15f472c78c.js
+│   │   │   │   │   └── zastroyschiki
+│   │   │   │   │       └── page-d14b160a27dca2f7.js
+│   │   │   │   └── vozmozhnosti
+│   │   │   │       ├── [slug]
+│   │   │   │       │   └── page-ee1959857faac194.js
+│   │   │   │       └── page-33255a7829000804.js
+│   │   │   ├── fd9d1056-6922f449a204c2cc.js
+│   │   │   ├── framework-f66176bb897dc684.js
+│   │   │   ├── main-app-1934bbc3b7649f89.js
+│   │   │   ├── main-b03a5b6562b32e8b.js
+│   │   │   ├── pages
+│   │   │   │   ├── _app-72b849fbd24ac258.js
+│   │   │   │   └── _error-7ba65e1336b92748.js
+│   │   │   ├── polyfills-42372ed130431b0a.js
+│   │   │   └── webpack-be95cb0b58a51fc5.js
+│   │   ├── css
+│   │   │   └── 9c7359bab200099b.css
+│   │   └── media
+│   │       ├── 0aa834ed78bf6d07-s.p.woff2
+│   │       ├── 19cfc7226ec3afaa-s.woff2
+│   │       ├── 21350d82a1f187e9-s.p.woff2
+│   │       ├── 67957d42bae0796d-s.woff2
+│   │       ├── 886030b0b59bc5a7-s.woff2
+│   │       ├── 8e9860b6e62d6359-s.woff2
+│   │       ├── 939c4f875ee75fbb-s.woff2
+│   │       ├── ba9851c3c22cd980-s.woff2
+│   │       ├── bb3ef058b751a6ad-s.p.woff2
+│   │       ├── c5fe6dc8356a8c31-s.woff2
+│   │       ├── df0a9ae256c0569c-s.woff2
+│   │       ├── e4af272ccee01ff0-s.p.woff2
+│   │       └── f911b923c6adde36-s.woff2
+│   ├── trace
+│   └── types
+│       ├── app
+│       │   ├── api
+│       │   │   └── quiz
+│       │   │       └── route.ts
+│       │   ├── contacts
+│       │   │   └── page.ts
+│       │   ├── keysy
+│       │   │   ├── [slug]
+│       │   │   │   └── page.ts
+│       │   │   └── page.ts
+│       │   ├── layout.ts
+│       │   ├── oborudovanie
+│       │   │   ├── [slug]
+│       │   │   │   └── page.ts
+│       │   │   ├── page.ts
+│       │   │   ├── parkomaty
+│       │   │   │   └── page.ts
+│       │   │   └── stoyki
+│       │   │       └── page.ts
+│       │   ├── page.ts
+│       │   ├── quiz
+│       │   │   └── page.ts
+│       │   ├── resheniya
+│       │   │   ├── [slug]
+│       │   │   │   └── page.ts
+│       │   │   ├── biznes-centry
+│       │   │   │   └── page.ts
+│       │   │   ├── dlya-inzhenerov
+│       │   │   │   └── page.ts
+│       │   │   ├── dlya-rukovoditeley
+│       │   │   │   └── page.ts
+│       │   │   ├── dlya-sluzhby-bezopasnosti
+│       │   │   │   └── page.ts
+│       │   │   ├── page.ts
+│       │   │   ├── sravnenie-podhodov
+│       │   │   │   └── page.ts
+│       │   │   ├── torgovye-centry
+│       │   │   │   └── page.ts
+│       │   │   └── zastroyschiki
+│       │   │       └── page.ts
+│       │   └── vozmozhnosti
+│       │       ├── [slug]
+│       │       │   └── page.ts
+│       │       └── page.ts
+│       └── package.json
+├── app
+│   ├── .DS_Store
+│   ├── api
+│   │   └── quiz
+│   │       └── route.ts
+│   ├── components
+│   │   ├── animations
+│   │   │   ├── FadeIn.tsx
+│   │   │   └── PageTransition.tsx
+│   │   ├── forms
+│   │   │   └── QuizForm.tsx
+│   │   ├── landing
+│   │   │   ├── Hero.tsx
+│   │   │   ├── PriceList.tsx
+│   │   │   └── RoleSelector.tsx
+│   │   ├── layout
+│   │   │   ├── Footer.tsx
+│   │   │   ├── Header.tsx
+│   │   │   └── MobileMenu.tsx
+│   │   ├── navigation.ts
+│   │   └── ui
+│   │       ├── Breadcrumbs.tsx
+│   │       ├── Button.tsx
+│   │       ├── CtaBlock.tsx
+│   │       ├── GalleryBlock.tsx
+│   │       ├── Hero.tsx
+│   │       ├── LinkGrid.tsx
+│   │       ├── MetricsBlock.tsx
+│   │       └── TableBlock.tsx
+│   ├── config
+│   │   ├── navigation.ts
+│   │   └── site.ts
+│   ├── contacts
+│   │   └── page.tsx
+│   ├── globals.css
+│   ├── keysy
+│   │   ├── [slug]
+│   │   │   └── page.tsx
+│   │   └── page.tsx
+│   ├── layout.tsx
+│   ├── mdx-components.tsx
+│   ├── oborudovanie
+│   │   ├── [slug]
+│   │   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   ├── parkomaty
+│   │   │   └── page.tsx
+│   │   └── stoyki
+│   │       └── page.tsx
+│   ├── page.tsx
+│   ├── quiz
+│   │   └── page.tsx
+│   ├── resheniya
+│   │   ├── [slug]
+│   │   │   └── page.tsx
+│   │   ├── biznes-centry
+│   │   │   └── page.tsx
+│   │   ├── dlya-inzhenerov
+│   │   │   ├── components
+│   │   │   │   ├── CallToAction.tsx
+│   │   │   │   ├── Documentation.tsx
+│   │   │   │   ├── Hero.tsx
+│   │   │   │   ├── Integration.tsx
+│   │   │   │   ├── Reliability.tsx
+│   │   │   │   └── TechStack.tsx
+│   │   │   └── page.tsx
+│   │   ├── dlya-rukovoditeley
+│   │   │   ├── components
+│   │   │   │   ├── CallToAction.tsx
+│   │   │   │   ├── Hero.tsx
+│   │   │   │   ├── Metrics.tsx
+│   │   │   │   ├── ObjectTypes.tsx
+│   │   │   │   ├── PainPoints.tsx
+│   │   │   │   └── Solution.tsx
+│   │   │   └── page.tsx
+│   │   ├── dlya-sluzhby-bezopasnosti
+│   │   │   ├── components
+│   │   │   │   ├── CallToAction.tsx
+│   │   │   │   ├── Control.tsx
+│   │   │   │   ├── Hero.tsx
+│   │   │   │   ├── PainPoints.tsx
+│   │   │   │   ├── Reliability.tsx
+│   │   │   │   └── Solution.tsx
+│   │   │   └── page.tsx
+│   │   ├── page.tsx
+│   │   ├── sravnenie-podhodov
+│   │   │   ├── components
+│   │   │   │   ├── ApproachCards.tsx
+│   │   │   │   ├── CallToAction.tsx
+│   │   │   │   ├── ComparisonTable.tsx
+│   │   │   │   ├── Hero.tsx
+│   │   │   │   └── TcoSection.tsx
+│   │   │   └── page.tsx
+│   │   ├── torgovye-centry
+│   │   │   └── page.tsx
+│   │   └── zastroyschiki
+│   │       └── page.tsx
+│   ├── robots.ts
+│   ├── sitemap.ts
+│   └── vozmozhnosti
+│       ├── [slug]
+│       │   └── page.tsx
+│       └── page.tsx
+├── backend-integration-guide.md
+├── components
+│   └── ui
+│       ├── button.tsx
+│       ├── CtaBlock.tsx
+│       ├── navigation-menu.tsx
+│       ├── README.md
+│       └── sheet.tsx
+├── components.json
+├── config
+│   ├── navigation.ts
+│   └── site.ts
+├── content
+│   ├── .DS_Store
+│   ├── keysy
+│   │   └── test-keys.md
+│   ├── oborudovanie
+│   │   └── test-oborudovanie.md
+│   ├── resheniya
+│   │   ├── dlya-it-direktora.md
+│   │   ├── dlya-rukovodstva.md
+│   │   ├── integraciya-i-api.md
+│   │   ├── kak-my-rabotaem.md
+│   │   └── sravnenie-podhodov.md
+│   └── vozmozhnosti
+│       ├── abonementy-i-rfid.md
+│       ├── gibkaya-tarifikaciya.md
+│       ├── integracii-i-api.md
+│       ├── onlain-oplata.md
+│       └── raspoznavanie-nomerov.md
+├── content-guide.md
+├── deploy-guide.md
+├── lib
+│   ├── content-parser.ts
+│   ├── navigation.ts
+│   └── utils.ts
+├── next-env.d.ts
+├── next.config.js
+├── package-lock.json
+├── package.json
+├── postcss.config.js
+├── public
+│   └── images
+│       ├── cases
+│       │   └── galereya-cover.jpg
+│       └── equipment
+│           ├── rv3-1.jpg
+│           └── rv3-2.jpg
+├── site_tree.txt
+├── tailwind.config.js
+└── tsconfig.json
+
+134 directories, 391 files

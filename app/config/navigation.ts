@@ -1,69 +1,114 @@
-export type NavItem = {
+export type NavLink = {
   label: string;
-  href?: string;
-  children?: {
-    label: string;
-    href: string;
-  }[];
+  href: string;
+  description?: string;
 };
 
+export type NavGroup = {
+  label: string;
+  items: NavLink[];
+};
+
+export type NavItem = {
+  label: string;
+  /**
+   * Если указан href и groups, то label ведёт на href, а также открывает выпадающее меню.
+   */
+  href?: string;
+  groups?: NavGroup[];
+};
+
+/**
+ * Единый источник навигации (Sitemap v1.1)
+ * Важно: сюда попадают только страницы, которые помечены как «В меню: Да».
+ */
 export const navigation: NavItem[] = [
   {
-    label: "Решения",
-    children: [
+    label: 'Решения',
+    groups: [
       {
-        label: "Для руководителей",
-        href: "/resheniya/dlya-rukovoditeley",
+        label: 'По ролям',
+        items: [
+          {
+            label: 'Для руководителей',
+            href: '/resheniya/dlya-rukovoditeley',
+            description: 'NOI, контроль выручки, прозрачность и управляемость',
+          },
+          {
+            label: 'Для инженеров',
+            href: '/resheniya/dlya-inzhenerov',
+            description: 'Интеграции, API, схемы, эксплуатационная надёжность',
+          },
+          {
+            label: 'Для службы безопасности',
+            href: '/resheniya/dlya-sluzhby-bezopasnosti',
+            description: 'Контроль доступов, события, архив, антифрод',
+          },
+        ],
       },
       {
-        label: "Для инженеров",
-        href: "/resheniya/dlya-inzhenerov",
-      },
-      {
-        label: "Для службы безопасности",
-        href: "/resheniya/dlya-sluzhby-bezopasnosti",
+        label: 'По объектам',
+        items: [
+          {
+            label: 'Торговые центры',
+            href: '/resheniya/torgovye-centry',
+            description: 'Поток разовых клиентов, пики, онлайн-оплата, очереди',
+          },
+          {
+            label: 'Бизнес-центры',
+            href: '/resheniya/biznes-centry',
+            description: 'Резиденты, гости, заявки, лимиты, SLA охраны',
+          },
+          {
+            label: 'Застройщики',
+            href: '/resheniya/zastroyschiki',
+            description: 'Паркинг как сервис для УК и жителей, контроль и монетизация',
+          },
+        ],
       },
     ],
   },
-
   {
-    label: "Возможности",
-    children: [
+    label: 'Возможности',
+    href: '/vozmozhnosti',
+    groups: [
       {
-        label: "Онлайн-оплата",
-        href: "/vozmozhnosti/onlain-oplata",
-      },
-      {
-        label: "Распознавание номеров",
-        href: "/vozmozhnosti/raspoznavanie-nomerov",
-      },
-      {
-        label: "Интеграции и API",
-        href: "/vozmozhnosti/integracii-i-api",
-      },
-      {
-        label: "Абонементы и RFID",
-        href: "/vozmozhnosti/abonementy-i-rfid",
-      },
-      {
-        label: "Гибкая тарификация",
-        href: "/vozmozhnosti/gibkaya-tarifikaciya",
+        label: 'Типы клиентов',
+        items: [
+          {
+            label: 'Постоянные клиенты',
+            href: '/vozmozhnosti/postoyannie-klienti',
+            description: 'Абонементы, распознавание, доступ 24/7, отчётность',
+          },
+          {
+            label: 'Арендные клиенты',
+            href: '/vozmozhnosti/arendnie-klienti',
+            description: 'Договоры, привязка к компаниям, лимиты и правила доступа',
+          },
+          {
+            label: 'Разовые клиенты',
+            href: '/vozmozhnosti/razovie-klienti',
+            description: 'Билет/номер, тарификация, онлайн-оплата, ускорение выезда',
+          },
+          {
+            label: 'Гостевые клиенты',
+            href: '/vozmozhnosti/gostevie-klienti',
+            description: 'Заявки, временный доступ, подтверждение, безопасность',
+          },
+        ],
       },
     ],
   },
-
   {
-    label: "Оборудование",
-    href: "/oborudovanie",
+    label: 'Оборудование',
+    href: '/oborudovanie',
   },
-
   {
-    label: "Типовые комплекты",
-    href: "/komplekty",
+    label: 'Проекты',
+    href: '/keysy',
   },
-
   {
-    label: "Кейсы",
-    href: "/keysy",
+    label: 'Контакты',
+    href: '/contacts',
   },
 ];

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import LeadForm from '@/app/components/forms/LeadForm';
 
 export default function CallToAction() {
   return (
@@ -30,6 +31,14 @@ export default function CallToAction() {
             >
               Задать вопрос инженеру
             </a>
+          </div>
+
+          <div className="mx-auto max-w-xl">
+            <LeadForm
+              sourceSection="lead_cta"
+              sourcePage="/resheniya/dlya-inzhenerov"
+              submitLabel="Запросить ТЗ"
+            />
           </div>
 
           <p className="text-sm text-emerald-200 opacity-80">
