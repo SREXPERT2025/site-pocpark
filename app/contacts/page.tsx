@@ -9,6 +9,8 @@ export const metadata: Metadata = {
 }
 
 export default function ContactsPage() {
+  const telegramUrl = process.env.NEXT_PUBLIC_TELEGRAM_CONTACT_URL;
+
   return (
     <main className="min-h-screen bg-white">
       {/* HERO */}
@@ -35,28 +37,16 @@ export default function ContactsPage() {
             <ul className="space-y-4 text-slate-700">
               <li>
                 <strong>Телефон:</strong>{' '}
-                <a href="tel:+7XXXXXXXXXX" className="text-blue-600 hover:underline">
-                  +7 (XXX) XXX-XX-XX
-                </a>
-              </li>
-
-              <li>
-                <strong>Email:</strong>{' '}
-                <a href="mailto:info@rospark.ru" className="text-blue-600 hover:underline">
-                  info@rospark.ru
-                </a>
-              </li>
-
-              <li>
-                <strong>Telegram:</strong>{' '}
-                <a
-                  href="https://t.me/rospark_bot"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  @rospark_bot
-                </a>
+                {telegramUrl ? (
+  <a
+    href={telegramUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-blue-600 hover:underline"
+  >
+    +7 (XXX) XXX-XX-XX
+  </a>
+) : null}
               </li>
             </ul>
 

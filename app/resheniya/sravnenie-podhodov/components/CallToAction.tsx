@@ -1,6 +1,8 @@
 import Link from 'next/link';
 
 export default function CallToAction() {
+  const telegramUrl = process.env.NEXT_PUBLIC_TELEGRAM_CONTACT_URL;
+
   return (
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
@@ -23,14 +25,16 @@ export default function CallToAction() {
                 Запросить аудит / КП
               </Link>
 
-              <a
-                href="https://t.me/rospark_bot"
-                target="_blank"
-                rel="noreferrer"
-                className="px-8 py-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 transition-colors font-semibold text-center"
-              >
-                Написать в Telegram
-              </a>
+              {telegramUrl ? (
+  <a
+    href={telegramUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="px-8 py-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 transition-colors font-semibold text-center"
+  >
+    Написать в Telegram
+  </a>
+) : null}
             </div>
 
             <p className="mt-4 text-xs text-slate-500">
