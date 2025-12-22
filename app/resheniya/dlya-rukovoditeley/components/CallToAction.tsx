@@ -1,6 +1,9 @@
 import Link from 'next/link';
+import LeadForm from '@/app/components/forms/LeadForm';
 
 export default function CallToAction() {
+  const telegramUrl = process.env.NEXT_PUBLIC_TELEGRAM_CONTACT_URL;
+
   return (
     <section
       id="quiz"
@@ -32,14 +35,25 @@ export default function CallToAction() {
               Получить расчёт
             </Link>
 
-            <a
-              href="https://t.me/rospark_bot"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-10 py-5 bg-blue-700 border border-blue-500 hover:bg-blue-800 font-bold rounded-xl transition-colors"
-            >
-              Написать в Telegram
-            </a>
+            {telegramUrl ? (
+  <a
+    href={telegramUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="px-10 py-5 bg-blue-700 border border-blue-500 hover:bg-blue-800 font-bold rounded-xl transition-colors"
+  >
+    Написать в Telegram
+  </a>
+) : null}
+          </div>
+
+          <div className="mx-auto max-w-xl">
+            <LeadForm
+              sourceSection="lead_cta"
+              sourcePage="/resheniya/dlya-rukovoditeley"
+              submitLabel="Получить расчёт"
+              compact
+            />
           </div>
 
           {/* Доверие */}

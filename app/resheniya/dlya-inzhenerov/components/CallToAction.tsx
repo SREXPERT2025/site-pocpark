@@ -1,6 +1,9 @@
 import Link from 'next/link';
+import LeadForm from '@/app/components/forms/LeadForm';
 
 export default function CallToAction() {
+  const telegramUrl = process.env.NEXT_PUBLIC_TELEGRAM_CONTACT_URL;
+
   return (
     <section className="py-20 bg-emerald-600 text-white">
       <div className="container mx-auto px-4">
@@ -23,13 +26,24 @@ export default function CallToAction() {
               Запросить ТКП
             </Link>
 
-            <a
-              href="https://t.me/rospark_bot"
-              target="_blank"
-              className="px-8 py-4 bg-emerald-700 border border-emerald-400 rounded-lg font-semibold hover:bg-emerald-800 transition"
-            >
-              Задать вопрос инженеру
-            </a>
+            {telegramUrl ? (
+  <a
+    href={telegramUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="px-8 py-4 bg-emerald-700 border border-emerald-400 rounded-lg font-semibold hover:bg-emerald-800 transition"
+  >
+    Задать вопрос инженеру
+  </a>
+) : null}
+          </div>
+
+          <div className="mx-auto max-w-xl">
+            <LeadForm
+              sourceSection="lead_cta"
+              sourcePage="/resheniya/dlya-inzhenerov"
+              submitLabel="Запросить ТЗ"
+            />
           </div>
 
           <p className="text-sm text-emerald-200 opacity-80">

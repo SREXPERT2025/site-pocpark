@@ -6,6 +6,18 @@ import Header from '@/app/components/layout/Header';
 import Footer from '@/app/components/layout/Footer';
 import PageTransition from '@/app/components/animations/PageTransition';
 
+// metadataBase нужен Next.js для корректного формирования абсолютных URL
+// (OpenGraph/Twitter/каноникал). В проде задаётся через env.
+// Важно: NEXT_PUBLIC_SITE_URL должен быть полным URL, например:
+// https://роспарк.рф или https://rospark.rf
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+let METADATA_BASE: URL;
+try {
+  METADATA_BASE = new URL(SITE_URL);
+} catch {
+  METADATA_BASE = new URL('http://localhost:3000');
+}
+
 
 const inter = Inter({
   subsets: ['latin', 'cyrillic'],
@@ -20,6 +32,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: METADATA_BASE,
   title: {
     default: 'РОСПАРК — автоматизация парковок нового поколения',
     template: '%s — РОСПАРК',
