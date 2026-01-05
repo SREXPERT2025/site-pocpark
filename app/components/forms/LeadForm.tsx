@@ -1,238 +1,239 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useMemo, useState } from "react";
 
-type UtmData = Record<string, string>;
-
-type LeadFormProps = {
+export type LeadFormPayload = {
+  name: string;
+  phone: string;
+  company?: string;
+  objectType?: string;
+  comment?: string;
+  consent: boolean;
+  /** Откуда пришла заявка (логика/блок) */
   sourceSection?: string;
+  /** Страница-источник */
   sourcePage?: string;
+};
+
+export type LeadFormProps = {
+  /**
+   * Откуда пришла заявка (логика/блок): hero / lead_bottom / contacts и т.п.
+   */
+  sourceSection?: string;
+  /**
+   * Страница-источник (например: /resheniya/biznes-centry)
+   */
+  sourcePage?: string;
+  /** Подпись на кнопке */
   submitLabel?: string;
-  className?: string;
+  /** Компактный режим (меньше отступов) */
   compact?: boolean;
+  /** Минимальный набор полей (без компании и типа объекта) */
+  minimalFields?: boolean;
+  className?: string;
 };
 
-type ApiResponse = {
-  success: boolean;
-  message?: string;
-};
-
-function cn(...values: Array<string | undefined | false | null>) {
-  return values.filter(Boolean).join(' ');
+function normalizePhone(raw: string): string {
+  // Лёгкая нормализация: оставляем + и цифры
+  const trimmed = raw.trim();
+  const plus = trimmed.startsWith("+") ? "+" : "";
+  const digits = trimmed.replace(/\D/g, "");
+  return plus + digits;
 }
 
-function pickUtm(params: URLSearchParams) {
-  const keys = [
-    'utm_source',
-    'utm_medium',
-    'utm_campaign',
-    'utm_term',
-    'utm_content',
-    'gclid',
-    'yclid',
-    'fbclid',
-  ];
-  const out: Record<string, string> = {};
-  for (const k of keys) {
-    const v = params.get(k);
-    if (v) out[k] = v;
-  }
-  return out;
-}
+export default function LeadForm(props: LeadFormProps) {
+  const {
+    sourceSection,
+    sourcePage,
+    submitLabel = "Получить КП",
+    compact = false,
+    minimalFields = false,
+    className,
+  } = props;
 
-export default function LeadForm({
-  sourceSection,
-  sourcePage,
-  submitLabel = 'Отправить заявку',
-  className,
-  compact = false,
-}: LeadFormProps) {
-  const pathname = usePathname();
-  const [utm, setUtm] = useState<UtmData>({});
-
-  useEffect(() => {
-    try {
-      const sp = new URLSearchParams(window.location.search);
-      setUtm(pickUtm(sp));
-    } catch {
-      setUtm({});
-    }
-  }, []);
-
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [company, setCompany] = useState('');
-  const [objectType, setObjectType] = useState('');
-  const [message, setMessage] = useState('');
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [company, setCompany] = useState("");
+  const [objectType, setObjectType] = useState("");
+  const [comment, setComment] = useState("");
   const [consent, setConsent] = useState(true);
-  const [website, setWebsite] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorText, setErrorText] = useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent) {
+  const payload: LeadFormPayload = useMemo(
+    () => ({
+      name: name.trim(),
+      phone: phone.trim(),
+      company: minimalFields ? undefined : company.trim() || undefined,
+      objectType: minimalFields ? undefined : objectType.trim() || undefined,
+      comment: comment.trim() || undefined,
+      consent,
+      sourceSection,
+      sourcePage,
+    }),
+    [name, phone, company, objectType, comment, consent, sourceSection, sourcePage, minimalFields]
+  );
+
+  const canSubmit = useMemo(() => {
+    if (!payload.consent) return false;
+    if (!payload.name) return false;
+    if (!payload.phone) return false;
+
+    // минимальная валидация телефона: 10+ цифр
+    const digits = normalizePhone(payload.phone).replace(/\D/g, "");
+    if (digits.length < 10) return false;
+
+    return true;
+  }, [payload]);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (isSubmitting) return;
-    setError(null);
-    setSuccess(false);
+    setStatus("idle");
+    setErrorText(null);
+
+    if (!canSubmit) {
+      setStatus("error");
+      setErrorText("Проверьте имя, телефон и согласие на обработку данных.");
+      return;
+    }
 
     setIsSubmitting(true);
+
     try {
-      const res = await fetch('/api/lead', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          phone,
-          company,
-          objectType,
-          message,
-          consent,
-          website,
-          sourceSection,
-          sourcePage: sourcePage ?? pathname,
-          utm,
+          ...payload,
+          phone: normalizePhone(payload.phone),
         }),
       });
 
-      const data = (await res.json().catch(() => null)) as ApiResponse | null;
-      if (!res.ok || !data?.success) {
-        setError(data?.message || 'Не удалось отправить заявку. Попробуйте позже.');
-        return;
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(txt || `HTTP ${res.status}`);
       }
 
-      setSuccess(true);
-      setName('');
-      setPhone('');
-      setCompany('');
-      setObjectType('');
-      setMessage('');
-      setWebsite('');
+      setStatus("success");
+      setName("");
+      setPhone("");
+      setCompany("");
+      setObjectType("");
+      setComment("");
       setConsent(true);
-    } catch {
-      setError('Не удалось отправить заявку. Проверьте интернет и попробуйте ещё раз.');
+    } catch (err) {
+      setStatus("error");
+      setErrorText("Не удалось отправить заявку. Попробуйте еще раз или свяжитесь с нами по телефону.");
+      // eslint-disable-next-line no-console
+      console.error(err);
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className={cn('w-full', className)}>
-      {/* Honeypot */}
-      <div className="hidden">
-        <label>
-          Website
-          <input value={website} onChange={(e) => setWebsite(e.target.value)} />
-        </label>
-      </div>
-
-      <div
-        className={cn(
-          'grid gap-3',
-          compact ? 'md:grid-cols-3' : 'md:grid-cols-2'
-        )}
-      >
-        <div>
-          <label className="text-sm font-medium text-text-primary">Имя</label>
-          <input
-            className="mt-1 w-full rounded-xl border border-border bg-white px-4 py-3 text-text-primary outline-none focus:ring-2 focus:ring-blue-200"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Андрей"
-            autoComplete="name"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="text-sm font-medium text-text-primary">Телефон</label>
-          <input
-            className="mt-1 w-full rounded-xl border border-border bg-white px-4 py-3 text-text-primary outline-none focus:ring-2 focus:ring-blue-200"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+7 999 123-45-67"
-            autoComplete="tel"
-            required
-          />
-        </div>
-
-        {!compact && (
-          <div>
-            <label className="text-sm font-medium text-text-primary">Компания</label>
+    <form
+      onSubmit={handleSubmit}
+      className={
+        className ||
+        `rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] ${
+          compact ? "p-6" : "p-8"
+        }`
+      }
+    >
+      <div className="grid gap-6">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid gap-2">
+            <label className="text-sm font-semibold text-slate-900">Имя</label>
             <input
-              className="mt-1 w-full rounded-xl border border-border bg-white px-4 py-3 text-text-primary outline-none focus:ring-2 focus:ring-blue-200"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              placeholder="ООО “...”"
-              autoComplete="organization"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Андрей"
+              className="h-12 rounded-xl border border-slate-200 px-4 text-slate-900 outline-none transition focus:border-slate-400"
+              autoComplete="name"
             />
           </div>
-        )}
 
-        {!compact && (
-          <div>
-            <label className="text-sm font-medium text-text-primary">Тип объекта</label>
+          <div className="grid gap-2">
+            <label className="text-sm font-semibold text-slate-900">Телефон</label>
             <input
-              className="mt-1 w-full rounded-xl border border-border bg-white px-4 py-3 text-text-primary outline-none focus:ring-2 focus:ring-blue-200"
-              value={objectType}
-              onChange={(e) => setObjectType(e.target.value)}
-              placeholder="ТЦ / БЦ / ЖК / Паркинг"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+7 999 123-45-67"
+              className="h-12 rounded-xl border border-slate-200 px-4 text-slate-900 outline-none transition focus:border-slate-400"
+              autoComplete="tel"
             />
           </div>
-        )}
-      </div>
 
-      {!compact && (
-        <div className="mt-3">
-          <label className="text-sm font-medium text-text-primary">Комментарий</label>
+          {!minimalFields ? (
+            <>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold text-slate-900">Компания</label>
+                <input
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  placeholder='ООО "..."'
+                  className="h-12 rounded-xl border border-slate-200 px-4 text-slate-900 outline-none transition focus:border-slate-400"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold text-slate-900">Тип объекта</label>
+                <input
+                  value={objectType}
+                  onChange={(e) => setObjectType(e.target.value)}
+                  placeholder="ТЦ / БЦ / ЖК / Паркинг"
+                  className="h-12 rounded-xl border border-slate-200 px-4 text-slate-900 outline-none transition focus:border-slate-400"
+                />
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        <div className="grid gap-2">
+          <label className="text-sm font-semibold text-slate-900">Комментарий</label>
           <textarea
-            className="mt-1 w-full rounded-xl border border-border bg-white px-4 py-3 text-text-primary outline-none focus:ring-2 focus:ring-blue-200"
-            rows={4}
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
             placeholder="Коротко опишите объект и задачу (кол-во въездов, типы клиентов, пожелания)"
+            className="min-h-[120px] rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400"
           />
         </div>
-      )}
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex items-start gap-2 text-sm text-text-secondary">
-          <input
-            type="checkbox"
-            checked={consent}
-            onChange={(e) => setConsent(e.target.checked)}
-            className="mt-1 h-4 w-4"
-            required
-          />
-          <span>
-            Согласен(на) на обработку персональных данных и связь со мной по заявке.
-          </span>
-        </label>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <label className="flex items-center gap-3 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            <span>Согласен(на) на обработку персональных данных и связь со мной по заявке.</span>
+          </label>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className={cn(
-            'inline-flex items-center justify-center rounded-xl bg-blue-600 px-6 py-3 font-semibold text-white transition-colors',
-            isSubmitting ? 'opacity-70' : 'hover:bg-blue-700'
-          )}
-        >
-          {isSubmitting ? 'Отправляем…' : submitLabel}
-        </button>
+          <button
+            type="submit"
+            disabled={!canSubmit || isSubmitting}
+            className="inline-flex h-12 items-center justify-center rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isSubmitting ? "Отправляем…" : submitLabel}
+          </button>
+        </div>
+
+        {status === "success" ? (
+          <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            Заявка отправлена. Мы свяжемся с вами в ближайшее время.
+          </div>
+        ) : null}
+
+        {status === "error" ? (
+          <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            {errorText || "Проверьте поля и попробуйте еще раз."}
+          </div>
+        ) : null}
       </div>
-
-      {error && (
-        <p className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </p>
-      )}
-      {success && (
-        <p className="mt-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-          Заявка отправлена. Мы свяжемся с вами в рабочее время.
-        </p>
-      )}
     </form>
   );
 }

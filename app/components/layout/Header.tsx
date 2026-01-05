@@ -12,6 +12,7 @@ export default function Header() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null);
+  const telegramUrl = process.env.NEXT_PUBLIC_TELEGRAM_CONTACT_URL;
 
   // закрытие при клике вне навигации
   useEffect(() => {
@@ -59,6 +60,16 @@ export default function Header() {
                 <a href="tel:+74993212040" className="text-sm text-text-secondary hover:text-text-primary">
                   +7 (499) 321-20-40
                 </a>
+                {telegramUrl ? (
+                  <a
+                    href={telegramUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3 py-2 rounded-md border border-border-primary bg-bg-primary text-sm font-semibold text-text-primary hover:bg-bg-secondary transition"
+                  >
+                    Telegram
+                  </a>
+                ) : null}
                 <Link
                   href="/contacts"
                   className="px-4 py-2 rounded-md bg-accent-primary text-white text-sm font-semibold hover:bg-state-hover transition"
@@ -73,6 +84,16 @@ export default function Header() {
               <a href="tel:+74993212040" className="text-sm text-text-secondary">
                 +7 (499) 321-20-40
               </a>
+              {telegramUrl ? (
+                <a
+                  href={telegramUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm font-semibold text-text-primary hover:bg-bg-secondary transition"
+                >
+                  TG
+                </a>
+              ) : null}
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}

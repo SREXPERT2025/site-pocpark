@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Торговый центр — автоматизация парковки">
+  <defs>
+    <linearGradient id="bg_tc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071122"/>
+      <stop offset="0.55" stop-color="#0E2A5A"/>
+      <stop offset="1" stop-color="#2D6BFF"/>
+    </linearGradient>
+    <linearGradient id="glass_tc" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EAF2FF" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#EAF2FF" stop-opacity="0.15"/>
+    </linearGradient>
+    <radialGradient id="glow_tc" cx="78%" cy="20%" r="70%">
+      <stop offset="0" stop-color="#8AB3FF" stop-opacity="0.55"/>
+      <stop offset="0.5" stop-color="#2D6BFF" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#071122" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft_tc" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+    <pattern id="noise_tc" width="120" height="120" patternUnits="userSpaceOnUse">
+      <circle cx="18" cy="26" r="1.2" fill="#FFFFFF" opacity="0.10"/>
+      <circle cx="64" cy="18" r="1.5" fill="#FFFFFF" opacity="0.08"/>
+      <circle cx="98" cy="52" r="1.1" fill="#FFFFFF" opacity="0.07"/>
+      <circle cx="42" cy="86" r="1.3" fill="#FFFFFF" opacity="0.09"/>
+      <circle cx="92" cy="94" r="1.2" fill="#FFFFFF" opacity="0.08"/>
+    </pattern>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#bg_tc)"/>
+  <rect width="1600" height="1000" fill="url(#glow_tc)"/>
+  <rect width="1600" height="1000" fill="url(#noise_tc)" opacity="0.55"/>
+
+  <!-- Визуальный "подиум" -->
+  <path d="M0 720 C260 650, 520 630, 800 640 C1080 650, 1340 700, 1600 760 L1600 1000 L0 1000 Z" fill="#000000" opacity="0.18"/>
+  <path d="M0 770 C260 700, 520 680, 800 690 C1080 700, 1340 740, 1600 800" stroke="#FFFFFF" opacity="0.10" stroke-width="3" fill="none"/>
+
+  <!-- Торговый центр -->
+  <g transform="translate(190,210)">
+    <rect x="0" y="0" width="560" height="360" rx="32" fill="#081A33" opacity="0.75" stroke="#FFFFFF" stroke-opacity="0.14"/>
+    <rect x="32" y="48" width="496" height="220" rx="22" fill="url(#glass_tc)" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <g opacity="0.22">
+      <rect x="62" y="78" width="70" height="56" rx="10" fill="#FFFFFF"/>
+      <rect x="152" y="78" width="70" height="56" rx="10" fill="#FFFFFF"/>
+      <rect x="242" y="78" width="70" height="56" rx="10" fill="#FFFFFF"/>
+      <rect x="332" y="78" width="70" height="56" rx="10" fill="#FFFFFF"/>
+      <rect x="422" y="78" width="70" height="56" rx="10" fill="#FFFFFF"/>
+      <rect x="62" y="150" width="70" height="56" rx="10" fill="#FFFFFF"/>
+      <rect x="152" y="150" width="70" height="56" rx="10" fill="#FFFFFF"/>
+      <rect x="242" y="150" width="70" height="56" rx="10" fill="#FFFFFF"/>
+      <rect x="332" y="150" width="70" height="56" rx="10" fill="#FFFFFF"/>
+      <rect x="422" y="150" width="70" height="56" rx="10" fill="#FFFFFF"/>
+    </g>
+    <rect x="180" y="288" width="200" height="56" rx="18" fill="#2D6BFF" opacity="0.85"/>
+    <text x="280" y="324" text-anchor="middle" font-family="Arial, system-ui" font-weight="700" font-size="22" fill="#EAF2FF" opacity="0.92">ТРЦ</text>
+  </g>
+
+  <!-- Станция въезда (стойка + шлагбаум) -->
+  <g transform="translate(910,540)">
+    <rect x="0" y="0" width="140" height="280" rx="28" fill="#071A33" opacity="0.85" stroke="#FFFFFF" stroke-opacity="0.14"/>
+    <rect x="18" y="22" width="104" height="96" rx="18" fill="#0F2F66" stroke="#FFFFFF" stroke-opacity="0.10"/>
+    <rect x="34" y="42" width="72" height="56" rx="12" fill="#EAF2FF" opacity="0.16"/>
+    <circle cx="70" cy="156" r="12" fill="#2D6BFF" opacity="0.95"/>
+    <rect x="34" y="190" width="72" height="14" rx="7" fill="#EAF2FF" opacity="0.14"/>
+    <rect x="34" y="214" width="72" height="14" rx="7" fill="#EAF2FF" opacity="0.10"/>
+
+    <!-- Шлагбаум -->
+    <rect x="-10" y="-18" width="90" height="44" rx="22" fill="#0B2246" opacity="0.95" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <circle cx="30" cy="4" r="10" fill="#2D6BFF" opacity="0.95"/>
+    <g transform="translate(60,4) rotate(-14)">
+      <rect x="0" y="-10" width="440" height="20" rx="10" fill="#EAF2FF" opacity="0.90"/>
+      <rect x="0" y="-10" width="440" height="20" rx="10" fill="#2D6BFF" opacity="0.22"/>
+      <rect x="34" y="-10" width="34" height="20" fill="#FF3B3B" opacity="0.55"/>
+      <rect x="118" y="-10" width="34" height="20" fill="#FF3B3B" opacity="0.55"/>
+      <rect x="202" y="-10" width="34" height="20" fill="#FF3B3B" opacity="0.55"/>
+      <rect x="286" y="-10" width="34" height="20" fill="#FF3B3B" opacity="0.55"/>
+      <rect x="370" y="-10" width="34" height="20" fill="#FF3B3B" opacity="0.55"/>
+    </g>
+  </g>
+
+  <!-- Автомобиль -->
+  <g transform="translate(720,760)">
+    <path d="M40 40 C70 8, 110 0, 170 0 L300 0 C360 0, 410 18, 440 52 L480 100 L0 100 Z" fill="#0B2246" opacity="0.75"/>
+    <path d="M70 40 C95 18, 120 12, 170 12 L300 12 C340 12, 374 24, 402 48 L436 88 L36 88 Z" fill="#EAF2FF" opacity="0.10"/>
+    <circle cx="120" cy="100" r="26" fill="#0A0F18" opacity="0.75"/>
+    <circle cx="120" cy="100" r="14" fill="#EAF2FF" opacity="0.14"/>
+    <circle cx="360" cy="100" r="26" fill="#0A0F18" opacity="0.75"/>
+    <circle cx="360" cy="100" r="14" fill="#EAF2FF" opacity="0.14"/>
+  </g>
+
+  <!-- Мягкий блик -->
+  <ellipse cx="1180" cy="210" rx="260" ry="150" fill="#8AB3FF" opacity="0.18" filter="url(#soft_tc)"/>
+</svg>

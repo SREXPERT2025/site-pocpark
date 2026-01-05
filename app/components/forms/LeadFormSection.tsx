@@ -1,41 +1,52 @@
-import LeadForm from './LeadForm';
+import LeadForm from "./LeadForm";
 
-type LeadFormSectionProps = {
+export type LeadFormSectionProps = {
   title?: string;
   description?: string;
-  sourceSection?: string;
-  sourcePage?: string;
   submitLabel?: string;
-  className?: string;
+  /**
+   * Откуда пришла заявка (логика/блок): hero / lead_bottom / contacts и т.п.
+   */
+  sourceSection?: string;
+  /**
+   * Страница-источник (например: /resheniya/biznes-centry)
+   */
+  sourcePage?: string;
+  /** Минимальный набор полей (без компании и типа объекта) */
+  minimalFields?: boolean;
+  /** Компактный режим формы */
   compact?: boolean;
+  className?: string;
 };
 
-export default function LeadFormSection({
-  title = 'Получить коммерческое предложение',
-  description = 'Оставьте контакты — мы уточним задачу и пришлём расчёт/КП. Обычно отвечаем в течение рабочего дня.',
-  sourceSection,
-  sourcePage,
-  submitLabel,
-  className,
-  compact = false,
-}: LeadFormSectionProps) {
-  return (
-    <section className={className ?? 'py-16'}>
-      <div className="container mx-auto px-4 max-w-6xl">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 md:p-10 shadow-sm">
-          <div className="max-w-3xl">
-            <h2 className="text-2xl md:text-3xl font-bold text-slate-900">{title}</h2>
-            <p className="mt-3 text-slate-700">{description}</p>
-          </div>
+export default function LeadFormSection(props: LeadFormSectionProps) {
+  const {
+    title = "Получить КП",
+    description = "Оставьте контакты — мы уточним задачу и предложим оптимальное решение.",
+    submitLabel = "Получить КП",
+    sourceSection,
+    sourcePage,
+    minimalFields = false,
+    compact = false,
+    className,
+  } = props;
 
-          <div className="mt-8">
-            <LeadForm
-              sourceSection={sourceSection}
-              sourcePage={sourcePage}
-              submitLabel={submitLabel}
-              compact={compact}
-            />
-          </div>
+  return (
+    <section className={className}>
+      <div className="mx-auto max-w-[920px]">
+        <div className="text-center">
+          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">{title}</h2>
+          <p className="mt-4 text-base text-slate-600 md:text-lg">{description}</p>
+        </div>
+
+        <div className="mt-10">
+          <LeadForm
+            sourceSection={sourceSection}
+            sourcePage={sourcePage}
+            submitLabel={submitLabel}
+            minimalFields={minimalFields}
+            compact={compact}
+          />
         </div>
       </div>
     </section>

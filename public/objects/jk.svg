@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Жилой комплекс — автоматизация парковки">
+  <defs>
+    <linearGradient id="bg_jk" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071122"/>
+      <stop offset="0.50" stop-color="#0D2A54"/>
+      <stop offset="1" stop-color="#2D6BFF"/>
+    </linearGradient>
+    <radialGradient id="glow_jk" cx="70%" cy="20%" r="80%">
+      <stop offset="0" stop-color="#8AB3FF" stop-opacity="0.45"/>
+      <stop offset="0.55" stop-color="#2D6BFF" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#071122" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="house_jk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#081A33" stop-opacity="0.90"/>
+      <stop offset="1" stop-color="#081A33" stop-opacity="0.65"/>
+    </linearGradient>
+    <pattern id="noise_jk" width="110" height="110" patternUnits="userSpaceOnUse">
+      <circle cx="18" cy="30" r="1.3" fill="#FFFFFF" opacity="0.10"/>
+      <circle cx="62" cy="18" r="1.1" fill="#FFFFFF" opacity="0.08"/>
+      <circle cx="92" cy="58" r="1.2" fill="#FFFFFF" opacity="0.07"/>
+      <circle cx="44" cy="88" r="1.4" fill="#FFFFFF" opacity="0.09"/>
+    </pattern>
+    <filter id="soft_jk" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#bg_jk)"/>
+  <rect width="1600" height="1000" fill="url(#glow_jk)"/>
+  <rect width="1600" height="1000" fill="url(#noise_jk)" opacity="0.55"/>
+
+  <!-- Холм/ландшафт -->
+  <path d="M0 740 C280 640, 520 640, 820 690 C1120 740, 1340 800, 1600 880 L1600 1000 L0 1000 Z" fill="#000000" opacity="0.18"/>
+  <path d="M0 800 C300 700, 540 690, 820 730 C1100 770, 1360 840, 1600 910" stroke="#FFFFFF" opacity="0.10" stroke-width="3" fill="none"/>
+
+  <!-- Жилые дома -->
+  <g transform="translate(210,240)">
+    <rect x="0" y="0" width="380" height="520" rx="34" fill="url(#house_jk)" stroke="#FFFFFF" stroke-opacity="0.14"/>
+    <rect x="420" y="80" width="420" height="440" rx="34" fill="url(#house_jk)" stroke="#FFFFFF" stroke-opacity="0.14"/>
+    <g opacity="0.18" fill="#FFFFFF">
+      <rect x="38" y="60" width="64" height="44" rx="10"/>
+      <rect x="122" y="60" width="64" height="44" rx="10"/>
+      <rect x="206" y="60" width="64" height="44" rx="10"/>
+      <rect x="290" y="60" width="64" height="44" rx="10"/>
+
+      <rect x="38" y="120" width="64" height="44" rx="10"/>
+      <rect x="122" y="120" width="64" height="44" rx="10"/>
+      <rect x="206" y="120" width="64" height="44" rx="10"/>
+      <rect x="290" y="120" width="64" height="44" rx="10"/>
+
+      <rect x="38" y="180" width="64" height="44" rx="10"/>
+      <rect x="122" y="180" width="64" height="44" rx="10"/>
+      <rect x="206" y="180" width="64" height="44" rx="10"/>
+      <rect x="290" y="180" width="64" height="44" rx="10"/>
+
+      <rect x="38" y="240" width="64" height="44" rx="10"/>
+      <rect x="122" y="240" width="64" height="44" rx="10"/>
+      <rect x="206" y="240" width="64" height="44" rx="10"/>
+      <rect x="290" y="240" width="64" height="44" rx="10"/>
+
+      <rect x="458" y="140" width="64" height="44" rx="10"/>
+      <rect x="542" y="140" width="64" height="44" rx="10"/>
+      <rect x="626" y="140" width="64" height="44" rx="10"/>
+      <rect x="710" y="140" width="64" height="44" rx="10"/>
+
+      <rect x="458" y="200" width="64" height="44" rx="10"/>
+      <rect x="542" y="200" width="64" height="44" rx="10"/>
+      <rect x="626" y="200" width="64" height="44" rx="10"/>
+      <rect x="710" y="200" width="64" height="44" rx="10"/>
+
+      <rect x="458" y="260" width="64" height="44" rx="10"/>
+      <rect x="542" y="260" width="64" height="44" rx="10"/>
+      <rect x="626" y="260" width="64" height="44" rx="10"/>
+      <rect x="710" y="260" width="64" height="44" rx="10"/>
+    </g>
+
+    <rect x="122" y="454" width="140" height="56" rx="18" fill="#2D6BFF" opacity="0.85"/>
+    <text x="192" y="490" text-anchor="middle" font-family="Arial, system-ui" font-weight="700" font-size="22" fill="#EAF2FF" opacity="0.92">ЖК</text>
+  </g>
+
+  <!-- Шлагбаум у двора -->
+  <g transform="translate(1020,680)">
+    <rect x="0" y="0" width="150" height="250" rx="30" fill="#071A33" opacity="0.86" stroke="#FFFFFF" stroke-opacity="0.14"/>
+    <rect x="22" y="22" width="106" height="90" rx="18" fill="#0F2F66" stroke="#FFFFFF" stroke-opacity="0.10"/>
+    <circle cx="75" cy="150" r="12" fill="#2D6BFF" opacity="0.95"/>
+    <rect x="26" y="190" width="98" height="14" rx="7" fill="#EAF2FF" opacity="0.12"/>
+
+    <rect x="-26" y="-18" width="90" height="44" rx="22" fill="#0B2246" opacity="0.95" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <g transform="translate(32,4) rotate(-12)">
+      <rect x="0" y="-10" width="420" height="20" rx="10" fill="#EAF2FF" opacity="0.90"/>
+      <rect x="0" y="-10" width="420" height="20" rx="10" fill="#2D6BFF" opacity="0.22"/>
+      <rect x="34" y="-10" width="34" height="20" fill="#FF3B3B" opacity="0.55"/>
+      <rect x="118" y="-10" width="34" height="20" fill="#FF3B3B" opacity="0.55"/>
+      <rect x="202" y="-10" width="34" height="20" fill="#FF3B3B" opacity="0.55"/>
+      <rect x="286" y="-10" width="34" height="20" fill="#FF3B3B" opacity="0.55"/>
+      <rect x="370" y="-10" width="34" height="20" fill="#FF3B3B" opacity="0.55"/>
+    </g>
+  </g>
+
+  <!-- Блик -->
+  <ellipse cx="1180" cy="220" rx="260" ry="160" fill="#8AB3FF" opacity="0.16" filter="url(#soft_jk)"/>
+</svg>

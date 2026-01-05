@@ -1,29 +1,31 @@
-import Link from 'next/link';
-
 export default function Hero() {
   return (
-    <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-slate-900 text-white">
-      <div className="absolute inset-0 bg-[url('/images/hero-bg.jpg')] opacity-20 bg-cover bg-center" />
-      <div className="container mx-auto px-4 relative z-10 text-center">
-        <div className="inline-block mb-6 px-4 py-1.5 rounded-full bg-blue-600/20 border border-blue-500/30 backdrop-blur-sm text-blue-300 text-sm font-medium">
-          🚀 ООО «СР Эксперт» — работаем с 2010 года
-        </div>
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">
-          Автоматизация парковок <br />
-          <span className="text-blue-500">для коммерческой недвижимости</span>
+    <section className="relative overflow-hidden bg-slate-950 text-white">
+      {/* Background */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-40 left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-blue-600/20 blur-3xl" />
+        <div className="absolute -bottom-56 left-12 h-[520px] w-[520px] rounded-full bg-sky-500/10 blur-3xl" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900" />
+      </div>
+
+      <div className="relative mx-auto max-w-6xl px-6 pt-28 pb-20 lg:pt-40 lg:pb-28">
+        <h1 className="text-balance text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
+          Автоматизация парковок
+          <span className="block bg-gradient-to-r from-blue-300 to-sky-400 bg-clip-text text-transparent">
+            для коммерческой недвижимости
+          </span>
         </h1>
-        <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-10">
-          Повышаем выручку и безопасность объектов любого типа. 
-          Профессиональные решения под ключ: от проекта до обслуживания.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/resheniya" className="px-8 py-4 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors">
-            Подобрать решение
-          </Link>
-          <Link href="/contacts" className="px-8 py-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-semibold transition-colors">
-            Связаться с нами
-          </Link>
+
+        <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-white/80">
+          <span className="rounded-full border border-white/15 bg-white/5 px-4 py-2">Проектирование</span>
+          <span className="rounded-full border border-white/15 bg-white/5 px-4 py-2">Монтаж</span>
+          <span className="rounded-full border border-white/15 bg-white/5 px-4 py-2">Сервис</span>
+          <span className="rounded-full border border-white/15 bg-white/5 px-4 py-2">Поддержка 24/7</span>
         </div>
+
+        <p className="mt-8 max-w-2xl text-pretty text-lg leading-relaxed text-white/75 sm:text-xl">
+          Профессиональные решения под ключ: от схемы проезда и интеграций до сопровождения и развития.
+        </p>
       </div>
     </section>
   );

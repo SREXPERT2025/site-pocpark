@@ -15,6 +15,8 @@ export default function MobileMenu({
   onClose: () => void;
   navItems: NavItem[];
 }) {
+  const telegramUrl = process.env.NEXT_PUBLIC_TELEGRAM_CONTACT_URL;
+
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -124,6 +126,16 @@ export default function MobileMenu({
             >
               +7 (499) 321-20-40
             </a>
+            {telegramUrl ? (
+              <a
+                href={telegramUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 block text-center text-sm font-semibold text-accent-primary hover:underline"
+              >
+                Telegram
+              </a>
+            ) : null}
           </div>
         </nav>
       </div>

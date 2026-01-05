@@ -1,47 +1,96 @@
-import Link from 'next/link';
+import Link from "next/link";
 
-const roles = [
+type RoleCardItem = {
+  title: string;
+  description: string;
+  href: string;
+  /**
+   * Путь к картинке в /public. Если файла нет — сборка всё равно пройдет.
+   * Пример: /images/roles/leader.jpg
+   */
+  imageSrc: string;
+  imageAlt: string;
+};
+
+const roles: RoleCardItem[] = [
   {
-    title: "Для Руководителей",
-    desc: "Управляемость, рост выручки (NOI), прозрачные отчеты, контроль денег.",
-    link: "/resheniya/dlya-rukovoditeley",
-    icon: "👔",
-    color: "bg-blue-50 hover:bg-blue-100 border-blue-200",
+    title: "Для руководителей",
+    description: "Управляемость, рост выручки (NOI), прозрачные отчеты, контроль денег.",
+    href: "/resheniya/dlya-rukovoditeley",
+    imageSrc: "/images/roles/leader.jpg",
+    imageAlt: "Руководитель за ноутбуком",
   },
   {
-    title: "Для Инженеров",
-    desc: "Надежные протоколы, API, схемы подключения, техподдержка 24/7.",
-    link: "/resheniya/dlya-inzhenerov",
-    icon: "⚙️",
-    color: "bg-slate-50 hover:bg-slate-100 border-slate-200",
+    title: "Для инженеров",
+    description: "Надежные протоколы, API, схемы подключения, техническая поддержка 24/7.",
+    href: "/resheniya/dlya-inzhenerov",
+    imageSrc: "/images/roles/engineer.jpg",
+    imageAlt: "Инженер за рабочим местом",
   },
   {
-    title: "Для Службы Безопасности",
-    desc: "Тотальный контроль, черные списки, распознавание номеров, надежность.",
-    link: "/resheniya/dlya-sluzhby-bezopasnosti",
-    icon: "🛡️",
-    color: "bg-emerald-50 hover:bg-emerald-100 border-emerald-200",
+    title: "Для службы безопасности",
+    description:
+      "Полный контроль, черные и белые списки, распознавание номеров, надежность.",
+    href: "/resheniya/dlya-sluzhby-bezopasnosti",
+    imageSrc: "/images/roles/security.jpg",
+    imageAlt: "Сотрудник службы безопасности",
   },
 ];
 
+function RoleCard({ item }: { item: RoleCardItem }) {
+  return (
+    <div className="w-full max-w-[387px] overflow-hidden rounded-[30px] bg-[#1D1D1F] shadow-[0_12px_30px_rgba(0,0,0,0.18)]">
+      {/* Верхнее изображение */}
+      <div className="h-[258px] w-full bg-black/5">
+        {/*
+          Важно: используем обычный img, чтобы билд не зависел от наличия файла.
+          Картинки положите в /public/images/roles/*.jpg
+        */}
+        <img
+          src={item.imageSrc}
+          alt={item.imageAlt}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      </div>
+
+      {/* Нижний блок */}
+      <div className="flex flex-col items-center px-8 pb-10 pt-8 text-center">
+        <h3 className="text-[28px] font-black leading-[28px] tracking-[-0.01em] text-white">
+          {item.title}
+        </h3>
+
+        <p className="mt-4 text-[17px] leading-[20px] text-white/85">
+          {item.description}
+        </p>
+
+        <Link
+          href={item.href}
+          className="mt-10 inline-flex items-center gap-2 text-[17px] leading-[20px] text-[#00FFFF] hover:text-[#00FFFF]/90"
+        >
+          Подробнее <span aria-hidden>→</span>
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 export default function RoleSelector() {
   return (
-    <section className="py-20 bg-white">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">Мы говорим на вашем языке</h2>
-          <p className="text-slate-600">Выберите вашу роль, чтобы увидеть релевантные возможности системы</p>
+    <section className="mt-section">
+      <div className="mx-auto max-w-7xl px-4">
+        <div className="text-center">
+          <h2 className="text-[40px] font-black leading-[44px] tracking-[-0.02em] text-slate-950">
+            Мы говорим на вашем языке
+          </h2>
+          <p className="mt-3 text-[18px] leading-[24px] text-slate-600">
+            Выберите вашу роль, чтобы увидеть релевантные возможности системы
+          </p>
         </div>
-        <div className="grid md:grid-cols-3 gap-8">
+
+        <div className="mt-10 grid grid-cols-1 justify-items-center gap-8 md:grid-cols-3">
           {roles.map((role) => (
-            <Link key={role.link} href={role.link} className={`p-8 rounded-2xl border transition-all duration-300 transform hover:-translate-y-1 ${role.color}`}>
-              <div className="text-4xl mb-4">{role.icon}</div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">{role.title}</h3>
-              <p className="text-slate-600 mb-4">{role.desc}</p>
-              <div className="text-sm font-semibold text-slate-900 flex items-center">
-                Подробнее <span className="ml-2">→</span>
-              </div>
-            </Link>
+            <RoleCard key={role.title} item={role} />
           ))}
         </div>
       </div>
