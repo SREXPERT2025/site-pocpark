@@ -12,7 +12,6 @@ export default function Header() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navRef = useRef<HTMLDivElement | null>(null);
-  const telegramUrl = process.env.NEXT_PUBLIC_TELEGRAM_CONTACT_URL;
 
   // закрытие при клике вне навигации
   useEffect(() => {
@@ -33,82 +32,71 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-[1100] bg-bg-primary border-b border-border-primary">
-        <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-          <div className="h-16 flex items-center justify-between">
-            {/* LOGO */}
-            <Link href="/" className="text-lg sm:text-xl font-extrabold text-text-primary">
-              РОСПАРК
-            </Link>
+      <header className="fixed top-0 left-0 right-0 z-[1100]">
+        {/* TOP BAR (как в Figma) */}
+        <div className="bg-black text-white">
+          <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+            <div className="h-14 flex items-center justify-between">
+              {/* LOGO */}
+              <Link href="/" className="text-lg sm:text-xl font-extrabold tracking-wide text-white">
+                РОСПАРК
+              </Link>
 
-            {/* DESKTOP NAV */}
-            <div ref={navRef} className="hidden lg:flex items-center gap-8">
-              <nav className="flex items-center gap-8 text-text-secondary font-medium">
-                {navigation.map((item) => (
-                  <DesktopNavItem
-                    key={item.label}
-                    item={item}
-                    open={openDropdown === item.label}
-                    onToggle={() => setOpenDropdown((cur) => (cur === item.label ? null : item.label))}
-                    onClose={() => setOpenDropdown(null)}
-                  />
-                ))}
-              </nav>
-
-              {/* CTA */}
-              <div className="flex items-center gap-4">
-                <a href="tel:+74993212040" className="text-sm text-text-secondary hover:text-text-primary">
+              {/* RIGHT SIDE (desktop) */}
+              <div className="hidden lg:flex items-center gap-6">
+                <a href="tel:+74993212040" className="text-sm text-white/90 hover:text-white">
                   +7 (499) 321-20-40
                 </a>
-                {telegramUrl ? (
-                  <a
-                    href={telegramUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3 py-2 rounded-md border border-border-primary bg-bg-primary text-sm font-semibold text-text-primary hover:bg-bg-secondary transition"
-                  >
-                    Telegram
-                  </a>
-                ) : null}
                 <Link
                   href="/contacts"
-                  className="px-4 py-2 rounded-md bg-accent-primary text-white text-sm font-semibold hover:bg-state-hover transition"
+                  className="h-10 inline-flex items-center justify-center rounded-lg bg-accent-primary px-5 text-[14px] font-semibold text-white hover:bg-state-hover transition"
                 >
                   Получить коммерческое предложение
                 </Link>
               </div>
-            </div>
 
-            {/* MOBILE */}
-            <div className="flex items-center gap-3 lg:hidden">
-              <a href="tel:+74993212040" className="text-sm text-text-secondary">
-                +7 (499) 321-20-40
-              </a>
-              {telegramUrl ? (
-                <a
-                  href={telegramUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center justify-center rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm font-semibold text-text-primary hover:bg-bg-secondary transition"
-                >
-                  TG
+              {/* MOBILE */}
+              <div className="flex items-center gap-3 lg:hidden">
+                <a href="tel:+74993212040" className="text-sm text-white/90">
+                  +7 (499) 321-20-40
                 </a>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => setMobileOpen(true)}
-                className="inline-flex items-center justify-center rounded-md border border-border-primary bg-bg-primary p-2 text-text-primary hover:bg-bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-                aria-label="Открыть меню"
-              >
-                ☰
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(true)}
+                  className="inline-flex items-center justify-center rounded-md border border-white/20 bg-white/5 p-2 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                  aria-label="Открыть меню"
+                >
+                  ☰
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* MENU BAR (перенесли существующее меню ниже) */}
+        <div className="bg-white border-b border-[#E6E6E6]">
+          <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+            <div className="h-6 flex items-center justify-center">
+              <div ref={navRef} className="hidden lg:flex items-center">
+                <nav className="flex items-center gap-[70px] text-[13px] leading-5 text-[#0B1220]">
+                  {navigation.map((item) => (
+                    <DesktopNavItem
+                      key={item.label}
+                      item={item}
+                      open={openDropdown === item.label}
+                      onToggle={() => setOpenDropdown((cur) => (cur === item.label ? null : item.label))}
+                      onClose={() => setOpenDropdown(null)}
+                    />
+                  ))}
+                </nav>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      {/* ОТСТУП ПОД FIXED HEADER */}
-      <div className="h-16" />
+      {/* ОТСТУП ПОД FIXED HEADER (56px + 24px = 80px) */}
+      <div className="h-20" />
 
       <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} navItems={navigation} />
     </>
