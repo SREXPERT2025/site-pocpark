@@ -1,22 +1,59 @@
+
+'use client';
+
 import Link from 'next/link';
+import { getMainNav, getSolutionsByObject } from '@/app/lib/navigation';
 
 export default function Footer() {
-  return (
-    <footer className="border-t border-border-primary bg-bg-primary">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-sm font-semibold text-text-primary">РОСПАРК</div>
-            <div className="mt-2 text-xs text-text-secondary">© {new Date().getFullYear()} СР-Эксперт</div>
-          </div>
+  const year = new Date().getFullYear();
 
-          <div className="flex flex-wrap gap-4 text-sm text-text-secondary">
-            <Link className="hover:text-text-primary" href="/resheniya/dlya-rukovoditeley">Решения</Link>
-            <Link className="hover:text-text-primary" href="/vozmozhnosti">Возможности</Link>
-            <Link className="hover:text-text-primary" href="/oborudovanie">Оборудование</Link>
-            <Link className="hover:text-text-primary" href="/keysy">Проекты</Link>
-            <Link className="hover:text-text-primary" href="/contacts">Контакты</Link>
-          </div>
+    const main = getMainNav();
+  const byObject = getSolutionsByObject();
+
+  return (
+    <footer className="border-t border-neutral-200 bg-white">
+      <div className="mx-auto max-w-7xl px-6 py-12 grid gap-8 md:grid-cols-4">
+        <div>
+          <div className="text-lg font-semibold mb-4">РОСПАРК</div>
+          <p className="text-sm text-neutral-600">
+            Интеллектуальные парковочные системы под ключ
+          </p>
+          <p className="mt-4 text-sm text-neutral-500">
+            © {year} РОСПАРК
+          </p>
+        </div>
+
+        <div>
+          <div className="mb-4 font-medium">Навигация</div>
+          <ul className="space-y-2">
+            {main.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="text-sm text-neutral-600 hover:text-neutral-900">
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <div className="mb-4 font-medium">Решения</div>
+          <ul className="space-y-2">
+            {byObject.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="text-sm text-neutral-600 hover:text-neutral-900">
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <div className="mb-4 font-medium">Контакты</div>
+          <p className="text-sm text-neutral-600">
+            info@rospark.ru
+          </p>
         </div>
       </div>
     </footer>

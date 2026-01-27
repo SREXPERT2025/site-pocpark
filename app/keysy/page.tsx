@@ -85,7 +85,11 @@ export default function KeysyIndex({
             Все проекты ({sorted.length})
           </h2>
 
-          <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/*
+            Дизайн-решение: 2 колонки на десктопе выглядят «дороже» и лучше раскрывают фото объекта.
+            Третья колонка делает карточки слишком мелкими и ухудшает восприятие.
+          */}
+          <div className="mt-6 grid gap-8 md:grid-cols-2">
             {sorted.map((m) => (
               <ProjectCard
                 key={m.slug}

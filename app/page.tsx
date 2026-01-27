@@ -1,3 +1,4 @@
+import FeaturesShowcase from '@/app/components/FeaturesShowcase';
 import Hero from "./components/landing/Hero";
 import TrustNumbers from "./components/landing/TrustNumbers";
 import RoleSelector from "./components/landing/RoleSelector";
@@ -16,6 +17,7 @@ export default function HomePage() {
       <CapabilitiesSection />
       <PriceList />
       <LeadForm />
-    </main>
+      <FeaturesShowcase />
+</main>
   );
 }

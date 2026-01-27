@@ -60,6 +60,11 @@ export const navigation: NavItem[] = [
             description: 'Резиденты, гости, заявки, лимиты, SLA охраны',
           },
           {
+            label: 'Складские комплексы',
+            href: '/resheniya/skladskie-kompleksy',
+            description: 'Проезды грузового транспорта, спец. режимы, пропуска, контроль',
+          },
+          {
             label: 'Застройщики',
             href: '/resheniya/zastroyschiki',
             description: 'Паркинг как сервис для УК и жителей, контроль и монетизация',

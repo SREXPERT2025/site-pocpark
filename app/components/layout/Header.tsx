@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -9,31 +9,17 @@ import { navigation, type NavItem } from '@/app/config/navigation';
 
 export default function Header() {
   const pathname = usePathname();
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const navRef = useRef<HTMLDivElement | null>(null);
 
-  // закрытие при клике вне навигации
+  // Закрываем мобильное меню при переходе по ссылкам
   useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setOpenDropdown(null);
-      }
-    };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, []);
-
-  // закрытие при переходе по роуту
-  useEffect(() => {
-    setOpenDropdown(null);
     setMobileOpen(false);
   }, [pathname]);
 
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-[1100]">
-        {/* TOP BAR (как в Figma) */}
+        {/* TOP BAR */}
         <div className="bg-black text-white">
           <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
             <div className="h-14 flex items-center justify-between">
@@ -55,7 +41,7 @@ export default function Header() {
                 </Link>
               </div>
 
-              {/* MOBILE */}
+              {/* MOBILE TOGGLE */}
               <div className="flex items-center gap-3 lg:hidden">
                 <a href="tel:+74993212040" className="text-sm text-white/90">
                   +7 (499) 321-20-40
@@ -73,20 +59,16 @@ export default function Header() {
           </div>
         </div>
 
-        {/* MENU BAR (перенесли существующее меню ниже) */}
+        {/* MENU BAR */}
         <div className="bg-white border-b border-[#E6E6E6]">
           <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
-            <div className="h-6 flex items-center justify-center">
-              <div ref={navRef} className="hidden lg:flex items-center">
-                <nav className="flex items-center gap-[70px] text-[13px] leading-5 text-[#0B1220]">
+            {/* Высота контейнера меню 30px */}
+            <div className="h-[30px] flex items-center justify-center">
+              <div className="hidden lg:flex items-center">
+                {/* Шрифт 15px */}
+                <nav className="flex items-center gap-[70px] text-[15px] leading-[22px] font-medium text-[#0B1220]">
                   {navigation.map((item) => (
-                    <DesktopNavItem
-                      key={item.label}
-                      item={item}
-                      open={openDropdown === item.label}
-                      onToggle={() => setOpenDropdown((cur) => (cur === item.label ? null : item.label))}
-                      onClose={() => setOpenDropdown(null)}
-                    />
+                    <DesktopNavItem key={item.label} item={item} />
                   ))}
                 </nav>
               </div>
@@ -95,7 +77,7 @@ export default function Header() {
         </div>
       </header>
 
-      {/* ОТСТУП ПОД FIXED HEADER (56px + 24px = 80px) */}
+      {/* ОТСТУП ПОД FIXED HEADER */}
       <div className="h-20" />
 
       <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} navItems={navigation} />
@@ -103,90 +85,90 @@ export default function Header() {
   );
 }
 
-function DesktopNavItem({
-  item,
-  open,
-  onToggle,
-  onClose,
-}: {
-  item: NavItem;
-  open: boolean;
-  onToggle: () => void;
-  onClose: () => void;
-}) {
+// Новый компонент пункта меню (Hover через CSS)
+function DesktopNavItem({ item }: { item: NavItem }) {
   const hasDropdown = Boolean(item.groups?.length);
 
+  // Если нет выпадающего меню — просто ссылка
   if (!hasDropdown) {
     return (
-      <Link href={item.href ?? '#'} className="hover:text-text-primary">
+      <Link
+        href={item.href ?? '#'}
+        className="h-[30px] inline-flex items-center text-[15px] hover:text-text-primary transition-colors"
+      >
         {item.label}
       </Link>
     );
   }
 
+  // Если есть выпадающее меню — Hover логика
   return (
-    <div className="relative">
-      <div className="flex items-center gap-1">
-        {item.href ? (
-          <Link href={item.href} className="hover:text-text-primary">
-            {item.label}
-          </Link>
-        ) : (
-          <button
-            type="button"
-            onClick={onToggle}
-            className="hover:text-text-primary"
-            aria-haspopup="menu"
-            aria-expanded={open}
-          >
-            {item.label}
-          </button>
-        )}
-
-        <button
-          type="button"
-          onClick={onToggle}
-          className="rounded-sm px-1 text-text-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-          aria-label={`Открыть меню: ${item.label}`}
-          aria-haspopup="menu"
-          aria-expanded={open}
+    <div className="relative group h-[30px]">
+      {/* ТРИГГЕР: Единая зона (Слово + Стрелка) */}
+      <div className="flex items-center gap-1 h-[30px] cursor-pointer">
+        <Link
+          href={item.href ?? '#'}
+          className="inline-flex items-center h-[30px] text-[15px] hover:text-text-primary transition-colors"
         >
-          <span className={`inline-block transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
-        </button>
+          {item.label}
+        </Link>
+
+        {/* Стрелка (декоративная) */}
+        <span
+          className="inline-flex items-center h-[30px] text-text-secondary group-hover:text-text-primary transition-colors"
+          aria-hidden="true"
+        >
+          ▾
+        </span>
       </div>
 
-      {open && item.groups?.length ? (
-        <div
-          className="absolute left-0 top-full mt-3 w-[720px] rounded-md bg-bg-primary border border-border-primary shadow-md p-4"
-          role="menu"
-          aria-label={item.label}
-        >
-          <div className="grid grid-cols-2 gap-6">
-            {item.groups.map((group) => (
-              <div key={group.label}>
-                <div className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-                  {group.label}
-                </div>
-                <div className="mt-3 space-y-1">
-                  {group.items.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="block rounded-md px-3 py-3 hover:bg-bg-secondary"
-                      onClick={onClose}
-                    >
-                      <div className="text-sm font-semibold text-text-primary">{link.label}</div>
-                      {link.description ? (
-                        <div className="mt-0.5 text-xs text-text-secondary">{link.description}</div>
-                      ) : null}
-                    </Link>
-                  ))}
-                </div>
+      {/* DROPDOWN (Появляется при group-hover) */}
+      <div
+        className="
+          absolute left-0 top-full
+          mt-1
+          w-[720px]
+          rounded-md
+          bg-bg-primary
+          border border-border-primary
+          shadow-md
+          p-4
+          hidden
+          group-hover:block
+          z-50
+        "
+      >
+        {/* Невидимый мостик, чтобы меню не закрывалось при микро-движениях мыши */}
+        <div className="absolute -top-2 left-0 w-full h-2 bg-transparent" />
+        
+        <div className="grid grid-cols-2 gap-6">
+          {item.groups?.map((group) => (
+            <div key={group.label}>
+              <div className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+                {group.label}
               </div>
-            ))}
-          </div>
+              <div className="mt-3 space-y-1">
+                {group.items.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className="block rounded-md px-3 py-3 hover:bg-bg-secondary transition-colors"
+                  >
+                    <div className="text-sm font-semibold text-text-primary">
+                      {link.label}
+                    </div>
+                    {link.description ? (
+                      <div className="mt-0.5 text-xs text-text-secondary">
+                        {link.description}
+                      </div>
+                    ) : null}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }

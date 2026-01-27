@@ -1,0 +1,14 @@
+NEXT_PUBLIC_SITE_URL=https://роспарк.рф
+
+LEAD_EMAIL_TO=lead1@domain.ru,lead2@domain.ru,lead3@domain.ru
+
+LEAD_TELEGRAM_BOT_TOKEN=123456:ABC-DEF...
+LEAD_TELEGRAM_CHAT_IDS=-1001234567890
+LEAD_TELEGRAM_TOPIC_ID=42
+
+SMTP_HOST=smtp.yandex.ru
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=robot@domain.ru
+SMTP_PASS=********
+SMTP_FROM="РОСПАРК <robot@domain.ru>"
