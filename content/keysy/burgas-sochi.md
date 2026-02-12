@@ -1,7 +1,7 @@
     ---
-    title: "Складской комплекс Вегетта"
-    address: "Москва, мкрн. Шереметьевский"
-    previewImage: "/images/cases/vegetta.jpg"
+    title: "Пансионат Бургас"
+    address: "Сочи"
+    previewImage: "/images/cases/sochi.jpg"
     ---
 
     Установка автоматизированной парковочной системы РОСПАРК.

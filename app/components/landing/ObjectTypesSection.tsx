@@ -45,7 +45,7 @@ function ObjectTypeCard({ item }: { item: ObjectTypeCardItem }) {
       </div>
 
       <div className="flex h-[84px] items-center justify-center bg-[#1D1D1F] px-6 text-center">
-        <h3 className="text-[24px] font-black leading-[28px] tracking-[-0.01em] text-white">
+        <h3 className="text-[24px] font-extrabold leading-[28px] tracking-[-0.01em] text-white">
           {item.title}
         </h3>
       </div>
@@ -58,7 +58,7 @@ export default function ObjectTypesSection() {
     <section className="mt-section">
       <div className="mx-auto max-w-7xl px-4">
         <div className="text-center">
-          <h2 className="text-[40px] font-black leading-[44px] tracking-[-0.02em] text-slate-950">
+          <h2 className="text-[40px] font-extrabold leading-[44px] tracking-[-0.02em] text-slate-950">
             Решения под ваш тип объекта
           </h2>
         </div>

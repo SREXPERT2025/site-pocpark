@@ -1,7 +1,7 @@
     ---
-    title: "Складской комплекс Вегетта"
-    address: "Москва, мкрн. Шереметьевский"
-    previewImage: "/images/cases/vegetta.jpg"
+    title: "ТЦ Plazma"
+    address: "Мурманск"
+    previewImage: "/images/cases/plazma2.jpg"
     ---
 
     Установка автоматизированной парковочной системы РОСПАРК.

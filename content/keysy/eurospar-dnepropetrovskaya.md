@@ -1,7 +1,7 @@
     ---
-    title: "Складской комплекс Вегетта"
-    address: "Москва, мкрн. Шереметьевский"
-    previewImage: "/images/cases/vegetta.jpg"
+    title: "EUROSPAR"
+    address: "Москва, ул. Днепропетровская"
+    previewImage: "/images/cases/eurospar.jpg"
     ---
 
     Установка автоматизированной парковочной системы РОСПАРК.

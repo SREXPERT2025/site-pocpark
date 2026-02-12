@@ -1,7 +1,7 @@
     ---
-    title: "Складской комплекс Вегетта"
-    address: "Москва, мкрн. Шереметьевский"
-    previewImage: "/images/cases/vegetta.jpg"
+    title: "Вишняковский рынок"
+    address: "Москва"
+    previewImage: "/images/cases/vishnyakov.jpg"
     ---
 
     Установка автоматизированной парковочной системы РОСПАРК.

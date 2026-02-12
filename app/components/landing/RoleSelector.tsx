@@ -56,7 +56,7 @@ function RoleCard({ item }: { item: RoleCardItem }) {
 
       {/* Нижний блок */}
       <div className="flex flex-col items-center px-8 pb-10 pt-8 text-center">
-        <h3 className="text-[28px] font-black leading-[28px] tracking-[-0.01em] text-white">
+        <h3 className="text-[28px] font-extrabold leading-[28px] tracking-[-0.01em] text-white">
           {item.title}
         </h3>
 
@@ -80,7 +80,7 @@ export default function RoleSelector() {
     <section className="mt-section">
       <div className="mx-auto max-w-7xl px-4">
         <div className="text-center">
-          <h2 className="text-[40px] font-black leading-[44px] tracking-[-0.02em] text-slate-950">
+          <h2 className="text-[40px] font-extrabold leading-[44px] tracking-[-0.02em] text-slate-950">
             Мы говорим на вашем языке
           </h2>
           <p className="mt-3 text-[18px] leading-[24px] text-slate-600">

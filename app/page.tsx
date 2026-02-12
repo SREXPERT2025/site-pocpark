@@ -9,15 +9,17 @@ import LeadForm from "./components/landing/LeadForm";
 
 export default function HomePage() {
   return (
-    <main>
+    <main className="pt-0">
       <Hero />
-      <TrustNumbers />
+      <div className="flex flex-col gap-24">
+        <TrustNumbers />
       <RoleSelector />
       <ObjectTypesSection />
       <CapabilitiesSection />
       <PriceList />
       <LeadForm />
       <FeaturesShowcase />
-</main>
+      </div>
+    </main>
   );
 }

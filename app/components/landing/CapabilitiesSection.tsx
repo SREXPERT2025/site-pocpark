@@ -124,7 +124,7 @@ export default function CapabilitiesSection() {
           Основные возможности системы
         </h2>
 
-        <div className="mx-auto mt-6 w-full max-w-[691px] rounded-[20px] bg-[#F5F5F7] p-[2px]">
+        <div className="mx-auto mt-6 w-full max-w-[860px] rounded-[20px] bg-[#F5F5F7] p-[2px]">
           <div className="flex items-center gap-[2px]">
             {GROUPS.map((group) => {
               const isActive = group.id === active;
@@ -134,7 +134,7 @@ export default function CapabilitiesSection() {
                   type="button"
                   onClick={() => setActive(group.id)}
                   className={cn(
-                    "h-[38px] flex-1 rounded-[20px] px-4 md:px-8 text-[16px] md:text-[18px] leading-none transition-colors",
+                    "h-[38px] flex-1 whitespace-nowrap rounded-[20px] px-3 md:px-6 text-[15px] md:text-[18px] leading-none transition-colors",
                     isActive
                       ? "bg-[#1A1A1A] text-white"
                       : "text-[#242424]/70 hover:text-[#242424]"

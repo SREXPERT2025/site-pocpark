@@ -1,7 +1,7 @@
     ---
-    title: "Складской комплекс Вегетта"
-    address: "Москва, мкрн. Шереметьевский"
-    previewImage: "/images/cases/vegetta.jpg"
+    title: "ЖК ApartVille"
+    address: "Москва, ул. Дмитровское шоссе"
+    previewImage: "/images/cases/Апартвиль.png"
     ---
 
     Установка автоматизированной парковочной системы РОСПАРК.

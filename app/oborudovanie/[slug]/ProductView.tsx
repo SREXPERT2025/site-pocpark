@@ -38,18 +38,18 @@ export default function ProductView({ data, content }: { data: any, content: str
           
           {/* 1. ЗАГОЛОВОК И CTA */}
           <div className="text-center md:text-left mb-8">
-            <h1 className="text-3xl md:text-5xl font-bold text-[#0B1220] mb-6 leading-tight">
+            <h1 className="text-[24px] font-bold text-[#0B1220] mb-6 leading-tight">
               {title}
             </h1>
             
             {description && (
-              <p className="text-lg text-gray-600 mb-8 max-w-[800px] leading-relaxed">
+              <p className="text-[18px] text-gray-600 mb-8 max-w-[800px] leading-relaxed">
                 {description}
               </p>
             )}
 
             <button
-              className="inline-flex items-center justify-center rounded-lg bg-[#2563EB] px-8 py-4 text-white font-semibold text-lg hover:bg-blue-700 transition shadow-sm"
+              className="inline-flex items-center justify-center rounded-lg bg-[#2563EB] px-5 py-2.5 text-[14px] text-white font-semibold text-lg hover:bg-blue-700 transition shadow-sm"
             >
               Получить коммерческое предложение
             </button>
@@ -67,7 +67,7 @@ export default function ProductView({ data, content }: { data: any, content: str
                 </span>
               </div>
 
-              <h3 className="text-xl md:text-2xl font-bold text-[#0B1220] mb-6 leading-snug">
+              <h3 className="text-[28px] font-bold text-[#0B1220] mb-6 leading-[1.3]">
                 {answerFirst.lead}
               </h3>
 
@@ -77,7 +77,7 @@ export default function ProductView({ data, content }: { data: any, content: str
                     <span className="text-green-500 mt-1 flex-shrink-0">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </span>
-                    <span className="text-[15px] font-medium leading-relaxed text-gray-900">{b}</span>
+                    <span className="text-[18px] font-medium leading-relaxed text-gray-900">{b}</span>
                   </div>
                 ))}
               </div>
@@ -166,7 +166,7 @@ export default function ProductView({ data, content }: { data: any, content: str
                 <div
                   key={s.name}
                   // Увеличен padding до py-5
-                  className={`flex flex-col sm:flex-row justify-between px-6 py-5 text-[15px] border-b border-gray-100 last:border-0 ${
+                  className={`flex flex-col sm:flex-row justify-between px-6 py-5 text-[18px] border-b border-gray-100 last:border-0 ${
                     i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'
                   }`}
                 >
@@ -188,7 +188,7 @@ export default function ProductView({ data, content }: { data: any, content: str
                   <li key={p} className="flex gap-3 items-center">
                     <div className="w-5 h-5 rounded-full bg-white border border-gray-300 flex items-center justify-center flex-shrink-0 text-green-600 text-xs font-bold">✔</div>
                     {/* Шрифт 15px и Medium - точно как в таблице характеристик */}
-                    <span className="text-gray-900 text-[15px] font-medium">{p}</span>
+                    <span className="text-gray-900 text-[18px] font-medium">{p}</span>
                   </li>
                 ))}
               </ul>

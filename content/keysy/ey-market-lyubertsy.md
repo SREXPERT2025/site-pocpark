@@ -1,7 +1,7 @@
     ---
-    title: "Складской комплекс Вегетта"
-    address: "Москва, мкрн. Шереметьевский"
-    previewImage: "/images/cases/vegetta.jpg"
+    title: "ЭЙ Маркет"
+    address: "Люберцы"
+    previewImage: "/images/cases/lubertcy2.jpg"
     ---
 
     Установка автоматизированной парковочной системы РОСПАРК.

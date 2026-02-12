@@ -1,7 +1,7 @@
     ---
-    title: "Складской комплекс Вегетта"
-    address: "Москва, мкрн. Шереметьевский"
-    previewImage: "/images/cases/vegetta.jpg"
+    title: "БЦ Poklonka place"
+    address: "Москва"
+    previewImage: "/images/cases/poklonkaplace.jpg"
     ---
 
     Установка автоматизированной парковочной системы РОСПАРК.

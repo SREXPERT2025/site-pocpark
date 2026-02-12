@@ -1,7 +1,7 @@
     ---
-    title: "Складской комплекс Вегетта"
-    address: "Москва, мкрн. Шереметьевский"
-    previewImage: "/images/cases/vegetta.jpg"
+    title: "ТЦ Горизонт"
+    address: "Ростов"
+    previewImage: "/images/cases/gorizont.jpg"
     ---
 
     Установка автоматизированной парковочной системы РОСПАРК.

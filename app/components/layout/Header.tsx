@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 import MobileMenu from '@/app/components/layout/MobileMenu';
@@ -21,11 +22,11 @@ export default function Header() {
       <header className="fixed top-0 left-0 right-0 z-[1100]">
         {/* TOP BAR */}
         <div className="bg-black text-white">
-          <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+          <div className="mx-auto max-w-[1088px] px-4 sm:px-6">
             <div className="h-14 flex items-center justify-between">
               {/* LOGO */}
-              <Link href="/" className="text-lg sm:text-xl font-extrabold tracking-wide text-white">
-                РОСПАРК
+              <Link href="/" className="inline-flex items-center">
+                <Image src="/logo.svg" alt="РОСПАРК" width={180} height={48} priority className="h-10 w-auto" />
               </Link>
 
               {/* RIGHT SIDE (desktop) */}
@@ -61,14 +62,16 @@ export default function Header() {
 
         {/* MENU BAR */}
         <div className="bg-white border-b border-[#E6E6E6]">
-          <div className="mx-auto max-w-[1400px] px-4 sm:px-6">
+          <div className="mx-auto max-w-[1088px] px-4 sm:px-6">
             {/* Высота контейнера меню 30px */}
-            <div className="h-[30px] flex items-center justify-center">
-              <div className="hidden lg:flex items-center">
+            <div className="h-[34px] flex items-center justify-center">
+              <div className="hidden lg:flex items-center w-full">
                 {/* Шрифт 15px */}
-                <nav className="flex items-center gap-[70px] text-[15px] leading-[22px] font-medium text-[#0B1220]">
+                <nav className="flex w-full items-center justify-between text-[15px] leading-[22px] font-medium text-[#0B1220]">
                   {navigation.map((item) => (
-                    <DesktopNavItem key={item.label} item={item} />
+                    <div key={item.label} className="flex-1 flex justify-center">
+                      <DesktopNavItem item={item} />
+                    </div>
                   ))}
                 </nav>
               </div>
@@ -94,7 +97,7 @@ function DesktopNavItem({ item }: { item: NavItem }) {
     return (
       <Link
         href={item.href ?? '#'}
-        className="h-[30px] inline-flex items-center text-[15px] hover:text-text-primary transition-colors"
+        className="h-[34px] inline-flex items-center text-[15px] hover:text-text-primary transition-colors"
       >
         {item.label}
       </Link>
@@ -103,19 +106,19 @@ function DesktopNavItem({ item }: { item: NavItem }) {
 
   // Если есть выпадающее меню — Hover логика
   return (
-    <div className="relative group h-[30px]">
+    <div className="relative group h-[34px]">
       {/* ТРИГГЕР: Единая зона (Слово + Стрелка) */}
-      <div className="flex items-center gap-1 h-[30px] cursor-pointer">
+      <div className="flex items-center gap-1 h-[34px] cursor-pointer">
         <Link
           href={item.href ?? '#'}
-          className="inline-flex items-center h-[30px] text-[15px] hover:text-text-primary transition-colors"
+          className="inline-flex items-center h-[34px] text-[15px] hover:text-text-primary transition-colors"
         >
           {item.label}
         </Link>
 
         {/* Стрелка (декоративная) */}
         <span
-          className="inline-flex items-center h-[30px] text-text-secondary group-hover:text-text-primary transition-colors"
+          className="inline-flex items-center h-[34px] text-text-secondary group-hover:text-text-primary transition-colors"
           aria-hidden="true"
         >
           ▾
