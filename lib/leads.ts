@@ -1,5 +1,16 @@
 import type { Transporter } from 'nodemailer';
 import nodemailer from 'nodemailer';
+import { Bot } from '@maxhub/max-bot-api';
+
+let maxBot: Bot | null = null;
+
+function getMaxBot(token: string): Bot {
+  if (!maxBot) {
+    maxBot = new Bot(token);
+  }
+  return maxBot;
+}
+
 
 export type LeadPayload = {
   name: string;
@@ -42,10 +53,6 @@ function escapeHtml(s: string) {
     .replace(/'/g, '&#039;');
 }
 
-/**
- * Plain-text формат (для Telegram)
- * Без разметки, без parse_mode, безопасно
- */
 function formatLeadText(payload: LeadPayload) {
   const lines: string[] = [];
   lines.push('РОСПАРК — новая заявка');
@@ -63,71 +70,13 @@ function formatLeadText(payload: LeadPayload) {
   if (payload.timestamp) lines.push(`Время: ${payload.timestamp}`);
   if (payload.utm && Object.keys(payload.utm).length > 0) {
     lines.push('');
-    lines.push('UTM / Click IDs:');
+    lines.push('UTM:');
     for (const [k, v] of Object.entries(payload.utm)) {
       if (!v) continue;
       lines.push(`- ${k}: ${v}`);
     }
   }
   return lines.join('\n');
-}
-
-/**
- * HTML-версия (для Email)
- */
-function formatLeadHtml(payload: LeadPayload) {
-  const kv: Array<[string, string]> = [
-    ['Имя', payload.name],
-    ['Телефон', payload.phone],
-  ];
-  if (payload.company) kv.push(['Компания', payload.company]);
-  if (payload.objectType) kv.push(['Тип объекта', payload.objectType]);
-  if (payload.message) kv.push(['Сообщение', payload.message]);
-  if (payload.sourcePage) kv.push(['Страница', payload.sourcePage]);
-  if (payload.sourceSection) kv.push(['Раздел', payload.sourceSection]);
-  if (payload.ip) kv.push(['IP', payload.ip]);
-  if (payload.userAgent) kv.push(['User-Agent', payload.userAgent]);
-  if (payload.timestamp) kv.push(['Время', payload.timestamp]);
-
-  const utmRows = payload.utm
-    ? Object.entries(payload.utm)
-        .filter(([, v]) => Boolean(v))
-        .map(
-          ([k, v]) =>
-            `<tr>
-              <td style="padding:6px 10px;border:1px solid #e5e7eb;"><b>${escapeHtml(k)}</b></td>
-              <td style="padding:6px 10px;border:1px solid #e5e7eb;">${escapeHtml(String(v))}</td>
-            </tr>`
-        )
-        .join('')
-    : '';
-
-  return `
-  <div style="font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;">
-    <h2>РОСПАРК — новая заявка</h2>
-    <table style="border-collapse: collapse; width: 100%; max-width: 760px;">
-      ${kv
-        .map(
-          ([k, v]) =>
-            `<tr>
-              <td style="padding:6px 10px;border:1px solid #e5e7eb;background:#f9fafb;width:200px;"><b>${escapeHtml(
-                k
-              )}</b></td>
-              <td style="padding:6px 10px;border:1px solid #e5e7eb;">${escapeHtml(v)}</td>
-            </tr>`
-        )
-        .join('')}
-    </table>
-    ${
-      utmRows
-        ? `<h3 style="margin-top:16px;">UTM / Click IDs</h3>
-           <table style="border-collapse: collapse; width: 100%; max-width: 760px;">${utmRows}</table>`
-        : ''
-    }
-    <p style="margin-top:16px;color:#6b7280;font-size:12px;">
-      Автоматическое уведомление. Ответьте клиенту по телефону.
-    </p>
-  </div>`;
 }
 
 let cachedTransport: Transporter | null = null;
@@ -155,25 +104,36 @@ function getMailTransport(): Transporter {
   return cachedTransport;
 }
 
+async function sendToMax(text: string) {
+  const token = process.env.LEAD_MAX_BOT_TOKEN;
+  const chatId = process.env.LEAD_MAX_CHAT_ID;
+
+  if (!token || !chatId) return;
+
+  try {
+    const bot = getMaxBot(token);
+
+    const response = await bot.api.sendMessageToChat(
+      Number(chatId),
+      text
+    );
+
+    console.log("MAX SUCCESS:", response?.body?.mid);
+
+  } catch (err) {
+    console.error("MAX ERROR:", err);
+  }
+}
+
 export async function sendLead(payload: LeadPayload) {
   const emailTo = splitList(process.env.LEAD_EMAIL_TO);
   const tgToken = process.env.LEAD_TELEGRAM_BOT_TOKEN;
   const tgChats = splitList(process.env.LEAD_TELEGRAM_CHAT_IDS);
-  const tgTopicRaw = (process.env.LEAD_TELEGRAM_TOPIC_ID || '').trim();
-  const tgTopicId = tgTopicRaw ? Number.parseInt(tgTopicRaw, 10) : undefined;
-  const hasTopic = Number.isFinite(tgTopicId);
 
-  if (emailTo.length === 0 && (!tgToken || tgChats.length === 0)) {
-    throw new Error(
-      'Не настроены каналы доставки. Нужен LEAD_EMAIL_TO и/или LEAD_TELEGRAM_BOT_TOKEN + LEAD_TELEGRAM_CHAT_IDS.'
-    );
-  }
-
-  const subject = `РОСПАРК: заявка${payload.sourceSection ? ` — ${payload.sourceSection}` : ''}`;
+  const subject = `РОСПАРК: новая заявка`;
   const text = formatLeadText(payload);
-  const html = formatLeadHtml(payload);
 
-  // 1) Email
+  // EMAIL
   if (emailTo.length > 0) {
     const from = process.env.LEAD_EMAIL_FROM || emailTo[0];
     const transport = getMailTransport();
@@ -181,33 +141,29 @@ export async function sendLead(payload: LeadPayload) {
       from,
       to: emailTo,
       subject,
-      text,
-      html,
+      text
     });
   }
 
-  // 2) Telegram (БЕЗ parse_mode)
+  // TELEGRAM
   if (tgToken && tgChats.length > 0) {
     const apiUrl = `https://api.telegram.org/bot${tgToken}/sendMessage`;
 
     await Promise.all(
       tgChats.map(async (chatId) => {
-        const res = await fetch(apiUrl, {
+        await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: chatId,
             text,
-            disable_web_page_preview: true,
-            ...(hasTopic ? { message_thread_id: tgTopicId } : {}),
-          }),
+            disable_web_page_preview: true
+          })
         });
-
-        if (!res.ok) {
-          const body = await res.text().catch(() => '');
-          throw new Error(`Telegram sendMessage failed: ${res.status} ${body}`);
-        }
       })
     );
   }
+
+  // MAX
+  await sendToMax(text);
 }
