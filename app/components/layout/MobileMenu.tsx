@@ -116,7 +116,7 @@ export default function MobileMenu({
             <Link
               href="/contacts"
               onClick={onClose}
-              className="block w-full rounded-md bg-accent-primary px-4 py-3 text-center text-sm font-semibold text-white hover:bg-state-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              className="block w-full rounded-md bg-accent-primary px-4 py-3 text-center text-base font-medium text-white hover:bg-state-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             >
               Получить коммерческое предложение
             </Link>

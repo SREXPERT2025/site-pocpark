@@ -26,8 +26,16 @@ export default function Header() {
             <div className="h-14 flex items-center justify-between">
               {/* LOGO */}
               <Link href="/" className="inline-flex items-center">
-                <Image src="/logo.svg" alt="РОСПАРК" width={180} height={48} priority className="h-10 w-auto" />
-              </Link>
+  <Image
+    src="/logo.svg"
+    alt="РОСПАРК"
+    width={180}
+    height={40}
+    priority
+    className="h-[20px] w-auto object-contain"
+  />
+</Link>
+
 
               {/* RIGHT SIDE (desktop) */}
               <div className="hidden lg:flex items-center gap-6">
@@ -36,7 +44,7 @@ export default function Header() {
                 </a>
                 <Link
                   href="/contacts"
-                  className="h-10 inline-flex items-center justify-center rounded-lg bg-accent-primary px-5 text-[14px] font-semibold text-white hover:bg-state-hover transition"
+                  className="h-10 inline-flex items-center justify-center rounded-lg bg-accent-primary px-5 text-base font-medium text-white hover:bg-state-hover transition"
                 >
                   Получить коммерческое предложение
                 </Link>

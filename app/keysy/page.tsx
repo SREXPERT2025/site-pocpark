@@ -2,13 +2,16 @@ import Hero from '@/app/components/ui/Hero';
 import ProjectCard from '@/app/components/ui/ProjectCard';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import CaseStudyItemListJsonLd from '@/app/components/content/CaseStudyItemListJsonLd';
-import ProjectsControls, { type ProjectsSortKey } from '@/app/components/projects/ProjectsControls';
+import ProjectsControls, {
+  type ProjectsSortKey,
+} from '@/app/components/projects/ProjectsControls';
 import LeadFormSection from '@/app/components/forms/LeadFormSection';
 import { getAllContentMeta } from '@/lib/content-parser';
 
 export const metadata = {
   title: 'Проекты',
-  description: 'Реализованные проекты РОСПАРК: задачи, сроки, метрики, результат.',
+  description:
+    'Реализованные проекты РОСПАРК: задачи, сроки, метрики, результат.',
 };
 
 type SearchParams = {
@@ -39,7 +42,6 @@ export default function KeysyIndex({
     if (selectedSort === 'title_asc') {
       return a.title.localeCompare(b.title, 'ru');
     }
-    // newest (по lastModified)
     const da = a.lastModified ? Date.parse(a.lastModified) : 0;
     const db = b.lastModified ? Date.parse(b.lastModified) : 0;
     return db - da;
@@ -54,64 +56,85 @@ export default function KeysyIndex({
   }));
 
   return (
-    <div>
+    <div className="w-full">
+
       <BreadcrumbJsonLd
         items={[
           { name: 'Главная', url: '/' },
           { name: 'Проекты', url: '/keysy' },
         ]}
       />
+
       <CaseStudyItemListJsonLd
         name="Проекты РОСПАРК"
         description="Реализованные проекты: задачи, решение, сроки, метрики и результат."
         items={listItems}
       />
 
-      <Hero
-        title="Проекты"
-        description="Реализованные внедрения РОСПАРК: от задачи до измеримого результата."
-        cta={{ label: 'Получить консультацию', href: '/contacts' }}
-      />
+      {/* HERO */}
+      <section className="w-full px-[20px] pt-6">
+        <Hero
+          title="Проекты"
+          description="Реализованные внедрения РОСПАРК: от задачи до измеримого результата."
+          cta={{ label: 'Получить консультацию', href: '/contacts' }}
+        />
+      </section>
 
-      <div className="container">
+      {/* ОСНОВНОЙ КОНТЕНТ */}
+      <section className="w-full px-[20px] pt-10">
+
         <ProjectsControls
           formats={formats}
           selectedFormat={selectedFormat}
           selectedSort={selectedSort}
         />
 
-        <section className="mt-section">
-          <h2 className="text-xl font-semibold text-text-primary">
-            Все проекты ({sorted.length})
-          </h2>
+        <div className="mt-16">
 
-          {/*
-            Дизайн-решение: 2 колонки на десктопе выглядят «дороже» и лучше раскрывают фото объекта.
-            Третья колонка делает карточки слишком мелкими и ухудшает восприятие.
-          */}
-          <div className="mt-6 grid gap-8 md:grid-cols-2">
-            {sorted.map((m) => (
-              <ProjectCard
-                key={m.slug}
-                title={m.title}
-                description={m.description}
-                href={`/keysy/${m.slug}`}
-                coverImage={m.coverImage}
-                format={(m as any).format}
-                tags={m.tags}
-              />
-            ))}
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-3xl font-bold">
+              Выполненные проекты
+            </h2>
+
+            <span className="text-sm text-gray-500">
+              {sorted.length} проектов
+            </span>
           </div>
-        </section>
 
-        <LeadFormSection
-          className="mt-section"
-          sourceSection="projects"
-          title="Хотите похожий результат?"
-          description="Оставьте контакты — предложим решение, оборудование и план внедрения под ваш объект."
-          submitLabel="Получить консультацию"
-        />
-      </div>
+          {/* СЕТКА 2 В РЯД, GAP 15 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-[15px]">
+
+            {sorted.map((m) => (
+              <div
+                key={m.slug}
+                className="transition-all duration-300 hover:-translate-y-1"
+              >
+                <ProjectCard
+                  title={m.title}
+                  description={m.description}
+                  href={`/keysy/${m.slug}`}
+                  coverImage={m.coverImage}
+                  format={(m as any).format}
+                  tags={m.tags}
+                />
+              </div>
+            ))}
+
+          </div>
+
+        </div>
+
+        <div className="mt-24">
+          <LeadFormSection
+            sourceSection="projects"
+            title="Хотите похожий результат?"
+            description="Оставьте контакты — предложим решение под ваш объект."
+            submitLabel="Получить консультацию"
+          />
+        </div>
+
+      </section>
+
     </div>
   );
 }

@@ -54,10 +54,9 @@ export default function RootLayout({
 
         {/* Анимация только для контента */}
         <PageTransition>
-          <main className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
-            {children}
-          </main>
-        </PageTransition>
+  {children}
+</PageTransition>
+
 
         <Footer />
       </body>

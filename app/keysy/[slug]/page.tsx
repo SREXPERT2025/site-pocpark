@@ -34,7 +34,11 @@ export function generateMetadata({
   };
 }
 
-function scoreSimilar(baseTags: string[], itemTags: string[], sameCategory: boolean) {
+function scoreSimilar(
+  baseTags: string[],
+  itemTags: string[],
+  sameCategory: boolean
+) {
   const base = new Set((baseTags ?? []).map((t) => t.toLowerCase()));
   let score = sameCategory ? 3 : 0;
   (itemTags ?? []).forEach((t) => {
@@ -61,7 +65,7 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
       return { m, score, d };
     })
     .filter((x) => x.score > 0)
-    .sort((a, b) => (b.score - a.score) || (b.d - a.d))
+    .sort((a, b) => b.score - a.score || b.d - a.d)
     .slice(0, 3)
     .map((x) => x.m);
 
@@ -69,7 +73,7 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
   const metrics = data.metrics ?? [];
 
   return (
-    <div>
+    <div className="w-full px-[20px]">
       <BreadcrumbJsonLd
         items={[
           { name: 'Главная', url: '/' },
@@ -79,13 +83,17 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
       />
       {faq.length > 0 && <FaqJsonLd items={faq} />}
 
-      <Hero
-        title={data.title}
-        description={data.description}
-        cta={{ label: 'Получить консультацию', href: '/contacts' }}
-      />
+      {/* HERO (добавили обёртку для паддинга и full width) */}
+      <section className="w-full px-[20px] pt-6">
+        <Hero
+          title={data.title}
+          description={data.description}
+          cta={{ label: 'Получить консультацию', href: '/contacts' }}
+        />
+      </section>
 
-      <div className="container">
+      {/* ВЕСЬ КОНТЕНТ (раньше был container) */}
+      <section className="w-full px-[20px]">
         {data.coverImage && (
           <div className="mt-10 overflow-hidden rounded-2xl bg-slate-100">
             <img
@@ -110,7 +118,7 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
           </section>
         )}
 
-        {(data.videoUrl && String(data.videoUrl).trim()) && (
+        {data.videoUrl && String(data.videoUrl).trim() && (
           <section className="mt-section">
             <h2 className="text-xl font-semibold text-text-primary">Видеообзор</h2>
             <div className="mt-4 overflow-hidden rounded-2xl border border-border bg-black">
@@ -163,7 +171,7 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
           description="Оставьте контакты — уточним параметры объекта и предложим план внедрения РОСПАРК."
           submitLabel="Получить консультацию"
         />
-      </div>
+      </section>
     </div>
   );
 }

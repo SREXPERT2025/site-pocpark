@@ -45,11 +45,11 @@ export default function PriceList() {
   return (
     <section className="bg-white py-20">
       <div className="mx-auto max-w-6xl px-6">
-        <div className="max-w-3xl">
+        <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
             Примерные комплектации и стоимость
           </h2>
-          <p className="mt-4 text-base md:text-lg text-slate-600">
+          <p className="mt-4 text-[20px] text-slate-600">
             Ниже — ориентиры для быстрой оценки. Финальная конфигурация зависит от задач, количества въездов и интеграций.
           </p>
         </div>
