@@ -4,26 +4,18 @@ export type LeadFormSectionProps = {
   title?: string;
   description?: string;
   submitLabel?: string;
-  /**
-   * Откуда пришла заявка (логика/блок): hero / lead_bottom / contacts и т.п.
-   */
   sourceSection?: string;
-  /**
-   * Страница-источник (например: /resheniya/biznes-centry)
-   */
   sourcePage?: string;
-  /** Минимальный набор полей (без компании и типа объекта) */
   minimalFields?: boolean;
-  /** Компактный режим формы */
   compact?: boolean;
   className?: string;
 };
 
 export default function LeadFormSection(props: LeadFormSectionProps) {
   const {
-    title = "Получить КП",
-    description = "Оставьте контакты — мы уточним задачу и предложим оптимальное решение.",
-    submitLabel = "Получить КП",
+    title = "Рассчитать конфигурацию под ваш объект",
+    description = "Подготовим оптимальный формат внедрения и предварительную финансовую модель проекта.",
+    submitLabel = "Получить расчёт конфигурации",
     sourceSection,
     sourcePage,
     minimalFields = false,
@@ -32,14 +24,29 @@ export default function LeadFormSection(props: LeadFormSectionProps) {
   } = props;
 
   return (
-    <section className={className}>
-      <div className="mx-auto max-w-[920px]">
+    <section className={`bg-[#F7F8FA] py-24 ${className ?? ""}`}>
+      <div className="mx-auto max-w-[980px] px-6">
+
+        {/* Заголовок */}
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">{title}</h2>
-          <p className="mt-4 text-base text-slate-600 md:text-lg">{description}</p>
+          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+            {title}
+          </h2>
+
+          <p className="mt-5 text-lg text-slate-600">
+            {description}
+          </p>
+
+          {/* Доверительные маркеры */}
+          <div className="mt-6 flex flex-col items-center gap-2 text-sm text-slate-600 md:flex-row md:justify-center md:gap-8">
+            <span>⏱ Ответ в течение 1 рабочего дня</span>
+            <span>🔍 Предварительный аудит объекта — бесплатно</span>
+            <span>📊 Подбор конфигурации под бюджет и трафик</span>
+          </div>
         </div>
 
-        <div className="mt-10">
+        {/* Форма */}
+        <div className="mt-12 rounded-3xl bg-white p-8 shadow-[0_25px_60px_rgba(15,23,42,0.08)] md:p-12">
           <LeadForm
             sourceSection={sourceSection}
             sourcePage={sourcePage}
@@ -47,6 +54,16 @@ export default function LeadFormSection(props: LeadFormSectionProps) {
             minimalFields={minimalFields}
             compact={compact}
           />
+
+          {/* Микро-пояснение по данным */}
+          <p className="mt-6 text-center text-xs text-slate-500">
+            Данные используются только для подготовки расчёта и связи по проекту.
+          </p>
+        </div>
+
+        {/* Социальное доказательство */}
+        <div className="mt-10 text-center text-sm text-slate-600">
+          Более 350 реализованных объектов — работаем с ТЦ, БЦ и жилыми комплексами.
         </div>
       </div>
     </section>
