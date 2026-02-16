@@ -43,7 +43,7 @@ export default function Header() {
                   +7 (499) 321-20-40
                 </a>
                 <Link
-                  href="/contacts"
+                  href="/quiz?source=kp"
                   className="h-10 inline-flex items-center justify-center rounded-lg bg-accent-primary px-5 text-base font-medium text-white hover:bg-state-hover transition"
                 >
                   Получить коммерческое предложение

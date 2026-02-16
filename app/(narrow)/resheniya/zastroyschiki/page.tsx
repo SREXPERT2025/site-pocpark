@@ -71,13 +71,13 @@ export default function ZastroyschikiPage() {
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
-                href="/contacts"
+                href="/quiz?source=consult"
                 className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-8 py-4 font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
               >
                 Получить консультацию
               </Link>
               <Link
-                href="/quiz"
+                href="/quiz?source=price"
                 className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-8 py-4 font-semibold text-slate-900 hover:bg-slate-50 transition-colors"
               >
                 Рассчитать стоимость

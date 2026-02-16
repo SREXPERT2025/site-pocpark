@@ -76,7 +76,7 @@ export default function KeysyIndex({
         <Hero
           title="Проекты"
           description="Реализованные внедрения РОСПАРК: от задачи до измеримого результата."
-          cta={{ label: 'Получить консультацию', href: '/contacts' }}
+          cta={{ label: 'Получить консультацию', href: '/quiz?source=consult' }}
         />
       </section>
 

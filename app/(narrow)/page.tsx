@@ -1,6 +1,5 @@
 import FeaturesShowcase from '@/app/components/FeaturesShowcase';
 import Hero from "@/app/components/landing/Hero";
-import TrustNumbers from "@/app/components/landing/TrustNumbers";
 import RoleSelector from "@/app/components/landing/RoleSelector";
 import ObjectTypesSection from "@/app/components/landing/ObjectTypesSection";
 import CapabilitiesSection from "@/app/components/landing/CapabilitiesSection";
@@ -12,7 +11,6 @@ export default function HomePage() {
     <main className="pt-0">
       <Hero />
       <div className="flex flex-col gap-24">
-        <TrustNumbers />
       <RoleSelector />
       <ObjectTypesSection />
       <CapabilitiesSection />
