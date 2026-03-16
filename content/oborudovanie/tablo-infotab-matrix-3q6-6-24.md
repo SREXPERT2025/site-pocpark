@@ -15,9 +15,10 @@ priceFrom: 0
 currency: "RUB"
 availability: "InStock"
 condition: "NewCondition"
-coverImage: "/images/equipment/rv3-2.jpg"
+coverImage: "/images/equipment/infotab1.jpg"
 gallery:
-  - "/images/equipment/rv3-2.jpg"
+  - "/images/equipment/infotab1.jpg"
+  - "/images/equipment/infotab2.jpg"
 specifications:
   - name: "Габариты (Ш×В×Г)"
     value: "520×360×55 мм"

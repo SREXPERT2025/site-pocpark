@@ -15,9 +15,9 @@ priceFrom: 0
 currency: "RUB"
 availability: "InStock"
 condition: "NewCondition"
-coverImage: "/images/equipment/rv3-1.jpg"
+coverImage: "/images/equipment/svetofor1.jpg"
 gallery:
-  - "/images/equipment/rv3-1.jpg"
+  - "/images/equipment/svetofor1.jpg"
 specifications:
   - name: "Диаметр секции"
     value: "200 мм"

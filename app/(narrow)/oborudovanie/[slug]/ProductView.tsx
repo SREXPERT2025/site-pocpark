@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import ReactMarkdown from 'react-markdown'; 
+import ReactMarkdown from 'react-markdown';
 import Link from 'next/link';
 
-export default function ProductView({ data, content }: { data: any, content: string }) {
+export default function ProductView({ data, content }: { data: any; content: string }) {
   const {
     title,
     description,
@@ -19,69 +19,77 @@ export default function ProductView({ data, content }: { data: any, content: str
     faq = [],
   } = data;
 
-  // Логика галереи
   const allImages = [coverImage, ...gallery];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
   };
+
   const prevImage = () => {
     setCurrentImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
   };
 
   return (
     <main className="bg-white pb-20">
-      
       {/* ================= HERO + ANSWER FIRST (ЕДИНЫЙ ЭКРАН) ================= */}
-      <section className="bg-[#F9FAFB] pt-12 pb-6 border-b border-[#E6E6E6]">
+      <section className="border-b border-[#E6E6E6] bg-[#F9FAFB] pb-6 pt-12">
         <div className="mx-auto max-w-[1100px] px-6">
-          
           {/* 1. ЗАГОЛОВОК И CTA */}
-          <div className="text-center md:text-left mb-8">
-            <h1 className="text-[24px] font-bold text-[#0B1220] mb-6 leading-tight">
+          <div className="mb-8 text-center md:text-left">
+            <h1 className="mb-6 text-[24px] font-bold leading-tight text-[#0B1220]">
               {title}
             </h1>
-            
+
             {description && (
-              <p className="text-[18px] text-gray-600 mb-8 max-w-[800px] leading-relaxed">
+              <p className="mb-8 max-w-[800px] text-[18px] leading-relaxed text-gray-600">
                 {description}
               </p>
             )}
 
-            {/* ✅ БЫЛО button — СТАЛО Link на /quiz */}
             <Link
-  href={`/quiz?product=${encodeURIComponent(title)}&source=product-page`}
-  className="inline-flex items-center justify-center rounded-lg bg-[#2563EB] w-[440px] h-[45px] text-[18px] text-white font-semibold hover:bg-blue-700 transition shadow-sm"
->
-  Получить коммерческое предложение
-</Link>
-
+              href={`/quiz?product=${encodeURIComponent(title)}&source=product-page`}
+              className="inline-flex h-[45px] w-[440px] items-center justify-center rounded-lg bg-[#2563EB] text-[18px] font-semibold text-white shadow-sm transition hover:bg-blue-700"
+            >
+              Получить коммерческое предложение
+            </Link>
           </div>
 
           {/* 2. ANSWER FIRST (АКЦЕНТНЫЙ БЛОК) */}
           {answerFirst && (
-            <div className="bg-white rounded-xl p-6 md:p-8 border border-gray-200 shadow-sm mb-8 relative overflow-hidden">
-              {/* Декор (опционально) */}
-              <div className="absolute top-0 left-0 w-1 h-full bg-[#2563EB]" />
-              
-              <div className="flex items-center gap-3 mb-5">
-                 <span className="inline-block px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-xs font-bold uppercase tracking-wide text-[#2563EB]">
+            <div className="relative mb-8 overflow-hidden rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+              <div className="absolute left-0 top-0 h-full w-1 bg-[#2563EB]" />
+
+              <div className="mb-5 flex items-center gap-3">
+                <span className="inline-block rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-[#2563EB]">
                   Главное за 30 секунд
                 </span>
               </div>
 
-              <h3 className="text-[28px] font-bold text-[#0B1220] mb-6 leading-[1.3]">
+              <h3 className="mb-6 text-[28px] font-bold leading-[1.3] text-[#0B1220]">
                 {answerFirst.lead}
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-4">
+              <div className="grid grid-cols-1 gap-x-10 gap-y-4 md:grid-cols-2">
                 {answerFirst.bullets?.map((b: string) => (
-                  <div key={b} className="flex gap-3 items-start">
-                    <span className="text-green-500 mt-1 flex-shrink-0">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <div key={b} className="flex items-start gap-3">
+                    <span className="mt-1 flex-shrink-0 text-green-500">
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
                     </span>
-                    <span className="text-[18px] font-medium leading-relaxed text-gray-900">{b}</span>
+                    <span className="text-[18px] font-medium leading-relaxed text-gray-900">
+                      {b}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -91,21 +99,18 @@ export default function ProductView({ data, content }: { data: any, content: str
       </section>
 
       <div className="mx-auto max-w-[1100px] px-6">
-        
         {/* ================= ГАЛЕРЕЯ (ДОМИНИРУЮЩАЯ) ================= */}
-        <section className="py-10 flex flex-col items-center border-b border-gray-100">
-          {/* Увеличен размер контейнера до 800px / h-500px для доминирования */}
-          <div className="relative w-full max-w-[800px] h-[350px] md:h-[500px] mb-6 flex items-center justify-center">
-            
-            <button 
+        <section className="flex flex-col items-center border-b border-gray-100 py-10">
+          <div className="relative mb-6 flex h-[350px] w-full max-w-[800px] items-center justify-center md:h-[500px]">
+            <button
               onClick={prevImage}
-              className="absolute left-[-20px] md:left-[-60px] top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center hover:bg-gray-50 text-gray-700 hover:text-black transition z-10 text-2xl pb-1"
+              className="absolute left-[-20px] top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white pb-1 text-2xl text-gray-700 shadow-md transition hover:bg-gray-50 hover:text-black md:left-[-60px]"
             >
               ‹
             </button>
-            
-            <div className="relative w-full h-full">
-               <Image
+
+            <div className="relative h-full w-full">
+              <Image
                 src={allImages[currentImageIndex]}
                 alt={title}
                 fill
@@ -114,29 +119,37 @@ export default function ProductView({ data, content }: { data: any, content: str
               />
             </div>
 
-            <button 
+            <button
               onClick={nextImage}
-              className="absolute right-[-20px] md:right-[-60px] top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center hover:bg-gray-50 text-gray-700 hover:text-black transition z-10 text-2xl pb-1"
+              className="absolute right-[-20px] top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white pb-1 text-2xl text-gray-700 shadow-md transition hover:bg-gray-50 hover:text-black md:right-[-60px]"
             >
               ›
             </button>
           </div>
 
-          <p className="text-sm text-gray-500 font-medium mb-8 text-center bg-gray-50 px-4 py-1 rounded-full">
-            Промышленное исполнение. Корпус IP54, антивандальная панель, работа от -45°C.
+          <p className="mb-8 rounded-full bg-gray-50 px-4 py-1 text-center text-sm font-medium text-gray-500">
+            Промышленное исполнение. Корпус IP54, антивандальная панель, работа от
+            -45°C.
           </p>
 
           {allImages.length > 1 && (
-            <div className="flex gap-4 justify-center overflow-x-auto py-2">
+            <div className="flex justify-center gap-4 overflow-x-auto py-2">
               {allImages.map((img: string, idx: number) => (
-                <div 
-                  key={idx} 
+                <div
+                  key={idx}
                   onClick={() => setCurrentImageIndex(idx)}
-                  className={`border-2 rounded-md overflow-hidden w-20 h-20 relative cursor-pointer transition-all ${
-                    idx === currentImageIndex ? 'border-blue-600 ring-2 ring-blue-100 opacity-100 scale-105' : 'border-transparent opacity-70 hover:opacity-100 hover:border-gray-300'
+                  className={`relative h-20 w-20 cursor-pointer overflow-hidden rounded-md border-2 bg-white transition-all ${
+                    idx === currentImageIndex
+                      ? 'scale-105 border-blue-600 opacity-100 ring-2 ring-blue-100'
+                      : 'border-transparent opacity-70 hover:border-gray-300 hover:opacity-100'
                   }`}
                 >
-                  <Image src={img} alt="" fill className="object-cover" />
+                  <Image
+                    src={img}
+                    alt=""
+                    fill
+                    className="object-contain object-center p-1"
+                  />
                 </div>
               ))}
             </div>
@@ -144,53 +157,57 @@ export default function ProductView({ data, content }: { data: any, content: str
         </section>
 
         {/* ================= ОПИСАНИЕ (LEAD-АБЗАЦ) ================= */}
-<section className="py-16">
-  <h2 className="text-3xl font-bold text-[#0B1220] mb-8">
-    Описание и возможности
-  </h2>
+        <section className="py-16">
+          <h2 className="mb-8 text-3xl font-bold text-[#0B1220]">
+            Описание и возможности
+          </h2>
 
-  <div
-    className="
-      prose prose-lg max-w-none text-gray-600
-      prose-headings:font-bold prose-headings:text-[#0B1220]
-      prose-li:marker:text-blue-500
-      prose-img:rounded-xl
+          <div
+            className="
+              prose prose-lg max-w-none text-gray-600
+              prose-headings:font-bold prose-headings:text-[#0B1220]
+              prose-li:marker:text-blue-500
+              prose-img:rounded-xl
+              prose-p:first-of-type:mb-8
+              prose-p:first-of-type:text-[28px]
+              prose-p:first-of-type:leading-[1.35]
+              prose-p:first-of-type:text-gray-900
+            "
+          >
+            <ReactMarkdown>{content}</ReactMarkdown>
+          </div>
 
-      prose-p:first-of-type:text-[28px]
-      prose-p:first-of-type:leading-[1.35]
-      prose-p:first-of-type:text-gray-900
-      prose-p:first-of-type:mb-8
-    "
-  >
-    <ReactMarkdown>{content}</ReactMarkdown>
-  </div>
-
-  <div className="mt-10 p-5 bg-blue-50 rounded-xl border border-blue-100 flex items-start sm:items-center gap-4 cursor-pointer hover:bg-blue-100 transition group shadow-sm">
-    <span className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
-      !
-    </span>
-    <span className="text-blue-900 font-medium text-lg group-hover:underline decoration-blue-400 underline-offset-4">
-      Подготовим спецификацию под ваш объект, рассчитаем смету и покажем демо-версию.
-    </span>
-  </div>
-</section>
-
+          <div className="group mt-10 flex cursor-pointer items-start gap-4 rounded-xl border border-blue-100 bg-blue-50 p-5 shadow-sm transition hover:bg-blue-100 sm:items-center">
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">
+              !
+            </span>
+            <span className="text-lg font-medium text-blue-900 decoration-blue-400 underline-offset-4 group-hover:underline">
+              Подготовим спецификацию под ваш объект, рассчитаем смету и покажем
+              демо-версию.
+            </span>
+          </div>
+        </section>
 
         {/* ================= ХАРАКТЕРИСТИКИ (ВОЗДУХ) ================= */}
         {specifications.length > 0 && (
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-[#0B1220] mb-8">Технические характеристики</h2>
-            <div className="bg-white rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+            <h2 className="mb-8 text-3xl font-bold text-[#0B1220]">
+              Технические характеристики
+            </h2>
+            <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
               {specifications.map((s: any, i: number) => (
                 <div
                   key={s.name}
-                  // Увеличен padding до py-5
-                  className={`flex flex-col sm:flex-row justify-between px-6 py-5 text-[18px] border-b border-gray-100 last:border-0 ${
+                  className={`flex flex-col justify-between border-b border-gray-100 px-6 py-5 text-[18px] last:border-0 sm:flex-row ${
                     i % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'
                   }`}
                 >
-                  <span className="text-gray-700 font-medium mb-1 sm:mb-0 w-1/3">{s.name}</span>
-                  <span className="font-semibold text-gray-900 sm:text-right w-full sm:w-2/3">{s.value}</span>
+                  <span className="mb-1 w-1/3 font-medium text-gray-700 sm:mb-0">
+                    {s.name}
+                  </span>
+                  <span className="w-full font-semibold text-gray-900 sm:w-2/3 sm:text-right">
+                    {s.value}
+                  </span>
                 </div>
               ))}
             </div>
@@ -200,19 +217,21 @@ export default function ProductView({ data, content }: { data: any, content: str
         {/* ================= КОМПЛЕКТАЦИЯ (СИНХРОНИЗАЦИЯ ШРИФТОВ) ================= */}
         {packageContents.length > 0 && (
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-[#0B1220] mb-8">Комплектация</h2>
-            <div className="bg-[#F5F7FA] rounded-xl p-8 border border-[#E6E6E6]">
-              <ul className="space-y-4 mb-6">
+            <h2 className="mb-8 text-3xl font-bold text-[#0B1220]">Комплектация</h2>
+            <div className="rounded-xl border border-[#E6E6E6] bg-[#F5F7FA] p-8">
+              <ul className="mb-6 space-y-4">
                 {packageContents.map((p: string) => (
-                  <li key={p} className="flex gap-3 items-center">
-                    <div className="w-5 h-5 rounded-full bg-white border border-gray-300 flex items-center justify-center flex-shrink-0 text-green-600 text-xs font-bold">✔</div>
-                    {/* Шрифт 15px и Medium - точно как в таблице характеристик */}
-                    <span className="text-gray-900 text-[18px] font-medium">{p}</span>
+                  <li key={p} className="flex items-center gap-3">
+                    <div className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border border-gray-300 bg-white text-xs font-bold text-green-600">
+                      ✔
+                    </div>
+                    <span className="text-[18px] font-medium text-gray-900">{p}</span>
                   </li>
                 ))}
               </ul>
-              <p className="text-xs text-gray-400 border-t border-gray-200 pt-4 mt-4">
-                * Состав комплектации и внешний вид изделия могут быть уточнены в зависимости от проекта и версии оборудования.
+              <p className="mt-4 border-t border-gray-200 pt-4 text-xs text-gray-400">
+                * Состав комплектации и внешний вид изделия могут быть уточнены в
+                зависимости от проекта и версии оборудования.
               </p>
             </div>
           </section>
@@ -221,14 +240,17 @@ export default function ProductView({ data, content }: { data: any, content: str
         {/* ================= FAQ (АКЦЕНТЫ) ================= */}
         {faq.length > 0 && (
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-[#0B1220] mb-8">Частые вопросы</h2>
+            <h2 className="mb-8 text-3xl font-bold text-[#0B1220]">Частые вопросы</h2>
             <div className="space-y-4">
               {faq.map((f: any) => (
-                <div key={f.question} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition group">
-                  <div className="font-bold text-lg mb-3 text-[#0B1220] group-hover:text-blue-700 transition-colors">
+                <div
+                  key={f.question}
+                  className="group rounded-lg border border-gray-200 bg-white p-6 transition hover:shadow-md"
+                >
+                  <div className="mb-3 text-lg font-bold text-[#0B1220] transition-colors group-hover:text-blue-700">
                     {f.question}
                   </div>
-                  <div className="text-gray-700 leading-relaxed">{f.answer}</div>
+                  <div className="leading-relaxed text-gray-700">{f.answer}</div>
                 </div>
               ))}
             </div>
@@ -237,59 +259,76 @@ export default function ProductView({ data, content }: { data: any, content: str
 
         {/* ================= РАСШИРЕННАЯ ИНФОРМАЦИЯ ================= */}
         <section className="mb-16">
-           <div className="border border-gray-200 rounded-xl overflow-hidden">
-             <details className="group bg-white">
-                <summary className="flex items-center justify-between p-6 cursor-pointer list-none hover:bg-gray-50 transition">
-                   <div className="flex items-center gap-4">
-                      <span className="font-bold text-lg text-[#0B1220]">Расширенная информация</span>
-                      <span className="text-sm text-gray-400 font-normal hidden sm:block">
-                        Файлы, документация и дополнительные материалы
-                      </span>
-                   </div>
-                   <span className="transform group-open:rotate-180 transition-transform duration-200 text-gray-400">▼</span>
-                </summary>
-                <div className="p-6 pt-0 text-gray-600 border-t border-gray-100 bg-gray-50">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6">
-                      <div>
-                        <div className="mb-4 font-bold text-black uppercase text-xs tracking-wider opacity-50">Документы</div>
-                        <div className="flex flex-col gap-3">
-                            {downloads.map((d: any) => (
-                              <a key={d.url} href={d.url} className="text-blue-600 hover:underline flex items-center gap-2 font-medium bg-white p-3 rounded border border-gray-100 shadow-sm hover:shadow-md transition">
-                                <span className="text-xl">📄</span> {d.title}
-                              </a>
-                            ))}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="mb-4 font-bold text-black uppercase text-xs tracking-wider opacity-50">Сценарии применения</div>
-                         <div className="flex flex-wrap gap-2">
-                            {useCases.map((u: string) => (
-                              <span key={u} className="bg-white border border-gray-200 px-4 py-2 rounded text-sm text-gray-700 shadow-sm font-medium">{u}</span>
-                            ))}
-                         </div>
-                      </div>
-                   </div>
+          <div className="overflow-hidden rounded-xl border border-gray-200">
+            <details className="group bg-white">
+              <summary className="flex list-none cursor-pointer items-center justify-between p-6 transition hover:bg-gray-50">
+                <div className="flex items-center gap-4">
+                  <span className="text-lg font-bold text-[#0B1220]">
+                    Расширенная информация
+                  </span>
+                  <span className="hidden text-sm font-normal text-gray-400 sm:block">
+                    Файлы, документация и дополнительные материалы
+                  </span>
                 </div>
-             </details>
-           </div>
+                <span className="text-gray-400 transition-transform duration-200 group-open:rotate-180">
+                  ▼
+                </span>
+              </summary>
+              <div className="border-t border-gray-100 bg-gray-50 p-6 pt-0 text-gray-600">
+                <div className="grid grid-cols-1 gap-8 pt-6 md:grid-cols-2">
+                  <div>
+                    <div className="mb-4 text-xs font-bold uppercase tracking-wider text-black opacity-50">
+                      Документы
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      {downloads.map((d: any) => (
+                        <a
+                          key={d.url}
+                          href={d.url}
+                          className="flex items-center gap-2 rounded border border-gray-100 bg-white p-3 font-medium text-blue-600 shadow-sm transition hover:underline hover:shadow-md"
+                        >
+                          <span className="text-xl">📄</span> {d.title}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-4 text-xs font-bold uppercase tracking-wider text-black opacity-50">
+                      Сценарии применения
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {useCases.map((u: string) => (
+                        <span
+                          key={u}
+                          className="rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm"
+                        >
+                          {u}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </div>
         </section>
 
         {/* ================= ФОРМА (ФИНАЛЬНЫЙ УДАР) ================= */}
-        <section className="py-16 border-2 border-dashed border-[#FBBF24] bg-yellow-50 rounded-xl text-center">
-           <h3 className="text-3xl font-bold mb-4 text-[#0B1220]">Есть вопросы или нужен расчет?</h3>
-           <p className="text-gray-700 text-lg mb-8 max-w-lg mx-auto leading-relaxed">
-             Оставьте заявку, и инженер свяжется с вами для уточнения деталей проекта и подбора конфигурации.
-           </p>
-           {/* ✅ БЫЛО button — СТАЛО Link на /quiz */}
-           <Link
-  href={`/quiz?product=${encodeURIComponent(title)}&source=product-page`}
-  className="inline-flex items-center justify-center bg-[#FBBF24] text-black font-bold text-lg py-4 px-12 rounded-lg hover:bg-[#F59E0B] hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 shadow-md"
->
-  Оставить заявку
-</Link>
-
+        <section className="rounded-xl border-2 border-dashed border-[#FBBF24] bg-yellow-50 py-16 text-center">
+          <h3 className="mb-4 text-3xl font-bold text-[#0B1220]">
+            Есть вопросы или нужен расчет?
+          </h3>
+          <p className="mx-auto mb-8 max-w-lg text-lg leading-relaxed text-gray-700">
+            Оставьте заявку, и инженер свяжется с вами для уточнения деталей проекта и
+            подбора конфигурации.
+          </p>
+          <Link
+            href={`/quiz?product=${encodeURIComponent(title)}&source=product-page`}
+            className="inline-flex items-center justify-center rounded-lg bg-[#FBBF24] px-12 py-4 text-lg font-bold text-black shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#F59E0B] hover:shadow-lg"
+          >
+            Оставить заявку
+          </Link>
         </section>
-
       </div>
     </main>
   );

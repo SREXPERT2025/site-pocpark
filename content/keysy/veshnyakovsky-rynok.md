@@ -1,6 +1,6 @@
 ---
-title: Автоматизация парковки Вешняковского рынка
-description: "Комплексное внедрение РОСПАРК: Заполнить."
+title: Вешняковский рынок
+description: "Комплексная автоматизация парковки: Заполнить."
 coverImage: /images/cases/veshnyakovsky-rynok-cover.jpg
 category: Торговый центр
 tags:

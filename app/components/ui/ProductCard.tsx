@@ -48,14 +48,14 @@ export default function ProductCard({
         'group block overflow-hidden rounded-2xl border border-border-primary bg-bg-primary shadow-sm transition hover:shadow-md'
       )}
     >
-      <div className="relative h-44 w-full bg-bg-secondary">
+      <div className="relative aspect-[4/5] w-full overflow-hidden bg-bg-secondary p-4">
         {coverImage ? (
           <Image
             src={coverImage}
             alt={title}
             fill
-            className="object-cover"
-            sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
+            className="object-contain object-center transition-transform duration-300 group-hover:scale-[1.02]"
+            sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-xs text-text-secondary">

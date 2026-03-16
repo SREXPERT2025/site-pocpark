@@ -1,6 +1,6 @@
 ---
-title: Автоматизация парковки W-Plaza
-description: "Комплексное внедрение РОСПАРК: Заполнить."
+title: БЦ «W-Plaza»
+description: "Комплексная автоматизация парковки: Заполнить."
 coverImage: /images/cases/w-plaza-cover.jpg
 category: Бизнес центр
 tags:

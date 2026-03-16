@@ -14,9 +14,10 @@ priceFrom: 0
 currency: "RUB"
 availability: "InStock"
 condition: "NewCondition"
-coverImage: "/images/equipment/rv3-1.jpg"
+coverImage: "/images/equipment/infotab1.jpg"
 gallery:
-  - "/images/equipment/rv3-1.jpg"
+  - "/images/equipment/infotab1.jpg"
+  - "/images/equipment/infotab2.jpg"
 specifications:
   - name: "Питание"
     value: "24 В DC (часто) / 220 В (опционально)"
