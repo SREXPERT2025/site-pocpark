@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -54,8 +53,17 @@ export default function Footer() {
 
         <div>
           <div className="mb-4 font-medium">Контакты</div>
+
           <p className="text-sm text-neutral-600">
-            info@rospark.ru
+            <a href="mailto:is@srexpert.su" className="hover:underline">
+              is@srexpert.su
+            </a>
+          </p>
+
+          <p className="mt-2 text-sm text-neutral-600">
+            <a href="tel:+74993212040" className="hover:underline">
+              +7 (499) 321-20-40
+            </a>
           </p>
         </div>
       </div>

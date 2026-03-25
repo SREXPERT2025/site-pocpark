@@ -9,8 +9,6 @@ export const metadata: Metadata = {
 }
 
 export default function ContactsPage() {
-  const telegramUrl = process.env.NEXT_PUBLIC_TELEGRAM_CONTACT_URL;
-
   return (
     <main className="min-h-screen bg-white">
       {/* HERO */}
@@ -37,16 +35,21 @@ export default function ContactsPage() {
             <ul className="space-y-4 text-slate-700">
               <li>
                 <strong>Телефон:</strong>{' '}
-                {telegramUrl ? (
-  <a
-    href={telegramUrl}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="text-blue-600 hover:underline"
-  >
-    +7 (XXX) XXX-XX-XX
-  </a>
-) : null}
+                <a
+                  href="tel:+74993212040"
+                  className="text-blue-600 hover:underline"
+                >
+                  +7 499 321-20-40
+                </a>
+              </li>
+              <li>
+                <strong>Эл. почта:</strong>{' '}
+                <a
+                  href="mailto:is@srexpert.su"
+                  className="text-blue-600 hover:underline"
+                >
+                  is@srexpert.su
+                </a>
               </li>
             </ul>
 
@@ -71,13 +74,15 @@ export default function ContactsPage() {
                 <strong>Юридическое лицо:</strong> ООО «СР Эксперт»
               </li>
               <li>
-                <strong>ИНН / КПП:</strong> (указать при необходимости)
+                <strong>ИНН:</strong> 5040100635
               </li>
               <li>
-                <strong>ОГРН:</strong> (указать при необходимости)
+                <strong>ОГРН:</strong> 1105040005124
               </li>
               <li>
-                <strong>Адрес:</strong> Российская Федерация
+                <strong>Адрес:</strong> 123298, Россия, г. Москва,<br />
+                ул. Народного ополчения,<br />
+                д.38к3, офис 117
               </li>
             </ul>
 
