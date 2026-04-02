@@ -10,13 +10,14 @@ export default function Solution() {
             </h2>
 
             <p className="text-lg text-slate-600 mb-8">
-              РОСПАРК — это единая система контроля доступа, событий и действий персонала.
-              Каждый проезд фиксируется, каждое действие имеет автора и временную метку.
+              РОСПАРК — это единая система контроля доступа, событий и действий
+              персонала. Каждый проезд фиксируется, каждое действие имеет автора
+              и временную метку.
             </p>
 
             <div className="space-y-6">
               <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold shrink-0">
                   1
                 </div>
                 <div>
@@ -24,14 +25,15 @@ export default function Solution() {
                     Фото- и событийная фиксация каждого проезда
                   </h3>
                   <p className="text-slate-600">
-                    Номер автомобиля, время, направление, камера, сценарий допуска —
-                    всё сохраняется в журнале событий и доступно для разбора инцидентов.
+                    Номер автомобиля, время, направление, камера, сценарий
+                    допуска — всё сохраняется в журнале событий и доступно для
+                    разбора инцидентов.
                   </p>
                 </div>
               </div>
 
               <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold shrink-0">
                   2
                 </div>
                 <div>
@@ -39,14 +41,15 @@ export default function Solution() {
                     Чёрные списки и правила блокировок
                   </h3>
                   <p className="text-slate-600">
-                    Автоматическая блокировка нарушителей, автомобилей с долгами,
-                    несанкционированных номеров и попыток повторного проезда.
+                    Автоматическая блокировка нарушителей, автомобилей с
+                    долгами, несанкционированных номеров и попыток повторного
+                    проезда.
                   </p>
                 </div>
               </div>
 
               <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold shrink-0">
                   3
                 </div>
                 <div>
@@ -54,14 +57,15 @@ export default function Solution() {
                     Контроль действий персонала
                   </h3>
                   <p className="text-slate-600">
-                    Любое ручное вмешательство (открытие, разблокировка, изменение правил)
-                    фиксируется: кто, когда и с какого рабочего места.
+                    Любое ручное вмешательство (открытие, разблокировка,
+                    изменение правил) фиксируется: кто, когда и с какого
+                    рабочего места.
                   </p>
                 </div>
               </div>
 
               <div className="flex gap-4">
-                <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold shrink-0">
                   4
                 </div>
                 <div>
@@ -69,24 +73,28 @@ export default function Solution() {
                     Ролевая модель доступа
                   </h3>
                   <p className="text-slate-600">
-                    Разделение прав: СБ, охрана, администратор, инженер, управляющий.
-                    Каждый видит только то, что положено по регламенту.
+                    Разделение прав: СБ, охрана, администратор, инженер,
+                    управляющий. Каждый видит только то, что положено по
+                    регламенту.
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Визуальный плейсхолдер */}
-          <div className="bg-slate-100 border border-slate-200 rounded-2xl p-8 min-h-[420px] flex items-center justify-center text-center">
-            <div>
-              <p className="text-slate-400 font-medium">
-                [Скриншот журнала событий СБ]
-              </p>
-              <p className="text-sm text-slate-400 mt-2">
-                Проезды · Фото · Действия операторов · Фильтры
-              </p>
+          {/* Визуальный блок */}
+          <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 min-h-[420px] flex flex-col justify-center">
+            <div className="w-full overflow-hidden rounded-xl bg-white shadow-sm">
+              <img
+                src="/images/solutions/security-events-dashboard.jpeg"
+                alt="Скриншот журнала событий СБ"
+                className="block w-full h-auto object-cover"
+              />
             </div>
+
+            <p className="text-sm text-slate-400 mt-3 text-center">
+              Проезды · Фото · Действия операторов · Фильтры
+            </p>
           </div>
         </div>
       </div>
