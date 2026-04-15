@@ -75,7 +75,7 @@ export default function Solution() {
           <div className="bg-slate-100 rounded-2xl p-4 border border-slate-200 min-h-[420px] flex flex-col justify-center">
             <div className="w-full overflow-hidden rounded-xl bg-white shadow-sm">
               <img
-                src="/images/solutions/management-dashboard.jpeg"
+                src="/images/solutions/management-dashboard.jpg"
                 alt="Дашборд РОСПАРК для руководителей"
                 className="block w-full h-auto object-cover"
               />

@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 
@@ -116,14 +115,9 @@ function SectionCarousel({
       <div className="relative">
         <div className="relative overflow-hidden rounded-2xl bg-slate-50">
           <div className="relative aspect-[16/9] w-full min-h-[380px] md:min-h-[500px]">
-            <Image
-              src={`/images/vozmozhnosti/${current.imageSrc}`}
-              alt={current.title}
-              fill
-              className="object-cover rounded-xl"
-              onError={(e) => {
-                e.currentTarget.src = '/placeholder.jpg';
-              }}
+            <PlaceholderImage
+              title={current.imageSrc}
+              color={current.placeholderColor}
             />
           </div>
         </div>
@@ -194,49 +188,49 @@ export default function FeaturesShowcase() {
           {
             id: 'tariffs-constructor',
             title: 'Тарифы и конструктор. Короткий ответ: постоянные клиенты въезжают и выезжают автоматически — по номеру автомобиля, RFID-метке или BLE — а система сама применяет правила доступа, лимиты и формирует отчётность.',
-            imageSrc: 'vozmozhnosti-razovye-tarify-i-konstruktor.jpg',
+            imageSrc: 'vozmozhnosti-razovye-tarify-i-konstruktor.webp',
             placeholderColor: '#dbeafe',
           },
           {
             id: 'entry-by-card-or-ticket',
             title: 'Въезд по карте или билету',
-            imageSrc: 'vozmozhnosti-razovye-vezd-po-karte-ili-biletu.jpg',
+            imageSrc: 'vozmozhnosti-razovye-vezd-po-karte-ili-biletu.webp',
             placeholderColor: '#fde68a',
           },
           {
             id: 'fast-pass-without-cards',
             title: 'Быстрый проезд без карт',
-            imageSrc: 'vozmozhnosti-razovye-bystryi-proezd-bez-kart.jpg',
+            imageSrc: 'vozmozhnosti-razovye-bystryi-proezd-bez-kart.webp',
             placeholderColor: '#c7d2fe',
           },
           {
             id: 'custom-identifier',
             title: 'Свой идентификатор',
-            imageSrc: 'vozmozhnosti-razovye-svoi-identifikator.jpg',
+            imageSrc: 'vozmozhnosti-razovye-svoi-identifikator.webp',
             placeholderColor: '#fbcfe8',
           },
           {
             id: 'qr-invitations',
             title: 'QR-приглашения',
-            imageSrc: 'vozmozhnosti-razovye-qr-priglasheniya.jpg',
+            imageSrc: 'vozmozhnosti-razovye-qr-priglasheniya.webp',
             placeholderColor: '#bbf7d0',
           },
           {
             id: 'discount-by-receipt',
             title: 'Предоставление скидок по чеку',
-            imageSrc: 'vozmozhnosti-razovye-skidki-po-cheku.jpg',
+            imageSrc: 'vozmozhnosti-razovye-skidki-po-cheku.webp',
             placeholderColor: '#fed7aa',
           },
           {
             id: 'payment-by-tenant',
             title: 'Оплата за счет арендатора',
-            imageSrc: 'vozmozhnosti-razovye-oplata-za-schet-arendatora.jpg',
+            imageSrc: 'vozmozhnosti-razovye-oplata-za-schet-arendatora.webp',
             placeholderColor: '#ddd6fe',
           },
           {
             id: 'photo-fixation',
             title: 'Фотофиксация',
-            imageSrc: 'vozmozhnosti-razovye-fotofiksaciya.jpg',
+            imageSrc: 'vozmozhnosti-razovye-fotofiksaciya.webp',
             placeholderColor: '#bfdbfe',
           },
         ],
@@ -248,25 +242,25 @@ export default function FeaturesShowcase() {
           {
             id: 'resident-card',
             title: 'Проезд по карте постоянника',
-            imageSrc: 'vozmozhnosti-postoyannye-proezd-po-karte-postoyannika.jpg',
+            imageSrc: 'vozmozhnosti-postoyannye-proezd-po-karte-postoyannika.webp',
             placeholderColor: '#e9d5ff',
           },
           {
             id: 'video-recognition',
             title: 'Видеораспознавание',
-            imageSrc: 'vozmozhnosti-postoyannye-videoraspaznavanie.jpg',
+            imageSrc: 'vozmozhnosti-postoyannye-videoraspaznavanie.webp',
             placeholderColor: '#bae6fd',
           },
           {
             id: 'rfid',
             title: 'RFID',
-            imageSrc: 'vozmozhnosti-postoyannye-rfid.png',
+            imageSrc: 'vozmozhnosti-postoyannye-rfid.webp',
             placeholderColor: '#fecaca',
           },
           {
             id: 'tenant-space-limits',
             title: 'Лимиты мест на арендатора',
-            imageSrc: 'vozmozhnosti-postoyannye-limity-mest-na-arendatora.png',
+            imageSrc: 'vozmozhnosti-postoyannye-limity-mest-na-arendatora.webp',
             placeholderColor: '#d9f99d',
           },
         ],
@@ -278,37 +272,37 @@ export default function FeaturesShowcase() {
           {
             id: 'payment-at-exit',
             title: 'Оплата на выезде',
-            imageSrc: 'vozmozhnosti-oplata-oplata-na-vyezde.jpg',
+            imageSrc: 'vozmozhnosti-oplata-oplata-na-vyezde.webp',
             placeholderColor: '#fde68a',
           },
           {
             id: 'online-payment',
             title: 'Онлайн оплата',
-            imageSrc: 'vozmozhnosti-oplata-onlain-oplata.jpg',
+            imageSrc: 'vozmozhnosti-oplata-onlain-oplata.webp',
             placeholderColor: '#bfdbfe',
           },
           {
             id: 'automatic-shift-closing',
             title: 'Автоматическое закрытие смены',
-            imageSrc: 'vozmozhnosti-oplata-avtomaticheskoe-zakrytie-smeny.jpg',
+            imageSrc: 'vozmozhnosti-oplata-avtomaticheskoe-zakrytie-smeny.webp',
             placeholderColor: '#fecdd3',
           },
           {
             id: 'summary-report',
             title: 'Сводный отчет',
-            imageSrc: 'vozmozhnosti-oplata-svodnyi-otchet.jpg',
+            imageSrc: 'vozmozhnosti-oplata-svodnyi-otchet.webp',
             placeholderColor: '#c4b5fd',
           },
           {
             id: 'financial-report',
             title: 'Финансовый отчет',
-            imageSrc: 'vozmozhnosti-oplata-finansovyi-otchet.jpg',
+            imageSrc: 'vozmozhnosti-oplata-finansovyi-otchet.webp',
             placeholderColor: '#bbf7d0',
           },
           {
             id: 'event-log',
             title: 'Журнал событий',
-            imageSrc: 'vozmozhnosti-oplata-zhurnal-sobytii.jpg',
+            imageSrc: 'vozmozhnosti-oplata-zhurnal-sobytii.webp',
             placeholderColor: '#fed7aa',
           },
         ],

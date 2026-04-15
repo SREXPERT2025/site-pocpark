@@ -100,6 +100,11 @@ export const navigation: NavItem[] = [
             href: '/vozmozhnosti/gostevie-klienti',
             description: 'Заявки, временный доступ, подтверждение, безопасность',
           },
+          {
+            label: 'Все возможности',
+            href: '/vozmozhnosti',
+            description: 'Описание всех возможностей',
+          },
         ],
       },
     ],
