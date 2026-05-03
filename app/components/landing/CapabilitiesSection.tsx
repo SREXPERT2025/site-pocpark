@@ -96,12 +96,12 @@ function cn(...classes: Array<string | false | null | undefined>) {
 
 function CapabilityCardView({ card }: { card: CapabilityCard }) {
   return (
-    <div className="rounded-[30px] border border-[#EFEFEF] bg-white shadow-[0_14px_40px_rgba(15,23,42,0.08)] p-8">
-      <h3 className="text-[24px] font-bold tracking-tight text-[#0B1020]">
+    <div className="min-w-0 overflow-hidden rounded-[24px] border border-[#EFEFEF] bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.08)] sm:rounded-[30px] sm:p-8">
+      <h3 className="break-words text-[22px] font-bold leading-tight tracking-tight text-[#0B1020] sm:text-[24px]">
         {card.title}
       </h3>
 
-      <p className="mt-3 text-[16px] leading-relaxed text-[#4B5563]">
+      <p className="mt-3 break-words text-[16px] leading-relaxed text-[#4B5563]">
         {card.description}
       </p>
 
@@ -131,7 +131,7 @@ export default function CapabilitiesSection() {
   return (
     <section className="mt-section">
       <div className="text-center">
-        <h2 className="text-[36px] font-extrabold tracking-tight text-[#0B1020]">
+        <h2 className="mx-auto max-w-[820px] text-[32px] font-extrabold leading-tight tracking-tight text-[#0B1020] sm:text-[36px]">
           Архитектура управления парковочным активом
         </h2>
 
@@ -141,8 +141,8 @@ export default function CapabilitiesSection() {
         </p>
 
         {/* Tabs */}
-        <div className="mx-auto mt-8 w-full max-w-[860px] rounded-[20px] bg-[#F5F5F7] p-[2px]">
-          <div className="flex items-center gap-[2px]">
+        <div className="mx-auto mt-8 w-full max-w-[860px] overflow-hidden rounded-[20px] bg-[#F5F5F7] p-[2px]">
+          <div className="grid grid-cols-1 gap-[2px] sm:grid-cols-3">
             {GROUPS.map((group) => {
               const isActive = group.id === active;
               return (
@@ -151,7 +151,7 @@ export default function CapabilitiesSection() {
                   type="button"
                   onClick={() => setActive(group.id)}
                   className={cn(
-                    "h-[40px] flex-1 whitespace-nowrap rounded-[20px] px-4 text-[16px] transition-colors",
+                    "min-h-[40px] min-w-0 rounded-[20px] px-4 py-2 text-[15px] leading-tight transition-colors sm:text-[16px]",
                     isActive
                       ? "bg-[#1A1A1A] text-white"
                       : "text-[#242424]/70 hover:text-[#242424]"
@@ -174,7 +174,7 @@ export default function CapabilitiesSection() {
         </div>
       </div>
 
-      <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-12 grid min-w-0 grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {activeGroup.cards.map((card) => (
           <CapabilityCardView key={card.title} card={card} />
         ))}
