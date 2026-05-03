@@ -48,7 +48,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ru" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-      <body className="min-h-screen bg-bg-primary text-text-primary">
+      <body className="min-h-screen overflow-x-hidden bg-bg-primary text-text-primary">
         {/* Header всегда виден */}
         <Header />
 
