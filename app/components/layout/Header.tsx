@@ -23,46 +23,51 @@ export default function Header() {
         {/* TOP BAR */}
         <div className="bg-black text-white">
           <div className="mx-auto max-w-[1088px] px-4 sm:px-6">
-            <div className="h-14 flex items-center justify-between">
-              {/* LOGO */}
-              <Link href="/" className="inline-flex items-center">
-  <Image
-    src="/logo.svg"
-    alt="РОСПАРК"
-    width={180}
-    height={40}
-    priority
-    className="h-[20px] w-auto object-contain"
-  />
-</Link>
+            <div className="flex min-h-[66px] flex-col justify-center gap-2 py-3 lg:h-14 lg:min-h-0 lg:flex-row lg:items-center lg:justify-between lg:gap-0 lg:py-0">
+              <div className="flex min-w-0 items-center justify-between gap-3">
+                {/* LOGO */}
+                <Link href="/" className="inline-flex min-w-0 items-center">
+                  <Image
+                    src="/logo.svg"
+                    alt="РОСПАРК"
+                    width={180}
+                    height={40}
+                    priority
+                    className="h-[20px] w-auto max-w-[180px] object-contain"
+                    style={{ width: "auto" }}
+                  />
+                </Link>
 
+                {/* MOBILE TOGGLE */}
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen(true)}
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-white/20 bg-white/5 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary lg:hidden"
+                  aria-label="Открыть меню"
+                >
+                  ☰
+                </button>
+              </div>
+
+              {/* MOBILE PHONE */}
+              <a
+                href="tel:+74993212040"
+                className="block text-[15px] font-medium leading-none text-white/90 lg:hidden"
+              >
+                +7 (499) 321-20-40
+              </a>
 
               {/* RIGHT SIDE (desktop) */}
-              <div className="hidden lg:flex items-center gap-6">
+              <div className="hidden items-center gap-6 lg:flex">
                 <a href="tel:+74993212040" className="text-sm text-white/90 hover:text-white">
                   +7 (499) 321-20-40
                 </a>
                 <Link
                   href="/quiz?source=kp"
-                  className="h-10 inline-flex items-center justify-center rounded-lg bg-accent-primary px-5 text-base font-medium text-white hover:bg-state-hover transition"
+                  className="inline-flex h-10 items-center justify-center rounded-lg bg-accent-primary px-5 text-base font-medium text-white transition hover:bg-state-hover"
                 >
                   Получить коммерческое предложение
                 </Link>
-              </div>
-
-              {/* MOBILE TOGGLE */}
-              <div className="flex items-center gap-3 lg:hidden">
-                <a href="tel:+74993212040" className="text-sm text-white/90">
-                  +7 (499) 321-20-40
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setMobileOpen(true)}
-                  className="inline-flex items-center justify-center rounded-md border border-white/20 bg-white/5 p-2 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-                  aria-label="Открыть меню"
-                >
-                  ☰
-                </button>
               </div>
             </div>
           </div>
@@ -89,7 +94,7 @@ export default function Header() {
       </header>
 
       {/* ОТСТУП ПОД FIXED HEADER */}
-      <div className="h-20" />
+      <div className="h-[100px] lg:h-[88px]" />
 
       <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} navItems={navigation} />
     </>
