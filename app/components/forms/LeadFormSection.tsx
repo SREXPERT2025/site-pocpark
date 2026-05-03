@@ -24,16 +24,16 @@ export default function LeadFormSection(props: LeadFormSectionProps) {
   } = props;
 
   return (
-    <section className={`bg-[#F7F8FA] py-24 ${className ?? ""}`}>
-      <div className="mx-auto max-w-[980px] px-6">
+    <section className={`overflow-hidden bg-[#F7F8FA] py-14 sm:py-20 md:py-24 ${className ?? ""}`}>
+      <div className="mx-auto w-full max-w-[980px] px-4 sm:px-6">
 
         {/* Заголовок */}
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 md:text-4xl">
+          <h2 className="break-words text-[30px] font-extrabold leading-[1.15] tracking-tight text-slate-900 md:text-4xl">
             {title}
           </h2>
 
-          <p className="mt-5 text-lg text-slate-600">
+          <p className="mt-5 break-words text-base leading-relaxed text-slate-600 sm:text-lg">
             {description}
           </p>
 
@@ -46,7 +46,7 @@ export default function LeadFormSection(props: LeadFormSectionProps) {
         </div>
 
         {/* Форма */}
-        <div className="mt-12 rounded-3xl bg-white p-8 shadow-[0_25px_60px_rgba(15,23,42,0.08)] md:p-12">
+        <div className="mt-10 w-full max-w-full overflow-hidden rounded-3xl bg-white p-4 shadow-[0_25px_60px_rgba(15,23,42,0.08)] sm:p-6 md:p-12">
           <LeadForm
             sourceSection={sourceSection}
             sourcePage={sourcePage}

@@ -138,20 +138,20 @@ export default function LeadForm(props: LeadFormProps) {
       onSubmit={handleSubmit}
       className={
         className ||
-        `rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] ${
-          compact ? "p-6" : "p-8"
+        `w-full max-w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] ${
+          compact ? "p-4 sm:p-6" : "p-5 sm:p-8"
         }`
       }
     >
-      <div className="grid gap-6">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid min-w-0 gap-5 sm:gap-6">
+        <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
           <div className="grid gap-2">
             <label className="text-sm font-semibold text-slate-900">Имя</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Андрей"
-              className="h-12 rounded-xl border border-slate-200 px-4 text-slate-900 outline-none transition focus:border-slate-400"
+              className="h-12 w-full min-w-0 rounded-xl border border-slate-200 px-4 text-base text-slate-900 outline-none transition focus:border-slate-400"
               autoComplete="name"
             />
           </div>
@@ -162,7 +162,7 @@ export default function LeadForm(props: LeadFormProps) {
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+7 999 123-45-67"
-              className="h-12 rounded-xl border border-slate-200 px-4 text-slate-900 outline-none transition focus:border-slate-400"
+              className="h-12 w-full min-w-0 rounded-xl border border-slate-200 px-4 text-base text-slate-900 outline-none transition focus:border-slate-400"
               autoComplete="tel"
             />
           </div>
@@ -175,7 +175,7 @@ export default function LeadForm(props: LeadFormProps) {
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder='ООО "..."'
-                  className="h-12 rounded-xl border border-slate-200 px-4 text-slate-900 outline-none transition focus:border-slate-400"
+                  className="h-12 w-full min-w-0 rounded-xl border border-slate-200 px-4 text-base text-slate-900 outline-none transition focus:border-slate-400"
                 />
               </div>
 
@@ -185,7 +185,7 @@ export default function LeadForm(props: LeadFormProps) {
                   value={objectType}
                   onChange={(e) => setObjectType(e.target.value)}
                   placeholder="ТЦ / БЦ / ЖК / Паркинг"
-                  className="h-12 rounded-xl border border-slate-200 px-4 text-slate-900 outline-none transition focus:border-slate-400"
+                  className="h-12 w-full min-w-0 rounded-xl border border-slate-200 px-4 text-base text-slate-900 outline-none transition focus:border-slate-400"
                 />
               </div>
             </>
@@ -198,25 +198,25 @@ export default function LeadForm(props: LeadFormProps) {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Коротко опишите объект и задачу (кол-во въездов, типы клиентов, пожелания)"
-            className="min-h-[120px] rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition focus:border-slate-400"
+            className="min-h-[120px] w-full min-w-0 resize-y rounded-xl border border-slate-200 px-4 py-3 text-base text-slate-900 outline-none transition focus:border-slate-400"
           />
         </div>
 
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <label className="flex items-center gap-3 text-sm text-slate-700">
+          <label className="flex min-w-0 items-start gap-3 text-sm leading-6 text-slate-700">
             <input
               type="checkbox"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300"
+              className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300"
             />
-            <span>Согласен(на) на обработку персональных данных и связь со мной по заявке.</span>
+            <span className="min-w-0 break-words">Согласен(на) на обработку персональных данных и связь со мной по заявке.</span>
           </label>
 
           <button
             type="submit"
             disabled={!canSubmit || isSubmitting}
-            className="inline-flex h-12 items-center justify-center rounded-xl bg-blue-600 px-6 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-center text-sm font-semibold leading-tight text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
           >
             {isSubmitting ? "Отправляем…" : submitLabel}
           </button>

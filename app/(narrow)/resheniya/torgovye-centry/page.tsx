@@ -49,7 +49,7 @@ export default function TorgovyeCentresPage() {
         ];
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen min-w-0 overflow-hidden bg-white">
       <FaqJsonLd items={faq} />
       <BreadcrumbJsonLd
         items={[
@@ -60,25 +60,25 @@ export default function TorgovyeCentresPage() {
 
       {/* HERO */}
       <section className="pt-32 pb-16 bg-slate-50 border-b">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl font-bold leading-tight text-slate-900">
+        <div className="container mx-auto max-w-6xl min-w-0 px-4">
+          <div className="max-w-3xl min-w-0">
+            <h1 className="break-words text-3xl font-bold leading-tight text-slate-900 sm:text-4xl md:text-5xl">
               {heroTitle}
             </h1>
-            <p className="mt-5 text-lg text-slate-700">
+            <p className="mt-5 break-words text-lg text-slate-700">
               {heroDescription}
             </p>
 
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <div className="mt-8 flex min-w-0 flex-col gap-3 sm:flex-row">
               <Link
                 href="/quiz?source=request"
-                className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-8 py-4 font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
+                className="inline-flex min-w-0 items-center justify-center rounded-xl bg-blue-600 px-6 py-4 text-center font-semibold leading-snug text-white shadow-sm transition-colors hover:bg-blue-700 sm:px-8"
               >
                 Запросить расчёт
               </Link>
               <Link
                 href="/quiz?source=consult"
-                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-8 py-4 font-semibold text-slate-900 hover:bg-slate-50 transition-colors"
+                className="inline-flex min-w-0 items-center justify-center rounded-xl border border-slate-300 bg-white px-6 py-4 text-center font-semibold leading-snug text-slate-900 transition-colors hover:bg-slate-50 sm:px-8"
               >
                 Получить консультацию
               </Link>
@@ -105,20 +105,20 @@ export default function TorgovyeCentresPage() {
       />
 
       <section className="py-12">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Типовые задачи торгового центра</h2>
+        <div className="container mx-auto max-w-6xl min-w-0 px-4">
+          <h2 className="break-words text-2xl font-bold text-slate-900 md:text-3xl">Типовые задачи торгового центра</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900">Рост выручки и контроль потерь</h3>
-              <p className="mt-2 text-slate-700">Прозрачные правила, аудит ручных вмешательств и управляемая монетизация парковки.</p>
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="break-words text-lg font-semibold text-slate-900">Рост выручки и контроль потерь</h3>
+              <p className="mt-2 break-words text-slate-700">Прозрачные правила, аудит ручных вмешательств и управляемая монетизация парковки.</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900">Скорость и отсутствие очередей</h3>
-              <p className="mt-2 text-slate-700">Быстрый проезд постоянных клиентов и гостей, гибкая логика въезда/выезда.</p>
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="break-words text-lg font-semibold text-slate-900">Скорость и отсутствие очередей</h3>
+              <p className="mt-2 break-words text-slate-700">Быстрый проезд постоянных клиентов и гостей, гибкая логика въезда/выезда.</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900">Комфорт для покупателей</h3>
-              <p className="mt-2 text-slate-700">Гостевые сценарии, онлайн-оплата, понятные уведомления и поддержка персонала.</p>
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="break-words text-lg font-semibold text-slate-900">Комфорт для покупателей</h3>
+              <p className="mt-2 break-words text-slate-700">Гостевые сценарии, онлайн-оплата, понятные уведомления и поддержка персонала.</p>
             </div>
           </div>
           <p className="mt-6 text-sm text-slate-500">Для ТЦ критичны пики нагрузки: закладываем сценарии «час пик» и режимы деградации.</p>
@@ -126,20 +126,20 @@ export default function TorgovyeCentresPage() {
       </section>
 
       <section className="py-12">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-slate-900">Что входит в решение</h2>
+        <div className="container mx-auto max-w-6xl min-w-0 px-4">
+          <h2 className="break-words text-2xl font-bold text-slate-900 md:text-3xl">Что входит в решение</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900">Въезд/выезд и идентификация</h3>
-              <p className="mt-2 text-slate-700">Номера (ANPR) и/или идентификаторы, правила доступа по типам клиентов.</p>
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="break-words text-lg font-semibold text-slate-900">Въезд/выезд и идентификация</h3>
+              <p className="mt-2 break-words text-slate-700">Номера (ANPR) и/или идентификаторы, правила доступа по типам клиентов.</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900">Оплата и тарифы</h3>
-              <p className="mt-2 text-slate-700">Гибкая тарификация, льготы, исключения, онлайн-оплата при необходимости.</p>
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="break-words text-lg font-semibold text-slate-900">Оплата и тарифы</h3>
+              <p className="mt-2 break-words text-slate-700">Гибкая тарификация, льготы, исключения, онлайн-оплата при необходимости.</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900">Отчёты и аналитика</h3>
-              <p className="mt-2 text-slate-700">Выручка, загрузка, инциденты, эффективность льгот и правил.</p>
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="break-words text-lg font-semibold text-slate-900">Отчёты и аналитика</h3>
+              <p className="mt-2 break-words text-slate-700">Выручка, загрузка, инциденты, эффективность льгот и правил.</p>
             </div>
 
           </div>
@@ -147,13 +147,13 @@ export default function TorgovyeCentresPage() {
       </section>
 
       <section className="py-16 bg-blue-600 text-white">
-        <div className="container mx-auto px-4 max-w-6xl">
+        <div className="container mx-auto max-w-6xl min-w-0 px-4">
           <div className="rounded-2xl bg-blue-700/30 p-10">
             <h2 className="text-3xl md:text-4xl font-bold">Запросите расчёт для ТЦ</h2>
             <p className="mt-4 text-blue-100 max-w-3xl">
               Подскажем оптимальную схему для ваших въездов/выездов, рассчитаем бюджет и окупаемость, дадим план внедрения.
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+            <div className="mt-8 flex min-w-0 flex-col gap-3 sm:flex-row">
               <Link href="/quiz" className="inline-flex items-center justify-center rounded-xl bg-white px-8 py-4 font-semibold text-blue-700 shadow-sm hover:bg-blue-50 transition-colors">
                 Запросить расчёт
               </Link>
@@ -175,7 +175,7 @@ export default function TorgovyeCentresPage() {
 
       {/* Навигация */}
       <section className="pb-16">
-        <div className="container mx-auto px-4 max-w-6xl">
+        <div className="container mx-auto max-w-6xl min-w-0 px-4">
           <Link href="/resheniya" className="text-blue-600 font-medium hover:underline">
             ← Все решения РОСПАРК
           </Link>

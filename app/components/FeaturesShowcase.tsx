@@ -103,19 +103,19 @@ function SectionCarousel({
 
   return (
     <section
-      className="mx-auto w-full max-w-[976px] rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8"
+      className="mx-auto w-full max-w-[976px] overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 md:p-8"
       aria-labelledby={`${section.id}-title`}
     >
       <h2
         id={`${section.id}-title`}
-        className="mb-6 text-2xl font-semibold leading-tight text-slate-900 md:text-[30px]"
+        className="mb-6 max-w-full break-words text-[28px] font-semibold leading-[1.15] text-slate-900 sm:text-2xl md:text-[30px]"
       >
         {section.heading}
       </h2>
 
       <div className="relative">
         <div className="relative overflow-hidden rounded-2xl bg-slate-50">
-          <div className="relative aspect-[16/9] w-full min-h-[380px] md:min-h-[500px]">
+          <div className="relative aspect-[4/5] w-full min-h-[300px] sm:aspect-[16/9] sm:min-h-[380px] md:min-h-[500px]">
             <Image
               src={`/images/vozmozhnosti/${current.imageSrc}`}
               alt={current.title}
@@ -148,7 +148,7 @@ function SectionCarousel({
       </div>
 
       <div className="mt-5">
-        <p className="text-base font-medium leading-7 text-slate-800 md:text-[20px]">
+        <p className="max-w-full overflow-hidden break-words text-base font-medium leading-7 text-slate-800 md:text-[20px]">
           {current.title}
         </p>
       </div>
@@ -318,8 +318,8 @@ export default function FeaturesShowcase() {
   );
 
   return (
-    <main className="bg-slate-50 py-14 md:py-20">
-      <div className="mx-auto flex max-w-[1100px] flex-col gap-8 px-4 sm:px-6">
+    <main className="overflow-hidden bg-slate-50 py-14 md:py-20">
+      <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-8 overflow-hidden px-4 sm:px-6">
         {sections.map((section) => (
           <SectionCarousel key={section.id} section={section} />
         ))}

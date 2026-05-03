@@ -29,7 +29,7 @@ export default function MobileMenu({
   return (
     <div
       className={clsx(
-        'fixed inset-0 z-[1200] transition',
+        'fixed inset-0 z-[1200] overflow-hidden transition',
         open ? 'pointer-events-auto' : 'pointer-events-none'
       )}
       aria-hidden={!open}
@@ -44,7 +44,7 @@ export default function MobileMenu({
 
       <div
         className={clsx(
-          'absolute right-0 top-0 flex h-full w-80 max-w-[85vw] flex-col overflow-hidden border-l border-border-primary bg-bg-primary',
+          'absolute right-0 top-0 flex h-full w-80 max-w-[85vw] flex-col overflow-hidden border-l border-border-primary bg-bg-primary p-6',
           'transition-transform',
           open ? 'translate-x-0' : 'translate-x-full'
         )}
@@ -52,7 +52,7 @@ export default function MobileMenu({
         aria-modal="true"
         aria-label="Меню"
       >
-        <div className="flex shrink-0 items-center justify-between px-6 pt-6">
+        <div className="flex items-center justify-between">
           <div className="text-sm font-semibold text-text-primary">Меню</div>
           <button
             onClick={onClose}
@@ -63,8 +63,8 @@ export default function MobileMenu({
           </button>
         </div>
 
-        <nav className="mt-6 flex-1 overflow-y-auto px-6 pb-8">
-          <div className="space-y-6">
+        <nav className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+          <div className="space-y-6 pb-6">
             {navItems.map((item) => (
               <div key={item.label}>
                 <div className="flex items-center justify-between">
@@ -94,11 +94,11 @@ export default function MobileMenu({
                               <Link
                                 href={link.href}
                                 onClick={onClose}
-                                className="block rounded-md px-3 py-2 text-sm text-text-primary hover:bg-bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                                className="block min-w-0 rounded-md px-3 py-2 text-sm text-text-primary hover:bg-bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
                               >
-                                <div className="font-medium">{link.label}</div>
+                                <div className="break-words font-medium">{link.label}</div>
                                 {link.description ? (
-                                  <div className="mt-0.5 text-xs text-text-secondary">{link.description}</div>
+                                  <div className="mt-0.5 break-words text-xs text-text-secondary">{link.description}</div>
                                 ) : null}
                               </Link>
                             </li>

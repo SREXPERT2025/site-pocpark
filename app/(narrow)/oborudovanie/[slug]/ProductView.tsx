@@ -34,7 +34,7 @@ export default function ProductView({ data, content }: { data: any; content: str
     <main className="bg-white pb-20">
       {/* ================= HERO + ANSWER FIRST (ЕДИНЫЙ ЭКРАН) ================= */}
       <section className="border-b border-[#E6E6E6] bg-[#F9FAFB] pb-6 pt-12">
-        <div className="mx-auto max-w-[1100px] px-6">
+        <div className="mx-auto max-w-[1100px] min-w-0 px-4 sm:px-6">
           {/* 1. ЗАГОЛОВОК И CTA */}
           <div className="mb-8 text-center md:text-left">
             <h1 className="mb-6 text-[24px] font-bold leading-tight text-[#0B1220]">
@@ -42,14 +42,14 @@ export default function ProductView({ data, content }: { data: any; content: str
             </h1>
 
             {description && (
-              <p className="mb-8 max-w-[800px] text-[18px] leading-relaxed text-gray-600">
+              <p className="mb-8 max-w-[800px] break-words text-[17px] leading-relaxed text-gray-600 sm:text-[18px]">
                 {description}
               </p>
             )}
 
             <Link
               href={`/quiz?product=${encodeURIComponent(title)}&source=product-page`}
-              className="inline-flex h-[45px] w-[440px] items-center justify-center rounded-lg bg-[#2563EB] text-[18px] font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              className="inline-flex min-h-[45px] w-full max-w-[440px] items-center justify-center rounded-lg bg-[#2563EB] px-4 py-3 text-center text-[16px] font-semibold leading-snug text-white shadow-sm transition hover:bg-blue-700 sm:text-[18px]"
             >
               Получить коммерческое предложение
             </Link>
@@ -57,7 +57,7 @@ export default function ProductView({ data, content }: { data: any; content: str
 
           {/* 2. ANSWER FIRST (АКЦЕНТНЫЙ БЛОК) */}
           {answerFirst && (
-            <div className="relative mb-8 overflow-hidden rounded-xl border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="relative mb-8 min-w-0 overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm md:p-8">
               <div className="absolute left-0 top-0 h-full w-1 bg-[#2563EB]" />
 
               <div className="mb-5 flex items-center gap-3">
@@ -66,7 +66,7 @@ export default function ProductView({ data, content }: { data: any; content: str
                 </span>
               </div>
 
-              <h3 className="mb-6 text-[28px] font-bold leading-[1.3] text-[#0B1220]">
+              <h3 className="mb-6 break-words text-[24px] font-bold leading-[1.3] text-[#0B1220] sm:text-[28px]">
                 {answerFirst.lead}
               </h3>
 
@@ -87,7 +87,7 @@ export default function ProductView({ data, content }: { data: any; content: str
                         <polyline points="20 6 9 17 4 12"></polyline>
                       </svg>
                     </span>
-                    <span className="text-[18px] font-medium leading-relaxed text-gray-900">
+                    <span className="break-words text-[17px] font-medium leading-relaxed text-gray-900 sm:text-[18px]">
                       {b}
                     </span>
                   </div>
@@ -98,7 +98,7 @@ export default function ProductView({ data, content }: { data: any; content: str
         </div>
       </section>
 
-      <div className="mx-auto max-w-[1100px] px-6">
+      <div className="mx-auto max-w-[1100px] min-w-0 px-4 sm:px-6">
         {/* ================= ГАЛЕРЕЯ (ДОМИНИРУЮЩАЯ) ================= */}
         <section className="flex flex-col items-center border-b border-gray-100 py-10">
           <div className="relative mb-6 flex h-[350px] w-full max-w-[800px] items-center justify-center md:h-[500px]">
