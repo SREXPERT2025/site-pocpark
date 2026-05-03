@@ -44,7 +44,7 @@ export default function MobileMenu({
 
       <div
         className={clsx(
-          'absolute right-0 top-0 h-full w-80 max-w-[85vw] bg-bg-primary border-l border-border-primary p-6',
+          'absolute right-0 top-0 flex h-full w-80 max-w-[85vw] flex-col overflow-hidden border-l border-border-primary bg-bg-primary',
           'transition-transform',
           open ? 'translate-x-0' : 'translate-x-full'
         )}
@@ -52,7 +52,7 @@ export default function MobileMenu({
         aria-modal="true"
         aria-label="Меню"
       >
-        <div className="flex items-center justify-between">
+        <div className="flex shrink-0 items-center justify-between px-6 pt-6">
           <div className="text-sm font-semibold text-text-primary">Меню</div>
           <button
             onClick={onClose}
@@ -63,7 +63,7 @@ export default function MobileMenu({
           </button>
         </div>
 
-        <nav className="mt-6">
+        <nav className="mt-6 flex-1 overflow-y-auto px-6 pb-8">
           <div className="space-y-6">
             {navItems.map((item) => (
               <div key={item.label}>
