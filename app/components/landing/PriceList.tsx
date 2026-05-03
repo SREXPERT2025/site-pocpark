@@ -59,11 +59,11 @@ const packages = [
 
 export default function PriceList() {
   return (
-    <section className="bg-white py-24">
-      <div className="mx-auto max-w-6xl px-6">
+    <section className="bg-white py-16 sm:py-24">
+      <div className="mx-auto w-full max-w-6xl min-w-0 px-4 sm:px-6">
 
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+          <h2 className="text-[32px] font-extrabold leading-tight tracking-tight text-slate-900 md:text-5xl">
             Форматы внедрения и масштабирования
           </h2>
 
@@ -82,25 +82,25 @@ export default function PriceList() {
           </p>
         </div>
 
-        <div className="mt-16 space-y-6">
+        <div className="mt-10 min-w-0 space-y-6 sm:mt-16">
           {packages.map((pkg) => (
             <div
               key={pkg.title}
-              className={`rounded-2xl border p-8 transition ${
+              className={`w-full min-w-0 overflow-hidden rounded-2xl border p-5 transition sm:p-8 ${
                 pkg.highlight
-                  ? "border-blue-600 shadow-lg bg-[#F8FAFF]"
+                  ? "border-blue-600 bg-[#F8FAFF] shadow-lg"
                   : "border-slate-200 bg-white shadow-sm"
               }`}
             >
-              <div className="flex flex-col gap-8 lg:flex-row">
+              <div className="flex min-w-0 flex-col gap-6 lg:flex-row lg:gap-8">
 
                 {/* ЛЕВАЯ ЧАСТЬ */}
-                <div className="lg:w-[38%]">
-                  <div className="mb-3 inline-block rounded-full bg-slate-100 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                <div className="min-w-0 lg:w-[38%]">
+                  <div className="mb-3 inline-block max-w-full rounded-full bg-slate-100 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
                     {pkg.level}
                   </div>
 
-                  <h3 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
+                  <h3 className="max-w-full break-words text-[30px] font-extrabold leading-[1.08] tracking-tight text-slate-900 sm:text-3xl">
                     {pkg.title}
                   </h3>
 
@@ -114,28 +114,28 @@ export default function PriceList() {
                 </div>
 
                 {/* ЧТО ВХОДИТ */}
-                <div className="lg:flex-1">
+                <div className="min-w-0 lg:flex-1">
                   <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Что входит
                   </div>
 
                   <ul className="mt-4 grid gap-3 sm:grid-cols-2">
                     {pkg.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-2 text-slate-700">
+                      <li key={feature} className="flex min-w-0 items-start gap-2 text-slate-700">
                         <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-blue-600" />
-                        <span>{feature}</span>
+                        <span className="min-w-0 break-words">{feature}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
                 {/* ПРАВАЯ ЧАСТЬ — ЦЕНА */}
-                <div className="lg:min-w-[240px] flex flex-col justify-start items-end text-right">
+                <div className="flex min-w-0 flex-col items-start justify-start text-left lg:min-w-[240px] lg:items-end lg:text-right">
                   <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                     Бюджет от
                   </div>
 
-                  <div className="mt-3 whitespace-nowrap text-[clamp(28px,3.5vw,44px)] font-extrabold tracking-tight text-slate-900">
+                  <div className="mt-3 max-w-full break-words text-[28px] font-extrabold tracking-tight text-slate-900 sm:whitespace-nowrap sm:text-[clamp(28px,3.5vw,44px)]">
                     {pkg.priceFrom}
                   </div>
                 </div>
