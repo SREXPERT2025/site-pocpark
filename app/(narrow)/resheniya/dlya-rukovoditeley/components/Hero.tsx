@@ -2,12 +2,12 @@ import Link from 'next/link';
 
 export default function Hero() {
   return (
-    <section className="relative pt-32 pb-20 bg-slate-900 text-white overflow-hidden">
+    <section className="relative pt-24 pb-14 md:pt-32 md:pb-20 bg-slate-900 text-white overflow-hidden">
       {/* Фон */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-900/30 to-slate-900" />
 
       <div className="relative z-10 container mx-auto px-4">
-        <div className="max-w-4xl">
+        <div className="max-w-4xl min-w-0">
           
           {/* Бейдж */}
           <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full 
@@ -16,7 +16,7 @@ export default function Hero() {
           </div>
 
           {/* H1 — строго один на странице */}
-          <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
+          <h1 className="text-[clamp(2.25rem,10vw,3.75rem)] md:text-6xl font-bold leading-tight mb-6 break-words hyphens-auto">
             Как сделать парковку управляемой: <br />
             <span className="text-blue-500">
               доступ, оплата, отчётность и контроль загрузки
@@ -24,7 +24,7 @@ export default function Hero() {
           </h1>
 
           {/* Подзаголовок */}
-          <p className="text-xl text-slate-300 mb-8 max-w-2xl">
+          <p className="text-lg md:text-xl text-slate-300 mb-8 max-w-2xl break-words">
             РОСПАРК превращает парковку из источника потерь и конфликтов
             в прозрачный бизнес-процесс с контролем выручки и загрузки в реальном времени.
           </p>

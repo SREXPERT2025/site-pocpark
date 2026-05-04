@@ -77,7 +77,7 @@ export default function QuizPage({ searchParams }: Props) {
   const content = resolveContent(searchParams?.source);
 
   return (
-    <div className="mx-auto max-w-[980px] px-4 sm:px-6">
+    <div className="mx-auto max-w-[980px] px-4 sm:px-6 min-w-0 overflow-hidden [&_h1]:break-words [&_h1]:hyphens-auto [&_h1]:text-[clamp(2rem,11vw,3.5rem)]">
       <Hero title={content.title} description={content.description} />
       <QuizForm />
     </div>

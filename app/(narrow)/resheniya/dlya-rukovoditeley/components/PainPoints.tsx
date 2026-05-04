@@ -18,9 +18,9 @@ export default function PainPoints() {
         <div className="grid md:grid-cols-3 gap-8">
 
           {/* Боль 1 */}
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0">
             <div className="text-4xl mb-4">❌</div>
-            <h3 className="text-xl font-bold mb-3 text-slate-900">
+            <h3 className="text-xl font-bold mb-3 text-slate-900 break-words">
               Непрозрачная выручка
             </h3>
             <p className="text-slate-600">
@@ -31,9 +31,9 @@ export default function PainPoints() {
           </div>
 
           {/* Боль 2 */}
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0">
             <div className="text-4xl mb-4">📉</div>
-            <h3 className="text-xl font-bold mb-3 text-slate-900">
+            <h3 className="text-xl font-bold mb-3 text-slate-900 break-words">
               Операционные потери
             </h3>
             <p className="text-slate-600">
@@ -44,9 +44,9 @@ export default function PainPoints() {
           </div>
 
           {/* Боль 3 */}
-          <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+          <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0">
             <div className="text-4xl mb-4">😡</div>
-            <h3 className="text-xl font-bold mb-3 text-slate-900">
+            <h3 className="text-xl font-bold mb-3 text-slate-900 break-words">
               Недовольство арендаторов и клиентов
             </h3>
             <p className="text-slate-600">

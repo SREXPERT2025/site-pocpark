@@ -18,11 +18,11 @@ export default function Metrics() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
 
           {/* Метрика 1 */}
-          <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700">
-            <div className="text-4xl font-bold text-blue-500 mb-3">
+          <div className="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 min-w-0">
+            <div className="text-3xl md:text-4xl font-bold text-blue-500 mb-3 break-words">
               +15–30%
             </div>
-            <h3 className="font-bold text-lg mb-2">
+            <h3 className="font-bold text-lg mb-2 break-words">
               Контроль выручки и загрузки
             </h3>
             <p className="text-slate-400 text-sm">
@@ -32,11 +32,11 @@ export default function Metrics() {
           </div>
 
           {/* Метрика 2 */}
-          <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700">
-            <div className="text-4xl font-bold text-blue-500 mb-3">
+          <div className="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 min-w-0">
+            <div className="text-3xl md:text-4xl font-bold text-blue-500 mb-3 break-words">
               100%
             </div>
-            <h3 className="font-bold text-lg mb-2">
+            <h3 className="font-bold text-lg mb-2 break-words">
               Контроль оплат
             </h3>
             <p className="text-slate-400 text-sm">
@@ -46,11 +46,11 @@ export default function Metrics() {
           </div>
 
           {/* Метрика 3 */}
-          <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700">
-            <div className="text-4xl font-bold text-blue-500 mb-3">
+          <div className="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 min-w-0">
+            <div className="text-3xl md:text-4xl font-bold text-blue-500 mb-3 break-words">
               −0 ₽
             </div>
-            <h3 className="font-bold text-lg mb-2">
+            <h3 className="font-bold text-lg mb-2 break-words">
               Затраты на персонал
             </h3>
             <p className="text-slate-400 text-sm">
@@ -60,11 +60,11 @@ export default function Metrics() {
           </div>
 
           {/* Метрика 4 */}
-          <div className="bg-slate-800 rounded-2xl p-8 border border-slate-700">
-            <div className="text-4xl font-bold text-blue-500 mb-3">
+          <div className="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 min-w-0">
+            <div className="text-3xl md:text-4xl font-bold text-blue-500 mb-3 break-words">
               24/7
             </div>
-            <h3 className="font-bold text-lg mb-2">
+            <h3 className="font-bold text-lg mb-2 break-words">
               Работа без простоев
             </h3>
             <p className="text-slate-400 text-sm">
