@@ -17,9 +17,9 @@ export default function Hero() {
 
           {/* H1 — строго один на странице */}
           <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6">
-            Автоматизация парковки <br />
+            Как сделать парковку управляемой: <br />
             <span className="text-blue-500">
-              как управляемый актив
+              доступ, оплата, отчётность и контроль загрузки
             </span>
           </h1>
 
@@ -65,7 +65,7 @@ export default function Hero() {
                          border border-slate-700 rounded-lg font-medium 
                          transition-colors text-center"
             >
-              Смотреть кейсы
+              Смотреть проекты
             </Link>
           </div>
 

@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 
 export default function TorgovyeCentresPage() {
   const heroTitle = "Автоматизация парковки для торговых центров | РОСПАРК";
-  const heroDescription = "Скорость проезда в часы пик, прозрачная выручка, удобство для покупателей. РОСПАРК объединяет въезд/выезд, тарифы и оплату в управляемую систему.";
+  const heroDescription = "Управление въездом, оплатой и доступом на парковке торгового центра. РОСПАРК объединяет въезд, выезд, тарифы, оплату и отчётность в единую парковочную систему.";
 
   const extended = getExtendedContentBySlug('resheniya', 'torgovye-centry');
   const faq = extended?.faq ?? [];
@@ -109,11 +109,11 @@ export default function TorgovyeCentresPage() {
           <h2 className="break-words text-2xl font-bold text-slate-900 md:text-3xl">Типовые задачи торгового центра</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="break-words text-lg font-semibold text-slate-900">Рост выручки и контроль потерь</h3>
+              <h3 className="break-words text-lg font-semibold text-slate-900">Контроль выручки и снижение потерь</h3>
               <p className="mt-2 break-words text-slate-700">Прозрачные правила, аудит ручных вмешательств и управляемая монетизация парковки.</p>
             </div>
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="break-words text-lg font-semibold text-slate-900">Скорость и отсутствие очередей</h3>
+              <h3 className="break-words text-lg font-semibold text-slate-900">Снижение очередей в часы пик</h3>
               <p className="mt-2 break-words text-slate-700">Быстрый проезд постоянных клиентов и гостей, гибкая логика въезда/выезда.</p>
             </div>
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">

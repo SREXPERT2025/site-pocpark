@@ -32,7 +32,7 @@ export const navigation: NavItem[] = [
           {
             label: 'Для руководителей',
             href: '/resheniya/dlya-rukovoditeley',
-            description: 'NOI, контроль выручки, прозрачность и управляемость',
+            description: 'Контроль выручки, затрат и загрузки парковки',
           },
           {
             label: 'Для инженеров',
@@ -67,7 +67,7 @@ export const navigation: NavItem[] = [
           {
             label: 'Застройщики',
             href: '/resheniya/zastroyschiki',
-            description: 'Паркинг как сервис для УК и жителей, контроль и монетизация',
+            description: 'Парковка для УК и жителей: доступ, оплата и контроль',
           },
         ],
       },

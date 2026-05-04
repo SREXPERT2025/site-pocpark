@@ -75,7 +75,7 @@ export default function KeysyIndex({
       <section className="w-full px-[20px] pt-6">
         <Hero
           title="Проекты"
-          description="Реализованные внедрения РОСПАРК: от задачи до измеримого результата."
+          description="Реализованные проекты РОСПАРК: задача, состав системы и результат внедрения."
           cta={{ label: 'Получить консультацию', href: '/quiz?source=consult' }}
         />
       </section>

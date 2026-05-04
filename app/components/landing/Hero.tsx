@@ -39,26 +39,24 @@ export default function Hero() {
 
           {/* Малый верхний текст */}
           <div className="mb-6 text-xs tracking-[0.3em] uppercase text-white/70">
-            РОСПАРК — ЦИФРОВАЯ ПЛАТФОРМА УПРАВЛЕНИЯ ПАРКОВКОЙ
+            РОСПАРК — АВТОМАТИЗАЦИЯ ПАРКОВОК ПОД КЛЮЧ
           </div>
 
           {/* H1 */}
           <h1 className="font-extrabold tracking-tight text-[52px] leading-[1.1] sm:text-[64px] md:text-[72px]">
-            Управляемая парковка
+            Парковка, которой
             <br />
-            как бизнес-актив
+            можно управлять
           </h1>
 
           {/* Value line */}
           <div className="mt-6 text-[14px] tracking-[0.25em] uppercase text-white/80">
-            Рост NOI · Контроль доступа · Прозрачная выручка
+            Контроль въезда · Оплата · Доступ · Отчётность
           </div>
 
           {/* Description */}
           <p className="mx-auto mt-8 max-w-[760px] text-[18px] leading-[30px] text-white/85 sm:text-[20px]">
-            Мы превращаем парковку
-            в управляемый финансовый инструмент
-            с прозрачной экономикой и аналитикой в реальном времени.
+            РОСПАРК помогает управлять въездом, оплатой, доступом и отчётностью на парковке из единой системы.
           </p>
 
           {/* Trust metrics */}
@@ -97,7 +95,7 @@ export default function Hero() {
               href="/quiz?source=economy"
               className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-10 py-4 text-base font-semibold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
             >
-              Рассчитать экономику объекта
+              Оценить параметры проекта
             </a>
 
             <a

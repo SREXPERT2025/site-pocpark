@@ -5,7 +5,7 @@ export default function Solution() {
         {/* Заголовок */}
         <div className="max-w-3xl mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
-            Как РОСПАРК превращает парковку в управляемый актив
+            Как РОСПАРК помогает управлять парковкой
           </h2>
           <p className="text-lg text-slate-600">
             Мы внедряем не просто оборудование, а комплексную систему управления
