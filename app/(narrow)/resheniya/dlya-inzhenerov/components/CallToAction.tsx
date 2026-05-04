@@ -7,7 +7,7 @@ export default function CallToAction() {
   return (
     <section className="py-20 bg-emerald-600 text-white">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto text-center">
+        <div className="mx-auto max-w-5xl text-center">
 
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Нужны схемы, спецификация или ТКП?
@@ -21,7 +21,7 @@ export default function CallToAction() {
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6">
             <Link
               href="/contacts"
-              className="px-8 py-4 bg-white text-emerald-700 font-bold rounded-lg shadow hover:bg-emerald-50 transition"
+              className="inline-flex min-w-0 items-center justify-center px-6 py-4 text-center leading-snug sm:px-8 bg-white text-emerald-700 font-bold rounded-lg shadow hover:bg-emerald-50 transition"
             >
               Запросить ТКП
             </Link>
@@ -31,14 +31,14 @@ export default function CallToAction() {
     href={telegramUrl}
     target="_blank"
     rel="noopener noreferrer"
-    className="px-8 py-4 bg-emerald-700 border border-emerald-400 rounded-lg font-semibold hover:bg-emerald-800 transition"
+    className="inline-flex min-w-0 items-center justify-center px-6 py-4 text-center leading-snug sm:px-8 bg-emerald-700 border border-emerald-400 rounded-lg font-semibold hover:bg-emerald-800 transition"
   >
     Задать вопрос инженеру
   </a>
 ) : null}
           </div>
 
-          <div className="mx-auto max-w-xl">
+          <div className="mx-auto w-full max-w-3xl">
             <LeadForm
               sourceSection="lead_cta"
               sourcePage="/resheniya/dlya-inzhenerov"

@@ -6,7 +6,7 @@ export default function CallToAction() {
 
   return (
     <section className="py-20 bg-slate-800 text-white">
-      <div className="container mx-auto px-4 text-center">
+      <div className="container mx-auto max-w-6xl px-4 text-center">
 
         <h2 className="text-3xl font-bold mb-6">
           Обсудим требования службы безопасности
@@ -22,7 +22,7 @@ export default function CallToAction() {
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Link
             href="/contacts"
-            className="px-10 py-5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-colors"
+            className="inline-flex min-w-0 items-center justify-center px-6 py-4 text-center leading-snug sm:px-10 sm:py-5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-colors"
           >
             Запросить регламент и схемы
           </Link>
@@ -32,14 +32,14 @@ export default function CallToAction() {
     href={telegramUrl}
     target="_blank"
     rel="noopener noreferrer"
-    className="px-10 py-5 bg-slate-700 border border-slate-600 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors"
+    className="inline-flex min-w-0 items-center justify-center px-6 py-4 text-center leading-snug sm:px-10 sm:py-5 bg-slate-700 border border-slate-600 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors"
   >
     Связаться через Telegram
   </a>
 ) : null}
         </div>
 
-        <div className="mt-8 mx-auto max-w-xl">
+        <div className="mx-auto mt-8 w-full max-w-3xl">
           <LeadForm
             sourceSection="lead_cta"
             sourcePage="/resheniya/dlya-sluzhby-bezopasnosti"

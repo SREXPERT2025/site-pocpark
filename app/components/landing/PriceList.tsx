@@ -119,7 +119,7 @@ export default function PriceList() {
                     Что входит
                   </div>
 
-                  <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <ul className="mt-4 grid grid-cols-1 gap-3">
                     {pkg.features.map((feature) => (
                       <li key={feature} className="flex min-w-0 items-start gap-2 text-slate-700">
                         <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-blue-600" />

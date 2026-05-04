@@ -148,22 +148,22 @@ export default function TorgovyeCentresPage() {
 
       <section className="py-16 bg-blue-600 text-white">
         <div className="container mx-auto max-w-6xl min-w-0 px-4">
-          <div className="rounded-2xl bg-blue-700/30 p-10">
-            <h2 className="text-3xl md:text-4xl font-bold">Рассчитайте проект для торгового центра</h2>
+          <div className="rounded-2xl bg-blue-700/30 p-6 sm:p-8 md:p-10">
+            <h2 className="break-words text-2xl font-bold leading-tight md:text-3xl">Рассчитайте проект для торгового центра</h2>
             <p className="mt-4 text-blue-100 max-w-3xl">
               Подскажем оптимальную схему для ваших въездов и выездов, рассчитаем бюджет и окупаемость, дадим план внедрения.
             </p>
             <div className="mt-8 flex min-w-0 flex-col gap-3 sm:flex-row">
-              <Link href="/quiz" className="inline-flex items-center justify-center rounded-xl bg-white px-8 py-4 font-semibold text-blue-700 shadow-sm hover:bg-blue-50 transition-colors">
+              <Link href="/quiz" className="inline-flex min-w-0 items-center justify-center rounded-xl bg-white px-6 py-4 text-center font-semibold leading-snug text-blue-700 shadow-sm transition-colors hover:bg-blue-50 sm:px-8">
                 Рассчитать проект
               </Link>
-              <Link href="/contacts" className="inline-flex items-center justify-center rounded-xl border border-white/40 bg-transparent px-8 py-4 font-semibold text-white hover:bg-white/10 transition-colors">
+              <Link href="/contacts" className="inline-flex min-w-0 items-center justify-center rounded-xl border border-white/40 bg-transparent px-6 py-4 text-center font-semibold leading-snug text-white transition-colors hover:bg-white/10 sm:px-8">
                 Получить консультацию
               </Link>
             </div>
           </div>
 
-          <div className="mt-8 max-w-2xl">
+          <div id="lead" className="mx-auto mt-10 w-full max-w-4xl rounded-2xl bg-white p-5 sm:p-6 md:p-8">
             <LeadForm
               sourceSection="lead_cta"
               sourcePage="/resheniya/torgovye-centry"

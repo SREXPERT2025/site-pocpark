@@ -11,7 +11,7 @@ export default function CallToAction() {
     >
       <div className="container mx-auto px-4">
 
-        <div className="max-w-3xl mx-auto text-center">
+        <div className="mx-auto max-w-5xl text-center">
 
           {/* Заголовок */}
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
@@ -29,7 +29,7 @@ export default function CallToAction() {
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
             <Link
               href="/contacts"
-              className="px-10 py-5 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:bg-blue-50 transition-colors"
+              className="inline-flex min-w-0 items-center justify-center px-6 py-4 text-center leading-snug sm:px-10 sm:py-5 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:bg-blue-50 transition-colors"
             >
               Получить расчёт
             </Link>
@@ -39,14 +39,14 @@ export default function CallToAction() {
     href={telegramUrl}
     target="_blank"
     rel="noopener noreferrer"
-    className="px-10 py-5 bg-blue-700 border border-blue-500 hover:bg-blue-800 font-bold rounded-xl transition-colors"
+    className="inline-flex min-w-0 items-center justify-center px-6 py-4 text-center leading-snug sm:px-10 sm:py-5 bg-blue-700 border border-blue-500 hover:bg-blue-800 font-bold rounded-xl transition-colors"
   >
     Написать в Telegram
   </a>
 ) : null}
           </div>
 
-          <div className="mx-auto max-w-xl">
+          <div className="mx-auto w-full max-w-3xl">
             <LeadForm
               sourceSection="lead_cta"
               sourcePage="/resheniya/dlya-rukovoditeley"

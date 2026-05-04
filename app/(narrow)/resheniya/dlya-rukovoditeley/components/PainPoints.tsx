@@ -20,7 +20,7 @@ export default function PainPoints() {
           {/* Боль 1 */}
           <div className="bg-white max-w-full p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0 overflow-hidden">
             <div className="text-4xl mb-4">❌</div>
-            <h3 className="text-xl md:text-2xl font-bold mb-3 text-slate-900 leading-tight break-words break-words">
+            <h3 className="text-base md:text-lg font-bold mb-3 text-slate-900 leading-snug break-words">
               Непрозрачная выручка
             </h3>
             <p className="text-slate-600 break-words">
@@ -33,7 +33,7 @@ export default function PainPoints() {
           {/* Боль 2 */}
           <div className="bg-white max-w-full p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0 overflow-hidden">
             <div className="text-4xl mb-4">📉</div>
-            <h3 className="text-xl md:text-2xl font-bold mb-3 text-slate-900 leading-tight break-words break-words">
+            <h3 className="text-base md:text-lg font-bold mb-3 text-slate-900 leading-snug break-words">
               Операционные потери
             </h3>
             <p className="text-slate-600 break-words">
@@ -46,7 +46,7 @@ export default function PainPoints() {
           {/* Боль 3 */}
           <div className="bg-white max-w-full p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0 overflow-hidden">
             <div className="text-4xl mb-4">😡</div>
-            <h3 className="text-xl md:text-2xl font-bold mb-3 text-slate-900 leading-tight break-words break-words">
+            <h3 className="text-base md:text-lg font-bold mb-3 text-slate-900 leading-snug break-words">
               Недовольство арендаторов и клиентов
             </h3>
             <p className="text-slate-600 break-words">
