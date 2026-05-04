@@ -93,7 +93,7 @@ export default function KeysyIndex({
 
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold">
-              Выполненные проекты
+              Выполненные проекты РОСПАРК
             </h2>
 
             <span className="text-sm text-gray-500">
@@ -127,8 +127,8 @@ export default function KeysyIndex({
         <div className="mt-24">
           <LeadFormSection
             sourceSection="projects"
-            title="Хотите похожий результат?"
-            description="Оставьте контакты — предложим решение под ваш объект."
+            title="Нужен похожий результат?"
+            description="Оставьте контакты — предложим решение под параметры вашего объекта."
             submitLabel="Получить консультацию"
           />
         </div>

@@ -167,7 +167,7 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
         <LeadFormSection
           className="mt-section"
           sourceSection="project"
-          title="Обсудить проект для вашего объекта"
+          title="Обсудить решение для вашего объекта"
           description="Оставьте контакты — уточним параметры объекта и предложим план внедрения парковочной системы."
           submitLabel="Получить консультацию"
         />

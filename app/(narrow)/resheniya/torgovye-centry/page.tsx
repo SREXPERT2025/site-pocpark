@@ -36,7 +36,7 @@ export default function TorgovyeCentresPage() {
 
   const answerLead =
     answerFirst?.lead ??
-    'Для ТЦ РОСПАРК — это быстрый проезд и прозрачная монетизация: меньше очередей, больше контроля, понятные правила для гостей и постоянных клиентов.';
+    'Для торгового центра РОСПАРК — это быстрый проезд и прозрачный доход с парковки: меньше очередей, больше контроля, понятные правила для гостей и постоянных клиентов.';
 
   const answerBullets =
     answerFirst?.bullets?.length
@@ -45,7 +45,7 @@ export default function TorgovyeCentresPage() {
           'Сценарии «час пик»: ускорение потоков и снижение очередей.',
           'Прозрачная выручка: отчёты, события, аудит ручных вмешательств.',
           'Гибкие тарифы и льготы: правила без конфликтов с клиентами.',
-          'Онлайн-оплата и удобство для гостей (по необходимости).',
+          'Оплата через сайт и удобство для гостей при необходимости.',
         ];
 
   return (
@@ -74,7 +74,7 @@ export default function TorgovyeCentresPage() {
                 href="/quiz?source=request"
                 className="inline-flex min-w-0 items-center justify-center rounded-xl bg-blue-600 px-6 py-4 text-center font-semibold leading-snug text-white shadow-sm transition-colors hover:bg-blue-700 sm:px-8"
               >
-                Запросить расчёт
+                Рассчитать проект
               </Link>
               <Link
                 href="/quiz?source=consult"
@@ -110,7 +110,7 @@ export default function TorgovyeCentresPage() {
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="break-words text-lg font-semibold text-slate-900">Контроль выручки и снижение потерь</h3>
-              <p className="mt-2 break-words text-slate-700">Прозрачные правила, аудит ручных вмешательств и управляемая монетизация парковки.</p>
+              <p className="mt-2 break-words text-slate-700">Прозрачные правила, журнал ручных вмешательств и управляемый доход с парковки.</p>
             </div>
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="break-words text-lg font-semibold text-slate-900">Снижение очередей в часы пик</h3>
@@ -118,7 +118,7 @@ export default function TorgovyeCentresPage() {
             </div>
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="break-words text-lg font-semibold text-slate-900">Комфорт для покупателей</h3>
-              <p className="mt-2 break-words text-slate-700">Гостевые сценарии, онлайн-оплата, понятные уведомления и поддержка персонала.</p>
+              <p className="mt-2 break-words text-slate-700">Гостевые сценарии, оплата через сайт, понятные уведомления и поддержка персонала.</p>
             </div>
           </div>
           <p className="mt-6 text-sm text-slate-500">Для ТЦ критичны пики нагрузки: закладываем сценарии «час пик» и режимы деградации.</p>
@@ -130,12 +130,12 @@ export default function TorgovyeCentresPage() {
           <h2 className="break-words text-2xl font-bold text-slate-900 md:text-3xl">Что входит в решение</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="break-words text-lg font-semibold text-slate-900">Въезд/выезд и идентификация</h3>
-              <p className="mt-2 break-words text-slate-700">Номера (ANPR) и/или идентификаторы, правила доступа по типам клиентов.</p>
+              <h3 className="break-words text-lg font-semibold text-slate-900">Въезд, выезд и идентификация</h3>
+              <p className="mt-2 break-words text-slate-700">Номера автомобилей и/или идентификаторы, правила доступа по типам клиентов.</p>
             </div>
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="break-words text-lg font-semibold text-slate-900">Оплата и тарифы</h3>
-              <p className="mt-2 break-words text-slate-700">Гибкая тарификация, льготы, исключения, онлайн-оплата при необходимости.</p>
+              <p className="mt-2 break-words text-slate-700">Гибкая тарификация, льготы, исключения и оплата через сайт при необходимости.</p>
             </div>
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="break-words text-lg font-semibold text-slate-900">Отчёты и аналитика</h3>
@@ -149,13 +149,13 @@ export default function TorgovyeCentresPage() {
       <section className="py-16 bg-blue-600 text-white">
         <div className="container mx-auto max-w-6xl min-w-0 px-4">
           <div className="rounded-2xl bg-blue-700/30 p-10">
-            <h2 className="text-3xl md:text-4xl font-bold">Запросите расчёт для ТЦ</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Рассчитайте проект для торгового центра</h2>
             <p className="mt-4 text-blue-100 max-w-3xl">
-              Подскажем оптимальную схему для ваших въездов/выездов, рассчитаем бюджет и окупаемость, дадим план внедрения.
+              Подскажем оптимальную схему для ваших въездов и выездов, рассчитаем бюджет и окупаемость, дадим план внедрения.
             </p>
             <div className="mt-8 flex min-w-0 flex-col gap-3 sm:flex-row">
               <Link href="/quiz" className="inline-flex items-center justify-center rounded-xl bg-white px-8 py-4 font-semibold text-blue-700 shadow-sm hover:bg-blue-50 transition-colors">
-                Запросить расчёт
+                Рассчитать проект
               </Link>
               <Link href="/contacts" className="inline-flex items-center justify-center rounded-xl border border-white/40 bg-transparent px-8 py-4 font-semibold text-white hover:bg-white/10 transition-colors">
                 Получить консультацию
@@ -167,7 +167,7 @@ export default function TorgovyeCentresPage() {
             <LeadForm
               sourceSection="lead_cta"
               sourcePage="/resheniya/torgovye-centry"
-              submitLabel="Запросить расчёт"
+              submitLabel="Рассчитать проект"
             />
           </div>
         </div>
@@ -176,8 +176,8 @@ export default function TorgovyeCentresPage() {
       {/* Навигация */}
       <section className="pb-16">
         <div className="container mx-auto max-w-6xl min-w-0 px-4">
-          <Link href="/resheniya" className="text-blue-600 font-medium hover:underline">
-            ← Все решения РОСПАРК
+          <Link href="/" className="text-blue-600 font-medium hover:underline">
+            ← На главную страницу РОСПАРК
           </Link>
         </div>
       </section>

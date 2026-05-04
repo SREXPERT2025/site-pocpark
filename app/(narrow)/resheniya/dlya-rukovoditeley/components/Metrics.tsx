@@ -6,7 +6,7 @@ export default function Metrics() {
         {/* Заголовок */}
         <div className="max-w-3xl mb-16">
           <h2 className="text-2xl md:text-4xl font-bold mb-4 leading-tight break-words">
-            Экономический эффект от автоматизации
+            Как автоматизация влияет на экономику парковки
           </h2>
           <p className="text-lg text-slate-300">
             Автоматизация парковки помогает контролировать выручку, затраты и загрузку,
@@ -41,7 +41,7 @@ export default function Metrics() {
             </h3>
             <p className="text-slate-400 text-sm">
               Каждый въезд, выезд и платёж фиксируется системой.
-              Проехать «мимо кассы» невозможно.
+              Проезд без фиксации в системе становится невозможным.
             </p>
           </div>
 
@@ -54,7 +54,7 @@ export default function Metrics() {
               Затраты на персонал
             </h3>
             <p className="text-slate-400 text-sm">
-              Отсутствие парковщиков, смен, больничных,
+              Меньше ручного труда, смен, больничных,
               инкассации и ручного контроля.
             </p>
           </div>
@@ -65,7 +65,7 @@ export default function Metrics() {
               24/7
             </div>
             <h3 className="font-bold text-lg mb-2 break-words">
-              Работа без простоев
+              Круглосуточная работа
             </h3>
             <p className="text-slate-400 text-sm">
               Система работает круглосуточно, без выходных,
@@ -79,7 +79,7 @@ export default function Metrics() {
         <div className="mt-12 text-sm text-slate-400 max-w-3xl">
           * Фактический экономический эффект зависит от типа объекта,
           текущей организации парковки и выбранной конфигурации системы.
-          Точный расчёт выполняется в рамках аудита.
+          Точный расчёт выполняется после обследования объекта.
         </div>
 
       </div>

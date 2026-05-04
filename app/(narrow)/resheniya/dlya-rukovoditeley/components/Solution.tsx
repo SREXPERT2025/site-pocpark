@@ -24,7 +24,7 @@ export default function Solution() {
                 1
               </div>
               <div className="min-w-0">
-                <h3 className="text-xl md:text-2xl font-bold mb-2 text-slate-900 break-words hyphens-auto [overflow-wrap:anywhere] leading-tight">
+                <h3 className="text-xl md:text-2xl font-bold mb-2 text-slate-900 break-words break-words leading-tight">
                   Полная финансовая прозрачность
                 </h3>
                 <p className="text-slate-600 break-words">
@@ -42,7 +42,7 @@ export default function Solution() {
                 2
               </div>
               <div className="min-w-0">
-                <h3 className="text-xl md:text-2xl font-bold mb-2 text-slate-900 break-words hyphens-auto [overflow-wrap:anywhere] leading-tight">
+                <h3 className="text-xl md:text-2xl font-bold mb-2 text-slate-900 break-words break-words leading-tight">
                   Полная автоматизация 24/7
                 </h3>
                 <p className="text-slate-600 break-words">
@@ -59,7 +59,7 @@ export default function Solution() {
                 3
               </div>
               <div className="min-w-0">
-                <h3 className="text-xl md:text-2xl font-bold mb-2 text-slate-900 break-words hyphens-auto [overflow-wrap:anywhere] leading-tight">
+                <h3 className="text-xl md:text-2xl font-bold mb-2 text-slate-900 break-words break-words leading-tight">
                   Управление и контроль с любого устройства
                 </h3>
                 <p className="text-slate-600 break-words">
@@ -76,13 +76,13 @@ export default function Solution() {
             <div className="w-full max-w-full overflow-hidden rounded-xl bg-white shadow-sm">
               <img
                 src="/images/solutions/management-dashboard.jpg"
-                alt="Дашборд РОСПАРК для руководителей"
+                alt="Панель управления РОСПАРК для руководителей"
                 className="block h-auto w-full max-w-full object-cover"
               />
             </div>
 
             <p className="max-w-full break-words text-slate-500 text-sm mt-3 text-center">
-              Дашборд РОСПАРК: выручка, загрузка, события, отчёты
+              Панель управления РОСПАРК: выручка, загрузка, события, отчёты
             </p>
           </div>
         </div>
