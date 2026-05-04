@@ -5,7 +5,7 @@ import AnimatedNumber from "./AnimatedNumber";
 export default function Hero() {
   return (
     <section
-      className="relative text-white"
+      className="relative overflow-hidden text-white"
       style={{
         width: "100vw",
         left: "50%",
@@ -34,33 +34,33 @@ export default function Hero() {
       </div>
 
       {/* Content */}
-      <div className="relative mx-auto flex h-[820px] max-w-[1400px] items-center justify-center px-4 sm:px-6">
+      <div className="relative mx-auto flex min-h-[calc(100svh-180px)] max-w-[1400px] items-center justify-center px-4 py-14 sm:min-h-[720px] sm:px-6 sm:py-20 md:h-[820px]">
         <div className="w-full max-w-[1000px] text-center animate-fadeInUp">
 
           {/* Малый верхний текст */}
-          <div className="mb-6 text-xs tracking-[0.3em] uppercase text-white/70">
+          <div className="mb-4 text-[11px] leading-relaxed tracking-[0.22em] uppercase text-white/70 sm:mb-6 sm:text-xs sm:tracking-[0.3em]">
             РОСПАРК — АВТОМАТИЗАЦИЯ ПАРКОВОК ПОД КЛЮЧ
           </div>
 
           {/* H1 */}
-          <h1 className="font-extrabold tracking-tight text-[52px] leading-[1.1] sm:text-[64px] md:text-[72px]">
+          <h1 className="font-extrabold tracking-tight text-[42px] leading-[1.08] sm:text-[64px] md:text-[72px]">
             Парковка, которой
             <br />
             можно управлять
           </h1>
 
           {/* Value line */}
-          <div className="mt-6 text-[14px] tracking-[0.25em] uppercase text-white/80">
+          <div className="mt-5 text-[12px] leading-relaxed tracking-[0.18em] uppercase text-white/80 sm:mt-6 sm:text-[14px] sm:tracking-[0.25em]">
             Контроль въезда · Оплата · Доступ · Отчётность
           </div>
 
           {/* Description */}
-          <p className="mx-auto mt-8 max-w-[760px] text-[18px] leading-[30px] text-white/85 sm:text-[20px]">
+          <p className="mx-auto mt-6 max-w-[760px] text-[17px] leading-7 text-white/85 sm:mt-8 sm:text-[20px] sm:leading-[30px]">
             РОСПАРК помогает управлять въездом, оплатой, доступом и отчётностью на парковке из единой системы.
           </p>
 
           {/* Trust metrics */}
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-10 text-center">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-8 text-center sm:mt-12 sm:gap-10">
             <div>
               <div className="text-[32px] font-bold text-white">
                 <AnimatedNumber value={350} suffix="+" />
@@ -90,7 +90,7 @@ export default function Hero() {
           </div>
 
           {/* CTA */}
-          <div className="mt-14 flex flex-col items-center justify-center gap-5 sm:flex-row">
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:mt-14 sm:flex-row sm:gap-5">
             <a
               href="/quiz?source=economy"
               className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-10 py-4 text-base font-semibold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"

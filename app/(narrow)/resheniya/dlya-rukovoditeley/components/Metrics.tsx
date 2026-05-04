@@ -1,11 +1,11 @@
 export default function Metrics() {
   return (
-    <section className="py-20 bg-slate-900 text-white">
-      <div className="container mx-auto px-4">
+    <section className="overflow-x-hidden py-16 md:py-20 bg-slate-900 text-white">
+      <div className="container mx-auto max-w-full px-4">
 
         {/* Заголовок */}
         <div className="max-w-3xl mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+          <h2 className="text-2xl md:text-4xl font-bold mb-4 leading-tight break-words">
             Экономический эффект от автоматизации
           </h2>
           <p className="text-lg text-slate-300">

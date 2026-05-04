@@ -1,11 +1,11 @@
 export default function PainPoints() {
   return (
-    <section className="py-20 bg-slate-50">
-      <div className="container mx-auto px-4">
+    <section className="overflow-x-hidden py-16 md:py-20 bg-slate-50">
+      <div className="container mx-auto max-w-full px-4">
 
         {/* Заголовок */}
         <div className="max-w-3xl mx-auto text-center mb-14">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+          <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4 leading-tight break-words">
             Типовые проблемы парковки глазами руководителя
           </h2>
           <p className="text-lg text-slate-600">
@@ -15,15 +15,15 @@ export default function PainPoints() {
         </div>
 
         {/* Карточки болей */}
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid min-w-0 md:grid-cols-3 gap-6 md:gap-8">
 
           {/* Боль 1 */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0">
+          <div className="bg-white max-w-full p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0 overflow-hidden">
             <div className="text-4xl mb-4">❌</div>
-            <h3 className="text-xl font-bold mb-3 text-slate-900 break-words">
+            <h3 className="text-xl md:text-2xl font-bold mb-3 text-slate-900 leading-tight break-words hyphens-auto [overflow-wrap:anywhere]">
               Непрозрачная выручка
             </h3>
-            <p className="text-slate-600">
+            <p className="text-slate-600 break-words">
               Невозможно точно понять, сколько автомобилей заехало,
               сколько оплатили и сколько денег реально поступило.
               Человеческий фактор и «серые» схемы съедают доход.
@@ -31,12 +31,12 @@ export default function PainPoints() {
           </div>
 
           {/* Боль 2 */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0">
+          <div className="bg-white max-w-full p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0 overflow-hidden">
             <div className="text-4xl mb-4">📉</div>
-            <h3 className="text-xl font-bold mb-3 text-slate-900 break-words">
+            <h3 className="text-xl md:text-2xl font-bold mb-3 text-slate-900 leading-tight break-words hyphens-auto [overflow-wrap:anywhere]">
               Операционные потери
             </h3>
-            <p className="text-slate-600">
+            <p className="text-slate-600 break-words">
               Зарплаты парковщиков, инкассация, расходные материалы,
               ошибки персонала и простои оборудования напрямую
               снижают контроль выручки, затрат и загрузки парковки.
@@ -44,12 +44,12 @@ export default function PainPoints() {
           </div>
 
           {/* Боль 3 */}
-          <div className="bg-white p-6 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0">
+          <div className="bg-white max-w-full p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0 overflow-hidden">
             <div className="text-4xl mb-4">😡</div>
-            <h3 className="text-xl font-bold mb-3 text-slate-900 break-words">
+            <h3 className="text-xl md:text-2xl font-bold mb-3 text-slate-900 leading-tight break-words hyphens-auto [overflow-wrap:anywhere]">
               Недовольство арендаторов и клиентов
             </h3>
-            <p className="text-slate-600">
+            <p className="text-slate-600 break-words">
               Очереди на выезде, сложные сценарии оплаты,
               неработающие карты и конфликтные ситуации
               напрямую бьют по репутации объекта.

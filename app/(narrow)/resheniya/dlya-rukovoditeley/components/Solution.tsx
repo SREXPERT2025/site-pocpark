@@ -1,10 +1,10 @@
 export default function Solution() {
   return (
-    <section className="py-20 bg-white">
-      <div className="container mx-auto px-4">
+    <section className="overflow-x-hidden py-16 md:py-20 bg-white">
+      <div className="container mx-auto max-w-full px-4">
         {/* Заголовок */}
         <div className="max-w-3xl mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+          <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4 leading-tight break-words">
             Как РОСПАРК помогает управлять парковкой
           </h2>
           <p className="text-lg text-slate-600">
@@ -15,7 +15,7 @@ export default function Solution() {
         </div>
 
         {/* Контент */}
-        <div className="grid md:grid-cols-2 gap-12 items-start">
+        <div className="grid min-w-0 max-w-full md:grid-cols-2 gap-10 md:gap-12 items-start">
           {/* Левая колонка — пункты */}
           <div className="space-y-10">
             {/* Пункт 1 */}
@@ -24,7 +24,7 @@ export default function Solution() {
                 1
               </div>
               <div className="min-w-0">
-                <h3 className="text-2xl sm:text-xl font-bold mb-2 text-slate-900 break-words leading-tight">
+                <h3 className="text-xl md:text-2xl font-bold mb-2 text-slate-900 break-words hyphens-auto [overflow-wrap:anywhere] leading-tight">
                   Полная финансовая прозрачность
                 </h3>
                 <p className="text-slate-600 break-words">
@@ -42,7 +42,7 @@ export default function Solution() {
                 2
               </div>
               <div className="min-w-0">
-                <h3 className="text-2xl sm:text-xl font-bold mb-2 text-slate-900 break-words leading-tight">
+                <h3 className="text-xl md:text-2xl font-bold mb-2 text-slate-900 break-words hyphens-auto [overflow-wrap:anywhere] leading-tight">
                   Полная автоматизация 24/7
                 </h3>
                 <p className="text-slate-600 break-words">
@@ -59,7 +59,7 @@ export default function Solution() {
                 3
               </div>
               <div className="min-w-0">
-                <h3 className="text-2xl sm:text-xl font-bold mb-2 text-slate-900 break-words leading-tight">
+                <h3 className="text-xl md:text-2xl font-bold mb-2 text-slate-900 break-words hyphens-auto [overflow-wrap:anywhere] leading-tight">
                   Управление и контроль с любого устройства
                 </h3>
                 <p className="text-slate-600 break-words">
@@ -72,16 +72,16 @@ export default function Solution() {
           </div>
 
           {/* Правая колонка — визуальный блок */}
-          <div className="bg-slate-100 rounded-2xl p-4 border border-slate-200 min-h-[420px] flex flex-col justify-center">
-            <div className="w-full overflow-hidden rounded-xl bg-white shadow-sm">
+          <div className="w-full max-w-full min-w-0 overflow-hidden bg-slate-100 rounded-2xl p-3 sm:p-4 border border-slate-200 min-h-0 md:min-h-[420px] flex flex-col justify-center">
+            <div className="w-full max-w-full overflow-hidden rounded-xl bg-white shadow-sm">
               <img
                 src="/images/solutions/management-dashboard.jpg"
                 alt="Дашборд РОСПАРК для руководителей"
-                className="block w-full h-auto object-cover"
+                className="block h-auto w-full max-w-full object-cover"
               />
             </div>
 
-            <p className="text-slate-500 text-sm mt-3 text-center">
+            <p className="max-w-full break-words text-slate-500 text-sm mt-3 text-center">
               Дашборд РОСПАРК: выручка, загрузка, события, отчёты
             </p>
           </div>
