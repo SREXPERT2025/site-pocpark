@@ -17,7 +17,7 @@ export default function ContactsPage() {
             Контакты
           </h1>
           <p className="max-w-3xl break-words text-base leading-relaxed text-slate-600 sm:text-lg">
-            Свяжитесь с РОСПАРК — уточним задачу, параметры объекта и предложим подходящую конфигурацию парковочной системы.
+            Свяжитесь с РОСПАРК, чтобы обсудить объект, подобрать оборудование, спланировать внедрение или получить поддержку.
           </p>
         </div>
       </section>
@@ -90,7 +90,7 @@ export default function ContactsPage() {
       <LeadFormSection
         sourceSection="contacts"
         title="Получить консультацию"
-        description="Оставьте контакты — мы уточним задачу и предложим конфигурацию парковочной системы под ваш объект."
+        description="Оставьте контакты — уточним задачу, параметры объекта и следующий шаг по проекту."
         submitLabel="Отправить"
       />
     </main>

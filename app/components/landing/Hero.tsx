@@ -39,7 +39,7 @@ export default function Hero() {
 
           {/* Малый верхний текст */}
           <div className="mb-4 text-[11px] leading-relaxed tracking-[0.22em] uppercase text-white/70 sm:mb-6 sm:text-xs sm:tracking-[0.3em]">
-            РОСПАРК — управление парковкой под ключ
+            РОСПАРК — парковочные системы под ключ
           </div>
 
           {/* H1 */}
@@ -56,7 +56,7 @@ export default function Hero() {
 
           {/* Description */}
           <p className="mx-auto mt-6 max-w-[760px] text-[17px] leading-7 text-white/85 sm:mt-8 sm:text-[20px] sm:leading-[30px]">
-            РОСПАРК помогает управлять въездом, оплатой, доступом и отчётностью из одной понятной системы.
+            РОСПАРК проектирует, внедряет и сопровождает парковочные системы под ключ для ТЦ, БЦ, ЖК, застройщиков и управляющих компаний. В систему входят въезд, выезд, оплата, доступ, распознавание номеров, отчётность и поддержка после запуска.
           </p>
 
           {/* Trust metrics */}
