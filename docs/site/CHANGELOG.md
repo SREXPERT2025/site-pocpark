@@ -7,6 +7,137 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-05-04 — P1 visible copy follow-up: смягчение рискованных обещаний
+
+Рабочая ветка:
+
+```text
+dev-p1-visible-copy-001
+```
+
+Коммиты:
+
+```text
+7f83bac content(p1): soften risky claims in case pages
+d49ee95 content(p1): refine Poklonka Place case wording
+ef1c51d docs(agents): add AI assistant working materials
+baf93b3 content(p1): soften equipment wording
+9e55904 content(p1): soften solutions wording
+9623b23 content(nav): clarify solutions menu wording
+```
+
+### Что изменено
+
+Выполнен follow-up после P1 visible copy: смягчены рискованные обещания и русифицированы отдельные видимые формулировки в кейсах, карточках оборудования, страницах решений и меню.
+
+### Кейсы
+
+- смягчены рискованные формулировки в 6 кейсах;
+- убраны абсолютные обещания вроде `100%`, `полностью исключили`, `мгновенно`, `ликвидированы`;
+- удалён остаток англоязычного сокращения `ANPR` из видимого текста кейса;
+- отдельно уточнён Poklonka Place: `идеальный клиентский опыт` и `очереди ликвидированы` заменены на более аккуратные формулировки.
+
+Затронутые файлы:
+
+```text
+content/keysy/depo3vokzala.md
+content/keysy/mosflim.md
+content/keysy/odipark.md
+content/keysy/petrovsky.md
+content/keysy/poklonka-place.md
+content/keysy/w-plaza.md
+```
+
+### Оборудование
+
+- смягчены описания 9 карточек оборудования;
+- `безопасные сценарии`, `надёжная механика`, `закрывает требования безопасности`, `повышает безопасность` заменены на более инженерные формулировки;
+- технические термины в характеристиках не вычищались автоматически.
+
+Затронутые файлы:
+
+```text
+content/oborudovanie/tablo-svobodnyh-mest-variant-8.md
+content/oborudovanie/stoika-rospark-premium-enter.md
+content/oborudovanie/stoika-rospark-premium-exit.md
+content/oborudovanie/stoika-rospark-standart-enter.md
+content/oborudovanie/stoika-rospark-standart-exit.md
+content/oborudovanie/shlagbaum-rospark-3.md
+content/oborudovanie/shlagbaum-rospark-4.md
+content/oborudovanie/shlagbaum-rospark-6.md
+content/oborudovanie/svetofor-2sek-200mm-analog.md
+```
+
+### Решения
+
+- в видимых блоках страниц решений убраны `100%` и `SLA`;
+- `100%` заменено на `Единый учёт`;
+- `SLA` заменено на `регламент реакции поддержки`, `сроки реакции поддержки`, `условия сопровождения`;
+- смягчены формулировки про невозможность обхода системы и `серые схемы`.
+
+Затронутые файлы:
+
+```text
+app/(narrow)/resheniya/dlya-rukovoditeley/components/Metrics.tsx
+app/(narrow)/resheniya/sravnenie-podhodov/components/ApproachCards.tsx
+app/(narrow)/resheniya/sravnenie-podhodov/components/ComparisonTable.tsx
+app/(narrow)/resheniya/sravnenie-podhodov/components/TcoSection.tsx
+```
+
+### Навигация
+
+- в меню `Решения` заменены жаргонные термины;
+- `антифрод` заменён на `контроль злоупотреблений`;
+- `SLA охраны` заменено на `регламенты охраны`;
+- `/resheniya/sravnenie-podhodov` в меню не добавлялся;
+- `Header` и `MobileMenu` не менялись.
+
+Затронутый файл:
+
+```text
+app/config/navigation.ts
+```
+
+### AI-агенты
+
+- добавлены рабочие материалы AI-агентов: архитектор сайта, frontend-coder, маркетолог, технический редактор.
+
+Затронутые файлы:
+
+```text
+docs/agents/*
+```
+
+### Что не трогалось
+
+- `main`;
+- URL и маршруты;
+- формы и поля форм;
+- `app/api/*`;
+- `lib/leads.ts`;
+- `lib/leads2.ts`;
+- `metadata`;
+- JSON-LD;
+- FAQ;
+- `ExtendedInfo`;
+- `content/extended/*`;
+- PM2/env;
+- новые страницы;
+- deploy.
+
+### Проверка
+
+- `npm run build`: успешно для content/nav/solutions follow-up задач;
+- контрольные grep-проверки по утверждённым рискованным формулировкам выполнены;
+- `git diff --check`: успешно после исправления форматирования в solutions follow-up.
+
+### Риски / примечания
+
+- `content/extended/*`, `metadata`, FAQ и JSON-LD не включались в эти правки и требуют отдельного SEO/GEO-review;
+- `/resheniya/sravnenie-podhodov` пока остаётся вне меню;
+- `main` не трогался, рабочее согласование продолжается в `dev-p1-visible-copy-001`.
+
+
 ## 2026-05-03 — стабилизация мобильной версии
 
 Основной commit:
