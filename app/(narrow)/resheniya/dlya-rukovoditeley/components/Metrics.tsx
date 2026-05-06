@@ -26,22 +26,22 @@ export default function Metrics() {
               Контроль выручки и загрузки
             </h3>
             <p className="text-slate-400 text-sm">
-              За счёт прозрачной выручки, устранения «серых схем»
-              и оптимизации тарифов.
+              За счёт прозрачного учёта выручки, снижения рисков
+              неучтённых операций и настройки тарифов.
             </p>
           </div>
 
           {/* Метрика 2 */}
           <div className="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 min-w-0">
             <div className="text-3xl md:text-4xl font-bold text-blue-500 mb-3 break-words">
-              100%
+              Единый учёт
             </div>
             <h3 className="font-bold text-lg mb-2 break-words">
               Контроль оплат
             </h3>
             <p className="text-slate-400 text-sm">
-              Каждый въезд, выезд и платёж фиксируется системой.
-              Проезд без фиксации в системе становится невозможным.
+              Въезды, выезды и платежи фиксируются системой.
+              Проезд обрабатывается по настроенным правилам доступа и оплаты.
             </p>
           </div>
 
