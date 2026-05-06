@@ -42,7 +42,7 @@ export const navigation: NavItem[] = [
           {
             label: 'Для службы безопасности',
             href: '/resheniya/dlya-sluzhby-bezopasnosti',
-            description: 'Контроль доступов, события, архив, антифрод',
+            description: 'Контроль доступов, события, архив, контроль злоупотреблений',
           },
         ],
       },
@@ -57,7 +57,7 @@ export const navigation: NavItem[] = [
           {
             label: 'Бизнес-центры',
             href: '/resheniya/biznes-centry',
-            description: 'Резиденты, гости, заявки, лимиты, SLA охраны',
+            description: 'Резиденты, гости, заявки, лимиты, регламенты охраны',
           },
           {
             label: 'Складские комплексы',
