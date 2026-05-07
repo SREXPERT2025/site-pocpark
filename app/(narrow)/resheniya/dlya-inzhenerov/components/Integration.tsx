@@ -96,7 +96,7 @@ export default function Integration() {
 
             <div className="mt-6">
               <Link
-                href="/contacts"
+                href="/quiz?source=consult"
                 className="inline-block mt-4 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors"
               >
                 Получить техническую консультацию

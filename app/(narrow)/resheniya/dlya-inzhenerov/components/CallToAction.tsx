@@ -20,7 +20,7 @@ export default function CallToAction() {
 
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6">
             <Link
-              href="/contacts"
+              href="/quiz?source=kp"
               className="inline-flex min-w-0 items-center justify-center px-6 py-4 text-center leading-snug sm:px-8 bg-white text-emerald-700 font-bold rounded-lg shadow hover:bg-emerald-50 transition"
             >
               Запросить ТКП
