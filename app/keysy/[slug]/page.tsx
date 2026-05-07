@@ -88,7 +88,7 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
         <Hero
           title={data.title}
           description={data.description}
-          cta={{ label: 'Получить консультацию', href: '/contacts' }}
+          cta={{ label: 'Получить консультацию', href: '/quiz?source=consult' }}
         />
       </section>
 
