@@ -71,7 +71,7 @@ export default function BiznesCentresPage() {
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
-                href="/quiz?source=equest"
+                href="/quiz?source=request"
                 className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-8 py-4 font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
               >
                 Запросить расчёт
