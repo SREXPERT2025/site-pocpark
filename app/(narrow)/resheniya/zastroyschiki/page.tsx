@@ -154,7 +154,7 @@ export default function ZastroyschikiPage() {
               Разберём ситуацию, предложим 2–3 архитектуры доступа по типам клиентов и план внедрения без перегруза текста.
             </p>
             <div className="mt-8 flex min-w-0 flex-col gap-3 sm:flex-row">
-              <Link href="/contacts" className="inline-flex items-center justify-center rounded-xl bg-white px-8 py-4 font-semibold text-blue-700 shadow-sm hover:bg-blue-50 transition-colors">
+              <Link href="/quiz?source=consult" className="inline-flex items-center justify-center rounded-xl bg-white px-8 py-4 font-semibold text-blue-700 shadow-sm hover:bg-blue-50 transition-colors">
                 Получить консультацию
               </Link>
               <Link href="/quiz" className="inline-flex items-center justify-center rounded-xl border border-white/40 bg-transparent px-8 py-4 font-semibold text-white hover:bg-white/10 transition-colors">

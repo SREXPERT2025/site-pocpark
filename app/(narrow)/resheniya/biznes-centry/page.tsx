@@ -156,7 +156,7 @@ export default function BiznesCentresPage() {
               <Link href="/quiz" className="inline-flex items-center justify-center rounded-xl bg-white px-8 py-4 font-semibold text-blue-700 shadow-sm hover:bg-blue-50 transition-colors">
                 Запросить расчёт
               </Link>
-              <Link href="/contacts" className="inline-flex items-center justify-center rounded-xl border border-white/40 bg-transparent px-8 py-4 font-semibold text-white hover:bg-white/10 transition-colors">
+              <Link href="/quiz?source=consult" className="inline-flex items-center justify-center rounded-xl border border-white/40 bg-transparent px-8 py-4 font-semibold text-white hover:bg-white/10 transition-colors">
                 Получить консультацию
               </Link>
             </div>

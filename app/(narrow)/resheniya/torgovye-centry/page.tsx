@@ -157,7 +157,7 @@ export default function TorgovyeCentresPage() {
               <Link href="/quiz" className="inline-flex min-w-0 items-center justify-center rounded-xl bg-white px-6 py-4 text-center font-semibold leading-snug text-blue-700 shadow-sm transition-colors hover:bg-blue-50 sm:px-8">
                 Рассчитать проект
               </Link>
-              <Link href="/contacts" className="inline-flex min-w-0 items-center justify-center rounded-xl border border-white/40 bg-transparent px-6 py-4 text-center font-semibold leading-snug text-white transition-colors hover:bg-white/10 sm:px-8">
+              <Link href="/quiz?source=consult" className="inline-flex min-w-0 items-center justify-center rounded-xl border border-white/40 bg-transparent px-6 py-4 text-center font-semibold leading-snug text-white transition-colors hover:bg-white/10 sm:px-8">
                 Получить консультацию
               </Link>
             </div>
