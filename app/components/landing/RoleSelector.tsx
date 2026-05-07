@@ -18,7 +18,7 @@ const roles: RoleCardItem[] = [
     result:
       "Прогнозируемый финансовый результат и контроль доходности объекта.",
     href: "/resheniya/dlya-rukovoditeley",
-    imageSrc: "/images/roles/leader.jpg",
+    imageSrc: "/images/roles/leader.png",
     imageAlt: "Руководитель за ноутбуком",
     accent: true,
   },

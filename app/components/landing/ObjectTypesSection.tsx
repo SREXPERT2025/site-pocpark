@@ -25,7 +25,7 @@ const objectTypes: ObjectTypeCardItem[] = [
   {
     title: "Бизнес-центры",
     href: "/resheniya/biznes-centry",
-    imageSrc: "/images/object-types/bc.jpg",
+    imageSrc: "/images/object-types/bc.jpeg",
     imageAlt: "Бизнес-центр",
     tag: "Абонементы и доступ",
     focus: "Арендаторы, сотрудники и гости — прозрачные правила доступа.",
