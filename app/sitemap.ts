@@ -26,6 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/resheniya/dlya-sluzhby-bezopasnosti`, lastModified: now },
     { url: `${SITE_URL}/resheniya/torgovye-centry`, lastModified: now },
     { url: `${SITE_URL}/resheniya/biznes-centry`, lastModified: now },
+    { url: `${SITE_URL}/resheniya/skladskie-kompleksy`, lastModified: now },
     { url: `${SITE_URL}/resheniya/zastroyschiki`, lastModified: now },
 
     // Обзорные страницы (TSX, не в меню, но полезны для индексации / AI)
