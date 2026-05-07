@@ -97,7 +97,7 @@ export default function ApproachCards() {
               </p>
             </div>
             <Link
-              href="/contacts"
+              href="/quiz?source=project"
               className="px-6 py-3 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-colors font-semibold"
             >
               Обсудить проект

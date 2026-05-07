@@ -19,7 +19,7 @@ export default function CallToAction() {
 
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
               <Link
-                href="/contacts"
+                href="/quiz?source=kp"
                 className="px-8 py-4 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-colors font-semibold text-center"
               >
                 Запросить аудит / КП
