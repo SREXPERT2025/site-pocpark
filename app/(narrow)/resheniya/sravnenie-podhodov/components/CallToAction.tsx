@@ -36,10 +36,6 @@ export default function CallToAction() {
   </a>
 ) : null}
             </div>
-
-            <p className="mt-4 text-xs text-slate-500">
-              ООО &quot;СР Эксперт&quot; используется в футере сайта и на специализированных страницах (например, “О компании”).
-            </p>
           </div>
         </div>
       </div>
