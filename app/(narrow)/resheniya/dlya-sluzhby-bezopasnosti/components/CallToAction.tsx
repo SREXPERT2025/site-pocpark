@@ -21,7 +21,7 @@ export default function CallToAction() {
 
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <Link
-            href="/contacts"
+            href="/quiz?source=request"
             className="inline-flex min-w-0 items-center justify-center px-6 py-4 text-center leading-snug sm:px-10 sm:py-5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg transition-colors"
           >
             Запросить регламент и схемы
