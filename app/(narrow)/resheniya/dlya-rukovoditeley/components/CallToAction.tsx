@@ -26,7 +26,7 @@ export default function CallToAction() {
           {/* Кнопки */}
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
             <Link
-              href="/contacts"
+              href="/quiz?source=price"
               className="inline-flex min-w-0 items-center justify-center px-6 py-4 text-center leading-snug sm:px-10 sm:py-5 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:bg-blue-50 transition-colors"
             >
               Получить расчёт
