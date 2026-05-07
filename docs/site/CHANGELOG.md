@@ -7,6 +7,262 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-05-07 — P0/P1 production-readiness: контакты, sitemap, CTA и визуальный контент
+
+Рабочая ветка:
+
+```text
+dev-p1-visible-copy-001
+```
+
+Checkpoint:
+
+```text
+checkpoint-after-p0-demo-readiness-2026-05-07
+checkpoint-after-p0-contacts-consistency-2026-05-07
+checkpoint-after-p1-sitemap-skladskie-2026-05-07
+checkpoint-after-p1-sravnenie-internal-link-2026-05-07
+checkpoint-after-p1-content-and-images-2026-05-07
+checkpoint-after-p1-comparison-cta-to-quiz-2026-05-07
+checkpoint-after-p1-cta-destination-audit-2026-05-07
+checkpoint-after-p1-cta-destination-audit-fix-2026-05-07
+```
+
+Итоговая стабильная точка:
+
+```text
+66ca3a3 fix(p1): correct business centers quiz source
+```
+
+### Что изменено
+
+Выполнен безопасный production-readiness проход перед обновлением демо-сервера:
+
+- убрана внутренняя служебная заметка из CTA на странице сравнения подходов;
+- контактные email приведены к единой логике;
+- складские комплексы добавлены в sitemap.xml;
+- добавлена внутренняя ссылка на страницу сравнения подходов со страницы для руководителей;
+- на странице `/vozmozhnosti` в карусель добавлены описания возможностей;
+- обновлены изображения на главной странице;
+- проведён аудит CTA, которые нерелевантно вели на `/contacts`;
+- коммерческие CTA переведены на релевантные сценарии `/quiz?source=...`;
+- удалены старые файлы-копии страниц `keysy`;
+- исправлена опечатка `source=equest` → `source=request`.
+
+### Контакты
+
+Уточнена логика публичных email в `app/config/site.ts`:
+
+```text
+is@srexpert.su — основной публичный email для заявок;
+rav@srexpert.su — email бухгалтерии для закрывающих документов.
+```
+
+Адрес `sales@rospark.ru` удалён из конфигурации, так как такой почты сейчас нет.
+
+Затронутый файл:
+
+```text
+app/config/site.ts
+```
+
+### Sitemap
+
+В sitemap добавлена существующая коммерческая страница:
+
+```text
+/resheniya/skladskie-kompleksy
+```
+
+Затронутый файл:
+
+```text
+app/sitemap.ts
+```
+
+### Страница сравнения подходов
+
+CTA на странице `/resheniya/sravnenie-podhodov` переведены с общей страницы контактов на квиз:
+
+```text
+Запросить аудит / КП → /quiz?source=kp
+Обсудить проект → /quiz?source=project
+```
+
+Затронутые файлы:
+
+```text
+app/(narrow)/resheniya/sravnenie-podhodov/components/CallToAction.tsx
+app/(narrow)/resheniya/sravnenie-podhodov/components/ApproachCards.tsx
+```
+
+### Страница для руководителей
+
+CTA `Получить расчёт` переведён на сценарий расчёта:
+
+```text
+/contacts → /quiz?source=price
+```
+
+Также добавлена ссылка на страницу сравнения подходов из CTA-блока.
+
+Затронутый файл:
+
+```text
+app/(narrow)/resheniya/dlya-rukovoditeley/components/CallToAction.tsx
+```
+
+### Инженерная страница
+
+CTA инженерной страницы переведены на релевантные сценарии квиза:
+
+```text
+Запросить тех. консультацию → /quiz?source=consult
+Связаться с техподдержкой → /quiz?source=consult
+Получить техническую консультацию → /quiz?source=consult
+Запросить ТКП → /quiz?source=kp
+```
+
+Затронутые файлы:
+
+```text
+app/(narrow)/resheniya/dlya-inzhenerov/components/Hero.tsx
+app/(narrow)/resheniya/dlya-inzhenerov/components/Documentation.tsx
+app/(narrow)/resheniya/dlya-inzhenerov/components/Integration.tsx
+app/(narrow)/resheniya/dlya-inzhenerov/components/CallToAction.tsx
+```
+
+### Страницы объектов
+
+CTA на страницах типов объектов переведены с `/contacts` на квиз:
+
+```text
+/resheniya/torgovye-centry
+/resheniya/zastroyschiki
+/resheniya/biznes-centry
+```
+
+Используемые сценарии:
+
+```text
+/quiz?source=request
+/quiz?source=consult
+/quiz?source=price
+```
+
+Затронутые файлы:
+
+```text
+app/(narrow)/resheniya/torgovye-centry/page.tsx
+app/(narrow)/resheniya/zastroyschiki/page.tsx
+app/(narrow)/resheniya/biznes-centry/page.tsx
+```
+
+### Страница для службы безопасности
+
+CTA переведены на квиз:
+
+```text
+Задать вопрос СБ → /quiz?source=consult
+Запросить регламент и схемы → /quiz?source=request
+```
+
+Дополнительно исправлено окончание строки в `Hero.tsx` после случайного `^M`.
+
+Затронутые файлы:
+
+```text
+app/(narrow)/resheniya/dlya-sluzhby-bezopasnosti/components/Hero.tsx
+app/(narrow)/resheniya/dlya-sluzhby-bezopasnosti/components/CallToAction.tsx
+```
+
+### Кейсы и расширенный контент
+
+CTA в карточках объектов переведён на квиз:
+
+```text
+Получить консультацию → /quiz?source=consult
+```
+
+В расширенном тексте для руководителей ссылка на расчёт переведена на:
+
+```text
+/quiz?source=price
+```
+
+Удалены старые файлы-копии:
+
+```text
+app/keysy/page.tsx — исходник
+app/keysy/[slug]/page.tsx — копия
+```
+
+Затронутые файлы:
+
+```text
+app/keysy/page.tsx
+app/keysy/[slug]/page.tsx
+content/extended/resheniya/dlya-rukovoditeley.md
+```
+
+### Возможности и изображения
+
+На странице `/vozmozhnosti` в карусель добавлены описания возможностей по материалам маркетолога.
+
+Обновлены изображения на главной странице:
+
+```text
+app/components/FeaturesShowcase.tsx
+app/components/landing/ObjectTypesSection.tsx
+app/components/landing/RoleSelector.tsx
+public/images/object-types/*
+public/images/roles/*
+```
+
+### Что не трогалось
+
+- `main`;
+- формы и поля форм;
+- `/api/lead`;
+- `/api/quiz`;
+- отправка заявок на почту, MAX и Telegram;
+- переменные окружения;
+- PM2/env;
+- metadata;
+- JSON-LD;
+- FAQ;
+- `ExtendedInfo`, кроме одной markdown-ссылки в `content/extended/resheniya/dlya-rukovoditeley.md`;
+- структура маршрутов;
+- мобильная сетка, кроме визуально проверенных изображений и карусели.
+
+### Проверка
+
+Выполнялись проверки:
+
+```bash
+npm run build
+git diff --check
+grep -RIn "/contacts" app components content config lib --exclude-dir=.next --exclude-dir=node_modules
+grep -RIn "source=equest" app components content config lib --exclude-dir=.next --exclude-dir=node_modules
+grep -RIn "/quiz?source=" app components content config lib --exclude-dir=.next --exclude-dir=node_modules
+```
+
+Итог:
+
+- `npm run build`: успешно;
+- `/contacts` остался только в допустимых местах: navigation, MobileMenu, BreadcrumbJsonLd, sitemap;
+- `source=equest` не найден;
+- коммерческие CTA ведут на релевантные сценарии `/quiz?source=...`;
+- рабочая ветка `dev-p1-visible-copy-001` синхронизирована с origin;
+- checkpoint после исправления создан и запушен.
+
+### Риски / примечания
+
+- демо-сервер ещё нужно обновить с ветки `dev-p1-visible-copy-001`;
+- `main` пока не трогать;
+- после обновления демо нужно проверить ключевые страницы и сценарии квиза;
+- следующим отдельным этапом можно провести аудит самой страницы `/quiz`: как она отображает разные `source` и насколько заголовки соответствуют CTA.
+
 ## 2026-05-04 — P1 visible copy follow-up: смягчение рискованных обещаний
 
 Рабочая ветка:
