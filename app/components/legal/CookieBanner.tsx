@@ -56,7 +56,7 @@ export default function CookieBanner() {
           <button
             type="button"
             onClick={() => saveConsent('accepted')}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-4 py-2 font-medium text-white transition hover:bg-accent-hover"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-accent-primary px-4 py-2 font-medium text-white transition hover:bg-state-hover"
           >
             Принять
           </button>
