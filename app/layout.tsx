@@ -5,6 +5,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import Header from '@/app/components/layout/Header';
 import Footer from '@/app/components/layout/Footer';
 import PageTransition from '@/app/components/animations/PageTransition';
+import CookieBanner from '@/app/components/legal/CookieBanner';
 
 // metadataBase нужен Next.js для корректного формирования абсолютных URL
 // (OpenGraph/Twitter/каноникал). В проде задаётся через env.
@@ -59,6 +60,7 @@ export default function RootLayout({
 
 
         <Footer />
+        <CookieBanner />
       </body>
     </html>
   );
