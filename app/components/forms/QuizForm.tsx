@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import Button from '@/app/components/ui/Button';
 
@@ -89,7 +90,7 @@ export default function QuizForm() {
       setIsSuccess(true);
       setFormData({ name: '', phone: '', objectType: 'ТЦ / Бизнес-центр' });
       setTouched({ phone: false });
-      setConsent(true);
+      setConsent(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
     } finally {
@@ -161,8 +162,20 @@ export default function QuizForm() {
           onChange={(e) => setConsent(e.target.checked)}
           className="mt-1 h-4 w-4 rounded border-border-primary"
         />
-        <label htmlFor="consent" className="text-xs text-text-secondary">
-          Я согласен на обработку персональных данных для связи по заявке.
+        <label htmlFor="consent" className="text-xs leading-5 text-text-secondary">
+          Я даю согласие на обработку моих персональных данных для обработки обращения,
+          подготовки расчёта и связи со мной. Подтверждаю, что ознакомлен с{' '}
+          <Link href="/privacy" className="underline underline-offset-2 hover:text-text-primary">
+            Политикой обработки персональных данных
+          </Link>{' '}
+          и{' '}
+          <Link
+            href="/soglasie-na-obrabotku-personalnyh-dannyh"
+            className="underline underline-offset-2 hover:text-text-primary"
+          >
+            Согласием на обработку персональных данных
+          </Link>
+          .
         </label>
       </div>
 
@@ -176,7 +189,7 @@ export default function QuizForm() {
       </div>
 
       <p className="text-xs text-text-secondary">
-        Мы продублируем заявку в Email и Telegram, чтобы она не потерялась.
+        Заявка поступит в отдел продаж и будет обработана ответственным специалистом.
       </p>
     </form>
   );

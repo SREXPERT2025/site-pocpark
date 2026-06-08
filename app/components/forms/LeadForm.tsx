@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 export type LeadFormPayload = {
@@ -56,7 +57,7 @@ export default function LeadForm(props: LeadFormProps) {
   const [company, setCompany] = useState("");
   const [objectType, setObjectType] = useState("");
   const [comment, setComment] = useState("");
-  const [consent, setConsent] = useState(true);
+  const [consent, setConsent] = useState(false);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
@@ -122,7 +123,7 @@ export default function LeadForm(props: LeadFormProps) {
       setCompany("");
       setObjectType("");
       setComment("");
-      setConsent(true);
+      setConsent(false);
     } catch (err) {
       setStatus("error");
       setErrorText("Не удалось отправить заявку. Попробуйте еще раз или свяжитесь с нами по телефону.");
@@ -210,7 +211,21 @@ export default function LeadForm(props: LeadFormProps) {
               onChange={(e) => setConsent(e.target.checked)}
               className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300"
             />
-            <span className="min-w-0 break-words">Согласен(на) на обработку персональных данных и связь со мной по заявке.</span>
+            <span className="min-w-0 break-words">
+              Я даю согласие на обработку моих персональных данных для обработки обращения,
+              подготовки расчёта и связи со мной. Подтверждаю, что ознакомлен с{" "}
+              <Link href="/privacy" className="text-blue-700 underline underline-offset-2 hover:text-blue-900">
+                Политикой обработки персональных данных
+              </Link>{" "}
+              и{" "}
+              <Link
+                href="/soglasie-na-obrabotku-personalnyh-dannyh"
+                className="text-blue-700 underline underline-offset-2 hover:text-blue-900"
+              >
+                Согласием на обработку персональных данных
+              </Link>
+              .
+            </span>
           </label>
 
           <button

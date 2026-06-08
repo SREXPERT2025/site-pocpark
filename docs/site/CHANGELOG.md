@@ -7,6 +7,46 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+
+## 2026-06-08 — P0: документы по персональным данным
+
+Рабочая ветка:
+
+```text
+dev-p1-visible-copy-001
+```
+
+### Что изменено
+
+Добавлен юридический пакет по персональным данным перед production:
+
+- созданы страницы `/privacy` и `/soglasie-na-obrabotku-personalnyh-dannyh`;
+- тексты страниц перенесены из `legal/privacy.md` и `legal/personal-data-consent.md`;
+- в `LeadForm` чекбокс согласия выключен по умолчанию и сбрасывается после успешной отправки;
+- в `QuizForm` чекбокс согласия сбрасывается после успешной отправки;
+- текст согласия в формах приведён к единой формулировке со ссылками на документы;
+- из `QuizForm` убран текст про Telegram;
+- ссылки на документы добавлены в Footer;
+- страницы добавлены в sitemap.
+
+### Проверка API
+
+`app/api/lead/route.ts` проверен: заявка без `consent: true` возвращает ошибку 400.
+
+`app/api/quiz/route.ts` не менялся: текущий `QuizForm` отправляет заявку через `/api/lead`.
+
+### Затронутые файлы
+
+```text
+app/(narrow)/privacy/page.tsx
+app/(narrow)/soglasie-na-obrabotku-personalnyh-dannyh/page.tsx
+app/components/forms/LeadForm.tsx
+app/components/forms/QuizForm.tsx
+app/components/layout/Footer.tsx
+app/sitemap.ts
+docs/site/CHANGELOG.md
+```
+
 ## 2026-05-07 — P0/P1 production-readiness: контакты, sitemap, CTA и визуальный контент
 
 Рабочая ветка:
