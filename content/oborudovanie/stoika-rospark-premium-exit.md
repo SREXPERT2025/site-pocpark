@@ -10,7 +10,7 @@ tags:
 brand: "РОСПАРК"
 model: "Премиум"
 sku: "02-02"
-priceFrom: 250000
+priceFrom: 0
 currency: "RUB"
 availability: "InStock"
 condition: "NewCondition"

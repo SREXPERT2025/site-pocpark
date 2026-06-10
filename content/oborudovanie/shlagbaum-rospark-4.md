@@ -12,7 +12,7 @@ tags:
 brand: "РОСПАРК"
 model: "Стандарт 4"
 sku: "04-05"
-priceFrom: 100000
+priceFrom: 0
 currency: "RUB"
 availability: "InStock"
 condition: "NewCondition"

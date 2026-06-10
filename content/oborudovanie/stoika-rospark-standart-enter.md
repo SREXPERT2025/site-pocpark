@@ -10,7 +10,7 @@ tags:
 brand: "РОСПАРК"
 model: "Стандарт"
 sku: "01-01"
-priceFrom: 200000
+priceFrom: 0
 currency: "RUB"
 availability: "InStock"
 condition: "NewCondition"
