@@ -1,3 +1,5 @@
+import { getSiteUrl } from '@/app/config/site-url';
+
 export type ProductJsonLdProps = {
   /** Название товара */
   name: string;
@@ -61,10 +63,7 @@ function conditionUrl(value?: string) {
  * Важно для GEO/SEO: даёт ассистентам структуру товара (бренд/артикул/наличие/цена).
  */
 export default function ProductJsonLd(props: ProductJsonLdProps) {
-  const siteUrl =
-    props.baseUrl?.trim() ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    'https://роспарк.рф';
+  const siteUrl = props.baseUrl?.trim() || getSiteUrl();
 
   const name = props.name?.trim();
   if (!name) return null;

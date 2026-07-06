@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getContentBySlug, getAllContentMeta } from '@/lib/content-parser'; // Предполагаем, что парсер здесь
+import { canonicalUrl } from '@/app/config/site-url';
 
 // UI Компоненты
 import Hero from '@/app/components/ui/Hero'; // Путь может отличаться
@@ -18,6 +19,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   return {
     title: data.title,
     description: data.description,
+    alternates: {
+      canonical: canonicalUrl(`/resheniya/${params.slug}`),
+    },
   };
 }
 

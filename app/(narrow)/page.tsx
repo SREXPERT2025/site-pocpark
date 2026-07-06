@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import FeaturesShowcase from '@/app/components/FeaturesShowcase';
 import Hero from "@/app/components/landing/Hero";
 import RoleSelector from "@/app/components/landing/RoleSelector";
@@ -5,6 +6,13 @@ import ObjectTypesSection from "@/app/components/landing/ObjectTypesSection";
 import CapabilitiesSection from "@/app/components/landing/CapabilitiesSection";
 import PriceList from "@/app/components/landing/PriceList";
 import LeadForm from "@/app/components/landing/LeadForm";
+import { canonicalUrl } from '@/app/config/site-url';
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: canonicalUrl('/'),
+  },
+};
 
 export default function HomePage() {
   return (

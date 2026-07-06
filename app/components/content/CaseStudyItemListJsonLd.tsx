@@ -1,3 +1,5 @@
+import { absoluteUrl } from '@/app/config/site-url';
+
 export type CaseStudyListItem = {
   /** Название проекта */
   name: string;
@@ -33,19 +35,24 @@ export default function CaseStudyItemListJsonLd({
     ...(description ? { description } : {}),
     mainEntity: {
       '@type': 'ItemList',
-      itemListElement: items.map((it, idx) => ({
-        '@type': 'ListItem',
-        position: idx + 1,
-        url: it.url,
-        item: {
-          '@type': 'CaseStudy',
-          name: it.name,
-          ...(it.description ? { description: it.description } : {}),
-          ...(it.image ? { image: it.image } : {}),
-          ...(it.dateModified ? { dateModified: it.dateModified } : {}),
-          url: it.url,
-        },
-      })),
+      itemListElement: items.map((it, idx) => {
+        const itemUrl = absoluteUrl(it.url);
+        const imageUrl = it.image ? absoluteUrl(it.image) : undefined;
+
+        return {
+          '@type': 'ListItem',
+          position: idx + 1,
+          url: itemUrl,
+          item: {
+            '@type': 'CaseStudy',
+            name: it.name,
+            ...(it.description ? { description: it.description } : {}),
+            ...(imageUrl ? { image: imageUrl } : {}),
+            ...(it.dateModified ? { dateModified: it.dateModified } : {}),
+            url: itemUrl,
+          },
+        };
+      }),
     },
   };
 

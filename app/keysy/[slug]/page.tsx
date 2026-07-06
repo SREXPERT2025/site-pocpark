@@ -9,6 +9,7 @@ import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
 import LeadFormSection from '@/app/components/forms/LeadFormSection';
+import { canonicalUrl } from '@/app/config/site-url';
 import { getAllContentMeta, getContentBySlug } from '@/lib/content-parser';
 
 export function generateStaticParams() {
@@ -26,9 +27,13 @@ export function generateMetadata({
   return {
     title: `${data.title} — Проекты РОСПАРК`,
     description: data.description,
+    alternates: {
+      canonical: canonicalUrl(`/keysy/${params.slug}`),
+    },
     openGraph: {
       title: data.title,
       description: data.description,
+      url: canonicalUrl(`/keysy/${params.slug}`),
       images: data.coverImage ? [data.coverImage] : undefined,
     },
   };

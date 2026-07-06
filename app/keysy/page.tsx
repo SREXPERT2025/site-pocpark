@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Hero from '@/app/components/ui/Hero';
 import ProjectCard from '@/app/components/ui/ProjectCard';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
@@ -6,12 +7,16 @@ import ProjectsControls, {
   type ProjectsSortKey,
 } from '@/app/components/projects/ProjectsControls';
 import LeadFormSection from '@/app/components/forms/LeadFormSection';
+import { canonicalUrl } from '@/app/config/site-url';
 import { getAllContentMeta } from '@/lib/content-parser';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Проекты',
   description:
     'Реализованные проекты РОСПАРК: задачи, сроки, метрики, результат.',
+  alternates: {
+    canonical: canonicalUrl('/keysy'),
+  },
 };
 
 type SearchParams = {

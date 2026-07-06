@@ -6,6 +6,7 @@ import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
 import LeadForm from '@/app/components/forms/LeadForm';
+import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
 
 export const metadata: Metadata = {
@@ -19,9 +20,13 @@ export const metadata: Metadata = {
     "онлайн-оплата парковки",
     "РОСПАРК"
   ],
+  "alternates": {
+    "canonical": canonicalUrl('/resheniya/zastroyschiki')
+  },
   "openGraph": {
     "title": "Автоматизация парковки для застройщиков и ЖК | РОСПАРК",
     "description": "Разделение потоков резидентов, гостей и подрядчиков, контроль доступа и событий, минимум ручных конфликтов. Внедрение поэтапно и без перегруза интерфейса.",
+    "url": canonicalUrl('/resheniya/zastroyschiki'),
     "type": "website"
   }
 };

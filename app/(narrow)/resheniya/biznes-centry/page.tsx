@@ -6,6 +6,7 @@ import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
 import LeadForm from '@/app/components/forms/LeadForm';
+import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
 
 export const metadata: Metadata = {
@@ -19,9 +20,13 @@ export const metadata: Metadata = {
     "онлайн-оплата парковки",
     "РОСПАРК"
   ],
+  "alternates": {
+    "canonical": canonicalUrl('/resheniya/biznes-centry')
+  },
   "openGraph": {
     "title": "Автоматизация парковки для бизнес-центров | РОСПАРК",
     "description": "Доступ для арендаторов и гостей, правила по организациям, журналы событий и контроль исключений. РОСПАРК помогает держать порядок без ручного хаоса.",
+    "url": canonicalUrl('/resheniya/biznes-centry'),
     "type": "website"
   }
 };
