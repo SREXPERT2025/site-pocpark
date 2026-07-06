@@ -56,7 +56,7 @@ export default function ItemListJsonLd({ name, items, baseUrl }: ItemListJsonLdP
   const siteUrl =
     baseUrl?.trim() ||
     process.env.NEXT_PUBLIC_SITE_URL ||
-    'https://роспарк.рф';
+    'https://www.xn--80aukedde.xn--p1ai';
 
   const jsonLd = {
     '@context': 'https://schema.org',

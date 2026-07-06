@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getAllContentMeta } from '@/lib/content-parser';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://rospark.rf';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.xn--80aukedde.xn--p1ai';
 
 /**
  * Sitemap ориентирован на индексацию (SEO/GEO):

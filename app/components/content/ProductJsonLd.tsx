@@ -64,7 +64,7 @@ export default function ProductJsonLd(props: ProductJsonLdProps) {
   const siteUrl =
     props.baseUrl?.trim() ||
     process.env.NEXT_PUBLIC_SITE_URL ||
-    'https://роспарк.рф';
+    'https://www.xn--80aukedde.xn--p1ai';
 
   const name = props.name?.trim();
   if (!name) return null;

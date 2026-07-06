@@ -11,7 +11,7 @@ export default function GalleryBlock({ gallery }: { gallery: string[] }) {
           <div key={src} className="relative aspect-[4/3] overflow-hidden rounded-md border border-border-primary">
             <Image
               src={src}
-              alt="ROSPARK equipment"
+              alt="Оборудование для автоматизации парковок РОСПАРК"
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-cover"
