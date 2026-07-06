@@ -118,6 +118,10 @@ export const navigation: NavItem[] = [
     href: '/keysy',
   },
   {
+    label: 'Статьи',
+    href: '/stati',
+  },
+  {
     label: 'Контакты',
     href: '/contacts',
   },

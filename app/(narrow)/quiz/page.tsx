@@ -60,6 +60,51 @@ function resolveContent(source?: string) {
           'Оставьте контакты — мы свяжемся с вами для уточнения деталей.',
       };
 
+    case 'articles':
+      return {
+        title: 'Обсудить задачу по парковке',
+        description:
+          'Оставьте контакты и тип объекта — мы подскажем, какие сценарии доступа, оплаты и контроля стоит заложить в проект.',
+      };
+
+    case 'article-kak-vybrat-sistemu-avtomatizacii-parkovki':
+    case 'article-system-choice':
+      return {
+        title: 'Подобрать парковочную систему под объект',
+        description:
+          'Оставьте контакты и тип объекта — мы поможем определить сценарии, состав оборудования и следующий шаг по проекту.',
+      };
+
+    case 'article-avtomatizaciya-parkovki-torgovogo-centra':
+      return {
+        title: 'Обсудить парковку торгового центра',
+        description:
+          'Оставьте контакты — разберём поток посетителей, оплату, бесплатное время, льготы и контроль выезда для вашего ТЦ.',
+      };
+
+    case 'article-parkovka-biznes-centra-arendatory-gosti-limity':
+    case 'article-bc-parking':
+      return {
+        title: 'Настроить парковку бизнес-центра',
+        description:
+          'Оставьте контакты — обсудим арендаторов, гостей, лимиты мест, роли охраны и отчётность для управляющей компании.',
+      };
+
+    case 'article-iz-chego-sostoit-parkovochnaya-sistema':
+      return {
+        title: 'Подобрать состав парковочной системы',
+        description:
+          'Оставьте контакты — подскажем, какие стойки, шлагбаумы, терминалы, оплату и программные сценарии стоит рассмотреть.',
+      };
+
+    case 'article-ispravlenie-oshibok-oplaty-parkovki':
+    case 'article-payment-errors':
+      return {
+        title: 'Разобрать сценарий оплаты и ошибок',
+        description:
+          'Оставьте контакты — обсудим оплату, корректировки, журнал событий и действия оператора в спорных ситуациях.',
+      };
+
     default:
       return {
         title: 'Получить предварительное предложение',

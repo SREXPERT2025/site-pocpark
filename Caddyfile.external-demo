@@ -1,0 +1,9 @@
+srtestrealme.ru:3001 {
+	tls {
+		issuer acme
+	}
+
+	encode zstd gzip
+
+	reverse_proxy 127.0.0.1:3002
+}

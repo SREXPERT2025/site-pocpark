@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl('/contacts'), lastModified: now },
     { url: absoluteUrl('/oborudovanie'), lastModified: now },
     { url: absoluteUrl('/keysy'), lastModified: now },
+    { url: absoluteUrl('/stati'), lastModified: now },
     { url: absoluteUrl('/vozmozhnosti'), lastModified: now },
     { url: absoluteUrl('/quiz'), lastModified: now },
     { url: absoluteUrl('/privacy'), lastModified: now },
@@ -51,6 +52,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     ...getAllContentMeta('keysy').map((m) => ({
       url: absoluteUrl(`/keysy/${m.slug}`),
+      lastModified: m.lastModified ? new Date(m.lastModified) : now,
+    })),
+    ...getAllContentMeta('stati').map((m) => ({
+      url: absoluteUrl(`/stati/${m.slug}`),
       lastModified: m.lastModified ? new Date(m.lastModified) : now,
     })),
   ];
