@@ -21,6 +21,22 @@ Subagents помогают быстрее собирать специализи�
 
 ## Доступные subagents
 
+### Рабочая AI-команда РОСПАРК
+
+Эти subagents отражают целевую структуру команды сайта. Они работают read-only и помогают основному Codex, который выступает Архитектором сайта.
+
+- `rospark_ai_marketer` — офферы, коммерческий смысл, SEO/GEO-контент, статьи, новости, ТЗ для редактора и архитектора.
+- `rospark_ai_architect` — read-only профиль Архитектора/Оркестратора: scope, risks, task briefs, QA-gate и go/no-go до разработки.
+- `rospark_tech_editor` — русский технический B2B-текст, терминология, безопасные формулировки.
+- `rospark_ai_designer` — визуальная иерархия, первый экран, CTA, доверие, мобильная подача.
+- `rospark_frontend_coder` — read-only file-scope, план фронтенд-правок, команды проверки и отката. Код меняет только основной Codex или отдельный worker после утверждения.
+- `rospark_qa_tester` — QA-проверка, build/lint/typecheck план, мобильная версия, формы, SEO smoke и готовность к merge.
+
+Полный регламент работы команды:
+
+- `docs/agents/AI_TEAM_ORCHESTRATION.md`
+- `docs/agents/subagents/README.md`
+
 ### architect_reviewer
 
 Используется для архитектурного review:

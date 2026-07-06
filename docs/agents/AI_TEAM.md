@@ -249,3 +249,20 @@ STATUS: ready-for-work
 4. патч с изменениями;
 5. проверка мобильной версии;
 6. успешный деплой.
+
+## Актуальный регламент субагентов
+
+С 2026-07-06 рабочая структура AI-команды уточнена в отдельном документе:
+
+- `docs/agents/AI_TEAM_ORCHESTRATION.md`
+
+Project-scoped профили субагентов лежат в:
+
+- `.codex/agents/rospark-ai-architect.toml`
+- `.codex/agents/rospark-ai-marketer.toml`
+- `.codex/agents/rospark-tech-editor.toml`
+- `.codex/agents/rospark-ai-designer.toml`
+- `.codex/agents/rospark-frontend-coder.toml`
+- `.codex/agents/rospark-qa-tester.toml`
+
+Главное правило: постоянные субагенты работают read-only. Они анализируют, готовят ТЗ и проверяют риски. Кодовые изменения выполняются только после утвержденного scope, в отдельной ветке от `ai-site-dev`, с diff, проверками и review Архитектора.
