@@ -66,7 +66,7 @@ export default function CompanyPage() {
           <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
             <h2 className="text-2xl font-semibold text-slate-950">Кто такой РОСПАРК</h2>
             <p className="mt-4 leading-relaxed text-slate-700">
-              РОСПАРК — бренд парковочных систем. Юридическое лицо, указанное в публичных и legal-разделах сайта, — ООО «СР Эксперт».
+              РОСПАРК — бренд парковочных систем. Юридическое лицо, указанное в публичных и юридических разделах сайта, — ООО «СР Эксперт».
             </p>
           </article>
 
@@ -152,7 +152,7 @@ export default function CompanyPage() {
                 </a>
               </li>
               <li>
-                <span className="font-semibold text-slate-950">Legal/privacy: </span>
+                <span className="font-semibold text-slate-950">Юридические вопросы и персональные данные: </span>
                 <a href="mailto:rav@srexpert.su" className="text-blue-700 hover:underline">
                   rav@srexpert.su
                 </a>
