@@ -1,3 +1,5 @@
+import { getSiteUrl } from '@/app/config/site-url';
+
 export type ItemListEntry = {
   name: string;
   url: string;
@@ -53,10 +55,7 @@ function safePrice(v?: number) {
 export default function ItemListJsonLd({ name, items, baseUrl }: ItemListJsonLdProps) {
   if (!items || items.length === 0) return null;
 
-  const siteUrl =
-    baseUrl?.trim() ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    'https://роспарк.рф';
+  const siteUrl = baseUrl?.trim() || getSiteUrl();
 
   const jsonLd = {
     '@context': 'https://schema.org',

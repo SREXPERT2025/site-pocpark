@@ -1,3 +1,5 @@
+import { getSiteUrl } from '@/app/config/site-url';
+
 export type BreadcrumbItem = {
   /** Название шага (например, «Главная», «Решения для ТЦ»). */
   name: string;
@@ -32,10 +34,7 @@ function toAbsoluteUrl(baseUrl: string, url: string) {
 export default function BreadcrumbJsonLd({ items, baseUrl }: BreadcrumbJsonLdProps) {
   if (!items || items.length < 2) return null;
 
-  const siteUrl =
-    baseUrl?.trim() ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    'https://роспарк.рф';
+  const siteUrl = baseUrl?.trim() || getSiteUrl();
 
   const jsonLd = {
     '@context': 'https://schema.org',
