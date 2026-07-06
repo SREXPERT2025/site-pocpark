@@ -1,5 +1,7 @@
+import type { Metadata } from 'next';
 import Hero from '@/app/components/ui/Hero';
 import QuizForm from '@/app/components/forms/QuizForm';
+import { canonicalUrl } from '@/app/config/site-url';
 
 type Props = {
   searchParams?: {
@@ -67,10 +69,13 @@ function resolveContent(source?: string) {
   }
 }
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Расчёт проекта | РОСПАРК',
   description:
     'Ответьте на несколько вопросов — мы подготовим предварительную оценку конфигурации, бюджета и сценария работы парковки.',
+  alternates: {
+    canonical: canonicalUrl('/quiz'),
+  },
 };
 
 export default function QuizPage({ searchParams }: Props) {

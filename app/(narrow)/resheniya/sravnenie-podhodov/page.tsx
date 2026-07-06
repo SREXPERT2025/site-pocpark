@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { canonicalUrl } from '@/app/config/site-url';
 
 import Hero from './components/Hero';
 import ComparisonTable from './components/ComparisonTable';
@@ -11,13 +12,13 @@ export const metadata: Metadata = {
   description:
     'Сравниваем 3 подхода к автоматизации парковки: аренда (ревшэр), коробочное решение + монтаж, система под ключ от производителя (РОСПАРК). Когда что выгоднее и почему важно считать стоимость владения.',
   alternates: {
-    canonical: '/resheniya/sravnenie-podhodov',
+    canonical: canonicalUrl('/resheniya/sravnenie-podhodov'),
   },
   openGraph: {
     title: 'Сравнение подходов к автоматизации парковки | РОСПАРК',
     description:
       '3 подхода: аренда, коробка+монтаж, под ключ. Выбор под ваш объект и финансовую модель.',
-    url: '/resheniya/sravnenie-podhodov',
+    url: canonicalUrl('/resheniya/sravnenie-podhodov'),
     type: 'article',
   },
 };

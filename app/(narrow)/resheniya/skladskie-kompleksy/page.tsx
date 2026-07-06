@@ -1,4 +1,22 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { canonicalUrl } from "@/app/config/site-url";
+
+export const metadata: Metadata = {
+  title: "Решения для складских комплексов | РОСПАРК",
+  description:
+    "Контроль проезда для персонала, подрядчиков и грузового транспорта: правила доступа, события и аналитика для складского комплекса.",
+  alternates: {
+    canonical: canonicalUrl("/resheniya/skladskie-kompleksy"),
+  },
+  openGraph: {
+    title: "Решения для складских комплексов | РОСПАРК",
+    description:
+      "Контроль проезда для персонала, подрядчиков и грузового транспорта: правила доступа, события и аналитика для складского комплекса.",
+    url: canonicalUrl("/resheniya/skladskie-kompleksy"),
+    type: "website",
+  },
+};
 
 export default function WarehouseSolutionsPage() {
   return (

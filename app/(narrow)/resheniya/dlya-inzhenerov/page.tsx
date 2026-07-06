@@ -12,6 +12,7 @@ import AnswerFirst from '@/app/components/content/AnswerFirst';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
+import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
 
 export const metadata: Metadata = {
@@ -27,9 +28,13 @@ export const metadata: Metadata = {
     "парковочная система",
     "РОСПАРК"
   ],
+  "alternates": {
+    "canonical": canonicalUrl('/resheniya/dlya-inzhenerov')
+  },
   "openGraph": {
     "title": "Автоматизация парковки для инженеров — РОСПАРК",
     "description": "Инженерный взгляд: схемы, интерфейсы, интеграции, отказоустойчивость, эксплуатация.",
+    "url": canonicalUrl('/resheniya/dlya-inzhenerov'),
     "type": "website"
   }
 };

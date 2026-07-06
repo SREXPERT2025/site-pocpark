@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Hero from '@/app/components/ui/Hero';
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs';
 import CtaBlock from '@/app/components/ui/CtaBlock';
+import { canonicalUrl } from '@/app/config/site-url';
 import { getAllContentMeta, getContentBySlug } from '@/lib/content-parser';
 
 export function generateStaticParams() {
@@ -15,6 +16,9 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   return {
     title: data.title,
     description: data.description,
+    alternates: {
+      canonical: canonicalUrl(`/vozmozhnosti/${params.slug}`),
+    },
   };
 }
 

@@ -11,6 +11,7 @@ import AnswerFirst from '@/app/components/content/AnswerFirst';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
+import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
 
 export const metadata: Metadata = {
@@ -26,9 +27,13 @@ export const metadata: Metadata = {
     "автоматическая парковка",
     "РОСПАРК"
   ],
+  "alternates": {
+    "canonical": canonicalUrl('/resheniya/dlya-rukovoditeley')
+  },
   "openGraph": {
     "title": "Автоматизация парковки для руководителей — РОСПАРК",
     "description": "Как превратить парковку в управляемый актив: контроль выручки, автоматизация, рост дохода.",
+    "url": canonicalUrl('/resheniya/dlya-rukovoditeley'),
     "type": "website"
   }
 };
