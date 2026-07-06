@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { dispatchLeadFormEvent, type LeadFormEventParams } from "@/app/lib/analytics-events";
 import { getLeadAttribution } from "@/app/lib/lead-attribution";
 
 export type LeadFormPayload = {
@@ -63,6 +64,28 @@ export default function LeadForm(props: LeadFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
+  const hasStartedRef = useRef(false);
+
+  function getEventParams(): LeadFormEventParams {
+    return {
+      form_name: "lead_form",
+      source_page:
+        sourcePage ||
+        (typeof window !== "undefined" ? window.location.pathname : undefined),
+      source_section: sourceSection,
+    };
+  }
+
+  function handleFormStart() {
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+    dispatchLeadFormEvent("form_start", getEventParams());
+  }
+
+  useEffect(() => {
+    dispatchLeadFormEvent("form_view", getEventParams());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const payload: LeadFormPayload = useMemo(
     () => ({
@@ -98,12 +121,18 @@ export default function LeadForm(props: LeadFormProps) {
     if (!canSubmit) {
       setStatus("error");
       setErrorText("Проверьте имя, телефон и согласие на обработку данных.");
+      dispatchLeadFormEvent("form_error", {
+        ...getEventParams(),
+        error_type: "validation",
+      });
       return;
     }
 
     setIsSubmitting(true);
 
     try {
+      dispatchLeadFormEvent("form_submit", getEventParams());
+
       const res = await fetch("/api/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -120,6 +149,7 @@ export default function LeadForm(props: LeadFormProps) {
       }
 
       setStatus("success");
+      dispatchLeadFormEvent("form_success", getEventParams());
       setName("");
       setPhone("");
       setCompany("");
@@ -129,6 +159,10 @@ export default function LeadForm(props: LeadFormProps) {
     } catch (err) {
       setStatus("error");
       setErrorText("Не удалось отправить заявку. Попробуйте еще раз или свяжитесь с нами по телефону.");
+      dispatchLeadFormEvent("form_error", {
+        ...getEventParams(),
+        error_type: "network",
+      });
       // eslint-disable-next-line no-console
       console.error(err);
     } finally {
@@ -139,6 +173,7 @@ export default function LeadForm(props: LeadFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
+      onFocus={handleFormStart}
       className={
         className ||
         `w-full max-w-full overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] ${

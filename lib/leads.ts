@@ -113,13 +113,10 @@ async function sendToMax(text: string) {
   try {
     const bot = getMaxBot(token);
 
-    const response = await bot.api.sendMessageToChat(
+    await bot.api.sendMessageToChat(
       Number(chatId),
       text
     );
-
-    console.log("MAX SUCCESS:", response?.body?.mid);
-
   } catch (err) {
     console.error("MAX ERROR:", err);
   }

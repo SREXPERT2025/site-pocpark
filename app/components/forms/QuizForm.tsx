@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Button from '@/app/components/ui/Button';
+import { dispatchLeadFormEvent, type LeadFormEventParams } from '@/app/lib/analytics-events';
 import { getLeadAttribution } from '@/app/lib/lead-attribution';
 
 type FormData = {
@@ -37,6 +38,26 @@ export default function QuizForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasStartedRef = useRef(false);
+
+  function getEventParams(): LeadFormEventParams {
+    return {
+      form_name: 'quiz_form',
+      source_page: '/quiz',
+      source_section: 'quiz',
+    };
+  }
+
+  function handleFormStart() {
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
+    dispatchLeadFormEvent('form_start', getEventParams());
+  }
+
+  useEffect(() => {
+    dispatchLeadFormEvent('form_view', getEventParams());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const phoneError = useMemo(() => {
     if (!touched.phone) return null;
@@ -53,20 +74,34 @@ export default function QuizForm() {
     // Мини-валидация перед отправкой
     if (!formData.name.trim()) {
       setError('Укажите имя.');
+      dispatchLeadFormEvent('form_error', {
+        ...getEventParams(),
+        error_type: 'validation',
+      });
       return;
     }
     if (!formData.phone.trim() || !isValidRuPhone(formData.phone)) {
       setTouched({ phone: true });
       setError('Проверьте телефон.');
+      dispatchLeadFormEvent('form_error', {
+        ...getEventParams(),
+        error_type: 'validation',
+      });
       return;
     }
     if (!consent) {
       setError('Нужно согласиться на обработку персональных данных.');
+      dispatchLeadFormEvent('form_error', {
+        ...getEventParams(),
+        error_type: 'validation',
+      });
       return;
     }
 
     setIsSubmitting(true);
     try {
+      dispatchLeadFormEvent('form_submit', getEventParams());
+
       const res = await fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -90,18 +125,23 @@ export default function QuizForm() {
       }
 
       setIsSuccess(true);
+      dispatchLeadFormEvent('form_success', getEventParams());
       setFormData({ name: '', phone: '', objectType: 'ТЦ / Бизнес-центр' });
       setTouched({ phone: false });
       setConsent(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
+      dispatchLeadFormEvent('form_error', {
+        ...getEventParams(),
+        error_type: 'network',
+      });
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+    <form onSubmit={handleSubmit} onFocus={handleFormStart} className="mt-8 space-y-4">
       <div>
         <label className="block text-sm font-medium text-text-primary">Имя</label>
         <input
