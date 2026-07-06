@@ -40,7 +40,7 @@ export default function ContactsPage() {
                   href="tel:+74993212040"
                   className="break-all text-blue-600 hover:underline"
                 >
-                  +7 499 321-20-40
+                  +7 (499) 321-20-40
                 </a>
               </li>
               <li className="min-w-0 break-words">
@@ -80,7 +80,7 @@ export default function ContactsPage() {
                 <strong>ОГРН:</strong> 1105040005124
               </li>
               <li className="min-w-0 break-words">
-                <strong>Адрес:</strong> 123298, Россия, г. Москва, ул. Народного ополчения, д.38к3, офис 117
+                <strong>Офис для встреч и переговоров:</strong> 123298, Россия, г. Москва, ул. Народного ополчения, д.38к3, офис 117
               </li>
             </ul>
 
