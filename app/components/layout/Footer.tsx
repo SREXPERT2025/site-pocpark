@@ -68,6 +68,11 @@ export default function Footer() {
 
           <ul className="mt-4 space-y-2">
             <li>
+              <Link href="/o-kompanii" className="text-sm text-neutral-600 hover:text-neutral-900">
+                О компании
+              </Link>
+            </li>
+            <li>
               <Link href="/privacy" className="text-sm text-neutral-600 hover:text-neutral-900">
                 Политика обработки персональных данных
               </Link>
