@@ -95,42 +95,56 @@ export default function CompanyPage() {
       </section>
 
       <section className="py-12 sm:py-16">
-        <div className="container mx-auto grid max-w-5xl gap-6 px-4 lg:grid-cols-3">
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-950">Юридическая информация</h2>
-            <dl className="mt-4 space-y-3 text-sm leading-relaxed text-slate-700">
-              <div>
-                <dt className="font-semibold text-slate-950">Юридическое лицо</dt>
-                <dd>Общество с ограниченной ответственностью «СР Эксперт»</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-950">Краткое наименование</dt>
-                <dd>ООО «СР Эксперт»</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-950">ИНН</dt>
-                <dd>5040100635</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-950">ОГРН</dt>
-                <dd>1105040005124</dd>
-              </div>
-            </dl>
-          </article>
+        <div className="container mx-auto max-w-5xl px-4">
+          <h2 className="text-2xl font-semibold text-slate-950 sm:text-3xl">Адреса</h2>
+          <div className="mt-6 grid gap-6 lg:grid-cols-3">
+            <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-slate-950">Юридическая информация</h3>
+              <dl className="mt-4 space-y-3 text-sm leading-relaxed text-slate-700">
+                <div>
+                  <dt className="font-semibold text-slate-950">Юридическое лицо</dt>
+                  <dd>Общество с ограниченной ответственностью «СР Эксперт»</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-950">Краткое наименование</dt>
+                  <dd>ООО «СР Эксперт»</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-950">ИНН</dt>
+                  <dd>5040100635</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-950">ОГРН</dt>
+                  <dd>1105040005124</dd>
+                </div>
+              </dl>
+            </article>
 
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-950">Офис для встреч и переговоров</h2>
-            <p className="mt-4 text-sm leading-relaxed text-slate-700">
-              123298, Россия, г. Москва, ул. Народного ополчения, д.38к3, офис 117
-            </p>
-          </article>
+            <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-slate-950">Офис для встреч и переговоров</h3>
+              <p className="mt-4 text-sm leading-relaxed text-slate-700">
+                123298, Россия, г. Москва, ул. Народного ополчения, д.38к3, офис 117
+              </p>
+              <a
+                href="https://yandex.ru/maps/-/CTqWnIkl"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-5 inline-flex rounded-xl border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50"
+              >
+                Открыть в Яндекс Картах
+              </a>
+            </article>
 
-          <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-slate-950">Юридический адрес</h2>
-            <p className="mt-4 text-sm leading-relaxed text-slate-700">
-              140108, Московская область, г. Раменское, ул. Михалевича, д. 51А, комната 61
-            </p>
-          </article>
+            <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-slate-950">Юридический адрес</h3>
+              <p className="mt-4 text-sm leading-relaxed text-slate-700">
+                140108, Московская область, г. Раменское, ул. Михалевича, д. 51А, комната 61
+              </p>
+              <p className="mt-4 text-sm leading-relaxed text-slate-600">
+                Используется для юридических документов и официальной корреспонденции.
+              </p>
+            </article>
+          </div>
         </div>
       </section>
 
