@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { getLeadAttribution } from "@/app/lib/lead-attribution";
 
 export type LeadFormPayload = {
   name: string;
@@ -109,6 +110,7 @@ export default function LeadForm(props: LeadFormProps) {
         body: JSON.stringify({
           ...payload,
           phone: normalizePhone(payload.phone),
+          utm: getLeadAttribution(),
         }),
       });
 

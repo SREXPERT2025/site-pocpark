@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import Button from '@/app/components/ui/Button';
+import { getLeadAttribution } from '@/app/lib/lead-attribution';
 
 type FormData = {
   name: string;
@@ -78,6 +79,7 @@ export default function QuizForm() {
           consent,
           sourceSection: 'quiz',
           sourcePage: '/quiz',
+          utm: getLeadAttribution(),
         }),
       });
 
