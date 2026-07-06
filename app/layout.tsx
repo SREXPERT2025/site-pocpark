@@ -5,6 +5,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import Header from '@/app/components/layout/Header';
 import Footer from '@/app/components/layout/Footer';
 import PageTransition from '@/app/components/animations/PageTransition';
+import OrganizationJsonLd from '@/app/components/content/OrganizationJsonLd';
 import CookieBanner from '@/app/components/legal/CookieBanner';
 import { getMetadataBase } from '@/app/config/site-url';
 
@@ -39,6 +40,8 @@ export default function RootLayout({
   return (
     <html lang="ru" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="min-h-screen overflow-x-hidden bg-bg-primary text-text-primary">
+        <OrganizationJsonLd />
+
         {/* Header всегда виден */}
         <Header />
 
