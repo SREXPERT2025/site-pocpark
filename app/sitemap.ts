@@ -13,6 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Статические страницы (TSX) из Sitemap v1.1
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: absoluteUrl('/'), lastModified: now },
+    { url: absoluteUrl('/o-kompanii'), lastModified: now },
     { url: absoluteUrl('/contacts'), lastModified: now },
     { url: absoluteUrl('/oborudovanie'), lastModified: now },
     { url: absoluteUrl('/keysy'), lastModified: now },
