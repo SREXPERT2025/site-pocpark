@@ -87,6 +87,7 @@ export default function QuizForm({
   });
 
   const [consent, setConsent] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const [touched, setTouched] = useState<{ phone: boolean }>({ phone: false });
 
@@ -146,14 +147,6 @@ export default function QuizForm({
       });
       return;
     }
-    if (!formData.city.trim()) {
-      setError('Укажите город или регион объекта.');
-      dispatchLeadFormEvent('form_error', {
-        ...getEventParams(),
-        error_type: 'validation',
-      });
-      return;
-    }
     if (!consent) {
       setError('Нужно согласиться на обработку персональных данных.');
       dispatchLeadFormEvent('form_error', {
@@ -166,12 +159,19 @@ export default function QuizForm({
     setIsSubmitting(true);
     try {
       dispatchLeadFormEvent('form_submit', getEventParams());
-      const message = [
+      const messageParts = [
         'Заявка с квиза: подготовить коммерческое предложение / расчёт.',
-        `Что нужно: ${formData.requestGoal}.`,
-        `Стадия проекта: ${formData.projectStage}.`,
-        `Текущая система: ${formData.currentSystem.trim() || 'не указана'}.`,
-      ].join('\n');
+      ];
+
+      if (detailsOpen) {
+        messageParts.push(`Что нужно: ${formData.requestGoal}.`);
+        messageParts.push(`Стадия проекта: ${formData.projectStage}.`);
+        if (formData.currentSystem.trim()) {
+          messageParts.push(`Текущая система: ${formData.currentSystem.trim()}.`);
+        }
+      }
+
+      const message = messageParts.join('\n');
 
       const res = await fetch('/api/lead', {
         method: 'POST',
@@ -181,11 +181,11 @@ export default function QuizForm({
           phone: formData.phone,
           phoneNormalized: normalizePhone(formData.phone),
           objectType: formData.objectType,
-          city: formData.city,
-          accessPoints: formData.accessPoints,
-          projectStage: formData.projectStage,
-          requestGoal: formData.requestGoal,
-          currentSystem: formData.currentSystem,
+          city: detailsOpen ? formData.city : undefined,
+          accessPoints: detailsOpen ? formData.accessPoints : undefined,
+          projectStage: detailsOpen ? formData.projectStage : undefined,
+          requestGoal: detailsOpen ? formData.requestGoal : undefined,
+          currentSystem: detailsOpen ? formData.currentSystem : undefined,
           message,
           consent,
           source,
@@ -219,6 +219,7 @@ export default function QuizForm({
       });
       setTouched({ phone: false });
       setConsent(false);
+      setDetailsOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Неизвестная ошибка');
       dispatchLeadFormEvent('form_error', {
@@ -231,122 +232,19 @@ export default function QuizForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} onFocus={handleFormStart} className="mt-8 space-y-6">
-      <section className="rounded-lg border border-border-primary bg-bg-primary p-4 sm:p-5">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-              Быстрый бриф
-            </p>
-            <h2 className="mt-1 text-xl font-semibold text-text-primary">Параметры объекта</h2>
-          </div>
-          <div className="text-sm text-text-secondary">5 вопросов</div>
-        </div>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <div>
-            <label htmlFor="objectType" className="block text-sm font-medium text-text-primary">
-              Тип объекта
-            </label>
-            <select
-              id="objectType"
-              value={formData.objectType}
-              onChange={(e) => setFormData((p) => ({ ...p, objectType: e.target.value }))}
-              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-            >
-              {objectTypeOptions.map((option) => (
-                <option key={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="city" className="block text-sm font-medium text-text-primary">
-              Город или регион
-            </label>
-            <input
-              id="city"
-              value={formData.city}
-              onChange={(e) => setFormData((p) => ({ ...p, city: e.target.value }))}
-              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-              placeholder="Москва, МО, Казань..."
-              autoComplete="address-level2"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="accessPoints" className="block text-sm font-medium text-text-primary">
-              Въезды и выезды
-            </label>
-            <select
-              id="accessPoints"
-              value={formData.accessPoints}
-              onChange={(e) => setFormData((p) => ({ ...p, accessPoints: e.target.value }))}
-              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-            >
-              {accessPointOptions.map((option) => (
-                <option key={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="projectStage" className="block text-sm font-medium text-text-primary">
-              Стадия проекта
-            </label>
-            <select
-              id="projectStage"
-              value={formData.projectStage}
-              onChange={(e) => setFormData((p) => ({ ...p, projectStage: e.target.value }))}
-              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-            >
-              {projectStageOptions.map((option) => (
-                <option key={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="requestGoal" className="block text-sm font-medium text-text-primary">
-              Что подготовить
-            </label>
-            <select
-              id="requestGoal"
-              value={formData.requestGoal}
-              onChange={(e) => setFormData((p) => ({ ...p, requestGoal: e.target.value }))}
-              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-            >
-              {requestGoalOptions.map((option) => (
-                <option key={option}>{option}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="md:col-span-2">
-            <label htmlFor="currentSystem" className="block text-sm font-medium text-text-primary">
-              Текущая система или оборудование
-            </label>
-            <textarea
-              id="currentSystem"
-              value={formData.currentSystem}
-              onChange={(e) => setFormData((p) => ({ ...p, currentSystem: e.target.value }))}
-              className="mt-2 min-h-24 w-full resize-y rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-              placeholder="Если уже есть шлагбаумы, СКУД, камеры, терминалы или старая система"
-            />
-          </div>
-        </div>
-      </section>
-
+    <form onSubmit={handleSubmit} onFocus={handleFormStart} className="mt-8 space-y-5">
       <section className="rounded-lg border border-border-primary bg-bg-primary p-4 sm:p-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
-            Контакты
+            Короткая заявка
           </p>
-          <h2 className="mt-1 text-xl font-semibold text-text-primary">Куда отправить расчет</h2>
+          <h2 className="mt-1 text-xl font-semibold text-text-primary">Получить расчет</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">
+            Достаточно контактов и типа объекта. Детали проекта можно добавить по желанию.
+          </p>
         </div>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-text-primary">
               Имя
@@ -380,7 +278,128 @@ export default function QuizForm({
             />
             {phoneError ? <p className="mt-2 text-xs text-red-600">{phoneError}</p> : null}
           </div>
+
+          <div>
+            <label htmlFor="objectType" className="block text-sm font-medium text-text-primary">
+              Тип объекта
+            </label>
+            <select
+              id="objectType"
+              value={formData.objectType}
+              onChange={(e) => setFormData((p) => ({ ...p, objectType: e.target.value }))}
+              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            >
+              {objectTypeOptions.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
+            </select>
+          </div>
         </div>
+      </section>
+
+      <section className="rounded-lg border border-dashed border-border-primary bg-bg-primary">
+        <button
+          type="button"
+          onClick={() => setDetailsOpen((value) => !value)}
+          aria-expanded={detailsOpen}
+          className="flex w-full flex-col gap-3 p-4 text-left transition hover:bg-bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary sm:flex-row sm:items-center sm:justify-between sm:p-5"
+        >
+          <span>
+            <span className="block text-xs font-semibold uppercase tracking-wide text-text-secondary">
+              Необязательно
+            </span>
+            <span className="mt-1 block text-base font-semibold text-text-primary">
+              Добавить параметры проекта
+            </span>
+            <span className="mt-1 block text-sm leading-6 text-text-secondary">
+              Если есть время, это поможет быстрее подготовить КП без дополнительных вопросов.
+            </span>
+          </span>
+          <span className="inline-flex h-9 shrink-0 items-center justify-center rounded-md border border-border-primary px-3 text-sm font-medium text-text-primary">
+            {detailsOpen ? 'Скрыть' : 'Добавить'}
+          </span>
+        </button>
+
+        {detailsOpen ? (
+          <div className="border-t border-border-primary p-4 sm:p-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium text-text-primary">
+                  Город или регион
+                </label>
+                <input
+                  id="city"
+                  value={formData.city}
+                  onChange={(e) => setFormData((p) => ({ ...p, city: e.target.value }))}
+                  className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                  placeholder="Москва, МО, Казань..."
+                  autoComplete="address-level2"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="accessPoints" className="block text-sm font-medium text-text-primary">
+                  Въезды и выезды
+                </label>
+                <select
+                  id="accessPoints"
+                  value={formData.accessPoints}
+                  onChange={(e) => setFormData((p) => ({ ...p, accessPoints: e.target.value }))}
+                  className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                >
+                  {accessPointOptions.map((option) => (
+                    <option key={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="projectStage" className="block text-sm font-medium text-text-primary">
+                  Стадия проекта
+                </label>
+                <select
+                  id="projectStage"
+                  value={formData.projectStage}
+                  onChange={(e) => setFormData((p) => ({ ...p, projectStage: e.target.value }))}
+                  className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                >
+                  {projectStageOptions.map((option) => (
+                    <option key={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="requestGoal" className="block text-sm font-medium text-text-primary">
+                  Что подготовить
+                </label>
+                <select
+                  id="requestGoal"
+                  value={formData.requestGoal}
+                  onChange={(e) => setFormData((p) => ({ ...p, requestGoal: e.target.value }))}
+                  className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                >
+                  {requestGoalOptions.map((option) => (
+                    <option key={option}>{option}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="currentSystem" className="block text-sm font-medium text-text-primary">
+                  Текущая система или оборудование
+                </label>
+                <textarea
+                  id="currentSystem"
+                  value={formData.currentSystem}
+                  onChange={(e) => setFormData((p) => ({ ...p, currentSystem: e.target.value }))}
+                  className="mt-2 min-h-24 w-full resize-y rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                  placeholder="Если уже есть шлагбаумы, СКУД, камеры, терминалы или старая система"
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {error ? (
