@@ -25,6 +25,7 @@ export type NavItem = {
 export const navigation: NavItem[] = [
   {
     label: 'Решения',
+    href: '/resheniya',
     groups: [
       {
         label: 'По ролям',

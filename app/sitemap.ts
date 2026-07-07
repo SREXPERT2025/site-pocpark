@@ -19,6 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl('/keysy'), lastModified: now },
     { url: absoluteUrl('/stati'), lastModified: now },
     { url: absoluteUrl('/vozmozhnosti'), lastModified: now },
+    { url: absoluteUrl('/resheniya'), lastModified: now },
     { url: absoluteUrl('/quiz'), lastModified: now },
     { url: absoluteUrl('/privacy'), lastModified: now },
     { url: absoluteUrl('/soglasie-na-obrabotku-personalnyh-dannyh'), lastModified: now },
