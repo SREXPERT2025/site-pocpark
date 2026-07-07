@@ -104,6 +104,8 @@ export default function Header() {
 // Новый компонент пункта меню (Hover через CSS)
 function DesktopNavItem({ item }: { item: NavItem }) {
   const hasDropdown = Boolean(item.groups?.length);
+  const dropdownGridClass =
+    item.groups && item.groups.length > 2 ? 'grid grid-cols-3 gap-6' : 'grid grid-cols-2 gap-6';
 
   // Если нет выпадающего меню — просто ссылка
   if (!hasDropdown) {
@@ -157,7 +159,7 @@ function DesktopNavItem({ item }: { item: NavItem }) {
         {/* Невидимый мостик, чтобы меню не закрывалось при микро-движениях мыши */}
         <div className="absolute -top-2 left-0 w-full h-2 bg-transparent" />
         
-        <div className="grid grid-cols-2 gap-6">
+        <div className={dropdownGridClass}>
           {item.groups?.map((group) => (
             <div key={group.label}>
               <div className="text-xs font-semibold uppercase tracking-wide text-text-secondary">

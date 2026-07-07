@@ -2,13 +2,13 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { getMainNav, getSolutionsByObject } from '@/app/lib/navigation';
+import { getMainNav, getSolutionsFooterLinks } from '@/app/lib/navigation';
 
 export default function Footer() {
   const year = new Date().getFullYear();
 
   const main = getMainNav();
-  const byObject = getSolutionsByObject();
+  const solutions = getSolutionsFooterLinks();
 
   return (
     <footer className="border-t border-neutral-200 bg-white">
@@ -41,7 +41,7 @@ export default function Footer() {
         <div>
           <div className="mb-4 font-medium">Решения</div>
           <ul className="space-y-2">
-            {byObject.map((item) => (
+            {solutions.map((item) => (
               <li key={item.href}>
                 <Link href={item.href} className="text-sm text-neutral-600 hover:text-neutral-900">
                   {item.label}

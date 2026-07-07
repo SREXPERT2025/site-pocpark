@@ -71,6 +71,16 @@ export const navigation: NavItem[] = [
           },
         ],
       },
+      {
+        label: 'Процесс',
+        items: [
+          {
+            label: 'Как мы работаем',
+            href: '/resheniya/kak-my-rabotaem',
+            description: 'Этапы внедрения: обследование, проектирование, запуск и поддержка',
+          },
+        ],
+      },
     ],
   },
   {
