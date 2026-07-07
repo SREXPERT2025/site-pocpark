@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 export type ProjectCardProps = {
@@ -29,11 +30,12 @@ export default function ProjectCard({
     >
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-bg-secondary">
         {coverImage ? (
-          <img
+          <Image
             src={coverImage}
             alt={title}
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
-            loading="lazy"
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover transition duration-300 group-hover:scale-[1.04]"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs text-text-secondary">

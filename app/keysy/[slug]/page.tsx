@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Hero from '@/app/components/ui/Hero';
 import MetricsBlock from '@/app/components/ui/MetricsBlock';
 import FaqBlock from '@/app/components/ui/FaqBlock';
@@ -101,10 +102,13 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
       <section className="w-full px-4 sm:px-[20px] min-w-0">
         {data.coverImage && (
           <div className="mt-10 overflow-hidden rounded-2xl bg-slate-100">
-            <img
+            <Image
               src={data.coverImage}
               alt={data.title}
-              className="h-full w-full object-cover object-center"
+              width={1600}
+              height={900}
+              className="h-auto w-full object-cover object-center"
+              priority
             />
           </div>
         )}

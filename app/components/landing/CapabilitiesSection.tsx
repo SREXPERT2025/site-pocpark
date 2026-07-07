@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 
@@ -106,12 +107,13 @@ function CapabilityCardView({ card }: { card: CapabilityCard }) {
       </p>
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-[#EFEFEF] bg-[#F5F5F7]">
-        <div className="aspect-[16/9] w-full">
-          <img
+        <div className="relative aspect-[16/9] w-full">
+          <Image
             src={card.image}
             alt={card.title}
-            className="h-full w-full object-cover"
-            loading="lazy"
+            fill
+            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            className="object-cover"
           />
         </div>
       </div>

@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 type FeatureExplainerVisualProps = {
   src: string;
   alt: string;
@@ -17,7 +19,7 @@ export default function FeatureExplainerVisual({
           aria-label="Открыть схему крупно"
           className="block overflow-hidden rounded-lg border border-slate-200 bg-slate-950 shadow-sm transition-shadow hover:shadow-md"
         >
-          <img
+          <Image
             src={src}
             alt={alt}
             width={1024}

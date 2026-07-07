@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Hero from '@/app/components/ui/Hero';
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
@@ -73,11 +74,13 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
 
       {article.coverImage ? (
         <figure className="mx-auto mt-8 max-w-5xl overflow-hidden rounded-md border border-border-primary bg-bg-secondary">
-          <img
+          <Image
             src={article.coverImage}
             alt={article.title}
+            width={1600}
+            height={900}
             className="h-auto w-full object-cover"
-            loading="eager"
+            priority
           />
         </figure>
       ) : null}

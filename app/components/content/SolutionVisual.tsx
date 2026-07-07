@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 type SolutionVisualProps = {
   src: string;
   alt: string;
@@ -13,9 +15,11 @@ export default function SolutionVisual({
     <section className={`bg-white py-8 sm:py-10 ${className}`}>
       <div className="container mx-auto max-w-6xl min-w-0 px-4">
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-950 shadow-sm">
-          <img
+          <Image
             src={src}
             alt={alt}
+            width={1600}
+            height={900}
             className="block aspect-[16/9] h-auto w-full object-cover"
             loading="lazy"
             decoding="async"

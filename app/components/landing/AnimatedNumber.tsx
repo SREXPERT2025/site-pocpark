@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Props {
   value: number;
@@ -16,6 +16,22 @@ export default function AnimatedNumber({
   const [displayValue, setDisplayValue] = useState(0);
   const ref = useRef<HTMLSpanElement | null>(null);
   const hasAnimated = useRef(false);
+
+  const animate = useCallback(() => {
+    const start = performance.now();
+
+    const step = (timestamp: number) => {
+      const progress = Math.min((timestamp - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplayValue(Math.floor(eased * value));
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      }
+    };
+
+    requestAnimationFrame(step);
+  }, [duration, value]);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -35,26 +51,7 @@ export default function AnimatedNumber({
     return () => {
       observer.disconnect();
     };
-  }, []);
-
-  const animate = () => {
-    const start = performance.now();
-
-    const step = (timestamp: number) => {
-      const progress = Math.min((timestamp - start) / duration, 1);
-      const eased = easeOutCubic(progress);
-      setDisplayValue(Math.floor(eased * value));
-
-      if (progress < 1) {
-        requestAnimationFrame(step);
-      }
-    };
-
-    requestAnimationFrame(step);
-  };
-
-  const easeOutCubic = (t: number) =>
-    1 - Math.pow(1 - t, 3);
+  }, [animate]);
 
   return (
     <span ref={ref}>

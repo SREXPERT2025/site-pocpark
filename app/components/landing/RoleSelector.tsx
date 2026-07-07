@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 type RoleCardItem = {
@@ -55,12 +56,13 @@ function RoleCard({ item }: { item: RoleCardItem }) {
       }
       hover:-translate-y-1 hover:shadow-[0_22px_55px_rgba(0,0,0,0.35)]`}
     >
-      <div className="h-[258px] w-full bg-black/5">
-        <img
+      <div className="relative h-[258px] w-full bg-black/5">
+        <Image
           src={item.imageSrc}
           alt={item.imageAlt}
-          className="h-full w-full object-cover"
-          loading="lazy"
+          fill
+          sizes="(min-width: 768px) 33vw, 100vw"
+          className="object-cover"
         />
       </div>
 

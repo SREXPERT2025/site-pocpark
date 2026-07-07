@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export default function Solution() {
   return (
     <section className="overflow-x-hidden py-16 md:py-20 bg-white">
@@ -74,9 +76,11 @@ export default function Solution() {
           {/* Правая колонка — визуальный блок */}
           <div className="w-full max-w-full min-w-0 overflow-hidden bg-slate-100 rounded-2xl p-3 sm:p-4 border border-slate-200 min-h-0 md:min-h-[420px] flex flex-col justify-center">
             <div className="w-full max-w-full overflow-hidden rounded-xl bg-white shadow-sm">
-              <img
+              <Image
                 src="/images/solutions/management-dashboard.jpg"
                 alt="Панель управления РОСПАРК для руководителей"
+                width={1200}
+                height={800}
                 className="block h-auto w-full max-w-full object-cover"
               />
             </div>

@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 export default function Solution() {
   return (
     <section className="py-20 bg-white">
@@ -85,9 +87,11 @@ export default function Solution() {
           {/* Визуальный блок */}
           <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 min-h-[420px] flex flex-col justify-center">
             <div className="w-full overflow-hidden rounded-xl bg-white shadow-sm">
-              <img
+              <Image
                 src="/images/solutions/security-events-dashboard.jpeg"
                 alt="Скриншот журнала событий СБ"
+                width={1200}
+                height={800}
                 className="block w-full h-auto object-cover"
               />
             </div>
