@@ -114,7 +114,7 @@ export default function MobileMenu({
 
           <div className="mt-8 border-t border-border-primary pt-6">
             <Link
-              href="/contacts"
+              href="/quiz?source=kp"
               onClick={onClose}
               className="block w-full rounded-md bg-accent-primary px-4 py-3 text-center text-base font-medium text-white hover:bg-state-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             >

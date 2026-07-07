@@ -12,6 +12,14 @@ type FormData = {
   objectType: string;
 };
 
+type QuizFormProps = {
+  source?: string;
+  intent?: string;
+  product?: string;
+  packageName?: string;
+  sourceUrl?: string;
+};
+
 function normalizePhone(value: string) {
   return value.replace(/\s|\(|\)|-|\+/g, '');
 }
@@ -24,7 +32,13 @@ function isValidRuPhone(value: string) {
   return true;
 }
 
-export default function QuizForm() {
+export default function QuizForm({
+  source,
+  intent,
+  product,
+  packageName,
+  sourceUrl,
+}: QuizFormProps) {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     phone: '',
@@ -39,12 +53,14 @@ export default function QuizForm() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasStartedRef = useRef(false);
+  const resolvedSourceUrl =
+    sourceUrl || (typeof window !== 'undefined' ? window.location.href : undefined);
 
   function getEventParams(): LeadFormEventParams {
     return {
       form_name: 'quiz_form',
-      source_page: '/quiz',
-      source_section: 'quiz',
+      source_page: resolvedSourceUrl || '/quiz',
+      source_section: source ? `quiz:${source}` : 'quiz',
     };
   }
 
@@ -112,7 +128,12 @@ export default function QuizForm() {
           objectType: formData.objectType,
           message: 'Заявка с квиза: подготовить коммерческое предложение / расчёт. ',
           consent,
-          sourceSection: 'quiz',
+          source,
+          intent: intent || source,
+          product,
+          packageName,
+          sourceUrl: resolvedSourceUrl,
+          sourceSection: source ? `quiz:${source}` : 'quiz',
           sourcePage: '/quiz',
           utm: getLeadAttribution(),
         }),

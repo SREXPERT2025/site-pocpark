@@ -25,6 +25,12 @@ function isValidRuPhone(value: string) {
   return true;
 }
 
+function readString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0
+    ? value.trim()
+    : undefined;
+}
+
 // Простейший rate-limit на процесс (ок для MVP). На serverless может не сохраняться.
 const RATE_BUCKET: Map<string, { ts: number; count: number }> = new Map();
 const WINDOW_MS = 60_000;
@@ -69,11 +75,16 @@ export async function POST(req: Request) {
     const name = String(body.name ?? '').trim();
     const phone = String(body.phone ?? '').trim();
     const consent = Boolean(body.consent);
-    const company = String(body.company ?? '').trim() || undefined;
-    const objectType = String(body.objectType ?? '').trim() || undefined;
-    const message = String(body.message ?? '').trim() || undefined;
-    const sourcePage = String(body.sourcePage ?? '').trim() || undefined;
-    const sourceSection = String(body.sourceSection ?? '').trim() || undefined;
+    const company = readString(body.company);
+    const objectType = readString(body.objectType);
+    const message = readString(body.message) ?? readString(body.comment);
+    const sourcePage = readString(body.sourcePage);
+    const sourceSection = readString(body.sourceSection);
+    const source = readString(body.source);
+    const intent = readString(body.intent);
+    const product = readString(body.product);
+    const packageName = readString(body.packageName) ?? readString(body.package);
+    const sourceUrl = readString(body.sourceUrl);
     const utm = (body.utm && typeof body.utm === 'object') ? body.utm : undefined;
 
     if (!name) {
@@ -102,6 +113,11 @@ export async function POST(req: Request) {
       company,
       objectType,
       message,
+      source,
+      intent,
+      product,
+      packageName,
+      sourceUrl,
       consent,
       sourcePage,
       sourceSection,
@@ -115,7 +131,13 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Ошибка отправки';
-    return NextResponse.json({ success: false, message: msg }, { status: 500 });
+    console.error('[lead] submit failed', err);
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Не удалось отправить заявку. Попробуйте ещё раз или свяжитесь с нами по телефону.',
+      },
+      { status: 500 }
+    );
   }
 }

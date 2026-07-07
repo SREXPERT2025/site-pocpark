@@ -138,7 +138,10 @@ export default function LeadForm(props: LeadFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...payload,
+          message: payload.comment,
           phone: normalizePhone(payload.phone),
+          source: sourceSection,
+          sourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
           utm: getLeadAttribution(),
         }),
       });

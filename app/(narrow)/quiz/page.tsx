@@ -6,6 +6,10 @@ import { canonicalUrl } from '@/app/config/site-url';
 type Props = {
   searchParams?: {
     source?: string;
+    intent?: string;
+    product?: string;
+    package?: string;
+    packageName?: string;
   };
 };
 
@@ -125,11 +129,25 @@ export const metadata: Metadata = {
 
 export default function QuizPage({ searchParams }: Props) {
   const content = resolveContent(searchParams?.source);
+  const query = new URLSearchParams();
+  if (searchParams?.source) query.set('source', searchParams.source);
+  if (searchParams?.intent) query.set('intent', searchParams.intent);
+  if (searchParams?.product) query.set('product', searchParams.product);
+  if (searchParams?.package) query.set('package', searchParams.package);
+  if (searchParams?.packageName) query.set('packageName', searchParams.packageName);
+  const queryString = query.toString();
+  const sourceUrl = `/quiz${queryString ? `?${queryString}` : ''}`;
 
   return (
     <div className="mx-auto max-w-[980px] px-4 sm:px-6 min-w-0 overflow-hidden [&_h1]:break-words [&_h1]:hyphens-auto [&_h1]:text-[clamp(2rem,11vw,3.5rem)]">
       <Hero title={content.title} description={content.description} />
-      <QuizForm />
+      <QuizForm
+        source={searchParams?.source}
+        intent={searchParams?.intent || searchParams?.source}
+        product={searchParams?.product}
+        packageName={searchParams?.packageName || searchParams?.package}
+        sourceUrl={sourceUrl}
+      />
     </div>
   );
 }

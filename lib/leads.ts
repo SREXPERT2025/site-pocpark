@@ -19,6 +19,11 @@ export type LeadPayload = {
   company?: string;
   objectType?: string;
   message?: string;
+  source?: string;
+  intent?: string;
+  product?: string;
+  packageName?: string;
+  sourceUrl?: string;
   consent: boolean;
   sourcePage?: string;
   sourceSection?: string;
@@ -62,8 +67,13 @@ function formatLeadText(payload: LeadPayload) {
   if (payload.company) lines.push(`Компания: ${payload.company}`);
   if (payload.objectType) lines.push(`Тип объекта: ${payload.objectType}`);
   if (payload.message) lines.push(`Сообщение: ${payload.message}`);
+  if (payload.intent) lines.push(`Цель обращения: ${payload.intent}`);
+  if (payload.source) lines.push(`Источник/CTA: ${payload.source}`);
+  if (payload.product) lines.push(`Интерес к продукту: ${payload.product}`);
+  if (payload.packageName) lines.push(`Формат/пакет: ${payload.packageName}`);
   lines.push('');
   if (payload.sourcePage) lines.push(`Страница: ${payload.sourcePage}`);
+  if (payload.sourceUrl) lines.push(`URL источника: ${payload.sourceUrl}`);
   if (payload.sourceSection) lines.push(`Раздел: ${payload.sourceSection}`);
   if (payload.ip) lines.push(`IP: ${payload.ip}`);
   if (payload.userAgent) lines.push(`User-Agent: ${payload.userAgent}`);
@@ -104,63 +114,103 @@ function getMailTransport(): Transporter {
   return cachedTransport;
 }
 
-async function sendToMax(text: string) {
+async function sendToMax(text: string): Promise<boolean> {
   const token = process.env.LEAD_MAX_BOT_TOKEN;
   const chatId = process.env.LEAD_MAX_CHAT_ID;
 
-  if (!token || !chatId) return;
+  if (!token || !chatId) return false;
 
-  try {
-    const bot = getMaxBot(token);
+  const bot = getMaxBot(token);
 
-    await bot.api.sendMessageToChat(
-      Number(chatId),
-      text
-    );
-  } catch (err) {
-    console.error("MAX ERROR:", err);
-  }
+  await bot.api.sendMessageToChat(
+    Number(chatId),
+    text
+  );
+  return true;
 }
 
 export async function sendLead(payload: LeadPayload) {
   const emailTo = splitList(process.env.LEAD_EMAIL_TO);
   const tgToken = process.env.LEAD_TELEGRAM_BOT_TOKEN;
   const tgChats = splitList(process.env.LEAD_TELEGRAM_CHAT_IDS);
+  const hasEmail = emailTo.length > 0;
+  const hasTelegram = Boolean(tgToken && tgChats.length > 0);
+  const hasMax = Boolean(process.env.LEAD_MAX_BOT_TOKEN && process.env.LEAD_MAX_CHAT_ID);
+
+  if (!hasEmail && !hasTelegram && !hasMax) {
+    throw new Error('Не настроены каналы доставки заявок.');
+  }
 
   const subject = `РОСПАРК: новая заявка`;
   const text = formatLeadText(payload);
+  const deliveryResults: Array<{ channel: string; ok: boolean; error?: unknown }> = [];
 
   // EMAIL
-  if (emailTo.length > 0) {
-    const from = process.env.LEAD_EMAIL_FROM || emailTo[0];
-    const transport = getMailTransport();
-    await transport.sendMail({
-      from,
-      to: emailTo,
-      subject,
-      text
-    });
+  if (hasEmail) {
+    try {
+      const from = process.env.LEAD_EMAIL_FROM || emailTo[0];
+      const transport = getMailTransport();
+      await transport.sendMail({
+        from,
+        to: emailTo,
+        subject,
+        text
+      });
+      deliveryResults.push({ channel: 'email', ok: true });
+    } catch (error) {
+      deliveryResults.push({ channel: 'email', ok: false, error });
+    }
   }
 
   // TELEGRAM
-  if (tgToken && tgChats.length > 0) {
+  if (hasTelegram && tgToken) {
     const apiUrl = `https://api.telegram.org/bot${tgToken}/sendMessage`;
 
-    await Promise.all(
-      tgChats.map(async (chatId) => {
-        await fetch(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text,
-            disable_web_page_preview: true
-          })
-        });
-      })
-    );
+    try {
+      await Promise.all(
+        tgChats.map(async (chatId) => {
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text,
+              disable_web_page_preview: true
+            })
+          });
+
+          if (!response.ok) {
+            const body = await response.text().catch(() => '');
+            throw new Error(`Telegram sendMessage failed: ${response.status} ${body}`);
+          }
+        })
+      );
+      deliveryResults.push({ channel: 'telegram', ok: true });
+    } catch (error) {
+      deliveryResults.push({ channel: 'telegram', ok: false, error });
+    }
   }
 
   // MAX
-  await sendToMax(text);
+  if (hasMax) {
+    try {
+      await sendToMax(text);
+      deliveryResults.push({ channel: 'max', ok: true });
+    } catch (error) {
+      deliveryResults.push({ channel: 'max', ok: false, error });
+    }
+  }
+
+  const delivered = deliveryResults.some((result) => result.ok);
+  const failed = deliveryResults.filter((result) => !result.ok);
+
+  if (failed.length > 0) {
+    console.error('[lead] delivery failures', failed);
+  }
+
+  if (!delivered) {
+    throw new Error('Не удалось доставить заявку ни в один канал.');
+  }
+
+  return deliveryResults;
 }
