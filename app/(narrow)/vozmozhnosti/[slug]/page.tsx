@@ -20,6 +20,10 @@ const featureVisuals: Record<string, { src: string; alt: string }> = {
     src: '/images/features/explainers/razovie-klienti.png',
     alt: 'Инфографика РОСПАРК: разовые клиенты, тарифы, онлайн-оплата и быстрый выезд',
   },
+  'gostevie-klienti': {
+    src: '/images/features/explainers/gostevie-klienti.png',
+    alt: 'Инфографика РОСПАРК: гостевые клиенты, заявки, временный доступ и аудит событий',
+  },
 };
 
 export function generateStaticParams() {
