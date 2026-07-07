@@ -8,6 +8,7 @@ import ProjectCard from '@/app/components/ui/ProjectCard';
 import AnswerFirst from '@/app/components/content/AnswerFirst';
 import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
+import CaseStudyJsonLd from '@/app/components/content/CaseStudyJsonLd';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
 import LeadFormSection from '@/app/components/forms/LeadFormSection';
 import { canonicalUrl } from '@/app/config/site-url';
@@ -86,6 +87,16 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
           { name: 'Проекты', url: '/keysy' },
           { name: data.title, url: `/keysy/${data.slug}` },
         ]}
+      />
+      <CaseStudyJsonLd
+        title={data.title}
+        description={data.description}
+        url={`/keysy/${data.slug}`}
+        dateModified={data.lastModified}
+        image={data.coverImage}
+        category={data.category}
+        tags={data.tags}
+        metrics={metrics}
       />
       {faq.length > 0 && <FaqJsonLd items={faq} />}
 

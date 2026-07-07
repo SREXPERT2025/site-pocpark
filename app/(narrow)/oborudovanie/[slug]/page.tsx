@@ -70,6 +70,15 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     .map((image) => (typeof image === 'string' ? image.trim() : ''))
     .filter(Boolean);
   const faq = Array.isArray(data.faq) ? data.faq : [];
+  const specifications = Array.isArray(data.specifications)
+    ? data.specifications
+        .map((spec: any) => {
+          const name = typeof spec?.name === 'string' ? spec.name.trim() : '';
+          const value = typeof spec?.value === 'string' ? spec.value.trim() : '';
+          return name && value ? { name, value } : null;
+        })
+        .filter(Boolean)
+    : [];
 
   return (
     <>
@@ -96,6 +105,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         currency={typeof data.currency === 'string' ? data.currency : undefined}
         availability={typeof data.availability === 'string' ? data.availability : undefined}
         condition={typeof data.condition === 'string' ? data.condition : undefined}
+        specifications={specifications}
       />
       <ProductView data={data} content={content} />
     </>

@@ -29,6 +29,8 @@ export type ProductJsonLdProps = {
   availability?: string;
   /** Состояние: NewCondition | UsedCondition | RefurbishedCondition */
   condition?: string;
+  /** Характеристики товара */
+  specifications?: { name: string; value: string }[];
   /** Базовый URL сайта. Если не задан — берём из NEXT_PUBLIC_SITE_URL или fallback. */
   baseUrl?: string;
 };
@@ -89,6 +91,13 @@ export default function ProductJsonLd(props: ProductJsonLdProps) {
           '@type': 'Brand',
           name: props.brand.trim(),
         }
+      : undefined,
+    additionalProperty: props.specifications?.length
+      ? props.specifications.map((spec) => ({
+          '@type': 'PropertyValue',
+          name: spec.name,
+          value: spec.value,
+        }))
       : undefined,
     url: absUrl,
   };
