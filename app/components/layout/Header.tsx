@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -101,11 +101,26 @@ export default function Header() {
   );
 }
 
-// Новый компонент пункта меню (Hover через CSS)
 function DesktopNavItem({ item }: { item: NavItem }) {
   const hasDropdown = Boolean(item.groups?.length);
+  const [open, setOpen] = useState(false);
+  const dropdownId = useId();
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const dropdownGridClass =
     item.groups && item.groups.length > 2 ? 'grid grid-cols-3 gap-6' : 'grid grid-cols-2 gap-6';
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [open]);
 
   // Если нет выпадающего меню — просто ссылка
   if (!hasDropdown) {
@@ -119,29 +134,47 @@ function DesktopNavItem({ item }: { item: NavItem }) {
     );
   }
 
-  // Если есть выпадающее меню — Hover логика
   return (
-    <div className="relative group h-[34px]">
-      {/* ТРИГГЕР: Единая зона (Слово + Стрелка) */}
+    <div
+      ref={rootRef}
+      className="relative h-[34px]"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          setOpen(false);
+        }
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          setOpen(false);
+        }
+      }}
+    >
       <div className="flex items-center gap-1 h-[34px] cursor-pointer">
         <Link
           href={item.href ?? '#'}
+          onFocus={() => setOpen(true)}
           className="inline-flex items-center h-[34px] text-[15px] hover:text-text-primary transition-colors"
         >
           {item.label}
         </Link>
 
-        {/* Стрелка (декоративная) */}
-        <span
-          className="inline-flex items-center h-[34px] text-text-secondary group-hover:text-text-primary transition-colors"
-          aria-hidden="true"
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          onFocus={() => setOpen(true)}
+          aria-label={`${open ? 'Закрыть' : 'Открыть'} раздел ${item.label}`}
+          aria-expanded={open}
+          aria-controls={dropdownId}
+          className="inline-flex h-[34px] items-center text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
         >
           ▾
-        </span>
+        </button>
       </div>
 
-      {/* DROPDOWN (Появляется при group-hover) */}
       <div
+        id={dropdownId}
         className="
           absolute left-0 top-full
           mt-1
@@ -151,12 +184,10 @@ function DesktopNavItem({ item }: { item: NavItem }) {
           border border-border-primary
           shadow-md
           p-4
-          hidden
-          group-hover:block
           z-50
         "
+        hidden={!open}
       >
-        {/* Невидимый мостик, чтобы меню не закрывалось при микро-движениях мыши */}
         <div className="absolute -top-2 left-0 w-full h-2 bg-transparent" />
         
         <div className={dropdownGridClass}>
@@ -170,6 +201,7 @@ function DesktopNavItem({ item }: { item: NavItem }) {
                   <Link
                     key={link.href}
                     href={link.href}
+                    onClick={() => setOpen(false)}
                     className="block rounded-md px-3 py-3 hover:bg-bg-secondary transition-colors"
                   >
                     <div className="text-sm font-semibold text-text-primary">

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 
 import type { NavItem } from '@/app/config/navigation';
@@ -16,6 +16,15 @@ export default function MobileMenu({
   navItems: NavItem[];
 }) {
   const telegramUrl = process.env.NEXT_PUBLIC_TELEGRAM_CONTACT_URL;
+  const [openSections, setOpenSections] = useState<string[]>(['Решения']);
+
+  function toggleSection(label: string) {
+    setOpenSections((current) =>
+      current.includes(label)
+        ? current.filter((item) => item !== label)
+        : [...current, label]
+    );
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -65,7 +74,12 @@ export default function MobileMenu({
 
         <nav className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
           <div className="space-y-6 pb-6">
-            {navItems.map((item) => (
+            {navItems.map((item, index) => {
+              const hasGroups = Boolean(item.groups?.length);
+              const expanded = openSections.includes(item.label);
+              const panelId = `mobile-menu-section-${index}`;
+
+              return (
               <div key={item.label}>
                 <div className="flex items-center justify-between">
                   {item.href ? (
@@ -79,10 +93,25 @@ export default function MobileMenu({
                   ) : (
                     <div className="text-sm font-semibold text-text-primary">{item.label}</div>
                   )}
+
+                  {hasGroups ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleSection(item.label)}
+                      aria-expanded={expanded}
+                      aria-controls={panelId}
+                      className="ml-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-text-secondary hover:bg-bg-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                    >
+                      <span aria-hidden="true">{expanded ? '−' : '+'}</span>
+                      <span className="sr-only">
+                        {expanded ? 'Свернуть' : 'Развернуть'} раздел {item.label}
+                      </span>
+                    </button>
+                  ) : null}
                 </div>
 
-                {item.groups?.length ? (
-                  <div className="mt-3 space-y-4">
+                {hasGroups ? (
+                  <div id={panelId} className="mt-3 space-y-4" hidden={!expanded}>
                     {item.groups.map((group) => (
                       <div key={group.label}>
                         <div className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
@@ -109,35 +138,36 @@ export default function MobileMenu({
                   </div>
                 ) : null}
               </div>
-            ))}
-          </div>
-
-          <div className="mt-8 border-t border-border-primary pt-6">
-            <Link
-              href="/quiz?source=kp"
-              onClick={onClose}
-              className="block w-full rounded-md bg-accent-primary px-4 py-3 text-center text-base font-medium text-white hover:bg-state-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-            >
-              Получить коммерческое предложение
-            </Link>
-            <a
-              href="tel:+74993212040"
-              className="mt-3 block text-center text-sm text-text-secondary hover:text-text-primary"
-            >
-              +7 (499) 321-20-40
-            </a>
-            {telegramUrl ? (
-              <a
-                href={telegramUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-3 block text-center text-sm font-semibold text-accent-primary hover:underline"
-              >
-                Telegram
-              </a>
-            ) : null}
+              );
+            })}
           </div>
         </nav>
+
+        <div className="shrink-0 border-t border-border-primary bg-bg-primary pt-4">
+          <Link
+            href="/quiz?source=kp"
+            onClick={onClose}
+            className="block w-full rounded-md bg-accent-primary px-4 py-3 text-center text-base font-medium text-white hover:bg-state-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+          >
+            Получить коммерческое предложение
+          </Link>
+          <a
+            href="tel:+74993212040"
+            className="mt-3 block text-center text-sm text-text-secondary hover:text-text-primary"
+          >
+            +7 (499) 321-20-40
+          </a>
+          {telegramUrl ? (
+            <a
+              href={telegramUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 block text-center text-sm font-semibold text-accent-primary hover:underline"
+            >
+              Telegram
+            </a>
+          ) : null}
+        </div>
       </div>
     </div>
   );
