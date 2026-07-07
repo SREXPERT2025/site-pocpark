@@ -23,6 +23,7 @@ export type LeadPayload = {
   projectStage?: string;
   requestGoal?: string;
   currentSystem?: string;
+  projectInterests?: string[];
   message?: string;
   source?: string;
   intent?: string;
@@ -76,6 +77,9 @@ function formatLeadText(payload: LeadPayload) {
   if (payload.projectStage) lines.push(`Стадия проекта: ${payload.projectStage}`);
   if (payload.requestGoal) lines.push(`Что нужно: ${payload.requestGoal}`);
   if (payload.currentSystem) lines.push(`Текущая система: ${payload.currentSystem}`);
+  if (payload.projectInterests?.length) {
+    lines.push(`Важные сценарии: ${payload.projectInterests.join(', ')}`);
+  }
   if (payload.message) lines.push(`Сообщение: ${payload.message}`);
   if (payload.intent) lines.push(`Цель обращения: ${payload.intent}`);
   if (payload.source) lines.push(`Источник/CTA: ${payload.source}`);

@@ -10,6 +10,7 @@ export type LeadFormPayload = {
   phone: string;
   company?: string;
   objectType?: string;
+  projectInterests?: string[];
   comment?: string;
   consent: boolean;
   /** Откуда пришла заявка (логика/блок) */
@@ -33,7 +34,54 @@ export type LeadFormProps = {
   compact?: boolean;
   /** Минимальный набор полей (без компании и типа объекта) */
   minimalFields?: boolean;
+  /** Необязательные контекстные сценарии для конкретной страницы */
+  contextOptions?: string[];
   className?: string;
+};
+
+const CONTEXT_OPTIONS_BY_SOURCE_PAGE: Record<string, string[]> = {
+  "/resheniya/torgovye-centry": [
+    "Пиковый поток посетителей",
+    "Бесплатное время",
+    "Онлайн-оплата",
+    "Льготы и исключения",
+  ],
+  "/resheniya/biznes-centry": [
+    "Арендаторы",
+    "Гостевые заявки",
+    "Лимиты мест",
+    "Отчетность для УК",
+  ],
+  "/resheniya/zastroyschiki": [
+    "Резиденты",
+    "Гостевой доступ",
+    "Управляющая компания",
+    "Безопасность двора",
+  ],
+  "/resheniya/skladskie-kompleksy": [
+    "КПП",
+    "Грузовой транспорт",
+    "Пропуска",
+    "Журнал событий",
+  ],
+  "/resheniya/dlya-rukovoditeley": [
+    "Выручка и контроль оплат",
+    "Снижение затрат",
+    "Загрузка парковки",
+    "Прозрачная отчетность",
+  ],
+  "/resheniya/dlya-inzhenerov": [
+    "СКУД и API",
+    "Схема оборудования",
+    "Интеграции",
+    "Надежность и резерв",
+  ],
+  "/resheniya/dlya-sluzhby-bezopasnosti": [
+    "Журнал событий",
+    "Стоп-листы",
+    "Антихвост",
+    "Offline-сценарии",
+  ],
 };
 
 function normalizePhone(raw: string): string {
@@ -51,6 +99,7 @@ export default function LeadForm(props: LeadFormProps) {
     submitLabel = "Получить КП",
     compact = false,
     minimalFields = false,
+    contextOptions,
     className,
   } = props;
 
@@ -58,6 +107,7 @@ export default function LeadForm(props: LeadFormProps) {
   const [phone, setPhone] = useState("");
   const [company, setCompany] = useState("");
   const [objectType, setObjectType] = useState("");
+  const [projectInterests, setProjectInterests] = useState<string[]>([]);
   const [comment, setComment] = useState("");
   const [consent, setConsent] = useState(false);
 
@@ -87,18 +137,43 @@ export default function LeadForm(props: LeadFormProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const effectiveContextOptions = useMemo(
+    () => contextOptions ?? (sourcePage ? CONTEXT_OPTIONS_BY_SOURCE_PAGE[sourcePage] : undefined) ?? [],
+    [contextOptions, sourcePage]
+  );
+
+  function toggleProjectInterest(option: string) {
+    setProjectInterests((current) =>
+      current.includes(option)
+        ? current.filter((item) => item !== option)
+        : [...current, option]
+    );
+  }
+
   const payload: LeadFormPayload = useMemo(
     () => ({
       name: name.trim(),
       phone: phone.trim(),
       company: minimalFields ? undefined : company.trim() || undefined,
       objectType: minimalFields ? undefined : objectType.trim() || undefined,
+      projectInterests: projectInterests.length > 0 ? projectInterests : undefined,
       comment: comment.trim() || undefined,
       consent,
       sourceSection,
       sourcePage,
     }),
-    [name, phone, company, objectType, comment, consent, sourceSection, sourcePage, minimalFields]
+    [
+      name,
+      phone,
+      company,
+      objectType,
+      projectInterests,
+      comment,
+      consent,
+      sourceSection,
+      sourcePage,
+      minimalFields,
+    ]
   );
 
   const canSubmit = useMemo(() => {
@@ -157,6 +232,7 @@ export default function LeadForm(props: LeadFormProps) {
       setPhone("");
       setCompany("");
       setObjectType("");
+      setProjectInterests([]);
       setComment("");
       setConsent(false);
     } catch (err) {
@@ -232,6 +308,41 @@ export default function LeadForm(props: LeadFormProps) {
             </>
           ) : null}
         </div>
+
+        {effectiveContextOptions.length > 0 ? (
+          <fieldset className="grid gap-3">
+            <legend className="text-sm font-semibold text-slate-900">
+              Что важно обсудить
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {effectiveContextOptions.map((option) => {
+                const selected = projectInterests.includes(option);
+
+                return (
+                  <label
+                    key={option}
+                    className={`inline-flex cursor-pointer items-center rounded-full border px-3 py-2 text-sm font-medium transition ${
+                      selected
+                        ? "border-blue-600 bg-blue-50 text-blue-800"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleProjectInterest(option)}
+                      className="sr-only"
+                    />
+                    {option}
+                  </label>
+                );
+              })}
+            </div>
+            <p className="text-xs leading-5 text-slate-500">
+              Можно пропустить или выбрать несколько пунктов.
+            </p>
+          </fieldset>
+        ) : null}
 
         <div className="grid gap-2">
           <label className="text-sm font-semibold text-slate-900">Комментарий</label>

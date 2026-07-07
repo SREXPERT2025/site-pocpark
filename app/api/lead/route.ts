@@ -31,6 +31,15 @@ function readString(value: unknown): string | undefined {
     : undefined;
 }
 
+function readStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const items = value
+    .map((item) => readString(item))
+    .filter(Boolean) as string[];
+
+  return items.length > 0 ? items : undefined;
+}
+
 // Простейший rate-limit на процесс (ок для MVP). На serverless может не сохраняться.
 const RATE_BUCKET: Map<string, { ts: number; count: number }> = new Map();
 const WINDOW_MS = 60_000;
@@ -82,6 +91,7 @@ export async function POST(req: Request) {
     const projectStage = readString(body.projectStage);
     const requestGoal = readString(body.requestGoal);
     const currentSystem = readString(body.currentSystem);
+    const projectInterests = readStringArray(body.projectInterests);
     const message = readString(body.message) ?? readString(body.comment);
     const sourcePage = readString(body.sourcePage);
     const sourceSection = readString(body.sourceSection);
@@ -122,6 +132,7 @@ export async function POST(req: Request) {
       projectStage,
       requestGoal,
       currentSystem,
+      projectInterests,
       message,
       source,
       intent,
