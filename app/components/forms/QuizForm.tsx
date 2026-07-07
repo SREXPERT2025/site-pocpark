@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import Button from '@/app/components/ui/Button';
 import { dispatchLeadFormEvent, type LeadFormEventParams } from '@/app/lib/analytics-events';
 import { getLeadAttribution } from '@/app/lib/lead-attribution';
@@ -95,8 +95,25 @@ export default function QuizForm({
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasStartedRef = useRef(false);
+  const formId = useId();
   const resolvedSourceUrl =
     sourceUrl || (typeof window !== 'undefined' ? window.location.href : undefined);
+
+  const fieldIds = {
+    name: `${formId}-name`,
+    phone: `${formId}-phone`,
+    phoneError: `${formId}-phone-error`,
+    objectType: `${formId}-object-type`,
+    details: `${formId}-details`,
+    city: `${formId}-city`,
+    accessPoints: `${formId}-access-points`,
+    projectStage: `${formId}-project-stage`,
+    requestGoal: `${formId}-request-goal`,
+    currentSystem: `${formId}-current-system`,
+    consent: `${formId}-consent`,
+    consentHint: `${formId}-consent-hint`,
+    submitHint: `${formId}-submit-hint`,
+  };
 
   function getEventParams(): LeadFormEventParams {
     return {
@@ -123,6 +140,19 @@ export default function QuizForm({
     if (!isValidRuPhone(formData.phone)) return 'Проверьте формат телефона.';
     return null;
   }, [formData.phone, touched.phone]);
+
+  const canSubmit = useMemo(
+    () => Boolean(formData.name.trim() && isValidRuPhone(formData.phone) && consent),
+    [consent, formData.name, formData.phone]
+  );
+
+  const submitHint = useMemo(() => {
+    if (!formData.name.trim()) return 'Введите имя.';
+    if (!formData.phone.trim()) return 'Введите телефон.';
+    if (!isValidRuPhone(formData.phone)) return 'Проверьте формат телефона.';
+    if (!consent) return 'Подтвердите согласие на обработку данных.';
+    return null;
+  }, [consent, formData.name, formData.phone]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -246,11 +276,11 @@ export default function QuizForm({
 
         <div className="mt-5 grid gap-4 md:grid-cols-3">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-text-primary">
+            <label htmlFor={fieldIds.name} className="block text-sm font-medium text-text-primary">
               Имя
             </label>
             <input
-              id="name"
+              id={fieldIds.name}
               value={formData.name}
               onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
               className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
@@ -261,11 +291,11 @@ export default function QuizForm({
           </div>
 
           <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-text-primary">
+            <label htmlFor={fieldIds.phone} className="block text-sm font-medium text-text-primary">
               Телефон
             </label>
             <input
-              id="phone"
+              id={fieldIds.phone}
               value={formData.phone}
               onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
               onBlur={() => setTouched((p) => ({ ...p, phone: true }))}
@@ -275,16 +305,21 @@ export default function QuizForm({
               autoComplete="tel"
               required
               aria-invalid={!!phoneError}
+              aria-describedby={phoneError ? fieldIds.phoneError : undefined}
             />
-            {phoneError ? <p className="mt-2 text-xs text-red-600">{phoneError}</p> : null}
+            {phoneError ? (
+              <p id={fieldIds.phoneError} className="mt-2 text-xs text-red-600">
+                {phoneError}
+              </p>
+            ) : null}
           </div>
 
           <div>
-            <label htmlFor="objectType" className="block text-sm font-medium text-text-primary">
+            <label htmlFor={fieldIds.objectType} className="block text-sm font-medium text-text-primary">
               Тип объекта
             </label>
             <select
-              id="objectType"
+              id={fieldIds.objectType}
               value={formData.objectType}
               onChange={(e) => setFormData((p) => ({ ...p, objectType: e.target.value }))}
               className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
@@ -302,6 +337,7 @@ export default function QuizForm({
           type="button"
           onClick={() => setDetailsOpen((value) => !value)}
           aria-expanded={detailsOpen}
+          aria-controls={fieldIds.details}
           className="flex w-full flex-col gap-3 p-4 text-left transition hover:bg-bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary sm:flex-row sm:items-center sm:justify-between sm:p-5"
         >
           <span>
@@ -321,14 +357,14 @@ export default function QuizForm({
         </button>
 
         {detailsOpen ? (
-          <div className="border-t border-border-primary p-4 sm:p-5">
+          <div id={fieldIds.details} className="border-t border-border-primary p-4 sm:p-5">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label htmlFor="city" className="block text-sm font-medium text-text-primary">
+                <label htmlFor={fieldIds.city} className="block text-sm font-medium text-text-primary">
                   Город или регион
                 </label>
                 <input
-                  id="city"
+                  id={fieldIds.city}
                   value={formData.city}
                   onChange={(e) => setFormData((p) => ({ ...p, city: e.target.value }))}
                   className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
@@ -338,11 +374,11 @@ export default function QuizForm({
               </div>
 
               <div>
-                <label htmlFor="accessPoints" className="block text-sm font-medium text-text-primary">
+                <label htmlFor={fieldIds.accessPoints} className="block text-sm font-medium text-text-primary">
                   Въезды и выезды
                 </label>
                 <select
-                  id="accessPoints"
+                  id={fieldIds.accessPoints}
                   value={formData.accessPoints}
                   onChange={(e) => setFormData((p) => ({ ...p, accessPoints: e.target.value }))}
                   className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
@@ -354,11 +390,11 @@ export default function QuizForm({
               </div>
 
               <div>
-                <label htmlFor="projectStage" className="block text-sm font-medium text-text-primary">
+                <label htmlFor={fieldIds.projectStage} className="block text-sm font-medium text-text-primary">
                   Стадия проекта
                 </label>
                 <select
-                  id="projectStage"
+                  id={fieldIds.projectStage}
                   value={formData.projectStage}
                   onChange={(e) => setFormData((p) => ({ ...p, projectStage: e.target.value }))}
                   className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
@@ -370,11 +406,11 @@ export default function QuizForm({
               </div>
 
               <div>
-                <label htmlFor="requestGoal" className="block text-sm font-medium text-text-primary">
+                <label htmlFor={fieldIds.requestGoal} className="block text-sm font-medium text-text-primary">
                   Что подготовить
                 </label>
                 <select
-                  id="requestGoal"
+                  id={fieldIds.requestGoal}
                   value={formData.requestGoal}
                   onChange={(e) => setFormData((p) => ({ ...p, requestGoal: e.target.value }))}
                   className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
@@ -386,11 +422,11 @@ export default function QuizForm({
               </div>
 
               <div className="md:col-span-2">
-                <label htmlFor="currentSystem" className="block text-sm font-medium text-text-primary">
+                <label htmlFor={fieldIds.currentSystem} className="block text-sm font-medium text-text-primary">
                   Текущая система или оборудование
                 </label>
                 <textarea
-                  id="currentSystem"
+                  id={fieldIds.currentSystem}
                   value={formData.currentSystem}
                   onChange={(e) => setFormData((p) => ({ ...p, currentSystem: e.target.value }))}
                   className="mt-2 min-h-24 w-full resize-y rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
@@ -410,6 +446,7 @@ export default function QuizForm({
 
       {isSuccess ? (
         <div
+          role="status"
           aria-live="polite"
           className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800 flex items-center gap-2"
         >
@@ -420,13 +457,15 @@ export default function QuizForm({
 
       <div className="flex items-start gap-2">
         <input
-          id="consent"
+          id={fieldIds.consent}
           type="checkbox"
           checked={consent}
           onChange={(e) => setConsent(e.target.checked)}
           className="mt-1 h-4 w-4 rounded border-border-primary"
+          required
+          aria-describedby={fieldIds.consentHint}
         />
-        <label htmlFor="consent" className="text-xs leading-5 text-text-secondary">
+        <label htmlFor={fieldIds.consent} className="text-xs leading-5 text-text-secondary">
           Я даю согласие на обработку моих персональных данных для обработки обращения,
           подготовки расчёта и связи со мной. Подтверждаю, что ознакомлен с{' '}
           <Link href="/privacy" className="underline underline-offset-2 hover:text-text-primary">
@@ -443,8 +482,27 @@ export default function QuizForm({
         </label>
       </div>
 
+      <p id={fieldIds.consentHint} className="sr-only">
+        Согласие требуется для отправки заявки.
+      </p>
+
+      {submitHint ? (
+        <p
+          id={fieldIds.submitHint}
+          aria-live="polite"
+          className="text-xs leading-5 text-text-secondary"
+        >
+          Чтобы отправить заявку: {submitHint}
+        </p>
+      ) : null}
+
       <div className="pt-2">
-        <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
+        <Button
+          type="submit"
+          disabled={isSubmitting || !canSubmit}
+          aria-describedby={submitHint ? fieldIds.submitHint : undefined}
+          className="w-full sm:w-auto"
+        >
           <span className="inline-flex items-center gap-2">
             {isSubmitting ? <span className="spinner" aria-label="Отправка" /> : null}
             {isSubmitting ? 'Отправляем…' : 'Отправить'}

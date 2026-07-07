@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { dispatchLeadFormEvent, type LeadFormEventParams } from "@/app/lib/analytics-events";
 import { getLeadAttribution } from "@/app/lib/lead-attribution";
 
@@ -115,6 +115,19 @@ export default function LeadForm(props: LeadFormProps) {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
   const hasStartedRef = useRef(false);
+  const formId = useId();
+
+  const fieldIds = {
+    name: `${formId}-name`,
+    phone: `${formId}-phone`,
+    phoneHint: `${formId}-phone-hint`,
+    company: `${formId}-company`,
+    objectType: `${formId}-object-type`,
+    comment: `${formId}-comment`,
+    consent: `${formId}-consent`,
+    consentHint: `${formId}-consent-hint`,
+    submitHint: `${formId}-submit-hint`,
+  };
 
   function getEventParams(): LeadFormEventParams {
     return {
@@ -187,6 +200,17 @@ export default function LeadForm(props: LeadFormProps) {
 
     return true;
   }, [payload]);
+
+  const phoneDigits = normalizePhone(phone).replace(/\D/g, "");
+  const phoneLooksInvalid = phone.trim().length > 0 && phoneDigits.length < 10;
+
+  const submitHint = useMemo(() => {
+    if (!name.trim()) return "Введите имя.";
+    if (!phone.trim()) return "Введите телефон.";
+    if (phoneLooksInvalid) return "Проверьте номер: нужно не меньше 10 цифр.";
+    if (!consent) return "Подтвердите согласие на обработку данных.";
+    return null;
+  }, [consent, name, phone, phoneLooksInvalid]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -263,42 +287,63 @@ export default function LeadForm(props: LeadFormProps) {
       <div className="grid min-w-0 gap-5 sm:gap-6">
         <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
           <div className="grid gap-2">
-            <label className="text-sm font-semibold text-slate-900">Имя</label>
+            <label htmlFor={fieldIds.name} className="text-sm font-semibold text-slate-900">
+              Имя
+            </label>
             <input
+              id={fieldIds.name}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Андрей"
               className="h-12 w-full min-w-0 rounded-xl border border-slate-200 px-4 text-base text-slate-900 outline-none transition focus:border-slate-400"
               autoComplete="name"
+              required
             />
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-semibold text-slate-900">Телефон</label>
+            <label htmlFor={fieldIds.phone} className="text-sm font-semibold text-slate-900">
+              Телефон
+            </label>
             <input
+              id={fieldIds.phone}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+7 999 123-45-67"
               className="h-12 w-full min-w-0 rounded-xl border border-slate-200 px-4 text-base text-slate-900 outline-none transition focus:border-slate-400"
+              inputMode="tel"
               autoComplete="tel"
+              required
+              aria-invalid={phoneLooksInvalid}
+              aria-describedby={fieldIds.phoneHint}
             />
+            <p id={fieldIds.phoneHint} className="text-xs leading-5 text-slate-500">
+              Можно указать номер в привычном формате.
+            </p>
           </div>
 
           {!minimalFields ? (
             <>
               <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-900">Компания</label>
+                <label htmlFor={fieldIds.company} className="text-sm font-semibold text-slate-900">
+                  Компания
+                </label>
                 <input
+                  id={fieldIds.company}
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder='ООО "..."'
                   className="h-12 w-full min-w-0 rounded-xl border border-slate-200 px-4 text-base text-slate-900 outline-none transition focus:border-slate-400"
+                  autoComplete="organization"
                 />
               </div>
 
               <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-900">Тип объекта</label>
+                <label htmlFor={fieldIds.objectType} className="text-sm font-semibold text-slate-900">
+                  Тип объекта
+                </label>
                 <input
+                  id={fieldIds.objectType}
                   value={objectType}
                   onChange={(e) => setObjectType(e.target.value)}
                   placeholder="ТЦ / БЦ / ЖК / Паркинг"
@@ -345,8 +390,11 @@ export default function LeadForm(props: LeadFormProps) {
         ) : null}
 
         <div className="grid gap-2">
-          <label className="text-sm font-semibold text-slate-900">Комментарий</label>
+          <label htmlFor={fieldIds.comment} className="text-sm font-semibold text-slate-900">
+            Комментарий
+          </label>
           <textarea
+            id={fieldIds.comment}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Коротко опишите объект и задачу (кол-во въездов, типы клиентов, пожелания)"
@@ -355,12 +403,15 @@ export default function LeadForm(props: LeadFormProps) {
         </div>
 
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <label className="flex min-w-0 items-start gap-3 text-sm leading-6 text-slate-700">
+          <label htmlFor={fieldIds.consent} className="flex min-w-0 items-start gap-3 text-sm leading-6 text-slate-700">
             <input
+              id={fieldIds.consent}
               type="checkbox"
               checked={consent}
               onChange={(e) => setConsent(e.target.checked)}
               className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300"
+              required
+              aria-describedby={fieldIds.consentHint}
             />
             <span className="min-w-0 break-words">
               Я даю согласие на обработку моих персональных данных для обработки обращения,
@@ -382,20 +433,35 @@ export default function LeadForm(props: LeadFormProps) {
           <button
             type="submit"
             disabled={!canSubmit || isSubmitting}
+            aria-describedby={submitHint ? fieldIds.submitHint : undefined}
             className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-blue-600 px-5 py-3 text-center text-sm font-semibold leading-tight text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto"
           >
             {isSubmitting ? "Отправляем…" : submitLabel}
           </button>
         </div>
 
+        <p id={fieldIds.consentHint} className="sr-only">
+          Согласие требуется для отправки заявки.
+        </p>
+
+        {submitHint ? (
+          <p
+            id={fieldIds.submitHint}
+            aria-live="polite"
+            className="text-xs leading-5 text-slate-500"
+          >
+            Чтобы отправить заявку: {submitHint}
+          </p>
+        ) : null}
+
         {status === "success" ? (
-          <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <div role="status" aria-live="polite" className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             Заявка отправлена. Мы свяжемся с вами в ближайшее время.
           </div>
         ) : null}
 
         {status === "error" ? (
-          <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <div role="alert" className="rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800">
             {errorText || "Проверьте поля и попробуйте еще раз."}
           </div>
         ) : null}
