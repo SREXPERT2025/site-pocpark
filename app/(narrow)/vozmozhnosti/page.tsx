@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import FeaturesShowcase from '@/app/components/FeaturesShowcase';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
@@ -173,6 +174,19 @@ export default function FeaturesPage() {
               </div>
             ))}
           </div>
+
+          <figure className="mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="relative aspect-[1122/1402] w-full">
+              <Image
+                src="/images/content/features-hub.png"
+                alt="Инфографика о возможностях РОСПАРК: сценарии доступа, онлайн-оплата, распознавание номеров и контроль парковки"
+                fill
+                sizes="(min-width: 1024px) 1088px, calc(100vw - 32px)"
+                className="object-cover"
+                priority
+              />
+            </div>
+          </figure>
         </div>
       </section>
 

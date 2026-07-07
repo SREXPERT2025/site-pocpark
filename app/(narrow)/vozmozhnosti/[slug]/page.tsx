@@ -24,6 +24,14 @@ const featureVisuals: Record<string, { src: string; alt: string }> = {
     src: '/images/features/explainers/gostevie-klienti.png',
     alt: 'Инфографика РОСПАРК: гостевые клиенты, заявки, временный доступ и аудит событий',
   },
+  'onlain-oplata': {
+    src: '/images/content/online-payment.png',
+    alt: 'Инфографика РОСПАРК: онлайн-оплата парковки, QR-код, приложение, сайт и платёжные сценарии',
+  },
+  'raspoznavanie-nomerov': {
+    src: '/images/content/license-plate-recognition.png',
+    alt: 'Инфографика РОСПАРК: распознавание номеров для парковки, доступ, оплата и контроль событий',
+  },
 };
 
 export function generateStaticParams() {
