@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
@@ -58,6 +59,23 @@ export default function CompanyPage() {
           <p className="mt-5 max-w-3xl text-base leading-relaxed text-slate-600 sm:text-lg">
             РОСПАРК помогает организовать въезд, выезд, оплату и администрирование парковки на объектах, где важны понятные правила доступа и контроль событий.
           </p>
+        </div>
+      </section>
+
+      <section className="bg-white py-8 sm:py-10">
+        <div className="container mx-auto max-w-5xl px-4">
+          <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="relative aspect-[2/3] w-full">
+              <Image
+                src="/images/content/about-rospark.png"
+                alt="Инфографика о компании РОСПАРК: решения, объекты, юридическая информация, адреса и контакты"
+                fill
+                sizes="(min-width: 1024px) 960px, calc(100vw - 32px)"
+                className="object-cover"
+                priority
+              />
+            </div>
+          </figure>
         </div>
       </section>
 

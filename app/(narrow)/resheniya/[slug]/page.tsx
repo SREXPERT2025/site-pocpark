@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import { getContentBySlug, getAllContentMeta } from '@/lib/content-parser'; // Предполагаем, что парсер здесь
 import { canonicalUrl } from '@/app/config/site-url';
 
@@ -44,6 +45,23 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
         description={data.description}
         cta={data.cta}
       />
+
+      {data.coverImage ? (
+        <section className="mx-auto max-w-5xl px-4 pb-2 pt-8 sm:px-6">
+          <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="relative aspect-[1055/1491] w-full">
+              <Image
+                src={data.coverImage}
+                alt={data.title}
+                fill
+                sizes="(min-width: 1024px) 960px, calc(100vw - 32px)"
+                className="object-cover"
+                priority={params.slug === 'kak-my-rabotaem'}
+              />
+            </div>
+          </figure>
+        </section>
+      ) : null}
 
       <main className="mx-auto max-w-4xl px-6 py-16">
         {/* Основной контент страницы, который уже работал */}
