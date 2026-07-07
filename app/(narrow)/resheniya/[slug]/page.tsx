@@ -4,6 +4,7 @@ import { getContentBySlug, getAllContentMeta } from '@/lib/content-parser'; // �
 import { canonicalUrl } from '@/app/config/site-url';
 
 // UI Компоненты
+import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import Hero from '@/app/components/ui/Hero'; // Путь может отличаться
 import CtaBlock from '@/app/components/ui/CtaBlock'; // Путь может отличаться
 
@@ -36,6 +37,14 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
 
   return (
     <>
+      <BreadcrumbJsonLd
+        items={[
+          { name: 'Главная', url: '/' },
+          { name: 'Решения', url: '/resheniya' },
+          { name: data.title, url: `/resheniya/${params.slug}` },
+        ]}
+      />
+
       {/* 
         ✅ ИСПРАВЛЕНО: Hero теперь получает CTA из frontmatter.
         Если в .md нет 'cta', он получит undefined, что Hero должен уметь обрабатывать.

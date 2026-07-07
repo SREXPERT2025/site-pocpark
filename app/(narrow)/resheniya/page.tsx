@@ -67,6 +67,12 @@ const scenarioLinks: SolutionCard[] = [
     label: 'Процесс',
   },
   {
+    title: 'Стоимость автоматизации парковки',
+    description: 'Из чего складывается бюджет: въезды, выезды, оборудование, онлайн-оплата, распознавание номеров и интеграции.',
+    href: '/resheniya/stoimost-avtomatizacii-parkovki',
+    label: 'Бюджет',
+  },
+  {
     title: 'Сравнение подходов',
     description: 'Чем отличается набор оборудования, локальная автоматизация и система парковки под ключ.',
     href: '/resheniya/sravnenie-podhodov',
