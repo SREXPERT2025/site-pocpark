@@ -11,6 +11,7 @@ import AnswerFirst from '@/app/components/content/AnswerFirst';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
+import SolutionVisual from '@/app/components/content/SolutionVisual';
 import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
 
@@ -67,6 +68,11 @@ export default function RukovoditeliPage() {
         ]}
       />
       <Hero />
+
+      <SolutionVisual
+        src="/images/solutions/explainers/dlya-rukovoditeley.png"
+        alt="Инфографика РОСПАРК: парковка как управляемый актив для руководителя"
+      />
 
       <AnswerFirst
         className="py-10"

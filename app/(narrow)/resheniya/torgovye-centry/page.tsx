@@ -5,6 +5,7 @@ import AnswerFirst from '@/app/components/content/AnswerFirst';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
+import SolutionVisual from '@/app/components/content/SolutionVisual';
 import LeadForm from '@/app/components/forms/LeadForm';
 import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
@@ -95,6 +96,11 @@ export default function TorgovyeCentresPage() {
           </div>
         </div>
       </section>
+
+      <SolutionVisual
+        src="/images/solutions/explainers/torgovye-centry.png"
+        alt="Инфографика РОСПАРК: автоматизация парковки торгового центра"
+      />
 
       <AnswerFirst
         className="py-10"

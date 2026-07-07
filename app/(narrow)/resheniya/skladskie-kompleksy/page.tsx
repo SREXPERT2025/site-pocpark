@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
+import SolutionVisual from '@/app/components/content/SolutionVisual';
 import LeadForm from '@/app/components/forms/LeadForm';
 import { canonicalUrl } from '@/app/config/site-url';
 
@@ -157,6 +158,11 @@ export default function WarehouseSolutionsPage() {
           </div>
         </div>
       </section>
+
+      <SolutionVisual
+        src="/images/solutions/explainers/skladskie-kompleksy.png"
+        alt="Инфографика РОСПАРК: автоматизация КПП и проездов складского комплекса"
+      />
 
       <section className="py-12">
         <div className="container mx-auto max-w-6xl min-w-0 px-4">

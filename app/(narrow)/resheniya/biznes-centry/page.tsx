@@ -5,6 +5,7 @@ import AnswerFirst from '@/app/components/content/AnswerFirst';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
+import SolutionVisual from '@/app/components/content/SolutionVisual';
 import LeadForm from '@/app/components/forms/LeadForm';
 import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
@@ -95,6 +96,11 @@ export default function BiznesCentresPage() {
           </div>
         </div>
       </section>
+
+      <SolutionVisual
+        src="/images/solutions/explainers/biznes-centry.png"
+        alt="Инфографика РОСПАРК: автоматизация парковки бизнес-центра"
+      />
 
       <AnswerFirst
         className="py-10"
