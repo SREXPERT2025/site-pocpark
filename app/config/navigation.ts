@@ -81,6 +81,21 @@ export const navigation: NavItem[] = [
           },
         ],
       },
+      {
+        label: 'Технологии',
+        items: [
+          {
+            label: 'Онлайн-оплата',
+            href: '/vozmozhnosti/onlain-oplata',
+            description: 'QR, сайт, приложение и платёжные сценарии без кассиров',
+          },
+          {
+            label: 'Распознавание номеров',
+            href: '/vozmozhnosti/raspoznavanie-nomerov',
+            description: 'ANPR для въезда, выезда, гостей, абонементов и контроля',
+          },
+        ],
+      },
     ],
   },
   {

@@ -358,12 +358,12 @@ export default function FeaturesShowcase() {
   );
 
   return (
-    <main className="overflow-hidden bg-slate-50 py-14 md:py-20">
+    <section className="overflow-hidden bg-slate-50 py-14 md:py-20">
       <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-8 overflow-hidden px-4 sm:px-6">
         {sections.map((section) => (
           <SectionCarousel key={section.id} section={section} />
         ))}
       </div>
-    </main>
+    </section>
   );
 }
