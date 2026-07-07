@@ -10,6 +10,11 @@ type FormData = {
   name: string;
   phone: string;
   objectType: string;
+  city: string;
+  accessPoints: string;
+  projectStage: string;
+  requestGoal: string;
+  currentSystem: string;
 };
 
 type QuizFormProps = {
@@ -32,6 +37,37 @@ function isValidRuPhone(value: string) {
   return true;
 }
 
+const objectTypeOptions = [
+  'ТЦ / торговый объект',
+  'Бизнес-центр / офис',
+  'ЖК / дворовая территория',
+  'Склад / логистический комплекс',
+  'Отель / объект с гостями',
+  'Другое',
+];
+
+const accessPointOptions = [
+  '1 въезд / 1 выезд',
+  '2-3 въезда/выезда',
+  '4+ въезда/выезда',
+  'Пока неизвестно',
+];
+
+const projectStageOptions = [
+  'Новый объект',
+  'Модернизация текущей парковки',
+  'Нужно заменить часть оборудования',
+  'Нужен аудит текущего решения',
+];
+
+const requestGoalOptions = [
+  'Коммерческое предложение',
+  'Предварительный расчет',
+  'Консультация инженера',
+  'Аудит текущей парковки',
+  'Техническое задание',
+];
+
 export default function QuizForm({
   source,
   intent,
@@ -42,7 +78,12 @@ export default function QuizForm({
   const [formData, setFormData] = useState<FormData>({
     name: '',
     phone: '',
-    objectType: 'ТЦ / Бизнес-центр',
+    objectType: objectTypeOptions[0],
+    city: '',
+    accessPoints: accessPointOptions[0],
+    projectStage: projectStageOptions[0],
+    requestGoal: requestGoalOptions[0],
+    currentSystem: '',
   });
 
   const [consent, setConsent] = useState(false);
@@ -105,6 +146,14 @@ export default function QuizForm({
       });
       return;
     }
+    if (!formData.city.trim()) {
+      setError('Укажите город или регион объекта.');
+      dispatchLeadFormEvent('form_error', {
+        ...getEventParams(),
+        error_type: 'validation',
+      });
+      return;
+    }
     if (!consent) {
       setError('Нужно согласиться на обработку персональных данных.');
       dispatchLeadFormEvent('form_error', {
@@ -117,6 +166,12 @@ export default function QuizForm({
     setIsSubmitting(true);
     try {
       dispatchLeadFormEvent('form_submit', getEventParams());
+      const message = [
+        'Заявка с квиза: подготовить коммерческое предложение / расчёт.',
+        `Что нужно: ${formData.requestGoal}.`,
+        `Стадия проекта: ${formData.projectStage}.`,
+        `Текущая система: ${formData.currentSystem.trim() || 'не указана'}.`,
+      ].join('\n');
 
       const res = await fetch('/api/lead', {
         method: 'POST',
@@ -126,7 +181,12 @@ export default function QuizForm({
           phone: formData.phone,
           phoneNormalized: normalizePhone(formData.phone),
           objectType: formData.objectType,
-          message: 'Заявка с квиза: подготовить коммерческое предложение / расчёт. ',
+          city: formData.city,
+          accessPoints: formData.accessPoints,
+          projectStage: formData.projectStage,
+          requestGoal: formData.requestGoal,
+          currentSystem: formData.currentSystem,
+          message,
           consent,
           source,
           intent: intent || source,
@@ -147,7 +207,16 @@ export default function QuizForm({
 
       setIsSuccess(true);
       dispatchLeadFormEvent('form_success', getEventParams());
-      setFormData({ name: '', phone: '', objectType: 'ТЦ / Бизнес-центр' });
+      setFormData({
+        name: '',
+        phone: '',
+        objectType: objectTypeOptions[0],
+        city: '',
+        accessPoints: accessPointOptions[0],
+        projectStage: projectStageOptions[0],
+        requestGoal: requestGoalOptions[0],
+        currentSystem: '',
+      });
       setTouched({ phone: false });
       setConsent(false);
     } catch (err) {
@@ -162,56 +231,169 @@ export default function QuizForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} onFocus={handleFormStart} className="mt-8 space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-text-primary">Имя</label>
-        <input
-          value={formData.name}
-          onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
-          className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-          placeholder="Иван"
-          autoComplete="name"
-        />
-      </div>
+    <form onSubmit={handleSubmit} onFocus={handleFormStart} className="mt-8 space-y-6">
+      <section className="rounded-lg border border-border-primary bg-bg-primary p-4 sm:p-5">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+              Быстрый бриф
+            </p>
+            <h2 className="mt-1 text-xl font-semibold text-text-primary">Параметры объекта</h2>
+          </div>
+          <div className="text-sm text-text-secondary">5 вопросов</div>
+        </div>
 
-      <div>
-        <label className="block text-sm font-medium text-text-primary">Телефон</label>
-        <input
-          value={formData.phone}
-          onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
-          onBlur={() => setTouched((p) => ({ ...p, phone: true }))}
-          className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-          placeholder="+7 999 123-45-67"
-          inputMode="tel"
-          autoComplete="tel"
-          aria-invalid={!!phoneError}
-        />
-        {phoneError ? <p className="mt-2 text-xs text-red-600">{phoneError}</p> : null}
-      </div>
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div>
+            <label htmlFor="objectType" className="block text-sm font-medium text-text-primary">
+              Тип объекта
+            </label>
+            <select
+              id="objectType"
+              value={formData.objectType}
+              onChange={(e) => setFormData((p) => ({ ...p, objectType: e.target.value }))}
+              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            >
+              {objectTypeOptions.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
+            </select>
+          </div>
 
-      <div>
-        <label className="block text-sm font-medium text-text-primary">Тип объекта</label>
-        <select
-          value={formData.objectType}
-          onChange={(e) => setFormData((p) => ({ ...p, objectType: e.target.value }))}
-          className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-        >
-          <option>ТЦ / Бизнес-центр</option>
-          <option>ЖК / Дворовая территория</option>
-          <option>Промышленная площадка</option>
-          <option>Парковка у офиса</option>
-          <option>Другое</option>
-        </select>
-      </div>
+          <div>
+            <label htmlFor="city" className="block text-sm font-medium text-text-primary">
+              Город или регион
+            </label>
+            <input
+              id="city"
+              value={formData.city}
+              onChange={(e) => setFormData((p) => ({ ...p, city: e.target.value }))}
+              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              placeholder="Москва, МО, Казань..."
+              autoComplete="address-level2"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="accessPoints" className="block text-sm font-medium text-text-primary">
+              Въезды и выезды
+            </label>
+            <select
+              id="accessPoints"
+              value={formData.accessPoints}
+              onChange={(e) => setFormData((p) => ({ ...p, accessPoints: e.target.value }))}
+              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            >
+              {accessPointOptions.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="projectStage" className="block text-sm font-medium text-text-primary">
+              Стадия проекта
+            </label>
+            <select
+              id="projectStage"
+              value={formData.projectStage}
+              onChange={(e) => setFormData((p) => ({ ...p, projectStage: e.target.value }))}
+              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            >
+              {projectStageOptions.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="requestGoal" className="block text-sm font-medium text-text-primary">
+              Что подготовить
+            </label>
+            <select
+              id="requestGoal"
+              value={formData.requestGoal}
+              onChange={(e) => setFormData((p) => ({ ...p, requestGoal: e.target.value }))}
+              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            >
+              {requestGoalOptions.map((option) => (
+                <option key={option}>{option}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="md:col-span-2">
+            <label htmlFor="currentSystem" className="block text-sm font-medium text-text-primary">
+              Текущая система или оборудование
+            </label>
+            <textarea
+              id="currentSystem"
+              value={formData.currentSystem}
+              onChange={(e) => setFormData((p) => ({ ...p, currentSystem: e.target.value }))}
+              className="mt-2 min-h-24 w-full resize-y rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              placeholder="Если уже есть шлагбаумы, СКУД, камеры, терминалы или старая система"
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-lg border border-border-primary bg-bg-primary p-4 sm:p-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">
+            Контакты
+          </p>
+          <h2 className="mt-1 text-xl font-semibold text-text-primary">Куда отправить расчет</h2>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium text-text-primary">
+              Имя
+            </label>
+            <input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              placeholder="Иван"
+              autoComplete="name"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-text-primary">
+              Телефон
+            </label>
+            <input
+              id="phone"
+              value={formData.phone}
+              onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
+              onBlur={() => setTouched((p) => ({ ...p, phone: true }))}
+              className="mt-2 w-full rounded-md border border-border-primary bg-bg-primary px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              placeholder="+7 999 123-45-67"
+              inputMode="tel"
+              autoComplete="tel"
+              required
+              aria-invalid={!!phoneError}
+            />
+            {phoneError ? <p className="mt-2 text-xs text-red-600">{phoneError}</p> : null}
+          </div>
+        </div>
+      </section>
 
       {error ? (
-        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {error}
         </div>
       ) : null}
 
       {isSuccess ? (
-        <div className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800 flex items-center gap-2">
+        <div
+          aria-live="polite"
+          className="rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-800 flex items-center gap-2"
+        >
           <span aria-hidden="true">✓</span>
           <span>Заявка принята. Мы свяжемся с вами в ближайшее время.</span>
         </div>

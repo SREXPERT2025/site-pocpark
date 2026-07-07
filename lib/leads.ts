@@ -18,6 +18,11 @@ export type LeadPayload = {
   phoneNormalized?: string;
   company?: string;
   objectType?: string;
+  city?: string;
+  accessPoints?: string;
+  projectStage?: string;
+  requestGoal?: string;
+  currentSystem?: string;
   message?: string;
   source?: string;
   intent?: string;
@@ -66,6 +71,11 @@ function formatLeadText(payload: LeadPayload) {
   lines.push(`Телефон: ${payload.phone}`);
   if (payload.company) lines.push(`Компания: ${payload.company}`);
   if (payload.objectType) lines.push(`Тип объекта: ${payload.objectType}`);
+  if (payload.city) lines.push(`Город/регион: ${payload.city}`);
+  if (payload.accessPoints) lines.push(`Въезды/выезды: ${payload.accessPoints}`);
+  if (payload.projectStage) lines.push(`Стадия проекта: ${payload.projectStage}`);
+  if (payload.requestGoal) lines.push(`Что нужно: ${payload.requestGoal}`);
+  if (payload.currentSystem) lines.push(`Текущая система: ${payload.currentSystem}`);
   if (payload.message) lines.push(`Сообщение: ${payload.message}`);
   if (payload.intent) lines.push(`Цель обращения: ${payload.intent}`);
   if (payload.source) lines.push(`Источник/CTA: ${payload.source}`);

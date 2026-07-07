@@ -77,6 +77,11 @@ export async function POST(req: Request) {
     const consent = Boolean(body.consent);
     const company = readString(body.company);
     const objectType = readString(body.objectType);
+    const city = readString(body.city);
+    const accessPoints = readString(body.accessPoints);
+    const projectStage = readString(body.projectStage);
+    const requestGoal = readString(body.requestGoal);
+    const currentSystem = readString(body.currentSystem);
     const message = readString(body.message) ?? readString(body.comment);
     const sourcePage = readString(body.sourcePage);
     const sourceSection = readString(body.sourceSection);
@@ -112,6 +117,11 @@ export async function POST(req: Request) {
       phoneNormalized: normalizePhone(phone),
       company,
       objectType,
+      city,
+      accessPoints,
+      projectStage,
+      requestGoal,
+      currentSystem,
       message,
       source,
       intent,
