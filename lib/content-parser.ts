@@ -178,12 +178,23 @@ function normalizeSpecs(v: any): { name: string; value: string }[] | undefined {
   return out.length ? out : undefined;
 }
 
+function isAvailableDownloadUrl(url: string): boolean {
+  if (!url.startsWith('/')) return true;
+
+  const pathname = url.split(/[?#]/)[0];
+  const publicRoot = path.resolve(process.cwd(), 'public');
+  const filePath = path.resolve(publicRoot, pathname.replace(/^\/+/, ''));
+
+  return filePath.startsWith(`${publicRoot}${path.sep}`) && fs.existsSync(filePath);
+}
+
 function normalizeDownloads(v: any): { title: string; url: string }[] | undefined {
   if (!Array.isArray(v)) return undefined;
   const out = v
     .map((d) => {
       const title = normalizeString(d?.title ?? d?.name);
       const url = normalizeString(d?.url ?? d?.href);
+      if (!title || !url || !isAvailableDownloadUrl(url)) return null;
       return title && url ? { title, url } : null;
     })
     .filter(Boolean) as { title: string; url: string }[];
@@ -212,9 +223,9 @@ function normalizeAnswerFirst(v: any): { lead: string; bullets: string[] } | und
 
 function normalizeCta(v: any): CtaItem | undefined {
   if (!v || typeof v !== 'object') return undefined;
-  const label = normalizeString((v as any).label);
-  const buttonText = normalizeString((v as any).buttonText);
-  const href = normalizeString((v as any).href);
+  const label = normalizeString((v as any).label ?? (v as any).title ?? (v as any).heading);
+  const buttonText = normalizeString((v as any).buttonText ?? (v as any).button_text ?? (v as any).button);
+  const href = normalizeString((v as any).href ?? (v as any).url);
   if (!label || !buttonText || !href) return undefined;
   const description = normalizeString((v as any).description);
   const badge = normalizeString((v as any).badge);
