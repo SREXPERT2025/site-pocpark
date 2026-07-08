@@ -38,7 +38,7 @@ export const navigation: NavItem[] = [
           {
             label: 'Для инженеров',
             href: '/resheniya/dlya-inzhenerov',
-            description: 'Интеграции, API, схемы, эксплуатационная надёжность',
+            description: 'Интеграции, обмен данными, схемы, эксплуатационная надёжность',
           },
           {
             label: 'Для службы безопасности',
@@ -80,6 +80,16 @@ export const navigation: NavItem[] = [
             href: '/resheniya/kak-my-rabotaem',
             description: 'Этапы внедрения: обследование, проектирование, запуск и поддержка',
           },
+          {
+            label: 'Стоимость автоматизации',
+            href: '/resheniya/stoimost-avtomatizacii-parkovki',
+            description: 'Из чего складывается бюджет парковочной системы',
+          },
+          {
+            label: 'Интеграции и обмен данными',
+            href: '/resheniya/integracii-i-api',
+            description: 'Связь парковки со СКУД, 1С, сайтом и внутренними системами',
+          },
         ],
       },
       {
@@ -93,7 +103,7 @@ export const navigation: NavItem[] = [
           {
             label: 'Распознавание номеров',
             href: '/vozmozhnosti/raspoznavanie-nomerov',
-            description: 'ANPR для въезда, выезда, гостей, абонементов и контроля',
+            description: 'Распознавание ГРНЗ для въезда, выезда, гостей, абонементов и контроля',
           },
         ],
       },
