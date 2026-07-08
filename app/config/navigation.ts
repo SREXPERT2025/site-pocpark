@@ -177,11 +177,6 @@ export const navigation: NavItem[] = [
             href: '/oborudovanie/shlagbaum-rospark-4',
             description: 'Универсальный вариант для типовых въездов',
           },
-          {
-            label: 'Шлагбаум 6 м',
-            href: '/oborudovanie/shlagbaum-rospark-6',
-            description: 'Для широких проездов и особых требований к перекрытию',
-          },
         ],
       },
     ],
