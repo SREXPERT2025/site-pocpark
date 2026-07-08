@@ -148,6 +148,43 @@ export const navigation: NavItem[] = [
   {
     label: 'Оборудование',
     href: '/oborudovanie',
+    groups: [
+      {
+        label: 'Категории',
+        items: [
+          {
+            label: 'Все оборудование',
+            href: '/oborudovanie',
+            description: 'Каталог стоек, шлагбаумов, терминалов, табло и периферии',
+          },
+          {
+            label: 'Шлагбаумы',
+            href: '/oborudovanie/shlagbaumy',
+            description: 'Российские автоматические шлагбаумы для парковок и контролируемых въездов',
+          },
+        ],
+      },
+      {
+        label: 'Модели шлагбаумов',
+        items: [
+          {
+            label: 'Шлагбаум 3 м',
+            href: '/oborudovanie/shlagbaum-rospark-3',
+            description: 'Для проездов меньшей ширины',
+          },
+          {
+            label: 'Шлагбаум 4 м',
+            href: '/oborudovanie/shlagbaum-rospark-4',
+            description: 'Универсальный вариант для типовых въездов',
+          },
+          {
+            label: 'Шлагбаум 6 м',
+            href: '/oborudovanie/shlagbaum-rospark-6',
+            description: 'Для широких проездов и особых требований к перекрытию',
+          },
+        ],
+      },
+    ],
   },
   {
     label: 'Проекты',

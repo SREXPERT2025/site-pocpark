@@ -10,6 +10,7 @@ export default function ProductView({ data, content }: { data: any; content: str
     title,
     description,
     coverImage,
+    imageCaption,
     gallery = [],
     answerFirst,
     useCases = [],
@@ -128,8 +129,8 @@ export default function ProductView({ data, content }: { data: any; content: str
           </div>
 
           <p className="mb-8 rounded-full bg-gray-50 px-4 py-1 text-center text-sm font-medium text-gray-500">
-            Промышленное исполнение. Корпус IP54, антивандальная панель, работа от
-            -45°C.
+            {imageCaption ??
+              'Внешний вид, комплектация и исполнение уточняются под задачу объекта и версию оборудования.'}
           </p>
 
           {allImages.length > 1 && (
