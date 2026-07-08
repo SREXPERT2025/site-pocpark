@@ -4,7 +4,7 @@ description: "Комплексная автоматизация парковки
 coverImage: /images/cases/spar-dnepropetrovskaya-cover.jpg
 category: Торговый центр
 tags:
-  - ТЦ
+  - торговые центры
   - Контроль выручки
 format: text
 metrics:

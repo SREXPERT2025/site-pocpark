@@ -11,7 +11,7 @@ import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
 
 export const metadata: Metadata = {
-  "title": "Автоматизация парковки для застройщиков и ЖК | РОСПАРК",
+  "title": "Автоматизация парковки для застройщиков и жилых комплексов | РОСПАРК",
   "description": "Разделение потоков резидентов, гостей и подрядчиков, контроль доступа и событий, минимум ручных конфликтов. Внедрение поэтапно и без перегруза интерфейса.",
   "keywords": [
     "автоматизация парковки",
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     "canonical": canonicalUrl('/resheniya/zastroyschiki')
   },
   "openGraph": {
-    "title": "Автоматизация парковки для застройщиков и ЖК | РОСПАРК",
+    "title": "Автоматизация парковки для застройщиков и жилых комплексов | РОСПАРК",
     "description": "Разделение потоков резидентов, гостей и подрядчиков, контроль доступа и событий, минимум ручных конфликтов. Внедрение поэтапно и без перегруза интерфейса.",
     "url": canonicalUrl('/resheniya/zastroyschiki'),
     "type": "website"
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 };
 
 export default function ZastroyschikiPage() {
-  const heroTitle = "Автоматизация парковки для застройщиков и ЖК | РОСПАРК";
+  const heroTitle = "Автоматизация парковки для застройщиков и жилых комплексов | РОСПАРК";
   const heroDescription = "Разделение потоков резидентов, гостей и подрядчиков, контроль доступа и событий, минимум ручных конфликтов. Внедрение поэтапно и без перегруза интерфейса.";
 
   const extended = getExtendedContentBySlug('resheniya', 'zastroyschiki');
@@ -60,7 +60,7 @@ export default function ZastroyschikiPage() {
       <BreadcrumbJsonLd
         items={[
           { name: 'Главная', url: '/' },
-          { name: 'Застройщики и ЖК', url: '/resheniya/zastroyschiki' },
+          { name: 'Застройщики и жилые комплексы', url: '/resheniya/zastroyschiki' },
         ]}
       />
 
@@ -99,7 +99,7 @@ export default function ZastroyschikiPage() {
 
       <SolutionVisual
         src="/images/solutions/explainers/zastroyschiki.png"
-        alt="Инфографика РОСПАРК: парковка ЖК и застройщиков с доступом для резидентов, гостей и подрядчиков"
+        alt="Инфографика РОСПАРК: парковка жилого комплекса и застройщиков с доступом для резидентов, гостей и подрядчиков"
       />
 
       <AnswerFirst
@@ -112,12 +112,12 @@ export default function ZastroyschikiPage() {
         section="resheniya"
         slug="zastroyschiki"
         className="pb-8"
-        summaryLabel="Расширенная информация: сценарии ЖК, гостевые заявки, безопасность, эксплуатация, FAQ"
+        summaryLabel="Расширенная информация: сценарии жилого комплекса, гостевые заявки, безопасность, эксплуатация, FAQ"
       />
 
       <section className="py-12">
         <div className="container mx-auto max-w-6xl min-w-0 px-4">
-          <h2 className="break-words text-2xl font-bold text-slate-900 md:text-3xl">Типовые задачи застройщика/ЖК</h2>
+          <h2 className="break-words text-2xl font-bold text-slate-900 md:text-3xl">Типовые задачи застройщика и жилого комплекса</h2>
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="break-words text-lg font-semibold text-slate-900">Разделение потоков</h3>
@@ -132,7 +132,7 @@ export default function ZastroyschikiPage() {
               <p className="mt-2 break-words text-slate-700">Стоп-листы, сценарии с двухфакторным подтверждением, аудит действий и исключений.</p>
             </div>
           </div>
-          <p className="mt-6 text-sm text-slate-500">В ЖК важны стабильность и понятные правила для жителей: минимум ручных операций и спорных ситуаций.</p>
+          <p className="mt-6 text-sm text-slate-500">В жилом комплексе важны стабильность и понятные правила для жителей: минимум ручных операций и спорных ситуаций.</p>
         </div>
       </section>
 
@@ -160,7 +160,7 @@ export default function ZastroyschikiPage() {
       <section className="py-16 bg-blue-600 text-white">
         <div className="container mx-auto max-w-6xl min-w-0 px-4">
           <div className="rounded-2xl bg-blue-700/30 p-10">
-            <h2 className="text-3xl md:text-4xl font-bold">Консультация по парковке ЖК</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Консультация по парковке жилого комплекса</h2>
             <p className="mt-4 text-blue-100 max-w-3xl">
               Разберём ситуацию, предложим 2–3 архитектуры доступа по типам клиентов и план внедрения без перегруза текста.
             </p>

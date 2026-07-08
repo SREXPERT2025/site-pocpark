@@ -63,7 +63,7 @@ export default function LeadFormSection(props: LeadFormSectionProps) {
 
         {/* Социальное доказательство */}
         <div className="mt-10 text-center text-sm text-slate-600">
-          Более 350 реализованных объектов — работаем с ТЦ, БЦ и жилыми комплексами.
+          Более 350 реализованных объектов — работаем с торговыми центрами, бизнес-центрами и жилыми комплексами.
         </div>
       </div>
     </section>

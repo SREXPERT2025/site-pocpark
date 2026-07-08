@@ -4,7 +4,7 @@ description: "Комплексная автоматизация КПП: упра
 coverImage: /images/cases/elma-kuryanovo-cover.jpg
 category: Бизнес центр
 tags:
-  - БЦ
+  - бизнес-центры
   - Распознавание номеров
   - Контроль выручки
 format: text

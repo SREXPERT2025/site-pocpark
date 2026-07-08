@@ -4,7 +4,7 @@ description: "Комплексная автоматизация парковки
 coverImage: /images/cases/ryabovskaya-manufaktura.jpeg
 category: Бизнес центр
 tags:
-  - БЦ
+  - бизнес-центры
   - Контроль выручки
 format: text
 metrics:

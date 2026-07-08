@@ -41,7 +41,7 @@ export default function Hero() {
             </li>
             <li className="flex items-center gap-3">
               <span className="text-green-400">✓</span>
-              Решения для ТЦ, БЦ и жилых комплексов
+              Решения для торговых центров, бизнес-центров и жилых комплексов
             </li>
             <li className="flex items-center gap-3">
               <span className="text-green-400">✓</span>

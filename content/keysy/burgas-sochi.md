@@ -2,7 +2,7 @@
 title: Пансионат «Бургас», Сочи
 description: "Контролируемый въезд/выезд на территорию пансионата"
 coverImage: /images/cases/burgas-sochi-cover.jpg
-category: ЖК и отели
+category: Жилые комплексы и отели
 tags:
   - Отель
   - Контроль выручки

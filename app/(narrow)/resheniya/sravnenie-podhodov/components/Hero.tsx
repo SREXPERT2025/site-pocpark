@@ -49,7 +49,7 @@ export default function Hero() {
             </li>
             <li className="flex gap-3">
               <span className="text-emerald-400">✓</span>
-              Помогаем выбрать под ТЦ/БЦ/ЖК
+              Помогаем выбрать под торговый центр, бизнес-центр или жилой комплекс
             </li>
             <li className="flex gap-3">
               <span className="text-emerald-400">✓</span>

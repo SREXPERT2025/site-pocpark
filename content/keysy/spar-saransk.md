@@ -4,7 +4,7 @@ description: "Комплексная автоматизация парковки
 coverImage: /images/cases/spar-saransk-cover.jpg
 category: Торговый центр
 tags:
-  - ТЦ
+  - торговые центры
   - Распознавание номеров
   - Контроль выручки
 format: text

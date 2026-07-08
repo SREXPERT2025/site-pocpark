@@ -4,7 +4,7 @@ description: "Автоматизация логистического парки
 coverImage: /images/cases/odipark-cover.jpg
 category: Торговый центр
 tags:
-  - ТЦ
+  - торговые центры
   - Распознавание номеров
   - Контроль выручки
 format: text

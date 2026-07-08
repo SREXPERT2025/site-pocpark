@@ -346,7 +346,7 @@ export default function LeadForm(props: LeadFormProps) {
                   id={fieldIds.objectType}
                   value={objectType}
                   onChange={(e) => setObjectType(e.target.value)}
-                  placeholder="ТЦ / БЦ / ЖК / Паркинг"
+                  placeholder="торговый центр / бизнес-центр / жилой комплекс / паркинг"
                   className="h-12 w-full min-w-0 rounded-xl border border-slate-200 px-4 text-base text-slate-900 outline-none transition focus:border-slate-400"
                 />
               </div>

@@ -112,7 +112,7 @@ export default function TorgovyeCentresPage() {
         section="resheniya"
         slug="torgovye-centry"
         className="pb-8"
-        summaryLabel="Расширенная информация: сценарии ТЦ, тарифы, онлайн-оплата, отказоустойчивость, FAQ"
+        summaryLabel="Расширенная информация: сценарии торгового центра, тарифы, онлайн-оплата, отказоустойчивость, FAQ"
       />
 
       <section className="py-12">
@@ -132,7 +132,7 @@ export default function TorgovyeCentresPage() {
               <p className="mt-2 break-words text-slate-700">Гостевые сценарии, оплата через сайт, понятные уведомления и поддержка персонала.</p>
             </div>
           </div>
-          <p className="mt-6 text-sm text-slate-500">Для ТЦ критичны пики нагрузки: закладываем сценарии «час пик» и режимы деградации.</p>
+          <p className="mt-6 text-sm text-slate-500">Для торгового центра критичны пики нагрузки: закладываем сценарии «час пик» и режимы деградации.</p>
         </div>
       </section>
 

@@ -4,7 +4,7 @@ description: "Комплексная автоматизация парковки
 coverImage: /images/cases/mosfilm-cover.jpg
 category: Бизнес центр
 tags:
-  - БЦ
+  - бизнес-центры
   - Распознавание номеров
   - Контроль выручки
 format: text
