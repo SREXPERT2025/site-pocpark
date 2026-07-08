@@ -109,6 +109,38 @@ function resolveContent(source?: string) {
           'Оставьте контакты — обсудим оплату, корректировки, журнал событий и действия оператора в спорных ситуациях.',
       };
 
+    case 'article-oshibki-vnedreniya-parkovochnoj-sistemy':
+    case 'article-implementation-errors':
+      return {
+        title: 'Проверить проект парковки до внедрения',
+        description:
+          'Оставьте контакты — разберём сценарии, роли, интеграции, резервные правила и риски до закупки оборудования.',
+      };
+
+    case 'article-onlain-oplata-parkovki-kak-vnedrit':
+    case 'article-online-payment':
+      return {
+        title: 'Обсудить онлайн-оплату парковки',
+        description:
+          'Оставьте контакты — разберём тарифы, способы оплаты, фискализацию, связь платежа с выездом и резервные сценарии.',
+      };
+
+    case 'article-raspoznavanie-nomerov-dlya-parkovki':
+    case 'article-number-recognition':
+      return {
+        title: 'Оценить распознавание номеров на объекте',
+        description:
+          'Оставьте контакты — обсудим въезды, камеры, доступ по ГРНЗ, оплату по номеру и резервные сценарии.',
+      };
+
+    case 'article-parkovka-zhilogo-kompleksa-rezidenty-gosti-podryadchiki':
+    case 'article-residential-parking':
+      return {
+        title: 'Настроить парковку жилого комплекса',
+        description:
+          'Оставьте контакты — обсудим доступ резидентов, гостевые заявки, подрядчиков, журнал событий и роли управляющей компании.',
+      };
+
     default:
       return {
         title: 'Получить предварительное предложение',
