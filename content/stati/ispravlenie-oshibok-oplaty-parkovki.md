@@ -90,5 +90,5 @@ faq:
 ## Связанные материалы
 
 - [Онлайн-оплата парковки](/stati/onlain-oplata-parkovki-kak-vnedrit) — как проектировать оплату до выезда.
-- [Ошибки внедрения парковочной системы](/stati/oshibki-vnedreniya-parkovochnoj-sistemy) — какие сценарии важно описать до запуска.
+- [7 подводных камней при автоматизации парковки](/stati/oshibki-vnedreniya-parkovochnoj-sistemy) — какие сценарии важно описать до запуска.
 - [Распознавание номеров для парковки](/stati/raspoznavanie-nomerov-dlya-parkovki) — почему ошибка номера должна иметь резервный сценарий.

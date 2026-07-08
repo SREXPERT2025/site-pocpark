@@ -91,7 +91,7 @@ faq:
 
 ## Что читать дальше
 
-- [Ошибки внедрения парковочной системы](/stati/oshibki-vnedreniya-parkovochnoj-sistemy) — что проверить до закупки оборудования.
+- [7 подводных камней при автоматизации парковки](/stati/oshibki-vnedreniya-parkovochnoj-sistemy) — что проверить до закупки оборудования.
 - [Онлайн-оплата парковки](/stati/onlain-oplata-parkovki-kak-vnedrit) — как связать платеж, тариф и разрешение выезда.
 - [Распознавание номеров для парковки](/stati/raspoznavanie-nomerov-dlya-parkovki) — где помогает доступ по номеру и какие нужны резервные сценарии.
 - [Парковка жилого комплекса](/stati/parkovka-zhilogo-kompleksa-rezidenty-gosti-podryadchiki) — как разделить резидентов, гостей и подрядчиков.

@@ -86,4 +86,4 @@ faq:
 
 - [Онлайн-оплата парковки](/stati/onlain-oplata-parkovki-kak-vnedrit) — как снизить очередь на выезде и связать оплату с тарифами.
 - [Распознавание номеров для парковки](/stati/raspoznavanie-nomerov-dlya-parkovki) — как ускорить въезд и выезд по ГРНЗ.
-- [Ошибки внедрения парковочной системы](/stati/oshibki-vnedreniya-parkovochnoj-sistemy) — что проверить до закупки оборудования.
+- [7 подводных камней при автоматизации парковки](/stati/oshibki-vnedreniya-parkovochnoj-sistemy) — что проверить до закупки оборудования.

@@ -111,10 +111,11 @@ function resolveContent(source?: string) {
 
     case 'article-oshibki-vnedreniya-parkovochnoj-sistemy':
     case 'article-implementation-errors':
+    case 'article-7-pitfalls':
       return {
         title: 'Проверить проект парковки до внедрения',
         description:
-          'Оставьте контакты — разберём сценарии, роли, интеграции, резервные правила и риски до закупки оборудования.',
+          'Оставьте контакты — разберём техническое задание, спецификацию, сроки, монтаж, поддержку и риски до подписания договора.',
       };
 
     case 'article-onlain-oplata-parkovki-kak-vnedrit':
