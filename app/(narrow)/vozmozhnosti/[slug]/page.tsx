@@ -4,6 +4,7 @@ import Hero from '@/app/components/ui/Hero';
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs';
 import CtaBlock from '@/app/components/ui/CtaBlock';
 import FeatureExplainerVisual from '@/app/components/content/FeatureExplainerVisual';
+import TrustConversionBlocks from '@/app/components/content/TrustConversionBlocks';
 import { canonicalUrl } from '@/app/config/site-url';
 import { getAllContentMeta, getContentBySlug } from '@/lib/content-parser';
 
@@ -71,6 +72,10 @@ export default function VozmozhnostiPage({ params }: { params: { slug: string } 
 
       <div className="mt-10">
         <div className="md-content prose prose-slate max-w-none" dangerouslySetInnerHTML={{ __html: data.contentHtml }} />
+      </div>
+
+      <div className="mt-12">
+        <TrustConversionBlocks variant="features" />
       </div>
 
       {data.ctas?.length ? (

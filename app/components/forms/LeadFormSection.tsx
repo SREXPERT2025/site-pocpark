@@ -39,9 +39,9 @@ export default function LeadFormSection(props: LeadFormSectionProps) {
 
           {/* Доверительные маркеры */}
           <div className="mt-6 flex flex-col items-center gap-2 text-sm text-slate-600 md:flex-row md:justify-center md:gap-8">
-            <span>⏱ Ответ в течение 1 рабочего дня</span>
-            <span>🔍 Предварительный аудит объекта — бесплатно</span>
-            <span>📊 Подбор конфигурации под бюджет и трафик</span>
+            <span>Ответ в течение 1 рабочего дня</span>
+            <span>Предварительный аудит объекта — бесплатно</span>
+            <span>Подбор сценария под бюджет и трафик</span>
           </div>
         </div>
 

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import FeaturesShowcase from '@/app/components/FeaturesShowcase';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
+import TrustConversionBlocks from '@/app/components/content/TrustConversionBlocks';
 import LeadFormSection from '@/app/components/forms/LeadFormSection';
 import { canonicalUrl } from '@/app/config/site-url';
 
@@ -240,11 +241,13 @@ export default function FeaturesPage() {
 
       <FeaturesShowcase />
 
+      <TrustConversionBlocks variant="features" />
+
       <LeadFormSection
         sourceSection="features_hub"
         sourcePage="/vozmozhnosti"
         title="Нужно собрать сценарий под конкретный объект?"
-        description="Опишите объект и задачу, а мы подскажем, какие возможности стоит заложить в проект сразу, а какие можно подключить позже."
+        description="Опишите объект и задачу, а мы подскажем, какие возможности стоит заложить сразу, какие можно подключить позже и кто отвечает за каждый этап."
         submitLabel="Обсудить сценарий"
         minimalFields
         className="bg-white"

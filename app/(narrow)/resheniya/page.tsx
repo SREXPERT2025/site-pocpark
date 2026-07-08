@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
+import TrustConversionBlocks from '@/app/components/content/TrustConversionBlocks';
 import LeadFormSection from '@/app/components/forms/LeadFormSection';
 import { canonicalUrl } from '@/app/config/site-url';
 
@@ -306,11 +307,13 @@ export default function SolutionsPage() {
         items={ecosystemLinks}
       />
 
+      <TrustConversionBlocks variant="solutions" />
+
       <LeadFormSection
         sourceSection="solutions_hub"
         sourcePage="/resheniya"
         title="Нужно понять, какое решение подходит вашему объекту?"
-        description="Опишите объект и задачу. Подскажем сценарий доступа, состав системы и следующий шаг без лишней детализации на старте."
+        description="Опишите объект и задачу. Подскажем сценарий доступа, зоны ответственности, состав системы и следующий шаг без лишней детализации на старте."
         submitLabel="Подобрать решение"
         minimalFields
         className="bg-white"

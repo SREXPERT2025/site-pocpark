@@ -5,6 +5,7 @@ import { canonicalUrl } from '@/app/config/site-url';
 
 // UI Компоненты
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
+import TrustConversionBlocks from '@/app/components/content/TrustConversionBlocks';
 import Hero from '@/app/components/ui/Hero'; // Путь может отличаться
 import CtaBlock from '@/app/components/ui/CtaBlock'; // Путь может отличаться
 
@@ -87,6 +88,10 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
           className="prose prose-slate max-w-none"
           dangerouslySetInnerHTML={{ __html: data.contentHtml }}
         />
+
+        <div className="not-prose mt-16">
+          <TrustConversionBlocks variant="implementation" />
+        </div>
 
         {/* 
           ✅ ДОБАВЛЕНО: Универсальный CtaBlock рендерится внизу, если есть 'cta' в frontmatter.
