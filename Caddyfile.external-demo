@@ -1,4 +1,6 @@
 srtestrealme.ru:3001 {
+	bind 0.0.0.0
+
 	tls {
 		issuer acme
 	}
