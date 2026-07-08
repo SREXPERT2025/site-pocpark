@@ -35,6 +35,11 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
     notFound();
   }
 
+  const coverAspectClass =
+    data.coverImageAspect === '1122/1402'
+      ? 'relative aspect-[1122/1402] w-full'
+      : 'relative aspect-[1055/1491] w-full';
+
   return (
     <>
       <BreadcrumbJsonLd
@@ -58,14 +63,18 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
       {data.coverImage ? (
         <section className="mx-auto max-w-5xl px-4 pb-2 pt-8 sm:px-6">
           <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="relative aspect-[1055/1491] w-full">
+            <div className={coverAspectClass}>
               <Image
                 src={data.coverImage}
                 alt={data.title}
                 fill
                 sizes="(min-width: 1024px) 960px, calc(100vw - 32px)"
-                className="object-cover"
-                priority={params.slug === 'kak-my-rabotaem'}
+                className="object-contain"
+                priority={
+                  params.slug === 'kak-my-rabotaem' ||
+                  params.slug === 'stoimost-avtomatizacii-parkovki' ||
+                  params.slug === 'integracii-i-api'
+                }
               />
             </div>
           </figure>

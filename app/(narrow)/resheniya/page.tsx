@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import LeadFormSection from '@/app/components/forms/LeadFormSection';
@@ -244,6 +245,19 @@ export default function SolutionsPage() {
               Смотреть по объектам
             </Link>
           </div>
+
+          <figure className="mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="relative aspect-[1055/1491] w-full">
+              <Image
+                src="/images/content/solutions-hub.png"
+                alt="Решения РОСПАРК: сценарии парковочной системы по ролям, объектам и этапам внедрения"
+                fill
+                sizes="(min-width: 1024px) 1088px, calc(100vw - 32px)"
+                className="object-contain"
+                priority
+              />
+            </div>
+          </figure>
 
           <div className="mt-10 grid gap-3 md:grid-cols-3">
             {[

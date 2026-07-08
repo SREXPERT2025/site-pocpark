@@ -87,6 +87,7 @@ export type ContentMeta = {
 
   // витринные поля (опционально)
   coverImage?: string;
+  coverImageAspect?: string;
   category?: string;
   tags?: string[];
   brand?: string;
@@ -263,6 +264,7 @@ export function getAllContentMeta(section: string): ContentMeta[] {
       description: String(fm.description ?? ''),
       lastModified,
       coverImage: normalizeString(fm.coverImage),
+      coverImageAspect: normalizeString(fm.coverImageAspect),
       category: normalizeString(fm.category),
       tags: normalizeTags(fm.tags),
       brand: normalizeString(fm.brand),
@@ -304,6 +306,7 @@ export function getContentBySlug<T = Record<string, any>>(
     description: String(fm.description ?? ''),
     lastModified,
     coverImage: normalizeString(fm.coverImage),
+    coverImageAspect: normalizeString(fm.coverImageAspect),
     category: normalizeString(fm.category),
     tags: normalizeTags(fm.tags),
     brand: normalizeString(fm.brand),
