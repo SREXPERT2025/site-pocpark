@@ -73,6 +73,12 @@ const scenarioLinks: SolutionCard[] = [
     label: 'Бюджет',
   },
   {
+    title: 'Интеграции и API',
+    description: 'Как парковочная система связывается со СКУД, CRM, ERP, 1С, платёжными сервисами и внутренними системами.',
+    href: '/resheniya/integracii-i-api',
+    label: 'API',
+  },
+  {
     title: 'Сравнение подходов',
     description: 'Чем отличается набор оборудования, локальная автоматизация и система парковки под ключ.',
     href: '/resheniya/sravnenie-podhodov',
