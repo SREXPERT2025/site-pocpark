@@ -4,7 +4,7 @@ type TrustNumber = {
 };
 
 const NUMBERS: TrustNumber[] = [
-  { value: "15+", label: "лет на рынке" },
+  { value: "16+", label: "лет на рынке" },
   { value: "50+", label: "городов присутствия" },
   { value: "150+", label: "объектов в эксплуатации" },
 ];

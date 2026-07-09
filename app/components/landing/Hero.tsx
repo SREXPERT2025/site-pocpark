@@ -72,7 +72,7 @@ export default function Hero() {
 
             <div>
               <div className="text-[32px] font-bold text-white">
-                <AnimatedNumber value={15} suffix="" /> лет
+                <AnimatedNumber value={16} suffix="" /> лет
               </div>
               <div className="mt-1 text-xs uppercase tracking-wide text-white/60">
                 опыта
