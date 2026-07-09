@@ -1,7 +1,7 @@
 ---
 title: "Парковка бизнес-центра: арендаторы, гости, лимиты и контроль доступа"
 description: "Как построить правила парковки бизнес-центра для арендаторов, сотрудников, гостей и подрядчиков: лимиты, заявки, роли охраны и отчеты для управляющей компании."
-coverImage: "/images/articles/parkovka-biznes-centra-arendatory-gosti-limity.png"
+coverImage: "/images/articles/parkovka-biznes-centra-arendatory-gosti-limity.webp"
 category: "Бизнес-центры"
 tags:
   - бизнес-центры

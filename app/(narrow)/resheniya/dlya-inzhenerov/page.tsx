@@ -71,7 +71,7 @@ export default function EngineersPage() {
       <Hero />
 
       <SolutionVisual
-        src="/images/solutions/explainers/dlya-inzhenerov.png"
+        src="/images/solutions/explainers/dlya-inzhenerov.webp"
         alt="Инфографика РОСПАРК: инженерная архитектура парковочной системы"
       />
 

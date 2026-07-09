@@ -1,7 +1,7 @@
 ---
 title: "Почему парковочной системе нужен сценарий исправления ошибок оплаты"
 description: "Новость о востребованности исправления ошибок в приложении «Парковки России» показывает важный тренд: парковочная система должна помогать разбирать ошибки оплаты, номера, зоны и времени, а не только открывать шлагбаум."
-coverImage: "/images/articles/ispravlenie-oshibok-oplaty-parkovki.png"
+coverImage: "/images/articles/ispravlenie-oshibok-oplaty-parkovki.webp"
 category: "Новости рынка"
 tags:
   - оплата

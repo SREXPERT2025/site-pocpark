@@ -88,7 +88,7 @@ export default function Solution() {
           <div className="bg-slate-100 border border-slate-200 rounded-2xl p-4 min-h-[420px] flex flex-col justify-center">
             <div className="w-full overflow-hidden rounded-xl bg-white shadow-sm">
               <Image
-                src="/images/solutions/security-events-dashboard.jpeg"
+                src="/images/solutions/security-events-dashboard.webp"
                 alt="Скриншот журнала событий СБ"
                 width={1200}
                 height={800}

@@ -98,7 +98,7 @@ export default function ZastroyschikiPage() {
       </section>
 
       <SolutionVisual
-        src="/images/solutions/explainers/zastroyschiki.png"
+        src="/images/solutions/explainers/zastroyschiki.webp"
         alt="Инфографика РОСПАРК: парковка жилого комплекса и застройщиков с доступом для резидентов, гостей и подрядчиков"
       />
 

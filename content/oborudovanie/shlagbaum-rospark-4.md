@@ -16,7 +16,7 @@ priceFrom: 0
 currency: "RUB"
 availability: "InStock"
 condition: "NewCondition"
-coverImage: "/images/equipment/shlagbaum-04-05-1.jpg"
+coverImage: "/images/equipment/shlagbaum-04-05-1.webp"
 gallery:
   - "/images/equipment/shlagbaum-03-05-2.jpg"
   - "/images/equipment/shlagbaum-03-05-3.jpg"

@@ -67,7 +67,7 @@ export default function CompanyPage() {
           <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="relative aspect-[2/3] w-full">
               <Image
-                src="/images/content/about-rospark.png"
+                src="/images/content/about-rospark.webp"
                 alt="Инфографика о компании РОСПАРК: решения, объекты, юридическая информация, адреса и контакты"
                 fill
                 sizes="(min-width: 1024px) 960px, calc(100vw - 32px)"

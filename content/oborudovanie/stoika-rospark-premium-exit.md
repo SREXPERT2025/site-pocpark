@@ -14,10 +14,10 @@ priceFrom: 0
 currency: "RUB"
 availability: "InStock"
 condition: "NewCondition"
-coverImage: "/images/equipment/stoika-rospark-02-02.jpg"
+coverImage: "/images/equipment/stoika-rospark-02-02.webp"
 gallery:
-  - "/images/equipment/stoika-rospark-02-02.jpg"
-  - "/images/equipment/stoika-rospark-02-02.jpg"
+  - "/images/equipment/stoika-rospark-02-02.webp"
+  - "/images/equipment/stoika-rospark-02-02.webp"
 specifications:
   - name: "Напряжение питания"
     value: "220 В ± 10%, 50 Гц"

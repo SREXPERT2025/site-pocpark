@@ -1,7 +1,7 @@
 ---
 title: "Онлайн-оплата парковки: как внедрить без очередей и ручных проверок"
 description: "Практическая статья о внедрении онлайн-оплаты парковки: QR-код, сайт, приложение, платежные сервисы, фискализация, связь оплаты с выездом и резервные сценарии."
-coverImage: "/images/articles/onlain-oplata-parkovki-kak-vnedrit.png"
+coverImage: "/images/articles/onlain-oplata-parkovki-kak-vnedrit.webp"
 category: "Онлайн-оплата"
 tags:
   - онлайн-оплата

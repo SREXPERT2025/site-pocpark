@@ -98,7 +98,7 @@ export default function TorgovyeCentresPage() {
       </section>
 
       <SolutionVisual
-        src="/images/solutions/explainers/torgovye-centry.png"
+        src="/images/solutions/explainers/torgovye-centry.webp"
         alt="Инфографика РОСПАРК: автоматизация парковки торгового центра"
       />
 

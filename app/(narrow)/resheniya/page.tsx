@@ -250,7 +250,7 @@ export default function SolutionsPage() {
           <figure className="mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="relative aspect-[1055/1491] w-full">
               <Image
-                src="/images/content/solutions-hub.png"
+                src="/images/content/solutions-hub.webp"
                 alt="Решения РОСПАРК: сценарии парковочной системы по ролям, объектам и этапам внедрения"
                 fill
                 sizes="(min-width: 1024px) 1088px, calc(100vw - 32px)"

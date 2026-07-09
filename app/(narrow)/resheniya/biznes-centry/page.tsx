@@ -98,7 +98,7 @@ export default function BiznesCentresPage() {
       </section>
 
       <SolutionVisual
-        src="/images/solutions/explainers/biznes-centry.png"
+        src="/images/solutions/explainers/biznes-centry.webp"
         alt="Инфографика РОСПАРК: автоматизация парковки бизнес-центра"
       />
 

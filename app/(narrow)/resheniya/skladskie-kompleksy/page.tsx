@@ -160,7 +160,7 @@ export default function WarehouseSolutionsPage() {
       </section>
 
       <SolutionVisual
-        src="/images/solutions/explainers/skladskie-kompleksy.png"
+        src="/images/solutions/explainers/skladskie-kompleksy.webp"
         alt="Инфографика РОСПАРК: автоматизация КПП и проездов складского комплекса"
       />
 

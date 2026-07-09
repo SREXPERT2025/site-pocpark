@@ -1,7 +1,7 @@
 ---
 title: "Парковка жилого комплекса: резиденты, гости, подрядчики и понятные правила доступа"
 description: "Как организовать парковку жилого комплекса: постоянный доступ жителей, гостевые заявки, временные окна, подрядчики, безопасность, журнал событий и ответственность управляющей компании."
-coverImage: "/images/articles/parkovka-zhilogo-kompleksa-rezidenty-gosti-podryadchiki.png"
+coverImage: "/images/articles/parkovka-zhilogo-kompleksa-rezidenty-gosti-podryadchiki.webp"
 category: "Жилые комплексы"
 tags:
   - жилые комплексы

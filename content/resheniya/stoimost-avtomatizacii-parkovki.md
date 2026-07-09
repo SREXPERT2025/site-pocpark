@@ -1,7 +1,7 @@
 ---
 title: "Стоимость автоматизации парковки"
 description: "Из чего складывается стоимость автоматизации парковки: оборудование, въезды и выезды, онлайн-оплата, распознавание номеров, интеграции, монтаж и сопровождение."
-coverImage: "/images/content/parking-automation-cost.png"
+coverImage: "/images/content/parking-automation-cost.webp"
 coverImageAspect: "1122/1402"
 lastModified: 2026-07-07
 cta:

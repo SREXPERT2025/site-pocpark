@@ -1,7 +1,7 @@
 ---
 title: "Интеграции и обмен данными для парковочной системы"
 description: "Как РОСПАРК встраивается в ИТ-инфраструктуру объекта: обмен данными, интеграции со СКУД, 1С, системами работы с клиентами и арендаторами, платёжными сервисами и системами безопасности."
-coverImage: "/images/content/integrations-data-exchange.png"
+coverImage: "/images/content/integrations-data-exchange.webp"
 coverImageAspect: "1122/1402"
 lastModified: 2026-07-07
 cta:

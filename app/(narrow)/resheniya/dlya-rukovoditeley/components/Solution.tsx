@@ -77,7 +77,7 @@ export default function Solution() {
           <div className="w-full max-w-full min-w-0 overflow-hidden bg-slate-100 rounded-2xl p-3 sm:p-4 border border-slate-200 min-h-0 md:min-h-[420px] flex flex-col justify-center">
             <div className="w-full max-w-full overflow-hidden rounded-xl bg-white shadow-sm">
               <Image
-                src="/images/solutions/management-dashboard.jpg"
+                src="/images/solutions/management-dashboard.webp"
                 alt="Панель управления РОСПАРК для руководителей"
                 width={1200}
                 height={800}

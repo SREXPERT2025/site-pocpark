@@ -70,7 +70,7 @@ export default function RukovoditeliPage() {
       <Hero />
 
       <SolutionVisual
-        src="/images/solutions/explainers/dlya-rukovoditeley.png"
+        src="/images/solutions/explainers/dlya-rukovoditeley.webp"
         alt="Инфографика РОСПАРК: парковка как управляемый актив для руководителя"
       />
 

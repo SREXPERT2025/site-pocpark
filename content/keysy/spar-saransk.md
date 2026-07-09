@@ -1,7 +1,7 @@
 ---
 title: Супермаркет «EUROSPAR», Саранск
 description: "Комплексная автоматизация парковки: Распознавание номеров, бумажные билеты, въезд по QR-коду и оплата на выездной стойке."
-coverImage: /images/cases/spar-saransk-cover.jpg
+coverImage: /images/cases/spar-saransk-cover.webp
 category: Торговый центр
 tags:
   - торговые центры

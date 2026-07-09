@@ -1,7 +1,7 @@
 ---
 title: "Из чего состоит парковочная система: стойки, шлагбаумы, терминалы и ПО"
 description: "Объясняем роль основных элементов парковочной системы и почему оборудование должно работать в едином сценарии, а не как набор отдельных устройств."
-coverImage: "/images/articles/iz-chego-sostoit-parkovochnaya-sistema.png"
+coverImage: "/images/articles/iz-chego-sostoit-parkovochnaya-sistema.webp"
 category: "Оборудование"
 tags:
   - оборудование

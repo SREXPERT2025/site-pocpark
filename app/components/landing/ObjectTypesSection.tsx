@@ -17,7 +17,7 @@ const objectTypes: ObjectTypeCardItem[] = [
   {
     title: "Торговые центры",
     href: "/resheniya/torgovye-centry",
-    imageSrc: "/images/object-types/tc.jpg",
+    imageSrc: "/images/object-types/tc.webp",
     imageAlt: "Торговый центр",
     tag: "Доход с потока",
     focus: "Быстрая ротация мест и контроль пиковых нагрузок.",

@@ -1,7 +1,7 @@
 ---
 title: ТЦ «Электроника на Пресне»
 description: "Комплексная автоматизация парковки: управление лимитами для сотен арендаторов и снижение заторов на въезде/выезде."
-coverImage: /images/cases/elekronika-na-presne-cover.jpg
+coverImage: /images/cases/elekronika-na-presne-cover.webp
 category: Торговый центр
 tags:
   - торговые центры

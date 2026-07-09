@@ -1,7 +1,7 @@
 ---
 title: БЦ «W-Plaza»
 description: "Комплексная автоматизация парковки: гибридный доступ, электронные заявки для гостей и оплата прямо на выезде."
-coverImage: /images/cases/w-plaza-cover.jpg
+coverImage: /images/cases/w-plaza-cover.webp
 category: Бизнес центр
 tags:
   - бизнес-центры

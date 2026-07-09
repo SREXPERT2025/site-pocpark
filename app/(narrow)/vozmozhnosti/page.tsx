@@ -179,7 +179,7 @@ export default function FeaturesPage() {
           <figure className="mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="relative aspect-[1122/1402] w-full">
               <Image
-                src="/images/content/features-hub.png"
+                src="/images/content/features-hub.webp"
                 alt="Инфографика о возможностях РОСПАРК: сценарии доступа, онлайн-оплата, распознавание номеров и контроль парковки"
                 fill
                 sizes="(min-width: 1024px) 1088px, calc(100vw - 32px)"

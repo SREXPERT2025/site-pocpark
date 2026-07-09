@@ -1,7 +1,7 @@
 ---
 title: "Автоматизация парковки в торговом центре: что учесть до внедрения"
 description: "Для торгового центра важны поток посетителей, бесплатное время, льготы, онлайн-оплата, терминалы и контроль исключений. Разбираем ключевые решения до старта проекта."
-coverImage: "/images/articles/avtomatizaciya-parkovki-torgovogo-centra.png"
+coverImage: "/images/articles/avtomatizaciya-parkovki-torgovogo-centra.webp"
 category: "Торговые центры"
 tags:
   - торговые центры

@@ -16,13 +16,13 @@ priceFrom: 0
 currency: "RUB"
 availability: "InStock"
 condition: "NewCondition"
-coverImage: "/images/equipment/shlagbaum-rospark-l300-hero.png"
+coverImage: "/images/equipment/shlagbaum-rospark-l300-hero.webp"
 imageCaption: "Шлагбаум РОСПАРК L300: промышленный корпус, фирменная стрела и исполнение для контролируемого въезда."
 gallery:
-  - "/images/equipment/shlagbaum-rospark-l300-promo-new.png"
+  - "/images/equipment/shlagbaum-rospark-l300-promo-new.webp"
   - "/images/equipment/shlagbaum-rospark-photo-1.jpeg"
   - "/images/equipment/shlagbaum-rospark-photo-2.jpeg"
-  - "/images/equipment/shlagbaum-03-05-1.jpg"
+  - "/images/equipment/shlagbaum-03-05-1.webp"
 specifications:
   - name: "Назначение"
     value: "Контроль въезда и выезда на парковках, территориях жилых комплексов, бизнес-центров, торговых центров, складов и промышленных объектов"

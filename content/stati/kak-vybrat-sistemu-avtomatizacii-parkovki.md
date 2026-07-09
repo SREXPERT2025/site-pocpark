@@ -1,7 +1,7 @@
 ---
 title: "Как выбрать систему автоматизации парковки для объекта"
 description: "Практический разбор для собственника, УК и инженера: с каких задач начинать выбор парковочной системы, какие сценарии описать и что проверить у подрядчика."
-coverImage: "/images/articles/kak-vybrat-sistemu-avtomatizacii-parkovki.png"
+coverImage: "/images/articles/kak-vybrat-sistemu-avtomatizacii-parkovki.webp"
 category: "Выбор системы"
 tags:
   - автоматизация

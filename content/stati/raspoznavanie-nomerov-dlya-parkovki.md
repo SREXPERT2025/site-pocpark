@@ -1,7 +1,7 @@
 ---
 title: "Распознавание номеров для парковки: где помогает, а где нужны резервные сценарии"
 description: "Как работает распознавание государственных регистрационных номеров на парковке, какие задачи решает, что влияет на точность и почему технологию нужно связывать с доступом, оплатой и журналом событий."
-coverImage: "/images/articles/raspoznavanie-nomerov-dlya-parkovki.png"
+coverImage: "/images/articles/raspoznavanie-nomerov-dlya-parkovki.webp"
 category: "Распознавание номеров"
 tags:
   - распознавание номеров

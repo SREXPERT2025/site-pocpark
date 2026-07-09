@@ -1,7 +1,7 @@
 ---
 title: БЦ «Рябовская мануфактура»
 description: "Комплексная автоматизация парковки креативного кластера: карточная система, управление доступом арендаторов и бесконтактная оплата на выезде."
-coverImage: /images/cases/ryabovskaya-manufaktura.jpeg
+coverImage: /images/cases/ryabovskaya-manufaktura.webp
 category: Бизнес центр
 tags:
   - бизнес-центры

@@ -69,7 +69,7 @@ export default function SecurityPage() {
       <Hero />
 
       <SolutionVisual
-        src="/images/solutions/explainers/dlya-sluzhby-bezopasnosti.png"
+        src="/images/solutions/explainers/dlya-sluzhby-bezopasnosti.webp"
         alt="Инфографика РОСПАРК: контроль доступа, событий и исключений для службы безопасности"
       />
 
