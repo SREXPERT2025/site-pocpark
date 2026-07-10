@@ -1,22 +1,29 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { clsx } from 'clsx';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 
 import type { NavItem } from '@/app/config/navigation';
 
 export default function MobileMenu({
+  id,
   open,
   onClose,
   navItems,
+  triggerRef,
 }: {
+  id: string;
   open: boolean;
   onClose: () => void;
   navItems: NavItem[];
+  triggerRef: RefObject<HTMLButtonElement>;
 }) {
   const telegramUrl = process.env.NEXT_PUBLIC_TELEGRAM_CONTACT_URL;
   const [openSections, setOpenSections] = useState<string[]>(['Решения']);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const titleId = `${id}-title`;
 
   function toggleSection(label: string) {
     setOpenSections((current) =>
@@ -28,42 +35,125 @@ export default function MobileMenu({
 
   useEffect(() => {
     if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+
+    const overlay = overlayRef.current;
+    const dialog = dialogRef.current;
+    if (!overlay || !dialog) return;
+
+    const previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const triggerElement = triggerRef.current;
+    const previousBodyOverflow = document.body.style.overflow;
+
+    let overlayRoot: HTMLElement = overlay;
+    while (overlayRoot.parentElement && overlayRoot.parentElement !== document.body) {
+      overlayRoot = overlayRoot.parentElement;
+    }
+
+    const backgroundElements = Array.from(document.body.children)
+      .filter((element): element is HTMLElement => element instanceof HTMLElement)
+      .filter(
+        (element) =>
+          element !== overlayRoot && !['SCRIPT', 'STYLE', 'LINK'].includes(element.tagName)
+      );
+    const backgroundState = backgroundElements.map((element) => ({
+      element,
+      inert: element.inert,
+      ariaHidden: element.getAttribute('aria-hidden'),
+    }));
+
+    document.body.style.overflow = 'hidden';
+    backgroundElements.forEach((element) => {
+      element.inert = true;
+      element.setAttribute('aria-hidden', 'true');
+    });
+
+    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+
+    const getFocusableElements = () =>
+      Array.from(
+        dialog.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      ).filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0);
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab') return;
+
+      const focusableElements = getFocusableElements();
+      if (focusableElements.length === 0) {
+        event.preventDefault();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (event.shiftKey && (activeElement === firstElement || !dialog.contains(activeElement))) {
+        event.preventDefault();
+        lastElement.focus();
+      } else if (!event.shiftKey && activeElement === lastElement) {
+        event.preventDefault();
+        firstElement.focus();
+      }
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
+
+    document.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
+      backgroundState.forEach(({ element, inert, ariaHidden }) => {
+        element.inert = inert;
+        if (ariaHidden === null) {
+          element.removeAttribute('aria-hidden');
+        } else {
+          element.setAttribute('aria-hidden', ariaHidden);
+        }
+      });
+
+      const focusTarget = triggerElement ?? previouslyFocused;
+      if (focusTarget && document.contains(focusTarget)) {
+        focusTarget.focus();
+      }
+    };
+  }, [open, onClose, triggerRef]);
+
+  if (!open) return null;
 
   return (
     <div
-      className={clsx(
-        'fixed inset-0 z-[1200] overflow-hidden transition',
-        open ? 'pointer-events-auto' : 'pointer-events-none'
-      )}
-      aria-hidden={!open}
+      ref={overlayRef}
+      className="fixed inset-0 z-[1200] overflow-hidden"
     >
       <div
-        className={clsx(
-          'absolute inset-0 bg-black/30 transition-opacity',
-          open ? 'opacity-100' : 'opacity-0'
-        )}
+        aria-hidden="true"
+        className="absolute inset-0 bg-black/30"
         onClick={onClose}
       />
 
       <div
-        className={clsx(
-          'absolute right-0 top-0 flex h-full w-80 max-w-[85vw] flex-col overflow-hidden border-l border-border-primary bg-bg-primary p-6',
-          'transition-transform',
-          open ? 'translate-x-0' : 'translate-x-full'
-        )}
+        ref={dialogRef}
+        id={id}
+        className="absolute right-0 top-0 flex h-full w-80 max-w-[85vw] flex-col overflow-hidden border-l border-border-primary bg-bg-primary p-6"
         role="dialog"
         aria-modal="true"
-        aria-label="Меню"
+        aria-labelledby={titleId}
       >
         <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold text-text-primary">Меню</div>
+          <div id={titleId} className="text-sm font-semibold text-text-primary">Меню</div>
           <button
+            ref={closeButtonRef}
+            type="button"
             onClick={onClose}
             className="rounded-md p-2 text-text-secondary hover:bg-bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             aria-label="Закрыть меню"

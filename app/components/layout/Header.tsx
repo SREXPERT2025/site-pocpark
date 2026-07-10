@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -11,6 +11,9 @@ import { navigation, type NavItem } from '@/app/config/navigation';
 export default function Header() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const mobileMenuId = 'mobile-navigation-dialog';
+  const closeMobileMenu = useCallback(() => setMobileOpen(false), []);
 
   // Закрываем мобильное меню при переходе по ссылкам
   useEffect(() => {
@@ -40,10 +43,13 @@ export default function Header() {
 
                 {/* MOBILE TOGGLE */}
                 <button
+                  ref={mobileMenuButtonRef}
                   type="button"
                   onClick={() => setMobileOpen(true)}
                   className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-white/20 bg-white/5 text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary lg:hidden"
-                  aria-label="Открыть меню"
+                  aria-label={mobileOpen ? 'Меню открыто' : 'Открыть меню'}
+                  aria-controls={mobileMenuId}
+                  aria-expanded={mobileOpen}
                 >
                   ☰
                 </button>
@@ -96,7 +102,13 @@ export default function Header() {
       {/* ОТСТУП ПОД FIXED HEADER */}
       <div className="h-[100px] lg:h-[88px]" />
 
-      <MobileMenu open={mobileOpen} onClose={() => setMobileOpen(false)} navItems={navigation} />
+      <MobileMenu
+        id={mobileMenuId}
+        open={mobileOpen}
+        onClose={closeMobileMenu}
+        navItems={navigation}
+        triggerRef={mobileMenuButtonRef}
+      />
     </>
   );
 }
