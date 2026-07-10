@@ -83,7 +83,7 @@ export async function POST(req: Request) {
 
     const name = String(body.name ?? '').trim();
     const phone = String(body.phone ?? '').trim();
-    const consent = Boolean(body.consent);
+    const consent = body.consent === true;
     const company = readString(body.company);
     const objectType = readString(body.objectType);
     const city = readString(body.city);
