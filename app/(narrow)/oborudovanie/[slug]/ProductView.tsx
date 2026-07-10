@@ -115,6 +115,7 @@ export default function ProductView({ data, content }: { data: any; content: str
                 src={allImages[currentImageIndex]}
                 alt={title}
                 fill
+                sizes="(min-width: 848px) 800px, (min-width: 640px) calc(100vw - 48px), calc(100vw - 32px)"
                 className="object-contain"
                 priority
               />
@@ -149,6 +150,7 @@ export default function ProductView({ data, content }: { data: any; content: str
                     src={img}
                     alt=""
                     fill
+                    sizes="80px"
                     className="object-contain object-center p-1"
                   />
                 </div>
