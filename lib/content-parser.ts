@@ -26,6 +26,8 @@ export type CaseFrontmatter = {
 export type EquipmentFrontmatter = {
   title: string;
   description: string;
+  /** Статус публикации: draft исключается из публичных страниц и индексации */
+  status?: 'published' | 'draft';
   coverImage?: string;
   gallery?: string[];
   /** Категория (для фильтров/витрины) */
@@ -138,6 +140,11 @@ function normalizeString(v: any): string | undefined {
   return s ? s : undefined;
 }
 
+export function isPublishedContent(data: unknown): boolean {
+  if (!data || typeof data !== 'object') return true;
+  return normalizeString((data as Record<string, unknown>).status)?.toLowerCase() !== 'draft';
+}
+
 function normalizeStringArray(v: any): string[] | undefined {
   if (!Array.isArray(v)) return undefined;
   const out = v.map((x) => String(x).trim()).filter(Boolean);
@@ -246,12 +253,14 @@ export function getAllContentMeta(section: string): ContentMeta[] {
 
   const files = fs.readdirSync(dir).filter((f) => f.toLowerCase().endsWith('.md'));
 
-  return files.map((file) => {
+  return files.flatMap((file) => {
     const slug = file.replace(/\.md$/i, '');
     const filePath = path.join(dir, file);
     const raw = fs.readFileSync(filePath, 'utf8');
     const { data } = matter(raw);
     const fm: any = data || {};
+
+    if (!isPublishedContent(fm)) return [];
 
     const lastModified =
       normalizeString(fm.lastModified) ||
@@ -277,7 +286,7 @@ export function getAllContentMeta(section: string): ContentMeta[] {
       videoUrl: normalizeString(fm.videoUrl),
     };
 
-    return meta;
+    return [meta];
   });
 }
 

@@ -7,6 +7,7 @@ import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
 import ProductJsonLd from '@/app/components/content/ProductJsonLd';
 import { canonicalUrl } from '@/app/config/site-url';
+import { isPublishedContent } from '@/lib/content-parser';
 import ProductView from './ProductView'; // Импортируем наш новый компонент
 
 const contentDir = path.join(process.cwd(), 'content/oborudovanie');
@@ -17,6 +18,7 @@ function getProduct(slug: string) {
 
   const raw = fs.readFileSync(filePath, 'utf-8');
   const { data, content } = matter(raw);
+  if (!isPublishedContent(data)) return null;
   return { data: data as any, content };
 }
 
@@ -26,6 +28,7 @@ export function generateStaticParams() {
   return fs
     .readdirSync(contentDir)
     .filter((file) => file.endsWith('.md'))
+    .filter((file) => getProduct(file.replace(/\.md$/, '')) !== null)
     .map((file) => ({ slug: file.replace(/\.md$/, '') }));
 }
 
