@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
+import { isPublishedContent } from './content-parser';
 
 const dir = path.join(process.cwd(), 'content/oborudovanie');
 
@@ -85,21 +86,23 @@ function getPriceLabel(data: any): string | null {
 export async function getAllEquipment() {
   const files = fs.readdirSync(dir).filter(f => f.endsWith('.md'));
 
-  return files.map(file => {
+  return files.flatMap(file => {
     const slug = file.replace(/\.md$/, '');
     const raw = fs.readFileSync(path.join(dir, file), 'utf-8');
     const { data, content } = matter(raw);
 
+    if (!isPublishedContent(data)) return [];
+
     const image = getImage(data);
     const category = normalizeCategory(data?.category);
 
-    return {
+    return [{
       title: data?.title ?? slug,
       description: data?.description || content.slice(0, 120),
       price: getPriceLabel(data),
       image,          // ✅ теперь будет брать coverImage
       slug,
       category,       // ✅ теперь русские категории будут маппиться
-    };
+    }];
   });
 }
