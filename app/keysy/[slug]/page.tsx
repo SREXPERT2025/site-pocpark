@@ -101,7 +101,7 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
       {faq.length > 0 && <FaqJsonLd items={faq} />}
 
       {/* HERO (добавили обёртку для паддинга и full width) */}
-      <section className="w-full px-4 sm:px-[20px] pt-6 min-w-0 overflow-hidden [&_h1]:break-words [&_h1]:hyphens-auto [&_h1]:text-[clamp(2rem,11vw,3.75rem)]">
+      <section className="w-full min-w-0 overflow-hidden px-4 pt-6 sm:px-[20px]">
         <Hero
           title={data.title}
           description={data.description}

@@ -1,4 +1,3 @@
-import Button from '@/app/components/ui/Button';
 import Link from 'next/link';
 import { clsx } from 'clsx';
 
@@ -13,7 +12,7 @@ export default function Hero({ title, description, cta, className }: HeroProps) 
   return (
     <section
       className={clsx(
-        'relative overflow-hidden rounded-md border border-border-primary bg-bg-secondary p-8 sm:p-10',
+        'relative overflow-hidden rounded-md border border-border-primary bg-bg-secondary p-6 sm:p-10',
         className
       )}
     >
@@ -27,7 +26,7 @@ export default function Hero({ title, description, cta, className }: HeroProps) 
         }}
       />
       <div className="relative">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-text-primary">
+        <h1 className="break-words text-[clamp(2rem,7vw,2.5rem)] font-semibold leading-[1.15] tracking-tight text-text-primary sm:text-[2.5rem] md:text-[3rem] md:leading-[1.12]">
           {title}
         </h1>
         {description ? (
@@ -36,8 +35,11 @@ export default function Hero({ title, description, cta, className }: HeroProps) 
 
         {cta ? (
           <div className="mt-6">
-            <Link href={cta.href}>
-              <Button>{cta.label}</Button>
+            <Link
+              href={cta.href}
+              className="inline-flex items-center justify-center rounded-md bg-accent-primary px-5 py-3 text-sm font-medium text-white transition hover:bg-state-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-primary"
+            >
+              {cta.label}
             </Link>
           </div>
         ) : null}
