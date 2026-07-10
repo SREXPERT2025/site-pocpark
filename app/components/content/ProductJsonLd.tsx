@@ -21,7 +21,7 @@ export type ProductJsonLdProps = {
   gtin?: string;
   /** URL страницы товара (относительный или абсолютный) */
   url: string;
-  /** Цена «от». Если 0/не задано — «по запросу» */
+  /** Цена «от». Если 0/не задано — Offer не публикуется */
   priceFrom?: number;
   /** Валюта, например RUB */
   currency?: string;
@@ -49,14 +49,10 @@ function toAbsoluteUrl(baseUrl: string, url: string) {
   return `${normalizeBaseUrl(baseUrl)}${path}`;
 }
 
-function availabilityUrl(value?: string) {
-  const v = String(value || 'InStock').trim();
-  // Schema.org ожидает абсолютный URL значения
-  return `https://schema.org/${v}`;
-}
-
-function conditionUrl(value?: string) {
-  const v = String(value || 'NewCondition').trim();
+function schemaUrl(value?: string) {
+  const v = String(value || '').trim();
+  if (!v) return undefined;
+  if (v.startsWith('http://') || v.startsWith('https://')) return v;
   return `https://schema.org/${v}`;
 }
 
@@ -111,26 +107,23 @@ export default function ProductJsonLd(props: ProductJsonLdProps) {
     else jsonLd.gtin = gtin;
   }
 
-  // Offer: если цена не задана/0 — считаем «по запросу» и не указываем price
-  const priceFrom = Number(props.priceFrom || 0);
+  // Offer публикуем только когда есть подтверждённые цена и валюта.
+  const priceFrom = props.priceFrom;
   const currency = (props.currency || '').trim();
 
-  const offer: any = {
-    '@type': 'Offer',
-    url: absUrl,
-    availability: availabilityUrl(props.availability),
-    itemCondition: conditionUrl(props.condition),
-  };
+  if (typeof priceFrom === 'number' && Number.isFinite(priceFrom) && priceFrom > 0 && currency) {
+    const availability = schemaUrl(props.availability);
+    const condition = schemaUrl(props.condition);
 
-  if (priceFrom > 0 && currency) {
-    offer.price = priceFrom;
-    offer.priceCurrency = currency;
-  } else if (currency) {
-    // Валюту можно оставить как подсказку, даже если цена «по запросу»
-    offer.priceCurrency = currency;
+    jsonLd.offers = {
+      '@type': 'Offer',
+      url: absUrl,
+      price: priceFrom,
+      priceCurrency: currency,
+      ...(availability ? { availability } : {}),
+      ...(condition ? { itemCondition: condition } : {}),
+    };
   }
-
-  jsonLd.offers = offer;
 
   return (
     <script
