@@ -53,7 +53,7 @@ export default function Hero() {
             </Link>
 
             <Link
-              href="/contacts"
+              href="/quiz?source=consult"
               className="px-8 py-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg font-medium transition-colors text-center"
             >
               Задать вопрос СБ

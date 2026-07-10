@@ -79,7 +79,7 @@ export default function Documentation() {
                 <li>• Поддержка внедрений</li>
               </ul>
               <Link
-                href="/contacts"
+                href="/quiz?source=consult"
                 className="inline-block text-sm font-medium text-emerald-600 hover:underline"
               >
                 Связаться с техподдержкой →

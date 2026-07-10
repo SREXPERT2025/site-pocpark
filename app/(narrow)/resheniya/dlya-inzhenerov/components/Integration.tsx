@@ -29,7 +29,7 @@ export default function Integration() {
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-600 font-bold">•</span>
-                  Общие идентификаторы: карты, номера авто, BLE, QR
+                  Общие идентификаторы: карты, номера автомобилей, BLE и QR
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-600 font-bold">•</span>
@@ -45,21 +45,21 @@ export default function Integration() {
             {/* ФИНАНСЫ И IT */}
             <div className="rounded-2xl border border-slate-200 p-8 bg-slate-50">
               <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
-                💳 Финансы и IT-системы
+                💳 Финансы и ИТ-системы
               </h3>
 
               <ul className="space-y-4 text-slate-700">
                 <li className="flex gap-3">
                   <span className="text-emerald-600 font-bold">•</span>
-                  REST API для биллинга и внешних сервисов
+                  Программный интерфейс для расчётных и внешних систем
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-600 font-bold">•</span>
-                  Выгрузка данных в 1С и BI-системы
+                  Выгрузка данных в 1С и системы аналитики
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-600 font-bold">•</span>
-                  Онлайн-оплаты, эквайринг, web-платежи
+                  Оплата через сайт, эквайринг и безналичные платежи
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-600 font-bold">•</span>
@@ -86,7 +86,7 @@ export default function Integration() {
               </li>
               <li className="flex gap-3">
                 <span className="text-green-400">✓</span>
-                Документированное API
+                Документированный программный интерфейс
               </li>
               <li className="flex gap-3">
                 <span className="text-green-400">✓</span>
@@ -96,10 +96,10 @@ export default function Integration() {
 
             <div className="mt-6">
               <Link
-                href="/contacts"
+                href="/quiz?source=consult"
                 className="inline-block mt-4 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors"
               >
-                Запросить техническую консультацию
+                Получить техническую консультацию
               </Link>
             </div>
           </div>

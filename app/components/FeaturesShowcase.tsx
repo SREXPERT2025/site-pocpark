@@ -7,6 +7,7 @@ import type { CSSProperties } from 'react';
 type SlideItem = {
   id: string;
   title: string;
+  description: string;
   imageSrc: string;
   placeholderColor: string;
 };
@@ -148,8 +149,11 @@ function SectionCarousel({
       </div>
 
       <div className="mt-5">
-        <p className="max-w-full overflow-hidden break-words text-base font-medium leading-7 text-slate-800 md:text-[20px]">
+        <p className="max-w-full break-words text-base font-semibold leading-7 text-slate-900 md:text-[20px]">
           {current.title}
+        </p>
+        <p className="mt-3 max-w-full break-words text-sm leading-6 text-slate-600 md:text-base md:leading-7">
+          {current.description}
         </p>
       </div>
 
@@ -193,49 +197,65 @@ export default function FeaturesShowcase() {
         items: [
           {
             id: 'tariffs-constructor',
-            title: 'Тарифы и конструктор. Короткий ответ: постоянные клиенты въезжают и выезжают автоматически — по номеру автомобиля, RFID-метке или BLE — а система сама применяет правила доступа, лимиты и формирует отчётность.',
+            title: 'Тарифы и конструктор',
+            description:
+              '16 алгоритмов с детальной настройкой помогают создать тарифы под объект и задачи. При необходимости можно разработать отдельный алгоритм тарификации на этапе изготовления оборудования.',
             imageSrc: 'vozmozhnosti-razovye-tarify-i-konstruktor.jpg',
             placeholderColor: '#dbeafe',
           },
           {
             id: 'entry-by-card-or-ticket',
             title: 'Въезд по карте или билету',
+            description:
+              'При въезде клиент получает карту или билет — идентификатор разового посетителя. По нему система рассчитывает время на парковке и сумму к оплате.',
             imageSrc: 'vozmozhnosti-razovye-vezd-po-karte-ili-biletu.jpg',
             placeholderColor: '#fde68a',
           },
           {
             id: 'fast-pass-without-cards',
             title: 'Быстрый проезд без карт',
+            description:
+              'Система может работать без физических носителей: автомобиль определяется по номеру с помощью камер. Это помогает повысить пропускную способность въездов и выездов.',
             imageSrc: 'vozmozhnosti-razovye-bystryi-proezd-bez-kart.jpg',
             placeholderColor: '#c7d2fe',
           },
           {
             id: 'custom-identifier',
             title: 'Свой идентификатор',
+            description:
+              'Мультисчитыватель позволяет использовать разные идентификаторы: ключ от домофона, электронный пропуск, банковскую карту и другие носители.',
             imageSrc: 'vozmozhnosti-razovye-svoi-identifikator.jpg',
             placeholderColor: '#fbcfe8',
           },
           {
             id: 'qr-invitations',
             title: 'QR-приглашения',
+            description:
+              'Управляющая компания и арендаторы могут отправлять гостям QR-приглашения. Гость проезжает по правилам объекта, а управляющий видит статистику по приглашениям и парковочному времени.',
             imageSrc: 'vozmozhnosti-razovye-qr-priglasheniya.jpg',
             placeholderColor: '#bbf7d0',
           },
           {
             id: 'discount-by-receipt',
             title: 'Предоставление скидок по чеку',
+            description:
+              'В терминал оплаты можно установить сканер QR- и штрихкодов. Гость сканирует чек и получает скидку на парковку в рублях или процентах по заданным правилам.',
             imageSrc: 'vozmozhnosti-razovye-skidki-po-cheku.jpg',
             placeholderColor: '#fed7aa',
           },
           {
             id: 'payment-by-tenant',
-            title: 'Оплата за счет арендатора',
+            title: 'Оплата за счёт арендатора',
+            description:
+              'Арендатор может отметить карту гостя в личном кабинете и разрешить бесплатный выезд. Управляющий получает отчёт по суммарному парковочному времени каждого арендатора.',
             imageSrc: 'vozmozhnosti-razovye-oplata-za-schet-arendatora.jpg',
             placeholderColor: '#ddd6fe',
           },
           {
             id: 'photo-fixation',
             title: 'Фотофиксация',
+            description:
+              'При каждом въезде и выезде система делает снимок. Это помогает разбирать спорные ситуации и проверять события по конкретному проезду.',
             imageSrc: 'vozmozhnosti-razovye-fotofiksaciya.jpg',
             placeholderColor: '#bfdbfe',
           },
@@ -247,25 +267,33 @@ export default function FeaturesShowcase() {
         items: [
           {
             id: 'resident-card',
-            title: 'Проезд по карте постоянника',
+            title: 'Проезд по карте постоянного клиента',
+            description:
+              'В парковочные стойки встроены считыватели карт постоянных клиентов. Для проезда достаточно приложить карту, а система проверит права доступа и статус абонемента.',
             imageSrc: 'vozmozhnosti-postoyannye-proezd-po-karte-postoyannika.jpg',
             placeholderColor: '#e9d5ff',
           },
           {
             id: 'video-recognition',
             title: 'Видеораспознавание',
+            description:
+              'Камера в зоне проезда распознаёт номер автомобиля. Если номер есть в списке постоянных клиентов и нет ограничений, система открывает шлагбаум.',
             imageSrc: 'vozmozhnosti-postoyannye-videoraspaznavanie.jpg',
             placeholderColor: '#bae6fd',
           },
           {
             id: 'rfid',
             title: 'RFID',
+            description:
+              'Постоянным клиентам можно выдать RFID-метки. При подъезде антенна считывает метку, а система проверяет права доступа, оплату абонемента и связанные ограничения.',
             imageSrc: 'vozmozhnosti-postoyannye-rfid.png',
             placeholderColor: '#fecaca',
           },
           {
             id: 'tenant-space-limits',
             title: 'Лимиты мест на арендатора',
+            description:
+              'Для каждого арендатора можно настроить свой лимит парковочных мест. При достижении лимита система предупреждает о нём и применяет заданные правила въезда.',
             imageSrc: 'vozmozhnosti-postoyannye-limity-mest-na-arendatora.png',
             placeholderColor: '#d9f99d',
           },
@@ -273,41 +301,53 @@ export default function FeaturesShowcase() {
       },
       {
         id: 'payments-and-reports',
-        heading: 'Оплата и отчеты',
+        heading: 'Оплата и отчёты',
         items: [
           {
             id: 'payment-at-exit',
             title: 'Оплата на выезде',
+            description:
+              'В стойку выезда можно установить компактный терминал оплаты. Если у гостя есть задолженность за парковочное время, система покажет сумму к оплате и выдаст чек в виде QR-кода.',
             imageSrc: 'vozmozhnosti-oplata-oplata-na-vyezde.jpg',
             placeholderColor: '#fde68a',
           },
           {
             id: 'online-payment',
-            title: 'Онлайн оплата',
+            title: 'Онлайн-оплата',
+            description:
+              'Клиент переходит на сайт, вводит номер карты или автомобиля и оплачивает парковку через удобный банк или платёжный сервис.',
             imageSrc: 'vozmozhnosti-oplata-onlain-oplata.jpg',
             placeholderColor: '#bfdbfe',
           },
           {
             id: 'automatic-shift-closing',
             title: 'Автоматическое закрытие смены',
+            description:
+              'В заданное время терминал оплаты может автоматически сформировать Z-отчёт и отправить его ответственным сотрудникам.',
             imageSrc: 'vozmozhnosti-oplata-avtomaticheskoe-zakrytie-smeny.jpg',
             placeholderColor: '#fecdd3',
           },
           {
             id: 'summary-report',
-            title: 'Сводный отчет',
+            title: 'Сводный отчёт о работе парковки',
+            description:
+              'Система показывает проезды по дням недели и часам, базовые метрики по выручке, пиковые периоды и другие показатели работы парковки.',
             imageSrc: 'vozmozhnosti-oplata-svodnyi-otchet.jpg',
             placeholderColor: '#c4b5fd',
           },
           {
             id: 'financial-report',
-            title: 'Финансовый отчет',
+            title: 'Финансовый отчёт',
+            description:
+              'Финансовый отчёт помогает видеть распределение по типам оплаты, выручку по дням недели, структуру по тарифам и другие денежные показатели.',
             imageSrc: 'vozmozhnosti-oplata-finansovyi-otchet.jpg',
             placeholderColor: '#bbf7d0',
           },
           {
             id: 'event-log',
             title: 'Журнал событий',
+            description:
+              'Все ключевые события фиксируются в журнале: подъезд к стойкам, открытие шлагбаумов, выдача идентификаторов, оплаты, обслуживание терминалов и другие действия.',
             imageSrc: 'vozmozhnosti-oplata-zhurnal-sobytii.jpg',
             placeholderColor: '#fed7aa',
           },

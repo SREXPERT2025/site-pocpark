@@ -39,24 +39,24 @@ export default function Hero() {
 
           {/* Малый верхний текст */}
           <div className="mb-4 text-[11px] leading-relaxed tracking-[0.22em] uppercase text-white/70 sm:mb-6 sm:text-xs sm:tracking-[0.3em]">
-            РОСПАРК — АВТОМАТИЗАЦИЯ ПАРКОВОК ПОД КЛЮЧ
+            РОСПАРК — парковочные системы под ключ
           </div>
 
           {/* H1 */}
           <h1 className="font-extrabold tracking-tight text-[42px] leading-[1.08] sm:text-[64px] md:text-[72px]">
-            Парковка, которой
+            Парковка работает 24/7
             <br />
-            можно управлять
+            система под контролем
           </h1>
 
           {/* Value line */}
           <div className="mt-5 text-[12px] leading-relaxed tracking-[0.18em] uppercase text-white/80 sm:mt-6 sm:text-[14px] sm:tracking-[0.25em]">
-            Контроль въезда · Оплата · Доступ · Отчётность
+            Въезд · Оплата · Доступ · Отчётность
           </div>
 
           {/* Description */}
           <p className="mx-auto mt-6 max-w-[760px] text-[17px] leading-7 text-white/85 sm:mt-8 sm:text-[20px] sm:leading-[30px]">
-            РОСПАРК помогает управлять въездом, оплатой, доступом и отчётностью на парковке из единой системы.
+            РОСПАРК помогает превратить парковку из набора оборудования в управляемый актив объекта: с понятным въездом, оплатой, доступом, распознаванием номеров, отчётностью и поддержкой после запуска.
           </p>
 
           {/* Trust metrics */}
@@ -95,14 +95,14 @@ export default function Hero() {
               href="/quiz?source=economy"
               className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-10 py-4 text-base font-semibold text-white shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
             >
-              Оценить параметры проекта
+              Рассчитать проект
             </a>
 
             <a
               href="/keysy"
               className="rounded-lg border border-white/40 px-8 py-4 text-base font-semibold text-white transition hover:bg-white/10"
             >
-              Смотреть проекты
+              Смотреть выполненные проекты
             </a>
           </div>
 

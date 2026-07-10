@@ -65,6 +65,22 @@ export default function Footer() {
               +7 (499) 321-20-40
             </a>
           </p>
+
+          <ul className="mt-4 space-y-2">
+            <li>
+              <Link href="/privacy" className="text-sm text-neutral-600 hover:text-neutral-900">
+                Политика обработки персональных данных
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/soglasie-na-obrabotku-personalnyh-dannyh"
+                className="text-sm text-neutral-600 hover:text-neutral-900"
+              >
+                Согласие на обработку персональных данных
+              </Link>
+            </li>
+          </ul>
         </div>
       </div>
     </footer>

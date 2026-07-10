@@ -19,6 +19,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}/keysy`, lastModified: now },
     { url: `${SITE_URL}/vozmozhnosti`, lastModified: now },
     { url: `${SITE_URL}/quiz`, lastModified: now },
+    { url: `${SITE_URL}/privacy`, lastModified: now },
+    { url: `${SITE_URL}/soglasie-na-obrabotku-personalnyh-dannyh`, lastModified: now },
 
     // Решения (коммерческие страницы на TSX)
     { url: `${SITE_URL}/resheniya/dlya-rukovoditeley`, lastModified: now },

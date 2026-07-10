@@ -50,7 +50,7 @@ export default function Reliability() {
                   {item.icon}
                 </div>
                 <div className="min-w-0">
-                  <h3 className="mb-2 max-w-full break-words text-[22px] font-bold leading-tight sm:text-2xl">
+                  <h3 className="mb-2 max-w-full break-words text-base font-bold leading-snug sm:text-lg md:text-xl">
                     {item.title}
                   </h3>
                   <p className="max-w-full break-words text-base leading-relaxed text-slate-300 sm:text-lg">

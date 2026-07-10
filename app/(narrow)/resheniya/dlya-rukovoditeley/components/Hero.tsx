@@ -12,7 +12,7 @@ export default function Hero() {
           {/* Бейдж */}
           <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full 
                           bg-blue-600/20 border border-blue-500/30 text-blue-300 text-sm font-medium">
-            👔 Решения для руководителей и управляющих
+            👔 Для руководителей и управляющих
           </div>
 
           {/* H1 — строго один на странице */}
@@ -25,7 +25,7 @@ export default function Hero() {
 
           {/* Подзаголовок */}
           <p className="text-lg md:text-xl text-slate-300 mb-8 max-w-2xl break-words">
-            РОСПАРК превращает парковку из источника потерь и конфликтов
+            РОСПАРК помогает превратить парковку из источника потерь и конфликтов
             в прозрачный бизнес-процесс с контролем выручки и загрузки в реальном времени.
           </p>
 
@@ -33,11 +33,11 @@ export default function Hero() {
           <ul className="grid sm:grid-cols-2 gap-4 mb-10 text-slate-200">
             <li className="flex items-center gap-3">
               <span className="text-green-400">✓</span>
-              Прозрачная выручка и отчёты онлайн
+              Прозрачная выручка и отчёты
             </li>
             <li className="flex items-center gap-3">
               <span className="text-green-400">✓</span>
-              Исключение человеческого фактора
+              Меньше ручных операций
             </li>
             <li className="flex items-center gap-3">
               <span className="text-green-400">✓</span>
@@ -65,7 +65,7 @@ export default function Hero() {
                          border border-slate-700 rounded-lg font-medium 
                          transition-colors text-center"
             >
-              Смотреть проекты
+              Смотреть выполненные проекты
             </Link>
           </div>
 

@@ -75,7 +75,7 @@ export default function KeysyIndex({
       <section className="w-full px-[20px] pt-6">
         <Hero
           title="Проекты"
-          description="Реализованные проекты РОСПАРК: задача, состав системы и результат внедрения."
+          description="Реализованные объекты и примеры внедрения парковочных систем РОСПАРК."
           cta={{ label: 'Получить консультацию', href: '/quiz?source=consult' }}
         />
       </section>
@@ -93,7 +93,7 @@ export default function KeysyIndex({
 
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold">
-              Выполненные проекты
+              Реализованные объекты РОСПАРК
             </h2>
 
             <span className="text-sm text-gray-500">
@@ -127,8 +127,8 @@ export default function KeysyIndex({
         <div className="mt-24">
           <LeadFormSection
             sourceSection="projects"
-            title="Хотите похожий результат?"
-            description="Оставьте контакты — предложим решение под ваш объект."
+            title="Нужно решение для вашего объекта?"
+            description="Оставьте контакты — обсудим задачу, состав системы и предварительный план внедрения."
             submitLabel="Получить консультацию"
           />
         </div>

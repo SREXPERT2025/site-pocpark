@@ -7,7 +7,7 @@ export default function TechStack() {
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-5xl min-w-0">
           <h2 className="mb-6 break-words text-3xl font-bold leading-tight text-slate-900">
-            Техническая архитектура системы
+            Техническая архитектура решения
           </h2>
 
           <p className="mb-10 max-w-3xl break-words text-base leading-7 text-slate-600 sm:mb-12 sm:text-lg">
@@ -56,19 +56,19 @@ export default function TechStack() {
               <ul className="min-w-0 space-y-4 text-slate-700">
                 <li className="flex min-w-0 items-start gap-3">
                   <span className="shrink-0 font-bold text-emerald-600">•</span>
-                  Сервер управления (локальный или облачный)
+                  Сервер управления на объекте или в облаке
                 </li>
                 <li className="flex min-w-0 items-start gap-3">
                   <span className="shrink-0 font-bold text-emerald-600">•</span>
-                  Web-интерфейс администратора
+                  Панель администратора через браузер
                 </li>
                 <li className="flex min-w-0 items-start gap-3">
                   <span className="shrink-0 font-bold text-emerald-600">•</span>
-                  REST API для интеграции с СКУД, биллингом, ERP
+                  Программный интерфейс для интеграции со СКУД, расчётными и учётными системами
                 </li>
                 <li className="flex min-w-0 items-start gap-3">
                   <span className="shrink-0 font-bold text-emerald-600">•</span>
-                  Логи, события, история проездов
+                  Журналы, события, история проездов
                 </li>
                 <li className="flex min-w-0 items-start gap-3">
                   <span className="shrink-0 font-bold text-emerald-600">•</span>

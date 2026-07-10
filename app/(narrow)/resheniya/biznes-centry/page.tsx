@@ -36,15 +36,15 @@ export default function BiznesCentresPage() {
 
   const answerLead =
     answerFirst?.lead ??
-    'Для БЦ РОСПАРК — это дисциплина доступа: роли и политики, гостевые заявки, отчёты по организациям и прозрачный аудит действий.';
+    'Для бизнес-центра РОСПАРК — это дисциплина доступа: роли, правила, гостевые заявки, отчёты по организациям и прозрачный журнал действий.';
 
   const answerBullets =
     answerFirst?.bullets?.length
       ? answerFirst.bullets
       : [
           'Контроль арендаторов: правила по организациям и лимиты мест.',
-          'Гостевые сценарии: заявки, подтверждения, прозрачные исключения.',
-          'Журналы событий и аудит: кто, что и когда сделал.',
+          'Гостевые проезды: заявки, подтверждения и прозрачные исключения.',
+          'Журналы событий: кто, что и когда сделал.',
           'Интеграции при необходимости: СКУД и корпоративные реестры.',
         ];
 
@@ -71,7 +71,7 @@ export default function BiznesCentresPage() {
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
-                href="/quiz?source=equest"
+                href="/quiz?source=request"
                 className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-8 py-4 font-semibold text-white shadow-sm hover:bg-blue-700 transition-colors"
               >
                 Запросить расчёт
@@ -121,7 +121,7 @@ export default function BiznesCentresPage() {
               <p className="mt-2 text-slate-700">При необходимости — связка со СКУД и корпоративными реестрами.</p>
             </div>
           </div>
-          <p className="mt-6 text-sm text-slate-500">В БЦ важна дисциплина доступа: политики, роли и аудит действий.</p>
+          <p className="mt-6 text-sm text-slate-500">В бизнес-центре важна дисциплина доступа: правила, роли и журнал действий.</p>
         </div>
       </section>
 
@@ -148,7 +148,7 @@ export default function BiznesCentresPage() {
       <section className="py-16 bg-blue-600 text-white">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="rounded-2xl bg-blue-700/30 p-10">
-            <h2 className="text-3xl md:text-4xl font-bold">Запросите расчёт для бизнес-центра</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Рассчитайте проект для бизнес-центра</h2>
             <p className="mt-4 text-blue-100 max-w-3xl">
               Подберём модель доступа для арендаторов и гостей, согласуем роли и регламенты, оценим бюджет внедрения.
             </p>
@@ -156,7 +156,7 @@ export default function BiznesCentresPage() {
               <Link href="/quiz" className="inline-flex items-center justify-center rounded-xl bg-white px-8 py-4 font-semibold text-blue-700 shadow-sm hover:bg-blue-50 transition-colors">
                 Запросить расчёт
               </Link>
-              <Link href="/contacts" className="inline-flex items-center justify-center rounded-xl border border-white/40 bg-transparent px-8 py-4 font-semibold text-white hover:bg-white/10 transition-colors">
+              <Link href="/quiz?source=consult" className="inline-flex items-center justify-center rounded-xl border border-white/40 bg-transparent px-8 py-4 font-semibold text-white hover:bg-white/10 transition-colors">
                 Получить консультацию
               </Link>
             </div>
@@ -176,8 +176,8 @@ export default function BiznesCentresPage() {
       {/* Навигация */}
       <section className="pb-16">
         <div className="container mx-auto px-4 max-w-6xl">
-          <Link href="/resheniya" className="text-blue-600 font-medium hover:underline">
-            ← Все решения РОСПАРК
+          <Link href="/" className="text-blue-600 font-medium hover:underline">
+            ← На главную страницу РОСПАРК
           </Link>
         </div>
       </section>

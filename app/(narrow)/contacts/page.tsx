@@ -17,7 +17,7 @@ export default function ContactsPage() {
             Контакты
           </h1>
           <p className="max-w-3xl break-words text-base leading-relaxed text-slate-600 sm:text-lg">
-            Свяжитесь с РОСПАРК — уточним задачу, параметры объекта и предложим подходящую парковочную систему.
+            Свяжитесь с РОСПАРК, чтобы обсудить объект, подобрать оборудование, спланировать внедрение или получить поддержку.
           </p>
         </div>
       </section>
@@ -26,7 +26,7 @@ export default function ContactsPage() {
         <div className="container mx-auto grid max-w-5xl grid-cols-1 gap-6 px-4 md:grid-cols-2 md:gap-12">
           <div className="min-w-0 overflow-hidden rounded-2xl border bg-white p-5 sm:p-8">
             <h2 className="mb-5 break-words text-[24px] font-semibold leading-tight sm:text-3xl">
-              Как с нами связаться
+              Как связаться с РОСПАРК
             </h2>
 
             <ul className="max-w-full space-y-4 overflow-hidden text-base leading-relaxed text-slate-700 sm:text-lg">
@@ -52,10 +52,10 @@ export default function ContactsPage() {
 
             <div className="mt-8">
               <Link
-                href="/resheniya"
+                href="/resheniya/dlya-rukovoditeley"
                 className="inline-block break-words text-base font-medium text-blue-600 hover:underline sm:text-lg"
               >
-                → Перейти к решениям
+                → Посмотреть решения
               </Link>
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function ContactsPage() {
       <LeadFormSection
         sourceSection="contacts"
         title="Получить консультацию"
-        description="Оставьте контакты — мы уточним задачу и предложим конфигурацию парковочной системы под параметры объекта."
+        description="Оставьте контакты — уточним задачу, параметры объекта и следующий шаг по проекту."
         submitLabel="Отправить"
       />
     </main>

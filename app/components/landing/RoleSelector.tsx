@@ -18,16 +18,16 @@ const roles: RoleCardItem[] = [
     result:
       "Прогнозируемый финансовый результат и контроль доходности объекта.",
     href: "/resheniya/dlya-rukovoditeley",
-    imageSrc: "/images/roles/leader.jpg",
+    imageSrc: "/images/roles/leader.png",
     imageAlt: "Руководитель за ноутбуком",
     accent: true,
   },
   {
     title: "Для инженеров",
     description:
-      "API, протоколы и схемы подключения. Совместимость с ИТ-контуром объекта.",
+      "Программные интерфейсы, протоколы и схемы подключения. Совместимость с ИТ-контуром объекта.",
     result:
-      "Интеграция без ручных доработок и архитектурных конфликтов.",
+      "Интеграция без лишних доработок и конфликтов в архитектуре объекта.",
     href: "/resheniya/dlya-inzhenerov",
     imageSrc: "/images/roles/engineer.jpg",
     imageAlt: "Инженер за рабочим местом",
@@ -35,7 +35,7 @@ const roles: RoleCardItem[] = [
   {
     title: "Для службы безопасности",
     description:
-      "Черные и белые списки, распознавание номеров и журнал событий.",
+      "Чёрные и белые списки, распознавание номеров и журнал событий.",
     result:
       "Снижение операционных рисков и полный контроль доступа.",
     href: "/resheniya/dlya-sluzhby-bezopasnosti",
@@ -104,11 +104,11 @@ export default function RoleSelector() {
       <div className="mx-auto max-w-7xl px-4">
         <div className="text-center">
           <h2 className="text-[38px] font-extrabold tracking-[-0.02em] text-slate-950">
-            Платформа для всех уровней управления парковочным активом
+            Система для всех уровней управления парковкой
           </h2>
 
           <p className="mt-4 text-[18px] text-slate-600">
-            Инструменты для принятия решений — от ежедневного контроля до стратегического роста доходности.
+            Инструменты для решений — от ежедневного контроля до роста доходности объекта.
           </p>
         </div>
 
@@ -119,7 +119,7 @@ export default function RoleSelector() {
         </div>
 
         <div className="mt-12 text-center text-[15px] text-slate-500">
-          Более 350 объектов используют платформу на разных уровнях управления.
+          Более 350 объектов используют решения РОСПАРК в ежедневной эксплуатации.
         </div>
       </div>
     </section>

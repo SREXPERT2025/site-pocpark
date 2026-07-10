@@ -36,7 +36,7 @@ export default function ZastroyschikiPage() {
 
   const answerLead =
     answerFirst?.lead ??
-    'Для ЖК РОСПАРК — это стабильные правила доступа по типам клиентов: меньше конфликтов, прозрачный контроль и понятная эксплуатация для УК.';
+    'Для жилого комплекса РОСПАРК — это стабильные правила доступа по типам клиентов: меньше конфликтов, прозрачный контроль и понятная эксплуатация для УК.';
 
   const answerBullets =
     answerFirst?.bullets?.length
@@ -44,7 +44,7 @@ export default function ZastroyschikiPage() {
       : [
           'Разделение типов клиентов: резиденты, арендаторы, гости, подрядчики.',
           'Гостевые заявки и подтверждения по регламенту УК.',
-          'Антифрод и аудит: стоп-листы, исключения, действия пользователей.',
+          'Защита от нарушений и журнал действий: стоп-листы, исключения, действия пользователей.',
           'Отказоустойчивость и регламенты — критично для жилых объектов.',
         ];
 
@@ -118,7 +118,7 @@ export default function ZastroyschikiPage() {
             </div>
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="break-words text-lg font-semibold text-slate-900">Безопасность и порядок</h3>
-              <p className="mt-2 break-words text-slate-700">Стоп-листы, 2FA-сценарии, аудит действий и исключений.</p>
+              <p className="mt-2 break-words text-slate-700">Стоп-листы, сценарии с двухфакторным подтверждением, аудит действий и исключений.</p>
             </div>
           </div>
           <p className="mt-6 text-sm text-slate-500">В ЖК важны стабильность и понятные правила для жителей: минимум ручных операций и спорных ситуаций.</p>
@@ -131,7 +131,7 @@ export default function ZastroyschikiPage() {
           <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="break-words text-lg font-semibold text-slate-900">Типы клиентов</h3>
-              <p className="mt-2 break-words text-slate-700">Постоянные/арендные/гостевые/разовые сценарии по регламенту.</p>
+              <p className="mt-2 break-words text-slate-700">Постоянные, арендные, гостевые и разовые сценарии по регламенту.</p>
             </div>
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="break-words text-lg font-semibold text-slate-900">Эксплуатация</h3>
@@ -139,7 +139,7 @@ export default function ZastroyschikiPage() {
             </div>
             <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <h3 className="break-words text-lg font-semibold text-slate-900">Масштабирование</h3>
-              <p className="mt-2 break-words text-slate-700">Добавление въездов/выездов и функций без перестроек (итеративно).</p>
+              <p className="mt-2 break-words text-slate-700">Добавление въездов, выездов и функций без перестройки всей системы.</p>
             </div>
 
           </div>
@@ -149,12 +149,12 @@ export default function ZastroyschikiPage() {
       <section className="py-16 bg-blue-600 text-white">
         <div className="container mx-auto max-w-6xl min-w-0 px-4">
           <div className="rounded-2xl bg-blue-700/30 p-10">
-            <h2 className="text-3xl md:text-4xl font-bold">Консультация по ЖК</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">Консультация по парковке ЖК</h2>
             <p className="mt-4 text-blue-100 max-w-3xl">
               Разберём ситуацию, предложим 2–3 архитектуры доступа по типам клиентов и план внедрения без перегруза текста.
             </p>
             <div className="mt-8 flex min-w-0 flex-col gap-3 sm:flex-row">
-              <Link href="/contacts" className="inline-flex items-center justify-center rounded-xl bg-white px-8 py-4 font-semibold text-blue-700 shadow-sm hover:bg-blue-50 transition-colors">
+              <Link href="/quiz?source=consult" className="inline-flex items-center justify-center rounded-xl bg-white px-8 py-4 font-semibold text-blue-700 shadow-sm hover:bg-blue-50 transition-colors">
                 Получить консультацию
               </Link>
               <Link href="/quiz" className="inline-flex items-center justify-center rounded-xl border border-white/40 bg-transparent px-8 py-4 font-semibold text-white hover:bg-white/10 transition-colors">
@@ -177,8 +177,8 @@ export default function ZastroyschikiPage() {
       {/* Навигация */}
       <section className="pb-16">
         <div className="container mx-auto max-w-6xl min-w-0 px-4">
-          <Link href="/resheniya" className="text-blue-600 font-medium hover:underline">
-            ← Все решения РОСПАРК
+          <Link href="/" className="text-blue-600 font-medium hover:underline">
+            ← На главную страницу РОСПАРК
           </Link>
         </div>
       </section>

@@ -6,10 +6,10 @@ export default function PainPoints() {
         {/* Заголовок */}
         <div className="max-w-3xl mx-auto text-center mb-14">
           <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-4 leading-tight break-words">
-            Типовые проблемы парковки глазами руководителя
+            Какие проблемы парковки видит руководитель
           </h2>
           <p className="text-lg text-slate-600">
-            Даже при хорошем трафике парковка часто остаётся источником потерь,
+            Даже при хорошем потоке автомобилей парковка часто остаётся источником потерь,
             конфликтов и неконтролируемых расходов.
           </p>
         </div>
@@ -20,24 +20,24 @@ export default function PainPoints() {
           {/* Боль 1 */}
           <div className="bg-white max-w-full p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0 overflow-hidden">
             <div className="text-4xl mb-4">❌</div>
-            <h3 className="text-xl md:text-2xl font-bold mb-3 text-slate-900 leading-tight break-words hyphens-auto [overflow-wrap:anywhere]">
+            <h3 className="text-base md:text-lg font-bold mb-3 text-slate-900 leading-snug break-words">
               Непрозрачная выручка
             </h3>
             <p className="text-slate-600 break-words">
               Невозможно точно понять, сколько автомобилей заехало,
               сколько оплатили и сколько денег реально поступило.
-              Человеческий фактор и «серые» схемы съедают доход.
+              Ручные операции и «серые» схемы снижают доход.
             </p>
           </div>
 
           {/* Боль 2 */}
           <div className="bg-white max-w-full p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0 overflow-hidden">
             <div className="text-4xl mb-4">📉</div>
-            <h3 className="text-xl md:text-2xl font-bold mb-3 text-slate-900 leading-tight break-words hyphens-auto [overflow-wrap:anywhere]">
+            <h3 className="text-base md:text-lg font-bold mb-3 text-slate-900 leading-snug break-words">
               Операционные потери
             </h3>
             <p className="text-slate-600 break-words">
-              Зарплаты парковщиков, инкассация, расходные материалы,
+              Зарплаты персонала, инкассация, расходные материалы,
               ошибки персонала и простои оборудования напрямую
               снижают контроль выручки, затрат и загрузки парковки.
             </p>
@@ -46,7 +46,7 @@ export default function PainPoints() {
           {/* Боль 3 */}
           <div className="bg-white max-w-full p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm min-w-0 overflow-hidden">
             <div className="text-4xl mb-4">😡</div>
-            <h3 className="text-xl md:text-2xl font-bold mb-3 text-slate-900 leading-tight break-words hyphens-auto [overflow-wrap:anywhere]">
+            <h3 className="text-base md:text-lg font-bold mb-3 text-slate-900 leading-snug break-words">
               Недовольство арендаторов и клиентов
             </h3>
             <p className="text-slate-600 break-words">

@@ -6,7 +6,7 @@ export default function Metrics() {
         {/* Заголовок */}
         <div className="max-w-3xl mb-16">
           <h2 className="text-2xl md:text-4xl font-bold mb-4 leading-tight break-words">
-            Экономический эффект от автоматизации
+            Как автоматизация влияет на экономику парковки
           </h2>
           <p className="text-lg text-slate-300">
             Автоматизация парковки помогает контролировать выручку, затраты и загрузку,
@@ -26,22 +26,22 @@ export default function Metrics() {
               Контроль выручки и загрузки
             </h3>
             <p className="text-slate-400 text-sm">
-              За счёт прозрачной выручки, устранения «серых схем»
-              и оптимизации тарифов.
+              За счёт прозрачного учёта выручки, снижения рисков
+              неучтённых операций и настройки тарифов.
             </p>
           </div>
 
           {/* Метрика 2 */}
           <div className="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 min-w-0">
             <div className="text-3xl md:text-4xl font-bold text-blue-500 mb-3 break-words">
-              100%
+              Единый учёт
             </div>
             <h3 className="font-bold text-lg mb-2 break-words">
               Контроль оплат
             </h3>
             <p className="text-slate-400 text-sm">
-              Каждый въезд, выезд и платёж фиксируется системой.
-              Проехать «мимо кассы» невозможно.
+              Въезды, выезды и платежи фиксируются системой.
+              Проезд обрабатывается по настроенным правилам доступа и оплаты.
             </p>
           </div>
 
@@ -54,7 +54,7 @@ export default function Metrics() {
               Затраты на персонал
             </h3>
             <p className="text-slate-400 text-sm">
-              Отсутствие парковщиков, смен, больничных,
+              Меньше ручного труда, смен, больничных,
               инкассации и ручного контроля.
             </p>
           </div>
@@ -65,7 +65,7 @@ export default function Metrics() {
               24/7
             </div>
             <h3 className="font-bold text-lg mb-2 break-words">
-              Работа без простоев
+              Круглосуточная работа
             </h3>
             <p className="text-slate-400 text-sm">
               Система работает круглосуточно, без выходных,
@@ -79,7 +79,7 @@ export default function Metrics() {
         <div className="mt-12 text-sm text-slate-400 max-w-3xl">
           * Фактический экономический эффект зависит от типа объекта,
           текущей организации парковки и выбранной конфигурации системы.
-          Точный расчёт выполняется в рамках аудита.
+          Точный расчёт выполняется после обследования объекта.
         </div>
 
       </div>

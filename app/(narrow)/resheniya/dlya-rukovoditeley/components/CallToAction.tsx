@@ -10,9 +10,7 @@ export default function CallToAction() {
       className="py-24 bg-blue-600 text-white"
     >
       <div className="container mx-auto px-4">
-
-        <div className="max-w-3xl mx-auto text-center">
-
+        <div className="mx-auto max-w-5xl text-center">
           {/* Заголовок */}
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Получите предварительную оценку проекта парковки
@@ -28,25 +26,35 @@ export default function CallToAction() {
           {/* Кнопки */}
           <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
             <Link
-              href="/contacts"
-              className="px-10 py-5 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:bg-blue-50 transition-colors"
+              href="/quiz?source=price"
+              className="inline-flex min-w-0 items-center justify-center px-6 py-4 text-center leading-snug sm:px-10 sm:py-5 bg-white text-blue-600 font-bold rounded-xl shadow-lg hover:bg-blue-50 transition-colors"
             >
               Получить расчёт
             </Link>
 
             {telegramUrl ? (
-  <a
-    href={telegramUrl}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="px-10 py-5 bg-blue-700 border border-blue-500 hover:bg-blue-800 font-bold rounded-xl transition-colors"
-  >
-    Написать в Telegram
-  </a>
-) : null}
+              <a
+                href={telegramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-w-0 items-center justify-center px-6 py-4 text-center leading-snug sm:px-10 sm:py-5 bg-blue-700 border border-blue-500 hover:bg-blue-800 font-bold rounded-xl transition-colors"
+              >
+                Написать в Telegram
+              </a>
+            ) : null}
           </div>
 
-          <div className="mx-auto max-w-xl">
+          <p className="mb-8 text-sm text-blue-100">
+            Хотите сначала сравнить варианты?{' '}
+            <Link
+              href="/resheniya/sravnenie-podhodov"
+              className="font-semibold text-white underline underline-offset-4 hover:text-blue-100"
+            >
+              Сравнить покупку, аренду и внедрение под ключ
+            </Link>
+          </p>
+
+          <div className="mx-auto w-full max-w-3xl">
             <LeadForm
               sourceSection="lead_cta"
               sourcePage="/resheniya/dlya-rukovoditeley"
@@ -57,13 +65,11 @@ export default function CallToAction() {
 
           {/* Доверие */}
           <p className="text-sm text-blue-200 opacity-80">
-            * Консультация не обязывает к покупке. 
+            * Консультация не обязывает к покупке.
             <br />
             Решение подбирается индивидуально под ваш объект.
           </p>
-
         </div>
-
       </div>
     </section>
   );

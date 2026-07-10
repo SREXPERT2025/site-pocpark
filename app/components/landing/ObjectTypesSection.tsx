@@ -19,16 +19,16 @@ const objectTypes: ObjectTypeCardItem[] = [
     href: "/resheniya/torgovye-centry",
     imageSrc: "/images/object-types/tc.jpg",
     imageAlt: "Торговый центр",
-    tag: "Монетизация трафика",
-    focus: "Управляемая ротация и контроль пиковых нагрузок.",
+    tag: "Доход с потока",
+    focus: "Быстрая ротация мест и контроль пиковых нагрузок.",
   },
   {
     title: "Бизнес-центры",
     href: "/resheniya/biznes-centry",
-    imageSrc: "/images/object-types/bc.jpg",
+    imageSrc: "/images/object-types/bc.jpeg",
     imageAlt: "Бизнес-центр",
-    tag: "Абонементы и СКУД",
-    focus: "Резиденты, гости, арендаторы — прозрачный контроль доступа.",
+    tag: "Абонементы и доступ",
+    focus: "Арендаторы, сотрудники и гости — прозрачные правила доступа.",
   },
   {
     title: "Жилые комплексы",
@@ -36,7 +36,7 @@ const objectTypes: ObjectTypeCardItem[] = [
     imageSrc: "/images/object-types/jk.jpg",
     imageAlt: "Жилой комплекс",
     tag: "Резиденты и гости",
-    focus: "Автоматизация гостевых сценариев и снижение конфликтов.",
+    focus: "Гостевые проезды по правилам УК и меньше спорных ситуаций.",
   },
 ];
 
@@ -94,10 +94,10 @@ export default function ObjectTypesSection() {
       <div className="mx-auto max-w-7xl px-4">
         <div className="text-center">
           <h2 className="text-[40px] font-extrabold leading-[44px] tracking-[-0.02em] text-slate-950">
-            Модели управления парковкой по типу объекта
+            Решения под тип объекта
           </h2>
           <p className="mx-auto mt-3 max-w-[820px] text-[18px] leading-[24px] text-slate-600">
-            Для каждого объекта — свои правила въезда, оплаты, доступа и отчётности.
+            Для каждого объекта нужны свои правила въезда, оплаты, доступа и отчётности.
           </p>
         </div>
 
@@ -109,7 +109,7 @@ export default function ObjectTypesSection() {
 
         {/* 1 аккуратная строка вместо “KPI-цифр” */}
         <p className="mx-auto mt-6 max-w-[920px] text-center text-[12px] leading-[16px] text-slate-500">
-          Финальная конфигурация зависит от сценариев пользователей, трафика и интеграций объекта.
+          Итоговая конфигурация зависит от типов пользователей, потока автомобилей и нужных интеграций.
         </p>
       </div>
     </section>
