@@ -139,7 +139,7 @@ export default function CompanyPage() {
             </article>
 
             <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h3 className="text-xl font-semibold text-slate-950">Офис для встреч и переговоров</h3>
+              <h3 className="text-xl font-semibold text-slate-950">Офис продаж</h3>
               <p className="mt-4 text-sm leading-relaxed text-slate-700">
                 123298, Россия, г. Москва, ул. Народного ополчения, д.38к3, офис 117
               </p>
