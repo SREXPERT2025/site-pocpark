@@ -20,7 +20,13 @@ export default function ProductView({ data, content }: { data: any; content: str
     faq = [],
   } = data;
 
-  const allImages = [coverImage, ...gallery];
+  const allImages = Array.from(
+    new Set(
+      [coverImage, ...(Array.isArray(gallery) ? gallery : [])]
+        .map((image) => (typeof image === 'string' ? image.trim() : ''))
+        .filter(Boolean)
+    )
+  );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const nextImage = () => {
