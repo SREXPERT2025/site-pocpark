@@ -145,7 +145,7 @@ export default function ProductView({ data, content }: { data: any; content: str
           </p>
 
           {allImages.length > 1 && (
-            <div className="flex justify-center gap-4 overflow-x-auto py-2">
+            <div className="flex max-w-full justify-start gap-4 overflow-x-auto px-2 py-2 sm:justify-center">
               {allImages.map((img: string, idx: number) => (
                 <button
                   key={idx}
@@ -153,7 +153,7 @@ export default function ProductView({ data, content }: { data: any; content: str
                   aria-label={`Показать изображение ${idx + 1} из ${allImages.length}`}
                   aria-pressed={idx === currentImageIndex}
                   onClick={() => setCurrentImageIndex(idx)}
-                  className={`relative h-20 w-20 cursor-pointer overflow-hidden rounded-md border-2 bg-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
+                  className={`relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-md border-2 bg-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
                     idx === currentImageIndex
                       ? 'scale-105 border-blue-600 opacity-100 ring-2 ring-blue-100'
                       : 'border-transparent opacity-70 hover:border-gray-300 hover:opacity-100'
