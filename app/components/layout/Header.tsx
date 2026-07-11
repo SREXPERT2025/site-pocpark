@@ -34,10 +34,9 @@ export default function Header() {
                     src="/logo.svg"
                     alt="РОСПАРК"
                     width={180}
-                    height={40}
+                    height={19}
                     priority
-                    className="h-[20px] w-auto max-w-[180px] object-contain"
-                    style={{ width: "auto" }}
+                    className="h-auto w-[180px] max-w-full object-contain"
                   />
                 </Link>
 
