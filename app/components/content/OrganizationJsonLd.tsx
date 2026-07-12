@@ -49,13 +49,25 @@ export default function OrganizationJsonLd() {
         availableLanguage: 'Russian',
       },
     ],
-    address: {
-      '@type': 'PostalAddress',
-      postalCode: '123298',
-      addressCountry: 'RU',
-      addressLocality: 'Москва',
-      streetAddress: 'ул. Народного ополчения, д.38к3, офис 117',
-    },
+    address: [
+      {
+        '@type': 'PostalAddress',
+        name: 'Юридический адрес',
+        postalCode: '140108',
+        addressCountry: 'RU',
+        addressRegion: 'Московская область',
+        addressLocality: 'Раменское',
+        streetAddress: 'ул. Михалевича, д. 51А, комната 61',
+      },
+      {
+        '@type': 'PostalAddress',
+        name: 'Офис продаж',
+        postalCode: '123298',
+        addressCountry: 'RU',
+        addressLocality: 'Москва',
+        streetAddress: 'ул. Народного ополчения, д.38к3, офис 117',
+      },
+    ],
   };
 
   return (
