@@ -109,14 +109,16 @@ export default function ProductView({ data, content }: { data: any; content: str
         {/* ================= ГАЛЕРЕЯ (ДОМИНИРУЮЩАЯ) ================= */}
         <section className="flex flex-col items-center border-b border-gray-100 py-10">
           <div className="relative mb-6 flex h-[350px] w-full max-w-[800px] items-center justify-center md:h-[500px]">
-            <button
-              type="button"
-              aria-label="Предыдущее изображение"
-              onClick={prevImage}
-              className="absolute left-[-20px] top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white pb-1 text-2xl text-gray-700 shadow-md transition hover:bg-gray-50 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 md:left-[-60px]"
-            >
-              ‹
-            </button>
+            {allImages.length > 1 && (
+              <button
+                type="button"
+                aria-label="Предыдущее изображение"
+                onClick={prevImage}
+                className="absolute left-[-20px] top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white pb-1 text-2xl text-gray-700 shadow-md transition hover:bg-gray-50 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 md:left-[-60px]"
+              >
+                ‹
+              </button>
+            )}
 
             <div className="relative h-full w-full">
               <Image
@@ -129,14 +131,16 @@ export default function ProductView({ data, content }: { data: any; content: str
               />
             </div>
 
-            <button
-              type="button"
-              aria-label="Следующее изображение"
-              onClick={nextImage}
-              className="absolute right-[-20px] top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white pb-1 text-2xl text-gray-700 shadow-md transition hover:bg-gray-50 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 md:right-[-60px]"
-            >
-              ›
-            </button>
+            {allImages.length > 1 && (
+              <button
+                type="button"
+                aria-label="Следующее изображение"
+                onClick={nextImage}
+                className="absolute right-[-20px] top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white pb-1 text-2xl text-gray-700 shadow-md transition hover:bg-gray-50 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 md:right-[-60px]"
+              >
+                ›
+              </button>
+            )}
           </div>
 
           <p className="mb-8 rounded-full bg-gray-50 px-4 py-1 text-center text-sm font-medium text-gray-500">
