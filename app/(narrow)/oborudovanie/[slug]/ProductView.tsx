@@ -20,7 +20,13 @@ export default function ProductView({ data, content }: { data: any; content: str
     faq = [],
   } = data;
 
-  const allImages = [coverImage, ...gallery];
+  const allImages = Array.from(
+    new Set(
+      [coverImage, ...(Array.isArray(gallery) ? gallery : [])]
+        .map((image) => (typeof image === 'string' ? image.trim() : ''))
+        .filter(Boolean)
+    )
+  );
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const nextImage = () => {
@@ -103,12 +109,16 @@ export default function ProductView({ data, content }: { data: any; content: str
         {/* ================= ГАЛЕРЕЯ (ДОМИНИРУЮЩАЯ) ================= */}
         <section className="flex flex-col items-center border-b border-gray-100 py-10">
           <div className="relative mb-6 flex h-[350px] w-full max-w-[800px] items-center justify-center md:h-[500px]">
-            <button
-              onClick={prevImage}
-              className="absolute left-[-20px] top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white pb-1 text-2xl text-gray-700 shadow-md transition hover:bg-gray-50 hover:text-black md:left-[-60px]"
-            >
-              ‹
-            </button>
+            {allImages.length > 1 && (
+              <button
+                type="button"
+                aria-label="Предыдущее изображение"
+                onClick={prevImage}
+                className="absolute left-[-20px] top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white pb-1 text-2xl text-gray-700 shadow-md transition hover:bg-gray-50 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 md:left-[-60px]"
+              >
+                ‹
+              </button>
+            )}
 
             <div className="relative h-full w-full">
               <Image
@@ -121,12 +131,16 @@ export default function ProductView({ data, content }: { data: any; content: str
               />
             </div>
 
-            <button
-              onClick={nextImage}
-              className="absolute right-[-20px] top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white pb-1 text-2xl text-gray-700 shadow-md transition hover:bg-gray-50 hover:text-black md:right-[-60px]"
-            >
-              ›
-            </button>
+            {allImages.length > 1 && (
+              <button
+                type="button"
+                aria-label="Следующее изображение"
+                onClick={nextImage}
+                className="absolute right-[-20px] top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white pb-1 text-2xl text-gray-700 shadow-md transition hover:bg-gray-50 hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 md:right-[-60px]"
+              >
+                ›
+              </button>
+            )}
           </div>
 
           <p className="mb-8 rounded-full bg-gray-50 px-4 py-1 text-center text-sm font-medium text-gray-500">
@@ -135,12 +149,15 @@ export default function ProductView({ data, content }: { data: any; content: str
           </p>
 
           {allImages.length > 1 && (
-            <div className="flex justify-center gap-4 overflow-x-auto py-2">
+            <div className="flex max-w-full justify-start gap-4 overflow-x-auto px-2 py-2 sm:justify-center">
               {allImages.map((img: string, idx: number) => (
-                <div
+                <button
                   key={idx}
+                  type="button"
+                  aria-label={`Показать изображение ${idx + 1} из ${allImages.length}`}
+                  aria-pressed={idx === currentImageIndex}
                   onClick={() => setCurrentImageIndex(idx)}
-                  className={`relative h-20 w-20 cursor-pointer overflow-hidden rounded-md border-2 bg-white transition-all ${
+                  className={`relative h-20 w-20 shrink-0 cursor-pointer overflow-hidden rounded-md border-2 bg-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 ${
                     idx === currentImageIndex
                       ? 'scale-105 border-blue-600 opacity-100 ring-2 ring-blue-100'
                       : 'border-transparent opacity-70 hover:border-gray-300 hover:opacity-100'
@@ -153,7 +170,7 @@ export default function ProductView({ data, content }: { data: any; content: str
                     sizes="80px"
                     className="object-contain object-center p-1"
                   />
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -180,11 +197,11 @@ export default function ProductView({ data, content }: { data: any; content: str
             <ReactMarkdown>{content}</ReactMarkdown>
           </div>
 
-          <div className="group mt-10 flex cursor-pointer items-start gap-4 rounded-xl border border-blue-100 bg-blue-50 p-5 shadow-sm transition hover:bg-blue-100 sm:items-center">
+          <div className="mt-10 flex items-start gap-4 rounded-xl border border-blue-100 bg-blue-50 p-5 shadow-sm sm:items-center">
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">
               !
             </span>
-            <span className="text-lg font-medium text-blue-900 decoration-blue-400 underline-offset-4 group-hover:underline">
+            <span className="text-lg font-medium text-blue-900">
               Подготовим спецификацию под ваш объект, рассчитаем смету и покажем
               демо-версию.
             </span>
@@ -261,60 +278,72 @@ export default function ProductView({ data, content }: { data: any; content: str
         )}
 
         {/* ================= РАСШИРЕННАЯ ИНФОРМАЦИЯ ================= */}
-        <section className="mb-16">
-          <div className="overflow-hidden rounded-xl border border-gray-200">
-            <details className="group bg-white">
-              <summary className="flex list-none cursor-pointer items-center justify-between p-6 transition hover:bg-gray-50">
-                <div className="flex items-center gap-4">
-                  <span className="text-lg font-bold text-[#0B1220]">
-                    Расширенная информация
-                  </span>
-                  <span className="hidden text-sm font-normal text-gray-400 sm:block">
-                    Файлы, документация и дополнительные материалы
-                  </span>
-                </div>
-                <span className="text-gray-400 transition-transform duration-200 group-open:rotate-180">
-                  ▼
-                </span>
-              </summary>
-              <div className="border-t border-gray-100 bg-gray-50 p-6 pt-0 text-gray-600">
-                <div className="grid grid-cols-1 gap-8 pt-6 md:grid-cols-2">
-                  <div>
-                    <div className="mb-4 text-xs font-bold uppercase tracking-wider text-black opacity-50">
-                      Документы
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      {downloads.map((d: any) => (
-                        <a
-                          key={d.url}
-                          href={d.url}
-                          className="flex items-center gap-2 rounded border border-gray-100 bg-white p-3 font-medium text-blue-600 shadow-sm transition hover:underline hover:shadow-md"
-                        >
-                          <span className="text-xl">📄</span> {d.title}
-                        </a>
-                      ))}
-                    </div>
+        {(downloads.length > 0 || useCases.length > 0) && (
+          <section className="mb-16">
+            <div className="overflow-hidden rounded-xl border border-gray-200">
+              <details className="group bg-white">
+                <summary className="flex list-none cursor-pointer items-center justify-between p-6 transition hover:bg-gray-50">
+                  <div className="flex items-center gap-4">
+                    <span className="text-lg font-bold text-[#0B1220]">
+                      Расширенная информация
+                    </span>
+                    <span className="hidden text-sm font-normal text-gray-400 sm:block">
+                      Файлы, документация и дополнительные материалы
+                    </span>
                   </div>
-                  <div>
-                    <div className="mb-4 text-xs font-bold uppercase tracking-wider text-black opacity-50">
-                      Сценарии применения
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {useCases.map((u: string) => (
-                        <span
-                          key={u}
-                          className="rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm"
-                        >
-                          {u}
-                        </span>
-                      ))}
-                    </div>
+                  <span className="text-gray-400 transition-transform duration-200 group-open:rotate-180">
+                    ▼
+                  </span>
+                </summary>
+                <div className="border-t border-gray-100 bg-gray-50 p-6 pt-0 text-gray-600">
+                  <div
+                    className={`grid grid-cols-1 gap-8 pt-6 ${
+                      downloads.length > 0 && useCases.length > 0
+                        ? 'md:grid-cols-2'
+                        : ''
+                    }`}
+                  >
+                    {downloads.length > 0 && (
+                      <div>
+                        <div className="mb-4 text-xs font-bold uppercase tracking-wider text-black opacity-50">
+                          Документы
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          {downloads.map((d: any) => (
+                            <a
+                              key={d.url}
+                              href={d.url}
+                              className="flex items-center gap-2 rounded border border-gray-100 bg-white p-3 font-medium text-blue-600 shadow-sm transition hover:underline hover:shadow-md"
+                            >
+                              <span className="text-xl">📄</span> {d.title}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {useCases.length > 0 && (
+                      <div>
+                        <div className="mb-4 text-xs font-bold uppercase tracking-wider text-black opacity-50">
+                          Сценарии применения
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {useCases.map((u: string) => (
+                            <span
+                              key={u}
+                              className="rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm"
+                            >
+                              {u}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </details>
-          </div>
-        </section>
+              </details>
+            </div>
+          </section>
+        )}
 
         {/* ================= ФОРМА (ФИНАЛЬНЫЙ УДАР) ================= */}
         <section className="rounded-xl border-2 border-dashed border-[#FBBF24] bg-yellow-50 py-16 text-center">
