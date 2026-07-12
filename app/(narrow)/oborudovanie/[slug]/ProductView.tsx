@@ -197,11 +197,11 @@ export default function ProductView({ data, content }: { data: any; content: str
             <ReactMarkdown>{content}</ReactMarkdown>
           </div>
 
-          <div className="group mt-10 flex cursor-pointer items-start gap-4 rounded-xl border border-blue-100 bg-blue-50 p-5 shadow-sm transition hover:bg-blue-100 sm:items-center">
+          <div className="mt-10 flex items-start gap-4 rounded-xl border border-blue-100 bg-blue-50 p-5 shadow-sm sm:items-center">
             <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-lg font-bold text-white">
               !
             </span>
-            <span className="text-lg font-medium text-blue-900 decoration-blue-400 underline-offset-4 group-hover:underline">
+            <span className="text-lg font-medium text-blue-900">
               Подготовим спецификацию под ваш объект, рассчитаем смету и покажем
               демо-версию.
             </span>
