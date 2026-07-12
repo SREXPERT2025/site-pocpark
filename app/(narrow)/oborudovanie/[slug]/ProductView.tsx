@@ -278,60 +278,72 @@ export default function ProductView({ data, content }: { data: any; content: str
         )}
 
         {/* ================= РАСШИРЕННАЯ ИНФОРМАЦИЯ ================= */}
-        <section className="mb-16">
-          <div className="overflow-hidden rounded-xl border border-gray-200">
-            <details className="group bg-white">
-              <summary className="flex list-none cursor-pointer items-center justify-between p-6 transition hover:bg-gray-50">
-                <div className="flex items-center gap-4">
-                  <span className="text-lg font-bold text-[#0B1220]">
-                    Расширенная информация
-                  </span>
-                  <span className="hidden text-sm font-normal text-gray-400 sm:block">
-                    Файлы, документация и дополнительные материалы
-                  </span>
-                </div>
-                <span className="text-gray-400 transition-transform duration-200 group-open:rotate-180">
-                  ▼
-                </span>
-              </summary>
-              <div className="border-t border-gray-100 bg-gray-50 p-6 pt-0 text-gray-600">
-                <div className="grid grid-cols-1 gap-8 pt-6 md:grid-cols-2">
-                  <div>
-                    <div className="mb-4 text-xs font-bold uppercase tracking-wider text-black opacity-50">
-                      Документы
-                    </div>
-                    <div className="flex flex-col gap-3">
-                      {downloads.map((d: any) => (
-                        <a
-                          key={d.url}
-                          href={d.url}
-                          className="flex items-center gap-2 rounded border border-gray-100 bg-white p-3 font-medium text-blue-600 shadow-sm transition hover:underline hover:shadow-md"
-                        >
-                          <span className="text-xl">📄</span> {d.title}
-                        </a>
-                      ))}
-                    </div>
+        {(downloads.length > 0 || useCases.length > 0) && (
+          <section className="mb-16">
+            <div className="overflow-hidden rounded-xl border border-gray-200">
+              <details className="group bg-white">
+                <summary className="flex list-none cursor-pointer items-center justify-between p-6 transition hover:bg-gray-50">
+                  <div className="flex items-center gap-4">
+                    <span className="text-lg font-bold text-[#0B1220]">
+                      Расширенная информация
+                    </span>
+                    <span className="hidden text-sm font-normal text-gray-400 sm:block">
+                      Файлы, документация и дополнительные материалы
+                    </span>
                   </div>
-                  <div>
-                    <div className="mb-4 text-xs font-bold uppercase tracking-wider text-black opacity-50">
-                      Сценарии применения
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {useCases.map((u: string) => (
-                        <span
-                          key={u}
-                          className="rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm"
-                        >
-                          {u}
-                        </span>
-                      ))}
-                    </div>
+                  <span className="text-gray-400 transition-transform duration-200 group-open:rotate-180">
+                    ▼
+                  </span>
+                </summary>
+                <div className="border-t border-gray-100 bg-gray-50 p-6 pt-0 text-gray-600">
+                  <div
+                    className={`grid grid-cols-1 gap-8 pt-6 ${
+                      downloads.length > 0 && useCases.length > 0
+                        ? 'md:grid-cols-2'
+                        : ''
+                    }`}
+                  >
+                    {downloads.length > 0 && (
+                      <div>
+                        <div className="mb-4 text-xs font-bold uppercase tracking-wider text-black opacity-50">
+                          Документы
+                        </div>
+                        <div className="flex flex-col gap-3">
+                          {downloads.map((d: any) => (
+                            <a
+                              key={d.url}
+                              href={d.url}
+                              className="flex items-center gap-2 rounded border border-gray-100 bg-white p-3 font-medium text-blue-600 shadow-sm transition hover:underline hover:shadow-md"
+                            >
+                              <span className="text-xl">📄</span> {d.title}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {useCases.length > 0 && (
+                      <div>
+                        <div className="mb-4 text-xs font-bold uppercase tracking-wider text-black opacity-50">
+                          Сценарии применения
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {useCases.map((u: string) => (
+                            <span
+                              key={u}
+                              className="rounded border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm"
+                            >
+                              {u}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </details>
-          </div>
-        </section>
+              </details>
+            </div>
+          </section>
+        )}
 
         {/* ================= ФОРМА (ФИНАЛЬНЫЙ УДАР) ================= */}
         <section className="rounded-xl border-2 border-dashed border-[#FBBF24] bg-yellow-50 py-16 text-center">
