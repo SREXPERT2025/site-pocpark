@@ -31,6 +31,22 @@ export default function EquipmentCatalogClient({
 }: EquipmentCatalogClientProps) {
   const [active, setActive] = useState<(typeof FILTERS)[number]['value']>('all');
 
+  const availableFilters = useMemo(
+    () =>
+      FILTERS.filter((filter) => {
+        if (filter.value === 'all') return true;
+
+        if (filter.value === 'posts') {
+          return items.some((item) =>
+            ['entry-post', 'exit-post'].includes(item.category)
+          );
+        }
+
+        return items.some((item) => item.category === filter.value);
+      }),
+    [items]
+  );
+
   const filtered = useMemo(() => {
     if (active === 'all') return items;
 
@@ -46,7 +62,7 @@ export default function EquipmentCatalogClient({
   return (
     <div className="space-y-10">
       <div className="flex flex-wrap gap-3">
-        {FILTERS.map((filter) => {
+        {availableFilters.map((filter) => {
           const isActive = active === filter.value;
 
           return (
