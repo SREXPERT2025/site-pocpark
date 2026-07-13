@@ -1,7 +1,3 @@
-"use client";
-
-import AnimatedNumber from "./AnimatedNumber";
-
 export default function Hero() {
   return (
     <section
@@ -63,7 +59,7 @@ export default function Hero() {
           <div className="mt-10 flex flex-wrap items-center justify-center gap-8 text-center sm:mt-12 sm:gap-10">
             <div>
               <div className="text-[32px] font-bold text-white">
-                <AnimatedNumber value={350} suffix="+" />
+                350+
               </div>
               <div className="mt-1 text-xs uppercase tracking-wide text-white/60">
                 объектов
@@ -72,7 +68,7 @@ export default function Hero() {
 
             <div>
               <div className="text-[32px] font-bold text-white">
-                <AnimatedNumber value={16} suffix="" /> лет
+                16 лет
               </div>
               <div className="mt-1 text-xs uppercase tracking-wide text-white/60">
                 опыта
@@ -81,7 +77,7 @@ export default function Hero() {
 
             <div>
               <div className="text-[32px] font-bold text-white">
-                <AnimatedNumber value={50} suffix="+" />
+                50+
               </div>
               <div className="mt-1 text-xs uppercase tracking-wide text-white/60">
                 городов

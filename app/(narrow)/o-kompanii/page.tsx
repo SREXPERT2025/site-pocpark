@@ -1,13 +1,24 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
+import {
+  ArrowRight,
+  Building2,
+  ClipboardCheck,
+  House,
+  KeyRound,
+  LifeBuoy,
+  PackageCheck,
+  ShoppingBag,
+  Warehouse,
+} from 'lucide-react';
 
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
+import CompactInfographic from '@/app/components/content/CompactInfographic';
 import { canonicalUrl } from '@/app/config/site-url';
 
 const title = 'О компании РОСПАРК';
 const description =
-  'РОСПАРК — парковочные системы для коммерческих и жилых объектов. Юридическая информация, офис для встреч, контакты и направления работы.';
+  'РОСПАРК — парковочные системы для коммерческих и жилых объектов. Юридическая информация, офис продаж, контакты и направления работы.';
 
 const quickLinks = [
   { href: '/keysy', label: 'Кейсы' },
@@ -17,12 +28,39 @@ const quickLinks = [
 ];
 
 const objectTypes = [
-  'торговые центры',
-  'бизнес-центры',
-  'складские комплексы',
-  'жилые комплексы и объекты застройщиков',
-  'объекты с гостевым, арендным или постоянным доступом',
-];
+  {
+    title: 'Торговые центры',
+    href: '/resheniya/torgovye-centry',
+    icon: ShoppingBag,
+  },
+  {
+    title: 'Бизнес-центры',
+    href: '/resheniya/biznes-centry',
+    icon: Building2,
+  },
+  {
+    title: 'Складские комплексы',
+    href: '/resheniya/skladskie-kompleksy',
+    icon: Warehouse,
+  },
+  {
+    title: 'Жилые комплексы и объекты застройщиков',
+    href: '/resheniya/zastroyschiki',
+    icon: House,
+  },
+  {
+    title: 'Гостевой, арендный и постоянный доступ',
+    href: '/vozmozhnosti',
+    icon: KeyRound,
+    wide: true,
+  },
+] as const;
+
+const companyProcess = [
+  { title: 'Обследование объекта', icon: ClipboardCheck },
+  { title: 'Комплектация системы', icon: PackageCheck },
+  { title: 'Запуск и сопровождение', icon: LifeBuoy },
+] as const;
 
 export const metadata: Metadata = {
   title,
@@ -40,7 +78,7 @@ export const metadata: Metadata = {
 
 export default function CompanyPage() {
   return (
-    <main className="min-h-screen overflow-hidden bg-white">
+    <div className="min-h-screen overflow-hidden bg-white">
       <BreadcrumbJsonLd
         items={[
           { name: 'Главная', url: '/' },
@@ -62,20 +100,13 @@ export default function CompanyPage() {
         </div>
       </section>
 
-      <section className="bg-white py-8 sm:py-10">
+      <section className="bg-white py-6 sm:py-8">
         <div className="container mx-auto max-w-5xl px-4">
-          <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="relative aspect-[2/3] w-full">
-              <Image
-                src="/images/content/about-rospark.webp"
-                alt="Инфографика о компании РОСПАРК: решения, объекты, юридическая информация, адреса и контакты"
-                fill
-                sizes="(min-width: 1024px) 960px, calc(100vw - 32px)"
-                className="object-cover"
-                priority
-              />
-            </div>
-          </figure>
+          <CompactInfographic
+            id="company-process"
+            title="От задачи до работающей парковки"
+            items={companyProcess}
+          />
         </div>
       </section>
 
@@ -102,10 +133,22 @@ export default function CompanyPage() {
           <h2 className="text-2xl font-semibold text-slate-950 sm:text-3xl">
             Для каких объектов внедряются парковочные системы
           </h2>
-          <ul className="mt-6 grid gap-3 text-slate-700 sm:grid-cols-2">
-            {objectTypes.map((item) => (
-              <li key={item} className="rounded-xl border border-slate-200 bg-white px-4 py-3">
-                {item}
+          <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+            {objectTypes.map(({ title, href, icon: Icon, ...item }) => (
+              <li key={href} className={'min-w-0 ' + ('wide' in item ? 'sm:col-span-2' : '')}>
+                <Link
+                  href={href}
+                  className="group flex min-h-24 items-center gap-4 rounded-xl border border-slate-200 bg-white p-5 text-slate-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                >
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition-colors group-hover:bg-blue-100">
+                    <Icon aria-hidden="true" className="h-6 w-6" strokeWidth={1.8} />
+                  </span>
+                  <span className="flex-1 text-lg font-semibold leading-snug">{title}</span>
+                  <ArrowRight
+                    aria-hidden="true"
+                    className="h-5 w-5 shrink-0 text-blue-700 transition-transform group-hover:translate-x-1"
+                  />
+                </Link>
               </li>
             ))}
           </ul>
@@ -228,6 +271,6 @@ export default function CompanyPage() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

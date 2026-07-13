@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import { Building2, ListChecks, UsersRound } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
+import CompactInfographic from '@/app/components/content/CompactInfographic';
 import TrustConversionBlocks from '@/app/components/content/TrustConversionBlocks';
 import LeadFormSection from '@/app/components/forms/LeadFormSection';
 import { canonicalUrl } from '@/app/config/site-url';
@@ -10,7 +12,6 @@ type SolutionCard = {
   title: string;
   description: string;
   href: string;
-  label: string;
 };
 
 const roleSolutions: SolutionCard[] = [
@@ -18,19 +19,16 @@ const roleSolutions: SolutionCard[] = [
     title: 'Для руководителей',
     description: 'Контроль выручки, загрузки парковки, затрат на персонал и прозрачная управленческая отчётность.',
     href: '/resheniya/dlya-rukovoditeley',
-    label: 'Управление',
   },
   {
     title: 'Для инженеров',
     description: 'Архитектура решения, оборудование, интеграции, обмен данными, надёжность и сопровождение системы.',
     href: '/resheniya/dlya-inzhenerov',
-    label: 'Техника',
   },
   {
     title: 'Для службы безопасности',
     description: 'Журнал событий, стоп-листы, контроль действий операторов, распознавание номеров и offline-сценарии.',
     href: '/resheniya/dlya-sluzhby-bezopasnosti',
-    label: 'Контроль',
   },
 ];
 
@@ -39,25 +37,21 @@ const objectSolutions: SolutionCard[] = [
     title: 'Торговые центры',
     description: 'Пиковый поток, бесплатное время, онлайн-оплата, льготы, арендаторы и минимум очередей на выезде.',
     href: '/resheniya/torgovye-centry',
-    label: 'Торговля',
   },
   {
     title: 'Бизнес-центры',
     description: 'Арендаторы, сотрудники, гости, лимиты мест, заявки, расписания и понятная отчётность для УК.',
     href: '/resheniya/biznes-centry',
-    label: 'Офисы',
   },
   {
     title: 'Складские комплексы',
     description: 'КПП, грузовой транспорт, пропуска, расписания, журнал событий и контроль въезда подрядчиков.',
     href: '/resheniya/skladskie-kompleksy',
-    label: 'Склад',
   },
   {
     title: 'Застройщики и жилые комплексы',
     description: 'Резиденты, гости, управляющая компания, двор без хаоса и сценарии доступа после передачи объекта.',
     href: '/resheniya/zastroyschiki',
-    label: 'Жильё',
   },
 ];
 
@@ -66,25 +60,21 @@ const scenarioLinks: SolutionCard[] = [
     title: 'Как мы работаем',
     description: 'Пошаговый процесс внедрения: обследование, проектирование, монтаж, запуск, передача и поддержка.',
     href: '/resheniya/kak-my-rabotaem',
-    label: 'Процесс',
   },
   {
     title: 'Стоимость автоматизации парковки',
     description: 'Из чего складывается бюджет: въезды, выезды, оборудование, онлайн-оплата, распознавание номеров и интеграции.',
     href: '/resheniya/stoimost-avtomatizacii-parkovki',
-    label: 'Бюджет',
   },
   {
     title: 'Интеграции и обмен данными',
     description: 'Как парковочная система связывается со СКУД, 1С, сайтом, платёжными сервисами и внутренними системами.',
     href: '/resheniya/integracii-i-api',
-    label: 'Обмен',
   },
   {
     title: 'Сравнение подходов',
     description: 'Чем отличается набор оборудования, локальная автоматизация и система парковки под ключ.',
     href: '/resheniya/sravnenie-podhodov',
-    label: 'Выбор',
   },
 ];
 
@@ -93,19 +83,16 @@ const ecosystemLinks: SolutionCard[] = [
     title: 'Оборудование',
     description: 'Шлагбаумы, терминалы оплаты, камеры распознавания номеров, контроллеры и периферия.',
     href: '/oborudovanie',
-    label: 'Состав',
   },
   {
     title: 'Проекты',
     description: 'Примеры внедрений на торговых объектах, бизнес-центрах, гостиницах, жилых комплексах и других парковках.',
     href: '/keysy',
-    label: 'Опыт',
   },
   {
     title: 'Возможности',
     description: 'Постоянные, арендные, разовые и гостевые клиенты, онлайн-оплата и распознавание номеров.',
     href: '/vozmozhnosti',
-    label: 'Функции',
   },
 ];
 
@@ -187,16 +174,14 @@ function SolutionGrid({
             <Link
               key={item.href}
               href={item.href}
-              className="group flex min-h-[230px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md"
+              className="group flex min-h-[190px] flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
             >
-              <span className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 group-hover:bg-white">
-                {item.label}
-              </span>
-              <h3 className="mt-5 text-xl font-bold text-slate-950">{item.title}</h3>
-              <p className="mt-3 flex-1 text-sm leading-6 text-slate-600">{item.description}</p>
-              <span className="mt-5 inline-flex text-sm font-semibold text-blue-700">
-                Перейти к решению
-              </span>
+              <h3 className="text-xl font-bold text-slate-950 group-hover:text-blue-700">
+                {item.title}
+              </h3>
+              <p className="mt-4 flex-1 text-base leading-7 text-slate-600">
+                {item.description}
+              </p>
             </Link>
           ))}
         </div>
@@ -205,9 +190,43 @@ function SolutionGrid({
   );
 }
 
+function SolutionInfographic({
+  id,
+  title,
+  src,
+  alt,
+}: {
+  id: string;
+  title: string;
+  src: string;
+  alt: string;
+}) {
+  return (
+    <section id={id} className="scroll-mt-24 px-4 py-8 sm:px-6 md:py-12">
+      <div className="mx-auto max-w-[1088px]">
+        <h2 className="text-2xl font-bold tracking-tight text-slate-950 md:text-3xl">
+          {title}
+        </h2>
+        <figure className="mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="relative aspect-[1896/829] w-full">
+            <Image
+              src={src}
+              alt={alt}
+              fill
+              sizes="(min-width: 1152px) 1088px, calc(100vw - 32px)"
+              className="object-contain"
+              unoptimized
+            />
+          </div>
+        </figure>
+      </div>
+    </section>
+  );
+}
+
 export default function SolutionsPage() {
   return (
-    <main className="overflow-hidden bg-slate-50">
+    <div className="overflow-hidden bg-slate-50">
       <BreadcrumbJsonLd
         items={[
           { name: 'Главная', url: '/' },
@@ -247,31 +266,15 @@ export default function SolutionsPage() {
             </Link>
           </div>
 
-          <figure className="mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="relative aspect-[1055/1491] w-full">
-              <Image
-                src="/images/content/solutions-hub.webp"
-                alt="Решения РОСПАРК: сценарии парковочной системы по ролям, объектам и этапам внедрения"
-                fill
-                sizes="(min-width: 1024px) 1088px, calc(100vw - 32px)"
-                className="object-contain"
-                priority
-              />
-            </div>
-          </figure>
-
-          <div className="mt-10 grid gap-3 md:grid-cols-3">
-            {[
-              ['3', 'роли в проекте'],
-              ['4', 'типа объектов'],
-              ['1', 'единый контур доступа, оплаты и контроля'],
-            ].map(([value, label]) => (
-              <div key={label} className="rounded-lg border border-slate-200 bg-slate-50 p-5">
-                <div className="text-3xl font-bold text-slate-950">{value}</div>
-                <div className="mt-1 text-sm leading-6 text-slate-600">{label}</div>
-              </div>
-            ))}
-          </div>
+          <CompactInfographic
+            id="solution-entry-points"
+            title="Как выбрать направление"
+            items={[
+              { title: 'По роли в проекте', href: '#roles', icon: UsersRound },
+              { title: 'По типу объекта', href: '#objects', icon: Building2 },
+              { title: 'По этапу внедрения', href: '#process', icon: ListChecks },
+            ]}
+          />
         </div>
       </section>
 
@@ -283,6 +286,13 @@ export default function SolutionsPage() {
         items={roleSolutions}
       />
 
+      <SolutionInfographic
+        id="roles-visual"
+        title="Одна система — три зоны ответственности"
+        src="/images/content/rospark-solutions-roles.webp"
+        alt="Управление, инженерия и безопасность связаны с единой парковочной системой"
+      />
+
       <SolutionGrid
         id="objects"
         eyebrow="По объектам"
@@ -291,12 +301,26 @@ export default function SolutionsPage() {
         items={objectSolutions}
       />
 
+      <SolutionInfographic
+        id="system-flow-visual"
+        title="Доступ, оплата и контроль работают вместе"
+        src="/images/content/rospark-solutions-system-flow.webp"
+        alt="Единый процесс парковки: въезд, оплата и подтверждённый выезд"
+      />
+
       <SolutionGrid
         id="process"
         eyebrow="Процесс и выбор подхода"
         title="Понять внедрение до старта работ"
         description="Перед закупкой оборудования важно зафиксировать сценарии, зоны ответственности и ограничения текущей инфраструктуры."
         items={scenarioLinks}
+      />
+
+      <SolutionInfographic
+        id="project-steps-visual"
+        title="От задачи до работающей системы"
+        src="/images/content/rospark-solutions-project-steps.webp"
+        alt="Этапы проекта: обследование, проектирование, запуск и поддержка парковочной системы"
       />
 
       <SolutionGrid
@@ -318,6 +342,6 @@ export default function SolutionsPage() {
         minimalFields
         className="bg-white"
       />
-    </main>
+    </div>
   );
 }
