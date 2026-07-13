@@ -84,7 +84,7 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
         </section>
       ) : null}
 
-      <main className="mx-auto max-w-4xl px-6 py-16">
+      <div className="mx-auto max-w-4xl px-6 py-16">
         {/* Основной контент страницы, который уже работал */}
         <div
           className="prose prose-slate max-w-none"
@@ -111,7 +111,7 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
 
           </div>
         )}
-      </main>
+      </div>
     </>
   );
 }
