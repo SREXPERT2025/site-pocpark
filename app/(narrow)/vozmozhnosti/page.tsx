@@ -123,7 +123,7 @@ function FeatureItemListJsonLd() {
 
 export default function FeaturesPage() {
   return (
-    <main className="overflow-hidden bg-slate-50">
+    <div className="overflow-hidden bg-slate-50">
       <BreadcrumbJsonLd
         items={[
           { name: 'Главная', url: '/' },
@@ -252,6 +252,6 @@ export default function FeaturesPage() {
         minimalFields
         className="bg-white"
       />
-    </main>
+    </div>
   );
 }
