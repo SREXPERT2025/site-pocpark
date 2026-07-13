@@ -12,7 +12,6 @@ type SolutionCard = {
   title: string;
   description: string;
   href: string;
-  label: string;
 };
 
 const roleSolutions: SolutionCard[] = [
@@ -20,19 +19,16 @@ const roleSolutions: SolutionCard[] = [
     title: 'Для руководителей',
     description: 'Контроль выручки, загрузки парковки, затрат на персонал и прозрачная управленческая отчётность.',
     href: '/resheniya/dlya-rukovoditeley',
-    label: 'Управление',
   },
   {
     title: 'Для инженеров',
     description: 'Архитектура решения, оборудование, интеграции, обмен данными, надёжность и сопровождение системы.',
     href: '/resheniya/dlya-inzhenerov',
-    label: 'Техника',
   },
   {
     title: 'Для службы безопасности',
     description: 'Журнал событий, стоп-листы, контроль действий операторов, распознавание номеров и offline-сценарии.',
     href: '/resheniya/dlya-sluzhby-bezopasnosti',
-    label: 'Контроль',
   },
 ];
 
@@ -41,25 +37,21 @@ const objectSolutions: SolutionCard[] = [
     title: 'Торговые центры',
     description: 'Пиковый поток, бесплатное время, онлайн-оплата, льготы, арендаторы и минимум очередей на выезде.',
     href: '/resheniya/torgovye-centry',
-    label: 'Торговля',
   },
   {
     title: 'Бизнес-центры',
     description: 'Арендаторы, сотрудники, гости, лимиты мест, заявки, расписания и понятная отчётность для УК.',
     href: '/resheniya/biznes-centry',
-    label: 'Офисы',
   },
   {
     title: 'Складские комплексы',
     description: 'КПП, грузовой транспорт, пропуска, расписания, журнал событий и контроль въезда подрядчиков.',
     href: '/resheniya/skladskie-kompleksy',
-    label: 'Склад',
   },
   {
     title: 'Застройщики и жилые комплексы',
     description: 'Резиденты, гости, управляющая компания, двор без хаоса и сценарии доступа после передачи объекта.',
     href: '/resheniya/zastroyschiki',
-    label: 'Жильё',
   },
 ];
 
@@ -68,25 +60,21 @@ const scenarioLinks: SolutionCard[] = [
     title: 'Как мы работаем',
     description: 'Пошаговый процесс внедрения: обследование, проектирование, монтаж, запуск, передача и поддержка.',
     href: '/resheniya/kak-my-rabotaem',
-    label: 'Процесс',
   },
   {
     title: 'Стоимость автоматизации парковки',
     description: 'Из чего складывается бюджет: въезды, выезды, оборудование, онлайн-оплата, распознавание номеров и интеграции.',
     href: '/resheniya/stoimost-avtomatizacii-parkovki',
-    label: 'Бюджет',
   },
   {
     title: 'Интеграции и обмен данными',
     description: 'Как парковочная система связывается со СКУД, 1С, сайтом, платёжными сервисами и внутренними системами.',
     href: '/resheniya/integracii-i-api',
-    label: 'Обмен',
   },
   {
     title: 'Сравнение подходов',
     description: 'Чем отличается набор оборудования, локальная автоматизация и система парковки под ключ.',
     href: '/resheniya/sravnenie-podhodov',
-    label: 'Выбор',
   },
 ];
 
@@ -95,19 +83,16 @@ const ecosystemLinks: SolutionCard[] = [
     title: 'Оборудование',
     description: 'Шлагбаумы, терминалы оплаты, камеры распознавания номеров, контроллеры и периферия.',
     href: '/oborudovanie',
-    label: 'Состав',
   },
   {
     title: 'Проекты',
     description: 'Примеры внедрений на торговых объектах, бизнес-центрах, гостиницах, жилых комплексах и других парковках.',
     href: '/keysy',
-    label: 'Опыт',
   },
   {
     title: 'Возможности',
     description: 'Постоянные, арендные, разовые и гостевые клиенты, онлайн-оплата и распознавание номеров.',
     href: '/vozmozhnosti',
-    label: 'Функции',
   },
 ];
 
@@ -189,16 +174,14 @@ function SolutionGrid({
             <Link
               key={item.href}
               href={item.href}
-              className="group flex min-h-[230px] flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md"
+              className="group flex min-h-[190px] flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
             >
-              <span className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600 group-hover:bg-white">
-                {item.label}
-              </span>
-              <h3 className="mt-5 text-xl font-bold text-slate-950">{item.title}</h3>
-              <p className="mt-3 flex-1 text-sm leading-6 text-slate-600">{item.description}</p>
-              <span className="mt-5 inline-flex text-sm font-semibold text-blue-700">
-                Перейти к решению
-              </span>
+              <h3 className="text-xl font-bold text-slate-950 group-hover:text-blue-700">
+                {item.title}
+              </h3>
+              <p className="mt-4 flex-1 text-base leading-7 text-slate-600">
+                {item.description}
+              </p>
             </Link>
           ))}
         </div>
