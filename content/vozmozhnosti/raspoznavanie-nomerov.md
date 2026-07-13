@@ -1,7 +1,7 @@
 ---
 title: "Распознавание номеров для парковки"
 description: "Автоматический въезд и выезд по номеру автомобиля: контроль, удобство для клиентов и прозрачная монетизация без участия оператора."
-coverImage: "/images/content/license-plate-recognition.webp"
+coverImage: "/images/vozmozhnosti/vozmozhnosti-postoyannye-videoraspaznavanie.webp"
 ctas:
   - title: "Хотите проверить распознавание на вашем объекте?"
     description: "Оценим сценарии (въезд/выезд, гости/абонементы), подберём камеру и опишем ограничения честно — до старта проекта."

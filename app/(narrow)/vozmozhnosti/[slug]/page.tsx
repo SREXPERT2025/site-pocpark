@@ -10,12 +10,12 @@ import { getAllContentMeta, getContentBySlug } from '@/lib/content-parser';
 
 const featureVisuals: Record<string, { src: string; alt: string }> = {
   'onlain-oplata': {
-    src: '/images/content/online-payment.webp',
-    alt: 'Инфографика РОСПАРК: онлайн-оплата парковки, QR-код, приложение, сайт и платёжные сценарии',
+    src: '/images/content/rospark-features-payment-anpr.webp',
+    alt: 'Схема РОСПАРК: идентификация автомобиля, безналичная оплата и автоматический выезд',
   },
   'raspoznavanie-nomerov': {
-    src: '/images/content/license-plate-recognition.webp',
-    alt: 'Инфографика РОСПАРК: распознавание номеров для парковки, доступ, оплата и контроль событий',
+    src: '/images/vozmozhnosti/vozmozhnosti-postoyannye-videoraspaznavanie.webp',
+    alt: 'Камера распознаёт номер автомобиля перед автоматическим проездом через шлагбаум',
   },
 };
 
