@@ -37,7 +37,9 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
   }
 
   const coverAspectClass =
-    data.coverImageAspect === '1122/1402'
+    data.coverImageAspect === '1896/829'
+      ? 'relative aspect-[1896/829] w-full'
+      : data.coverImageAspect === '1122/1402'
       ? 'relative aspect-[1122/1402] w-full'
       : 'relative aspect-[1055/1491] w-full';
 
