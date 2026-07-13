@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 export default function ContactsPage() {
   return (
-    <main className="min-h-screen overflow-hidden bg-white">
+    <div className="min-h-screen overflow-hidden bg-white">
       <section className="overflow-hidden border-b bg-slate-50 pb-12 pt-28 sm:pb-16 sm:pt-32">
         <div className="container mx-auto max-w-5xl px-4">
           <h1 className="mb-4 break-words text-[34px] font-bold leading-[1.12] sm:text-5xl">
@@ -100,6 +100,6 @@ export default function ContactsPage() {
         description="Оставьте контакты — уточним задачу, параметры объекта и следующий шаг по проекту."
         submitLabel="Отправить"
       />
-    </main>
+    </div>
   )
 }
