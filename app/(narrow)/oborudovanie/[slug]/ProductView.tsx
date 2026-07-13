@@ -38,7 +38,7 @@ export default function ProductView({ data, content }: { data: any; content: str
   };
 
   return (
-    <main className="bg-white pb-20">
+    <div className="bg-white pb-20">
       {/* ================= HERO + ANSWER FIRST (ЕДИНЫЙ ЭКРАН) ================= */}
       <section className="border-b border-[#E6E6E6] bg-[#F9FAFB] pb-6 pt-12">
         <div className="mx-auto max-w-[1100px] min-w-0 px-4 sm:px-6">
@@ -362,6 +362,6 @@ export default function ProductView({ data, content }: { data: any; content: str
           </Link>
         </section>
       </div>
-    </main>
+    </div>
   );
 }
