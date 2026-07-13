@@ -138,7 +138,7 @@ export default function FeaturesPage() {
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
               Возможности
             </p>
-            <h1 className="mt-3 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-slate-950 md:text-5xl">
+            <h1 className="mt-3 max-w-4xl break-words text-[30px] font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-4xl sm:leading-tight md:text-5xl">
               Сценарии доступа, оплаты и контроля для автоматизированной парковки
             </h1>
             <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
