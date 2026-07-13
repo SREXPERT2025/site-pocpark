@@ -14,8 +14,8 @@ const featureVisuals: Record<string, { src: string; alt: string }> = {
     alt: 'Схема РОСПАРК: идентификация автомобиля, безналичная оплата и автоматический выезд',
   },
   'raspoznavanie-nomerov': {
-    src: '/images/content/license-plate-recognition.webp',
-    alt: 'Инфографика РОСПАРК: распознавание номеров для парковки, доступ, оплата и контроль событий',
+    src: '/images/vozmozhnosti/vozmozhnosti-postoyannye-videoraspaznavanie.webp',
+    alt: 'Камера распознаёт номер автомобиля перед автоматическим проездом через шлагбаум',
   },
 };
 
