@@ -73,6 +73,40 @@ const groups = [
   },
 ] as const;
 
+type FeatureIllustrationProps = {
+  id: string;
+  title: string;
+  src: string;
+  alt: string;
+  className?: string;
+};
+
+function FeatureIllustration({
+  id,
+  title,
+  src,
+  alt,
+  className = '',
+}: FeatureIllustrationProps) {
+  return (
+    <figure className={`min-w-0 ${className}`} aria-labelledby={`${id}-title`}>
+      <figcaption id={`${id}-title`} className="text-xl font-bold text-slate-950 sm:text-2xl">
+        {title}
+      </figcaption>
+      <div className="relative mt-4 aspect-[1896/829] w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes="(min-width: 1024px) 1088px, calc(100vw - 32px)"
+          className="object-contain"
+          unoptimized
+        />
+      </div>
+    </figure>
+  );
+}
+
 export const metadata: Metadata = {
   title: 'Возможности парковочной системы РОСПАРК',
   description:
@@ -123,7 +157,7 @@ function FeatureItemListJsonLd() {
 
 export default function FeaturesPage() {
   return (
-    <main className="overflow-hidden bg-slate-50">
+    <div className="overflow-hidden bg-slate-50">
       <BreadcrumbJsonLd
         items={[
           { name: 'Главная', url: '/' },
@@ -138,7 +172,7 @@ export default function FeaturesPage() {
             <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
               Возможности
             </p>
-            <h1 className="mt-3 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-slate-950 md:text-5xl">
+            <h1 className="mt-3 max-w-4xl break-words text-[30px] font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-4xl sm:leading-tight md:text-5xl">
               Сценарии доступа, оплаты и контроля для автоматизированной парковки
             </h1>
             <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
@@ -176,18 +210,6 @@ export default function FeaturesPage() {
             ))}
           </div>
 
-          <figure className="mt-10 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="relative aspect-[1122/1402] w-full">
-              <Image
-                src="/images/content/features-hub.webp"
-                alt="Инфографика о возможностях РОСПАРК: сценарии доступа, онлайн-оплата, распознавание номеров и контроль парковки"
-                fill
-                sizes="(min-width: 1024px) 1088px, calc(100vw - 32px)"
-                className="object-cover"
-                priority
-              />
-            </div>
-          </figure>
         </div>
       </section>
 
@@ -233,9 +255,35 @@ export default function FeaturesPage() {
                       </Link>
                     ))}
                 </div>
+
+                {group.id === 'client' ? (
+                  <FeatureIllustration
+                    id="client-scenarios-visual"
+                    title="Четыре сценария доступа в одной системе"
+                    src="/images/content/rospark-features-client-scenarios.webp"
+                    alt="Четыре сценария доступа на парковку для постоянных, арендных, разовых и гостевых клиентов"
+                    className="mt-8"
+                  />
+                ) : (
+                  <FeatureIllustration
+                    id="payment-anpr-visual"
+                    title="Распознавание, оплата и автоматический выезд"
+                    src="/images/content/rospark-features-payment-anpr.webp"
+                    alt="Последовательность работы парковки: распознавание автомобиля, безналичная оплата и автоматический выезд"
+                    className="mt-8"
+                  />
+                )}
               </div>
             ))}
           </div>
+
+          <FeatureIllustration
+            id="unified-control-visual"
+            title="Единое управление парковкой"
+            src="/images/content/rospark-features-unified-control.webp"
+            alt="Единая система связывает въездное оборудование, оплату, рабочее место оператора и контроль безопасности"
+            className="mt-12"
+          />
         </div>
       </section>
 
@@ -252,6 +300,6 @@ export default function FeaturesPage() {
         minimalFields
         className="bg-white"
       />
-    </main>
+    </div>
   );
 }

@@ -9,22 +9,6 @@ import { canonicalUrl } from '@/app/config/site-url';
 import { getAllContentMeta, getContentBySlug } from '@/lib/content-parser';
 
 const featureVisuals: Record<string, { src: string; alt: string }> = {
-  'postoyannie-klienti': {
-    src: '/images/features/explainers/postoyannie-klienti.webp',
-    alt: 'Инфографика РОСПАРК: сценарии доступа для постоянных клиентов, резидентов и сотрудников',
-  },
-  'arendnie-klienti': {
-    src: '/images/features/explainers/arendnie-klienti.webp',
-    alt: 'Инфографика РОСПАРК: доступ арендных клиентов по договорам, организациям и лимитам',
-  },
-  'razovie-klienti': {
-    src: '/images/features/explainers/razovie-klienti.webp',
-    alt: 'Инфографика РОСПАРК: разовые клиенты, тарифы, онлайн-оплата и быстрый выезд',
-  },
-  'gostevie-klienti': {
-    src: '/images/features/explainers/gostevie-klienti.webp',
-    alt: 'Инфографика РОСПАРК: гостевые клиенты, заявки, временный доступ и аудит событий',
-  },
   'onlain-oplata': {
     src: '/images/content/online-payment.webp',
     alt: 'Инфографика РОСПАРК: онлайн-оплата парковки, QR-код, приложение, сайт и платёжные сценарии',
