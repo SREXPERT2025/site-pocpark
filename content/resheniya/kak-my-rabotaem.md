@@ -1,7 +1,8 @@
 ---
 title: "Как мы работаем"
 description: "Пошаговый процесс внедрения автоматизации парковки РОСПАРК: от обследования объекта до поддержки и развития системы."
-coverImage: "/images/content/how-we-work.webp"
+coverImage: "/images/content/rospark-solutions-project-steps.webp"
+coverImageAspect: "1896/829"
 cta:
   title: "Хотите понять, как это будет на вашем объекте?"
   description: "Покажем весь процесс внедрения именно для вашего объекта — без абстракций и маркетинга."
