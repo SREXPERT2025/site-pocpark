@@ -40,7 +40,7 @@ export const metadata: Metadata = {
 
 export default function CompanyPage() {
   return (
-    <main className="min-h-screen overflow-hidden bg-white">
+    <div className="min-h-screen overflow-hidden bg-white">
       <BreadcrumbJsonLd
         items={[
           { name: 'Главная', url: '/' },
@@ -228,6 +228,6 @@ export default function CompanyPage() {
           </div>
         </div>
       </section>
-    </main>
+    </div>
   );
 }
