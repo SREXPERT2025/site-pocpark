@@ -117,7 +117,7 @@ export const metadata: Metadata = {
 
 export default function WarehouseSolutionsPage() {
   return (
-    <main className="min-h-screen min-w-0 overflow-hidden bg-white">
+    <div className="min-h-screen min-w-0 overflow-hidden bg-white">
       <FaqJsonLd items={faq} />
       <BreadcrumbJsonLd
         items={[
@@ -331,6 +331,6 @@ export default function WarehouseSolutionsPage() {
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

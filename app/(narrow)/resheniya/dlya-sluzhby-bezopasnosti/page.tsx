@@ -58,7 +58,7 @@ export default function SecurityPage() {
         ];
 
   return (
-    <main className="bg-white">
+    <div className="bg-white">
       <FaqJsonLd items={faq} />
       <BreadcrumbJsonLd
         items={[
@@ -92,6 +92,6 @@ export default function SecurityPage() {
       <Reliability />
       <CallToAction />
 
-    </main>
+    </div>
   );
 }

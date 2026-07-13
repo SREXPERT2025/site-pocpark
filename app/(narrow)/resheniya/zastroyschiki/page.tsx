@@ -55,7 +55,7 @@ export default function ZastroyschikiPage() {
         ];
 
   return (
-    <main className="min-h-screen min-w-0 overflow-hidden bg-white">
+    <div className="min-h-screen min-w-0 overflow-hidden bg-white">
       <FaqJsonLd items={faq} />
       <BreadcrumbJsonLd
         items={[
@@ -193,6 +193,6 @@ export default function ZastroyschikiPage() {
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

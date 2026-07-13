@@ -55,7 +55,7 @@ export default function TorgovyeCentresPage() {
         ];
 
   return (
-    <main className="min-h-screen min-w-0 overflow-hidden bg-white">
+    <div className="min-h-screen min-w-0 overflow-hidden bg-white">
       <FaqJsonLd items={faq} />
       <BreadcrumbJsonLd
         items={[
@@ -192,6 +192,6 @@ export default function TorgovyeCentresPage() {
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

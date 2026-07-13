@@ -60,7 +60,7 @@ export default function EngineersPage() {
         ];
 
   return (
-    <main className="bg-white">
+    <div className="bg-white">
       <FaqJsonLd items={faq} />
       <BreadcrumbJsonLd
         items={[
@@ -94,6 +94,6 @@ export default function EngineersPage() {
       <Documentation />
       <CallToAction />
 
-    </main>
+    </div>
   );
 }

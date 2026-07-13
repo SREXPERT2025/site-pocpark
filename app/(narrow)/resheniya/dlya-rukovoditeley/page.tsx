@@ -59,7 +59,7 @@ export default function RukovoditeliPage() {
         ];
 
   return (
-    <main className="bg-white">
+    <div className="bg-white">
       <FaqJsonLd items={faq} />
       <BreadcrumbJsonLd
         items={[
@@ -93,6 +93,6 @@ export default function RukovoditeliPage() {
       <ObjectTypes />
       <CallToAction />
 
-    </main>
+    </div>
   );
 }
