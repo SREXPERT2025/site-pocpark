@@ -34,6 +34,10 @@ ctas:
 - запрет повторного въезда без новой заявки;
 - журнал событий для СБ.
 
+<figure>
+  <img src="/images/vozmozhnosti/vozmozhnosti-razovye-fotofiksaciya.webp" alt="Камера фиксирует автомобиль гостя и событие проезда через парковочный шлагбаум" width="1600" height="893" loading="lazy" decoding="async">
+</figure>
+
 ## Частые вопросы
 
 **Можно ли выдавать гостям доступ на несколько дней?**
