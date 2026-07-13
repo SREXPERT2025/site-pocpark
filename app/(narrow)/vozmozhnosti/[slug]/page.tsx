@@ -13,10 +13,6 @@ const featureVisuals: Record<string, { src: string; alt: string }> = {
     src: '/images/features/explainers/arendnie-klienti.webp',
     alt: 'Инфографика РОСПАРК: доступ арендных клиентов по договорам, организациям и лимитам',
   },
-  'razovie-klienti': {
-    src: '/images/features/explainers/razovie-klienti.webp',
-    alt: 'Инфографика РОСПАРК: разовые клиенты, тарифы, онлайн-оплата и быстрый выезд',
-  },
   'gostevie-klienti': {
     src: '/images/features/explainers/gostevie-klienti.webp',
     alt: 'Инфографика РОСПАРК: гостевые клиенты, заявки, временный доступ и аудит событий',

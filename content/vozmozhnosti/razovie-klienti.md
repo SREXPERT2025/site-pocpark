@@ -33,13 +33,25 @@ ctas:
 - не нужен билет;
 - удобно в плохую погоду и в часы пик.
 
+<figure>
+  <img src="/images/vozmozhnosti/vozmozhnosti-razovye-bystryi-proezd-bez-kart.webp" alt="Разовый посетитель въезжает на парковку по распознанному номеру автомобиля без билета" width="1600" height="893" loading="lazy" decoding="async">
+</figure>
+
 ### 2) По билету/QR
 - привычная схема для торгового центра;
 - QR-код выводит на оплату.
 
+<figure>
+  <img src="/images/vozmozhnosti/vozmozhnosti-razovye-vezd-po-karte-ili-biletu.webp" alt="Разовый посетитель использует парковочный билет или QR-код для въезда" width="1600" height="893" loading="lazy" decoding="async">
+</figure>
+
 ### 3) Въезд по собственному идентификатору
 - подходит для спец-сценариев (мероприятия, предоплаченные пропуска, промо);
 - идентификатор может выдаваться системой объекта.
+
+<figure>
+  <img src="/images/vozmozhnosti/vozmozhnosti-razovye-svoi-identifikator.webp" alt="Разовый посетитель предъявляет собственный идентификатор на въездной стойке" width="1600" height="893" loading="lazy" decoding="async">
+</figure>
 
 ## Частые вопросы
 
