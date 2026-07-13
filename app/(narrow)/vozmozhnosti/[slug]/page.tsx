@@ -9,10 +9,6 @@ import { canonicalUrl } from '@/app/config/site-url';
 import { getAllContentMeta, getContentBySlug } from '@/lib/content-parser';
 
 const featureVisuals: Record<string, { src: string; alt: string }> = {
-  'postoyannie-klienti': {
-    src: '/images/features/explainers/postoyannie-klienti.webp',
-    alt: 'Инфографика РОСПАРК: сценарии доступа для постоянных клиентов, резидентов и сотрудников',
-  },
   'arendnie-klienti': {
     src: '/images/features/explainers/arendnie-klienti.webp',
     alt: 'Инфографика РОСПАРК: доступ арендных клиентов по договорам, организациям и лимитам',
