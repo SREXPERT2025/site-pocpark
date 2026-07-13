@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <main className="pt-0">
+    <div className="pt-0">
       <Hero />
 
       <div className="flex flex-col gap-24">
@@ -36,6 +36,6 @@ export default function HomePage() {
         <LeadForm />
 
       </div>
-    </main>
+    </div>
   );
 }
