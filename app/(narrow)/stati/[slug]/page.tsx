@@ -100,7 +100,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         </section>
       ) : null}
 
-      <main className="mx-auto mt-12 max-w-4xl">
+      <div className="mx-auto mt-12 max-w-4xl">
         <article
           className="prose prose-slate max-w-none prose-headings:scroll-mt-28 prose-a:text-accent-primary"
           dangerouslySetInnerHTML={{ __html: article.contentHtml }}
@@ -117,7 +117,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             compact
           />
         </div>
-      </main>
+      </div>
     </div>
   );
 }
