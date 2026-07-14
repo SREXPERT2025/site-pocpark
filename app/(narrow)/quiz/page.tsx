@@ -152,11 +152,18 @@ function resolveContent(source?: string) {
 }
 
 export const metadata: Metadata = {
-  title: 'Расчёт проекта | РОСПАРК',
+  title: 'Расчёт проекта',
   description:
     'Ответьте на несколько вопросов — мы подготовим предварительную оценку конфигурации, бюджета и сценария работы парковки.',
   alternates: {
     canonical: canonicalUrl('/quiz'),
+  },
+  openGraph: {
+    title: 'Расчёт проекта',
+    description:
+      'Ответьте на несколько вопросов — мы подготовим предварительную оценку конфигурации, бюджета и сценария работы парковки.',
+    url: canonicalUrl('/quiz'),
+    type: 'website',
   },
 };
 

@@ -27,7 +27,7 @@ export function generateMetadata({
   if (!data) return { title: 'Проект не найден' };
 
   return {
-    title: `${data.title} — Проекты РОСПАРК`,
+    title: `${data.title} — Проекты`,
     description: data.description,
     alternates: {
       canonical: canonicalUrl(`/keysy/${params.slug}`),
@@ -36,7 +36,7 @@ export function generateMetadata({
       title: data.title,
       description: data.description,
       url: canonicalUrl(`/keysy/${params.slug}`),
-      images: data.coverImage ? [data.coverImage] : undefined,
+      images: data.coverImage ? [canonicalUrl(data.coverImage)] : undefined,
     },
   };
 }

@@ -32,6 +32,13 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
     alternates: {
       canonical: canonicalUrl(`/vozmozhnosti/${params.slug}`),
     },
+    openGraph: {
+      title: data.title,
+      description: data.description,
+      url: canonicalUrl(`/vozmozhnosti/${params.slug}`),
+      type: 'website',
+      images: data.coverImage ? [canonicalUrl(data.coverImage)] : undefined,
+    },
   };
 }
 

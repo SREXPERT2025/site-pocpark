@@ -44,7 +44,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
       description: article.description,
       url: canonicalUrl(`/stati/${params.slug}`),
       type: 'article',
-      images: article.coverImage ? [article.coverImage] : undefined,
+      images: article.coverImage ? [canonicalUrl(article.coverImage)] : undefined,
     },
   };
 }

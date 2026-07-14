@@ -17,6 +17,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: canonicalUrl('/keysy'),
   },
+  openGraph: {
+    title: 'Проекты',
+    description: 'Реализованные проекты РОСПАРК: задачи, сроки, метрики, результат.',
+    url: canonicalUrl('/keysy'),
+    type: 'website',
+  },
 };
 
 type SearchParams = {

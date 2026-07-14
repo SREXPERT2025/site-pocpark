@@ -12,6 +12,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: canonicalUrl('/'),
   },
+  openGraph: {
+    title: 'РОСПАРК — автоматизация парковок нового поколения',
+    description: 'Инженерные решения для автоматизации парковок: оборудование, проекты, внедрение.',
+    url: canonicalUrl('/'),
+    type: 'website',
+  },
 };
 
 export default function HomePage() {
