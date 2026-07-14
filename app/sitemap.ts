@@ -8,56 +8,54 @@ import { absoluteUrl } from '@/app/config/site-url';
  * - Добавляет контентные страницы из /content (MD)
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
-
   // Статические страницы (TSX) из Sitemap v1.1
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: absoluteUrl('/'), lastModified: now },
-    { url: absoluteUrl('/o-kompanii'), lastModified: now },
-    { url: absoluteUrl('/contacts'), lastModified: now },
-    { url: absoluteUrl('/oborudovanie'), lastModified: now },
-    { url: absoluteUrl('/keysy'), lastModified: now },
-    { url: absoluteUrl('/stati'), lastModified: now },
-    { url: absoluteUrl('/vozmozhnosti'), lastModified: now },
-    { url: absoluteUrl('/resheniya'), lastModified: now },
-    { url: absoluteUrl('/quiz'), lastModified: now },
-    { url: absoluteUrl('/privacy'), lastModified: now },
-    { url: absoluteUrl('/soglasie-na-obrabotku-personalnyh-dannyh'), lastModified: now },
+    { url: absoluteUrl('/') },
+    { url: absoluteUrl('/o-kompanii') },
+    { url: absoluteUrl('/contacts') },
+    { url: absoluteUrl('/oborudovanie') },
+    { url: absoluteUrl('/keysy') },
+    { url: absoluteUrl('/stati') },
+    { url: absoluteUrl('/vozmozhnosti') },
+    { url: absoluteUrl('/resheniya') },
+    { url: absoluteUrl('/quiz') },
+    { url: absoluteUrl('/privacy') },
+    { url: absoluteUrl('/soglasie-na-obrabotku-personalnyh-dannyh') },
 
     // Решения (коммерческие страницы на TSX)
-    { url: absoluteUrl('/resheniya/dlya-rukovoditeley'), lastModified: now },
-    { url: absoluteUrl('/resheniya/dlya-inzhenerov'), lastModified: now },
-    { url: absoluteUrl('/resheniya/dlya-sluzhby-bezopasnosti'), lastModified: now },
-    { url: absoluteUrl('/resheniya/torgovye-centry'), lastModified: now },
-    { url: absoluteUrl('/resheniya/biznes-centry'), lastModified: now },
-    { url: absoluteUrl('/resheniya/skladskie-kompleksy'), lastModified: now },
-    { url: absoluteUrl('/resheniya/zastroyschiki'), lastModified: now },
+    { url: absoluteUrl('/resheniya/dlya-rukovoditeley') },
+    { url: absoluteUrl('/resheniya/dlya-inzhenerov') },
+    { url: absoluteUrl('/resheniya/dlya-sluzhby-bezopasnosti') },
+    { url: absoluteUrl('/resheniya/torgovye-centry') },
+    { url: absoluteUrl('/resheniya/biznes-centry') },
+    { url: absoluteUrl('/resheniya/skladskie-kompleksy') },
+    { url: absoluteUrl('/resheniya/zastroyschiki') },
 
     // Обзорные страницы (TSX, не в меню, но полезны для индексации / AI)
-    { url: absoluteUrl('/resheniya/sravnenie-podhodov'), lastModified: now },
+    { url: absoluteUrl('/resheniya/sravnenie-podhodov') },
   ];
 
   // Контентные страницы из /content (MD)
   const dynamicRoutes: MetadataRoute.Sitemap = [
     ...getAllContentMeta('resheniya').map((m) => ({
       url: absoluteUrl(`/resheniya/${m.slug}`),
-      lastModified: m.lastModified ? new Date(m.lastModified) : now,
+      lastModified: m.lastModified ? new Date(m.lastModified) : undefined,
     })),
     ...getAllContentMeta('vozmozhnosti').map((m) => ({
       url: absoluteUrl(`/vozmozhnosti/${m.slug}`),
-      lastModified: m.lastModified ? new Date(m.lastModified) : now,
+      lastModified: m.lastModified ? new Date(m.lastModified) : undefined,
     })),
     ...getAllContentMeta('oborudovanie').map((m) => ({
       url: absoluteUrl(`/oborudovanie/${m.slug}`),
-      lastModified: m.lastModified ? new Date(m.lastModified) : now,
+      lastModified: m.lastModified ? new Date(m.lastModified) : undefined,
     })),
     ...getAllContentMeta('keysy').map((m) => ({
       url: absoluteUrl(`/keysy/${m.slug}`),
-      lastModified: m.lastModified ? new Date(m.lastModified) : now,
+      lastModified: m.lastModified ? new Date(m.lastModified) : undefined,
     })),
     ...getAllContentMeta('stati').map((m) => ({
       url: absoluteUrl(`/stati/${m.slug}`),
-      lastModified: m.lastModified ? new Date(m.lastModified) : now,
+      lastModified: m.lastModified ? new Date(m.lastModified) : undefined,
     })),
   ];
 
