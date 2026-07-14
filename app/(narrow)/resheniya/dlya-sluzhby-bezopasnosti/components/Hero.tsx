@@ -12,23 +12,24 @@ export default function Hero() {
             🛡 Решения для службы безопасности
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-            Полный контроль въезда и выезда
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight break-words hyphens-none">
+            Управляемый контроль въезда и выезда
             <br />
             <span className="text-red-400">
-              без человеческого фактора
+              с журналом событий и ролями доступа
             </span>
           </h1>
 
           <p className="text-xl text-slate-300 mb-8 max-w-3xl">
-            Система фиксирует каждый проезд, хранит фото- и видеоархив,
-            блокирует нарушителей и работает даже при отключении сети.
+            Система фиксирует события проезда, хранит связанные материалы,
+            применяет настроенные правила доступа и поддерживает локальные
+            сценарии при предусмотренной конфигурации.
           </p>
 
           <ul className="grid sm:grid-cols-2 gap-4 mb-10 text-slate-300">
             <li className="flex items-center gap-3">
               <span className="text-red-400">■</span>
-              Фотофиксация каждого въезда и выезда
+              Фотофиксация событий въезда и выезда
             </li>
             <li className="flex items-center gap-3">
               <span className="text-red-400">■</span>
@@ -40,7 +41,7 @@ export default function Hero() {
             </li>
             <li className="flex items-center gap-3">
               <span className="text-red-400">■</span>
-              Работа без интернета и при ЧС
+              Локальные сценарии при потере связи
             </li>
           </ul>
 
