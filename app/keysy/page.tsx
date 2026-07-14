@@ -20,9 +20,21 @@ export const metadata: Metadata = {
 };
 
 type SearchParams = {
-  format?: string;
+  category?: string;
   sort?: ProjectsSortKey;
 };
+
+function projectsCountLabel(count: number) {
+  const lastTwoDigits = count % 100;
+  const lastDigit = count % 10;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return `${count} проектов`;
+  }
+  if (lastDigit === 1) return `${count} проект`;
+  if (lastDigit >= 2 && lastDigit <= 4) return `${count} проекта`;
+  return `${count} проектов`;
+}
 
 export default function KeysyIndex({
   searchParams,
@@ -31,25 +43,21 @@ export default function KeysyIndex({
 }) {
   const all = getAllContentMeta('keysy');
 
-  const formats = Array.from(
-    new Set(all.map((m) => (m as any).format).filter(Boolean))
-  ) as string[];
+  const categories = Array.from(
+    new Set(all.map((m) => m.category).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b, 'ru')) as string[];
 
-  const selectedFormat = searchParams?.format;
-  const selectedSort = (searchParams?.sort ?? 'newest') as ProjectsSortKey;
+  const selectedCategory = searchParams?.category;
+  const selectedSort = (searchParams?.sort ?? 'title_asc') as ProjectsSortKey;
 
   const filtered = all.filter((m) => {
-    if (!selectedFormat) return true;
-    return (m as any).format === selectedFormat;
+    if (!selectedCategory) return true;
+    return m.category === selectedCategory;
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    if (selectedSort === 'title_asc') {
-      return a.title.localeCompare(b.title, 'ru');
-    }
-    const da = a.lastModified ? Date.parse(a.lastModified) : 0;
-    const db = b.lastModified ? Date.parse(b.lastModified) : 0;
-    return db - da;
+    const direction = selectedSort === 'title_desc' ? -1 : 1;
+    return direction * a.title.localeCompare(b.title, 'ru');
   });
 
   const listItems = sorted.map((m) => ({
@@ -89,8 +97,8 @@ export default function KeysyIndex({
       <section className="w-full px-[20px] pt-10">
 
         <ProjectsControls
-          formats={formats}
-          selectedFormat={selectedFormat}
+          categories={categories}
+          selectedCategory={selectedCategory}
           selectedSort={selectedSort}
         />
 
@@ -102,7 +110,7 @@ export default function KeysyIndex({
             </h2>
 
             <span className="text-sm text-gray-500">
-              {sorted.length} проектов
+              {projectsCountLabel(sorted.length)}
             </span>
           </div>
 
