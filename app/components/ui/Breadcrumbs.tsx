@@ -6,7 +6,7 @@ export default function Breadcrumbs({ items }: { items: Breadcrumb[] }) {
   if (!items?.length) return null;
 
   return (
-    <nav aria-label="Breadcrumb" className="mb-6">
+    <nav aria-label="Хлебные крошки" className="mb-6">
       <ol className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
         {items.map((item, idx) => {
           const isLast = idx === items.length - 1;

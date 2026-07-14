@@ -85,7 +85,10 @@ export default function Header() {
             <div className="h-[34px] flex items-center justify-center">
               <div className="hidden lg:flex items-center w-full">
                 {/* Шрифт 15px */}
-                <nav className="flex w-full items-center justify-between text-[15px] leading-[22px] font-medium text-[#0B1220]">
+                <nav
+                  aria-label="Основная навигация"
+                  className="flex w-full items-center justify-between text-[15px] leading-[22px] font-medium text-[#0B1220]"
+                >
                   {navigation.map((item) => (
                     <div key={item.label} className="flex-1 flex justify-center">
                       <DesktopNavItem item={item} />
