@@ -7,7 +7,7 @@ import { getAllContentMeta } from '@/lib/content-parser';
 import { getAllEquipment } from '@/lib/equipment';
 
 export const metadata: Metadata = {
-  title: 'Оборудование для автоматизации парковки | РОСПАРК',
+  title: 'Оборудование для автоматизации парковки',
   description:
     'Каталог оборудования РОСПАРК для автоматизации парковок: стойки въезда и выезда, шлагбаумы, терминалы оплаты, табло и светофоры.',
   alternates: {

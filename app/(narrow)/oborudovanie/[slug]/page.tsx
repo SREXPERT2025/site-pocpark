@@ -48,7 +48,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   const coverImage = typeof data.coverImage === 'string' ? data.coverImage : undefined;
 
   return {
-    title: `${title} | Оборудование РОСПАРК`,
+    title: `${title} | Оборудование`,
     description,
     alternates: {
       canonical: pageUrl,
