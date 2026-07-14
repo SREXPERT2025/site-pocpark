@@ -11,6 +11,20 @@ import LeadFormSection from '@/app/components/forms/LeadFormSection';
 import { canonicalUrl } from '@/app/config/site-url';
 import { getAllContentMeta, getContentBySlug } from '@/lib/content-parser';
 
+function formatArticleDate(value?: string) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}
+
 export function generateStaticParams() {
   return getAllContentMeta('stati').map((article) => ({ slug: article.slug }));
 }
@@ -38,6 +52,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
 export default function ArticlePage({ params }: { params: { slug: string } }) {
   const article = getContentBySlug('stati', params.slug);
   if (!article) notFound();
+  const updatedAt = formatArticleDate(article.lastModified);
 
   return (
     <div className="w-full px-[20px] pt-6">
@@ -72,6 +87,13 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         description={article.description}
         cta={{ label: 'Обсудить проект', href: `/quiz?source=article-${article.slug}` }}
       />
+
+      {article.category || updatedAt ? (
+        <div className="mx-auto mt-5 flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 text-sm text-text-secondary">
+          {article.category ? <span className="font-medium text-text-primary">{article.category}</span> : null}
+          {updatedAt ? <time dateTime={article.lastModified}>Обновлено {updatedAt}</time> : null}
+        </div>
+      ) : null}
 
       {article.coverImage ? (
         <figure className="mx-auto mt-8 max-w-5xl overflow-hidden rounded-md border border-border-primary bg-bg-secondary">
