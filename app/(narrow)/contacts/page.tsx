@@ -4,11 +4,18 @@ import LeadFormSection from '@/app/components/forms/LeadFormSection'
 import { canonicalUrl } from '@/app/config/site-url'
 
 export const metadata: Metadata = {
-  title: 'Контакты — РОСПАРК',
+  title: 'Контакты',
   description:
     'Контакты компании РОСПАРК. Консультации по автоматизации парковок, техническая поддержка, коммерческие предложения.',
   alternates: {
     canonical: canonicalUrl('/contacts'),
+  },
+  openGraph: {
+    title: 'Контакты',
+    description:
+      'Контакты компании РОСПАРК. Консультации по автоматизации парковок, техническая поддержка, коммерческие предложения.',
+    url: canonicalUrl('/contacts'),
+    type: 'website',
   },
 }
 
