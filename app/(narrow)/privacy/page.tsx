@@ -33,7 +33,7 @@ function LegalBlocks({ blocks }: { blocks: LegalBlock[] }) {
 
 export default function Page() {
   return (
-    <main className="bg-slate-50 py-10 sm:py-16">
+    <div className="bg-slate-50 py-10 sm:py-16">
       <article className="mx-auto max-w-3xl rounded-3xl border border-slate-200 bg-white px-4 py-8 text-slate-700 shadow-sm sm:px-8 lg:px-10">
         <header className="mb-8 border-b border-slate-200 pb-6">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-blue-700">
@@ -57,6 +57,6 @@ export default function Page() {
           ))}
         </div>
       </article>
-    </main>
+    </div>
   );
 }

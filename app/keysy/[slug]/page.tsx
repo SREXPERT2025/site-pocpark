@@ -46,8 +46,10 @@ function scoreSimilar(
   itemTags: string[],
   sameCategory: boolean
 ) {
+  if (!sameCategory) return 0;
+
   const base = new Set((baseTags ?? []).map((t) => t.toLowerCase()));
-  let score = sameCategory ? 3 : 0;
+  let score = 3;
   (itemTags ?? []).forEach((t) => {
     if (base.has(String(t).toLowerCase())) score += 2;
   });
@@ -176,7 +178,7 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
                   description={m.description}
                   href={`/keysy/${m.slug}`}
                   coverImage={m.coverImage}
-                  format={(m as any).format}
+                  category={m.category}
                   tags={m.tags}
                 />
               ))}

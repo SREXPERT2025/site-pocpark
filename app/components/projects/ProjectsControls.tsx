@@ -3,11 +3,11 @@
 import { useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-export type ProjectsSortKey = 'newest' | 'title_asc';
+export type ProjectsSortKey = 'title_asc' | 'title_desc';
 
 type Props = {
-  formats: string[]; // ['text','video']
-  selectedFormat?: string;
+  categories: string[];
+  selectedCategory?: string;
   selectedSort?: ProjectsSortKey;
 };
 
@@ -25,21 +25,23 @@ function buildQueryString(
 }
 
 export default function ProjectsControls({
-  formats,
-  selectedFormat,
-  selectedSort = 'newest',
+  categories,
+  selectedCategory,
+  selectedSort = 'title_asc',
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const formatOptions = useMemo(() => {
-    const base = [{ value: 'all', label: 'Все' }];
-    const mapped = (formats ?? []).map((f) => ({
-      value: f,
-      label: f === 'video' ? 'Видео' : f === 'text' ? 'Текст' : f,
-    }));
-    return [...base, ...mapped];
-  }, [formats]);
+  const categoryOptions = useMemo(
+    () => [
+      { value: 'all', label: 'Все типы объектов' },
+      ...(categories ?? []).map((category) => ({
+        value: category,
+        label: category,
+      })),
+    ],
+    [categories]
+  );
 
   function onChange(updates: Record<string, string | undefined>) {
     const current =
@@ -55,14 +57,14 @@ export default function ProjectsControls({
       <div className="grid gap-4 md:grid-cols-2">
         <div>
           <label className="block text-xs font-semibold text-text-secondary">
-            Формат
+            Тип объекта
           </label>
           <select
             className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2 text-sm"
-            value={selectedFormat ?? 'all'}
-            onChange={(e) => onChange({ format: e.target.value })}
+            value={selectedCategory ?? 'all'}
+            onChange={(e) => onChange({ category: e.target.value })}
           >
-            {formatOptions.map((o) => (
+            {categoryOptions.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>
@@ -79,8 +81,8 @@ export default function ProjectsControls({
             value={selectedSort}
             onChange={(e) => onChange({ sort: e.target.value })}
           >
-            <option value="newest">Сначала новые</option>
             <option value="title_asc">По названию (А→Я)</option>
+            <option value="title_desc">По названию (Я→А)</option>
           </select>
         </div>
       </div>

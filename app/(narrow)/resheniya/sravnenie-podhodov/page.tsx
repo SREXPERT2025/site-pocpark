@@ -25,12 +25,12 @@ export const metadata: Metadata = {
 
 export default function ComparisonApproachesPage() {
   return (
-    <main className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
       <Hero />
       <ComparisonTable />
       <ApproachCards />
       <TcoSection />
       <CallToAction />
-    </main>
+    </div>
   );
 }

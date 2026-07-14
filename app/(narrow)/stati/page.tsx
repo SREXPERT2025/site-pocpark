@@ -81,7 +81,6 @@ export default function ArticlesPage() {
               description={article.description}
               href={`/stati/${article.slug}`}
               coverImage={article.coverImage}
-              format="text"
               tags={article.tags}
             />
           ))}

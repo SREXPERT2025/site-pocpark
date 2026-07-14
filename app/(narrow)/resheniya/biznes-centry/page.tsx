@@ -55,7 +55,7 @@ export default function BiznesCentresPage() {
         ];
 
   return (
-    <main className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
       <FaqJsonLd items={faq} />
       <BreadcrumbJsonLd
         items={[
@@ -192,6 +192,6 @@ export default function BiznesCentresPage() {
           </Link>
         </div>
       </section>
-    </main>
+    </div>
   );
 }

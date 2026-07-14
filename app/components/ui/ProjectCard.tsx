@@ -6,8 +6,9 @@ export type ProjectCardProps = {
   description: string;
   href: string;
   coverImage?: string;
-  format?: string;
+  category?: string;
   tags?: string[];
+  imageSizes?: string;
 };
 
 export default function ProjectCard({
@@ -15,13 +16,12 @@ export default function ProjectCard({
   description,
   href,
   coverImage,
-  format,
+  category,
   tags,
+  imageSizes = '(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw',
 }: ProjectCardProps) {
   const chips = (tags ?? []).slice(0, 3);
   const extraCount = Math.max(0, (tags?.length ?? 0) - chips.length);
-  const formatLabel =
-    format === 'video' ? 'Видео' : format === 'text' ? 'Текст' : undefined;
 
   return (
     <Link
@@ -34,7 +34,7 @@ export default function ProjectCard({
             src={coverImage}
             alt={title}
             fill
-            sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+            sizes={imageSizes}
             className="object-cover transition duration-300 group-hover:scale-[1.04]"
           />
         ) : (
@@ -49,9 +49,9 @@ export default function ProjectCard({
 
       <div className="p-5">
         <div className="flex flex-wrap items-center gap-2">
-          {formatLabel && (
+          {category && (
             <span className="rounded-full bg-text-primary px-2.5 py-1 text-[11px] font-semibold text-bg-primary">
-              {formatLabel}
+              {category}
             </span>
           )}
           {chips.map((t) => (
