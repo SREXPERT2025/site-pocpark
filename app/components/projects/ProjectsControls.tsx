@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 export type ProjectsSortKey = 'title_asc' | 'title_desc';
@@ -31,6 +31,8 @@ export default function ProjectsControls({
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const categorySelectId = useId();
+  const sortSelectId = useId();
 
   const categoryOptions = useMemo(
     () => [
@@ -56,10 +58,14 @@ export default function ProjectsControls({
     <div className="mt-10 rounded-2xl border border-border bg-white p-4 shadow-soft">
       <div className="grid gap-4 md:grid-cols-2">
         <div>
-          <label className="block text-xs font-semibold text-text-secondary">
+          <label
+            htmlFor={categorySelectId}
+            className="block text-xs font-semibold text-text-secondary"
+          >
             Тип объекта
           </label>
           <select
+            id={categorySelectId}
             className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2 text-sm"
             value={selectedCategory ?? 'all'}
             onChange={(e) => onChange({ category: e.target.value })}
@@ -73,10 +79,14 @@ export default function ProjectsControls({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-text-secondary">
+          <label
+            htmlFor={sortSelectId}
+            className="block text-xs font-semibold text-text-secondary"
+          >
             Сортировка
           </label>
           <select
+            id={sortSelectId}
             className="mt-2 w-full rounded-xl border border-border bg-white px-3 py-2 text-sm"
             value={selectedSort}
             onChange={(e) => onChange({ sort: e.target.value })}

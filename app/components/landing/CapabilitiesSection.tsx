@@ -142,7 +142,11 @@ export default function CapabilitiesSection() {
         </p>
 
         {/* Tabs */}
-        <div className="mx-auto mt-8 w-full max-w-[860px] overflow-hidden rounded-[20px] bg-[#F5F5F7] p-[2px]">
+        <div
+          className="mx-auto mt-8 w-full max-w-[860px] overflow-hidden rounded-[20px] bg-[#F5F5F7] p-[2px]"
+          role="group"
+          aria-label="Раздел управления парковкой"
+        >
           <div className="grid grid-cols-1 gap-[2px] sm:grid-cols-3">
             {GROUPS.map((group) => {
               const isActive = group.id === active;
@@ -151,6 +155,7 @@ export default function CapabilitiesSection() {
                   key={group.id}
                   type="button"
                   onClick={() => setActive(group.id)}
+                  aria-pressed={isActive}
                   className={cn(
                     "min-h-[40px] min-w-0 rounded-[20px] px-4 py-2 text-[15px] leading-tight transition-colors sm:text-[16px]",
                     isActive
