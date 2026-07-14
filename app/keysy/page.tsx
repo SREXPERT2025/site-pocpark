@@ -127,8 +127,9 @@ export default function KeysyIndex({
                   description={m.description}
                   href={`/keysy/${m.slug}`}
                   coverImage={m.coverImage}
-                  format={(m as any).format}
+                  category={m.category}
                   tags={m.tags}
+                  imageSizes="(min-width: 768px) 50vw, 100vw"
                 />
               </div>
             ))}

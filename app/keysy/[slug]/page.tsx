@@ -176,7 +176,7 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
                   description={m.description}
                   href={`/keysy/${m.slug}`}
                   coverImage={m.coverImage}
-                  format={(m as any).format}
+                  category={m.category}
                   tags={m.tags}
                 />
               ))}
