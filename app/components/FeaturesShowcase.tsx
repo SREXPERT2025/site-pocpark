@@ -148,10 +148,10 @@ function SectionCarousel({
         </button>
       </div>
 
-      <div className="mt-5">
-        <p className="max-w-full break-words text-base font-semibold leading-7 text-slate-900 md:text-[20px]">
+      <div className="mt-5" aria-live="polite" aria-atomic="true">
+        <h3 className="max-w-full break-words text-base font-semibold leading-7 text-slate-900 md:text-[20px]">
           {current.title}
-        </p>
+        </h3>
         <p className="mt-3 max-w-full break-words text-sm leading-6 text-slate-600 md:text-base md:leading-7">
           {current.description}
         </p>
