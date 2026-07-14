@@ -102,6 +102,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             alt={article.title}
             width={1600}
             height={900}
+            sizes="(min-width: 1024px) 1024px, 100vw"
             className="h-auto w-full object-cover"
             priority
           />
