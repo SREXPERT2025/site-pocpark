@@ -16,7 +16,7 @@ export default function Hero() {
           </div>
 
           {/* H1 — строго один на странице */}
-          <h1 className="text-[clamp(2rem,9vw,3.75rem)] md:text-6xl font-bold leading-tight mb-6 break-words hyphens-auto [overflow-wrap:anywhere]">
+          <h1 className="text-[clamp(2rem,9vw,3.75rem)] md:text-6xl font-bold leading-tight mb-6 break-words hyphens-none">
             Как сделать парковку управляемой: <br />
             <span className="text-blue-500">
               доступ, оплата, отчётность и контроль загрузки

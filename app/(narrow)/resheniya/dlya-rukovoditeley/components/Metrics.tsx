@@ -20,14 +20,14 @@ export default function Metrics() {
           {/* Метрика 1 */}
           <div className="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 min-w-0">
             <div className="text-3xl md:text-4xl font-bold text-blue-500 mb-3 break-words">
-              +15–30%
+              Расчёт по объекту
             </div>
             <h3 className="font-bold text-lg mb-2 break-words">
               Контроль выручки и загрузки
             </h3>
             <p className="text-slate-400 text-sm">
-              За счёт прозрачного учёта выручки, снижения рисков
-              неучтённых операций и настройки тарифов.
+              Эффект оценивается по текущей выручке, загрузке,
+              тарифам и доле ручных операций.
             </p>
           </div>
 
@@ -48,14 +48,14 @@ export default function Metrics() {
           {/* Метрика 3 */}
           <div className="bg-slate-800 rounded-2xl p-6 md:p-8 border border-slate-700 min-w-0">
             <div className="text-3xl md:text-4xl font-bold text-blue-500 mb-3 break-words">
-              −0 ₽
+              Автоматизация
             </div>
             <h3 className="font-bold text-lg mb-2 break-words">
               Затраты на персонал
             </h3>
             <p className="text-slate-400 text-sm">
-              Меньше ручного труда, смен, больничных,
-              инкассации и ручного контроля.
+              Объём постоянного ручного контроля зависит от сценариев,
+              конфигурации оборудования и регламентов объекта.
             </p>
           </div>
 
@@ -68,8 +68,8 @@ export default function Metrics() {
               Круглосуточная работа
             </h3>
             <p className="text-slate-400 text-sm">
-              Система работает круглосуточно, без выходных,
-              отпусков и человеческого фактора.
+              Автоматические сценарии проезда и оплаты доступны круглосуточно,
+              а спорные ситуации остаются под контролем ответственных сотрудников.
             </p>
           </div>
 
