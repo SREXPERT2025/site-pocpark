@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Hero from '@/app/components/ui/Hero';
+import Breadcrumbs from '@/app/components/ui/Breadcrumbs';
 import ProjectCard from '@/app/components/ui/ProjectCard';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import ArticleItemListJsonLd from '@/app/components/content/ArticleItemListJsonLd';
@@ -51,6 +52,8 @@ export default function ArticlesPage() {
       />
 
       <section className="w-full px-[20px] pt-6">
+        <Breadcrumbs items={[{ label: 'Главная', href: '/' }, { label: 'Статьи' }]} />
+
         <Hero
           title="Статьи"
           description="Практические материалы об автоматизации парковок: выбор системы, доступ по номеру, гостевые сценарии, оплата и эксплуатация."
@@ -81,7 +84,9 @@ export default function ArticlesPage() {
               description={article.description}
               href={`/stati/${article.slug}`}
               coverImage={article.coverImage}
+              category={article.category}
               tags={article.tags}
+              imageSizes="(min-width: 768px) 50vw, 100vw"
             />
           ))}
         </div>
