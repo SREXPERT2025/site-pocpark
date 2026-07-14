@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Hero from '@/app/components/ui/Hero';
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs';
+import FaqBlock from '@/app/components/ui/FaqBlock';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
 import ArticleJsonLd from '@/app/components/content/ArticleJsonLd';
@@ -105,6 +106,8 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
           className="prose prose-slate max-w-none prose-headings:scroll-mt-28 prose-a:text-accent-primary"
           dangerouslySetInnerHTML={{ __html: article.contentHtml }}
         />
+
+        <FaqBlock title="Вопросы и ответы" items={article.faq ?? []} />
 
         <div className="mt-16 border-t border-border-primary pt-12">
           <LeadFormSection
