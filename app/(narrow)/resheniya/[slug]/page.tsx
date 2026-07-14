@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import { getContentBySlug, getAllContentMeta } from '@/lib/content-parser'; // Предполагаем, что парсер здесь
 import { canonicalUrl } from '@/app/config/site-url';
@@ -15,7 +16,7 @@ export function generateStaticParams() {
 }
 
 // Генерируем метаданные страницы
-export async function generateMetadata({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const data = getContentBySlug('resheniya', params.slug);
   if (!data) return { title: 'Страница не найдена' };
   
@@ -24,6 +25,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     description: data.description,
     alternates: {
       canonical: canonicalUrl(`/resheniya/${params.slug}`),
+    },
+    openGraph: {
+      title: data.title,
+      description: data.description,
+      url: canonicalUrl(`/resheniya/${params.slug}`),
+      type: 'website',
+      images: data.coverImage ? [canonicalUrl(data.coverImage)] : undefined,
     },
   };
 }
