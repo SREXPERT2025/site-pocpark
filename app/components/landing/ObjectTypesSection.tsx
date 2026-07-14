@@ -72,7 +72,7 @@ function ObjectTypeCard({ item }: { item: ObjectTypeCardItem }) {
 
         {/* микро-подсказка (появляется на hover, не раздувает блок) */}
         <div className="pointer-events-none absolute bottom-4 left-4 right-4">
-          <div className="rounded-2xl bg-black/55 px-4 py-3 opacity-0 transition duration-200 group-hover:opacity-100">
+          <div className="rounded-2xl bg-black/55 px-4 py-3 opacity-0 transition duration-200 group-hover:opacity-100 group-focus:opacity-100">
             <p className="text-[13px] leading-[18px] text-white/90">{item.focus}</p>
           </div>
         </div>
