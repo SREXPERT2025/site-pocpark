@@ -13,10 +13,10 @@ export default function Control() {
           <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
             <div className="text-3xl mb-4 text-red-600">📷</div>
             <h3 className="text-base md:text-lg font-bold mb-3 leading-snug">
-              Фиксация каждого события
+              Фиксация ключевых событий
             </h3>
             <p className="text-slate-600 mb-4">
-              Каждый въезд и выезд автоматически фиксируется системой:
+              Для событий въезда и выезда система может сохранять:
             </p>
             <ul className="list-disc list-inside text-slate-600 space-y-1">
               <li>госномер ТС</li>

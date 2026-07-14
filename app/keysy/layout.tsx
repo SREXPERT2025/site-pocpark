@@ -3,5 +3,5 @@ export default function ProjectsLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <main>{children}</main>;
+  return <main id="main-content">{children}</main>;
 }

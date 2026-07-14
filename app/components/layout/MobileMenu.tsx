@@ -162,7 +162,10 @@ export default function MobileMenu({
           </button>
         </div>
 
-        <nav className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+        <nav
+          aria-label="Основная навигация"
+          className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1"
+        >
           <div className="space-y-6 pb-6">
             {navItems.map((item, index) => {
               const hasGroups = Boolean(item.groups?.length);
