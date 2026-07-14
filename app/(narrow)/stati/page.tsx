@@ -81,7 +81,9 @@ export default function ArticlesPage() {
               description={article.description}
               href={`/stati/${article.slug}`}
               coverImage={article.coverImage}
+              category={article.category}
               tags={article.tags}
+              imageSizes="(min-width: 768px) 50vw, 100vw"
             />
           ))}
         </div>
