@@ -36,7 +36,7 @@ export function generateMetadata({
       title: data.title,
       description: data.description,
       url: canonicalUrl(`/keysy/${params.slug}`),
-      images: data.coverImage ? [data.coverImage] : undefined,
+      images: data.coverImage ? [canonicalUrl(data.coverImage)] : undefined,
     },
   };
 }

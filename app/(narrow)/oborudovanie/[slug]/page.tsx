@@ -58,7 +58,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
       description,
       url: pageUrl,
       type: 'website',
-      images: coverImage ? [coverImage] : undefined,
+      images: coverImage ? [canonicalUrl(coverImage)] : undefined,
     },
   };
 }
