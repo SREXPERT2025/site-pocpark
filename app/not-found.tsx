@@ -25,7 +25,10 @@ const primaryLinks = [
 
 export default function NotFound() {
   return (
-    <main className="mx-auto w-full max-w-[1088px] px-4 py-16 sm:px-6 lg:px-8">
+    <main
+      id="main-content"
+      className="mx-auto w-full max-w-[1088px] px-4 py-16 sm:px-6 lg:px-8"
+    >
       <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
         <p className="text-sm font-semibold uppercase tracking-[0.18em] text-blue-700">
           Страница не найдена

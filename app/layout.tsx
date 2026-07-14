@@ -42,6 +42,13 @@ export default function RootLayout({
       <body className="min-h-screen overflow-x-hidden bg-bg-primary text-text-primary">
         <OrganizationJsonLd />
 
+        <a
+          href="#main-content"
+          className="fixed left-4 top-4 z-[1300] -translate-y-[200%] rounded-md bg-white px-4 py-3 font-semibold text-slate-950 shadow-lg focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-accent-primary"
+        >
+          Перейти к основному содержанию
+        </a>
+
         {/* Header всегда виден */}
         <Header />
 
