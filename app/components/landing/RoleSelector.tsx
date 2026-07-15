@@ -38,7 +38,7 @@ const roles: RoleCardItem[] = [
     description:
       "Чёрные и белые списки, распознавание номеров и журнал событий.",
     result:
-      "Снижение операционных рисков и полный контроль доступа.",
+      "Снижение операционных рисков и управляемые сценарии доступа.",
     href: "/resheniya/dlya-sluzhby-bezopasnosti",
     imageSrc: "/images/roles/security.jpg",
     imageAlt: "Сотрудник службы безопасности",
