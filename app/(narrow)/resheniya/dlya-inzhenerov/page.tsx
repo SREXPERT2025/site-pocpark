@@ -17,7 +17,7 @@ import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
 
 export const metadata: Metadata = {
-  "title": "Автоматизация парковки для инженеров — схемы, API, надежность | РОСПАРК",
+  "title": "Автоматизация парковки для инженеров — схемы, API и эксплуатация",
   "description": "Технические решения РОСПАРК для инженеров и интеграторов: контроллеры, RS-485, Ethernet, REST API, схемы подключения, документация и поддержка. Проектирование и ТЗ.",
   "keywords": [
     "автоматизация парковки",

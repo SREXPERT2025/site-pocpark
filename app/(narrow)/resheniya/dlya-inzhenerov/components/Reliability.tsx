@@ -8,10 +8,8 @@ export default function Reliability() {
           </h2>
 
           <p className="text-lg text-slate-300 mb-12 max-w-3xl">
-            РОСПАРК проектируется как промышленная система,
-            рассчитанная на круглосуточную эксплуатацию
-            в реальных условиях — сбои связи, отключения питания,
-            человеческий фактор.
+            Конфигурация РОСПАРК проектируется с учётом режима работы объекта,
+            возможных сбоев связи, отключений питания и действий персонала.
           </p>
 
           <div className="grid md:grid-cols-2 gap-10">
@@ -24,19 +22,19 @@ export default function Reliability() {
               <ul className="space-y-4 text-slate-300">
                 <li className="flex gap-3">
                   <span className="text-emerald-400">✓</span>
-                  Работа контроллеров при отсутствии интернета
+                  Локальная логика контроллеров, если она предусмотрена проектом
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-400">✓</span>
-                  Локальные сценарии открытия/закрытия проезда
+                  Согласованные сценарии открытия и закрытия проезда
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-400">✓</span>
-                  Буферизация событий и транзакций
+                  Буферизация событий в поддерживаемой конфигурации
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-400">✓</span>
-                  Автоматическая синхронизация при восстановлении связи
+                  Синхронизация после восстановления связи
                 </li>
               </ul>
             </div>
@@ -58,7 +56,7 @@ export default function Reliability() {
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-400">✓</span>
-                  Защита от зависаний и некорректных состояний
+                  Контроль состояний оборудования и обработка ошибок
                 </li>
                 <li className="flex gap-3">
                   <span className="text-emerald-400">✓</span>
@@ -77,7 +75,7 @@ export default function Reliability() {
             <div className="grid sm:grid-cols-2 gap-6 text-slate-300">
               <div className="flex gap-3">
                 <span className="text-yellow-400">⚠</span>
-                Полный отказ сервера — контроллеры продолжают работу локально
+                Отказ сервера — переход на предусмотренный локальный сценарий
               </div>
               <div className="flex gap-3">
                 <span className="text-yellow-400">⚠</span>
@@ -85,20 +83,19 @@ export default function Reliability() {
               </div>
               <div className="flex gap-3">
                 <span className="text-yellow-400">⚠</span>
-                Потеря связи с БД — запись событий во временное хранилище
+                Потеря связи с БД — временное хранение, если оно предусмотрено архитектурой
               </div>
               <div className="flex gap-3">
                 <span className="text-yellow-400">⚠</span>
-                Ночной инцидент — удалённая диагностика без выезда
+                Ночной инцидент — удалённая диагностика при наличии защищённого доступа
               </div>
             </div>
           </div>
 
           {/* ИНЖЕНЕРНЫЙ АКЦЕНТ */}
           <div className="mt-12 text-slate-400 text-sm max-w-3xl">
-            * Все сценарии отрабатываются на этапе проектирования.
-            Мы закладываем отказоустойчивость в архитектуру,
-            а не «добавляем костыли» после запуска.
+            * Аварийные сценарии, время автономии и способы восстановления
+            согласуются на этапе проектирования под требования объекта.
           </div>
         </div>
       </div>

@@ -11,9 +11,9 @@ export default function TechStack() {
           </h2>
 
           <p className="mb-10 max-w-3xl break-words text-base leading-7 text-slate-600 sm:mb-12 sm:text-lg">
-            Система РОСПАРК строится по модульному принципу и
-            не зависит от конкретного производителя оборудования.
-            Все компоненты используют стандартные промышленные интерфейсы.
+            Система РОСПАРК строится по модульному принципу и объединяет
+            совместимые компоненты. Интерфейсы и протоколы подбираются
+            под выбранное оборудование и требования интеграции.
           </p>
 
           <div className="grid min-w-0 gap-5 md:grid-cols-2 md:gap-10">
@@ -72,7 +72,7 @@ export default function TechStack() {
                 </li>
                 <li className="flex min-w-0 items-start gap-3">
                   <span className="shrink-0 font-bold text-emerald-600">•</span>
-                  Обновления без остановки системы
+                  Плановые обновления по согласованному регламенту
                 </li>
               </ul>
             </div>
@@ -87,19 +87,19 @@ export default function TechStack() {
             <ul className="grid min-w-0 gap-4 break-words text-base leading-relaxed text-slate-300 sm:grid-cols-2 sm:text-lg">
               <li className="flex min-w-0 items-start gap-3">
                 <span className="shrink-0 text-green-400">✓</span>
-                Работа при отсутствии интернета
+                Локальный режим, если предусмотрен проектом
               </li>
               <li className="flex min-w-0 items-start gap-3">
                 <span className="shrink-0 text-green-400">✓</span>
-                Автоматическое восстановление связи
+                Восстановление и синхронизация связи
               </li>
               <li className="flex min-w-0 items-start gap-3">
                 <span className="shrink-0 text-green-400">✓</span>
-                Локальное хранение данных
+                Локальное хранение в выбранной конфигурации
               </li>
               <li className="flex min-w-0 items-start gap-3">
                 <span className="shrink-0 text-green-400">✓</span>
-                Резервирование питания и каналов связи
+                Резервирование по требованиям объекта
               </li>
             </ul>
           </div>
