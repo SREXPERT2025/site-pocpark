@@ -12,18 +12,18 @@ export default function Hero() {
             ⚙️ Решения для инженеров и служб эксплуатации
           </div>
 
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight break-words hyphens-none">
             Автоматизация парковки
             <br />
             <span className="text-blue-500">
-              без сюрпризов в эксплуатации
+              с понятными сценариями эксплуатации
             </span>
           </h1>
 
           <p className="text-xl text-slate-300 mb-10 max-w-2xl">
             Промышленное оборудование, понятная логика работы и
-            готовность к интеграциям. Мы проектируем системы, которые
-            легко смонтировать, обслуживать и масштабировать.
+            готовность к интеграциям. При проектировании учитываем монтаж,
+            обслуживание и дальнейшее масштабирование объекта.
           </p>
 
           {/* технические триггеры */}
@@ -38,7 +38,7 @@ export default function Hero() {
             </li>
             <li className="flex items-center gap-3">
               <span className="text-green-400">✓</span>
-              Работа без интернета (offline-режим)
+              Локальные режимы при выбранной архитектуре
             </li>
             <li className="flex items-center gap-3">
               <span className="text-green-400">✓</span>
