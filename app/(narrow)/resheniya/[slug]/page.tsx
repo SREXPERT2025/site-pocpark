@@ -1,14 +1,22 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Image from 'next/image';
+import { Route, SlidersHorizontal, Wrench } from 'lucide-react';
 import { getContentBySlug, getAllContentMeta } from '@/lib/content-parser'; // Предполагаем, что парсер здесь
 import { canonicalUrl } from '@/app/config/site-url';
 
 // UI Компоненты
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
+import CompactInfographic from '@/app/components/content/CompactInfographic';
 import TrustConversionBlocks from '@/app/components/content/TrustConversionBlocks';
 import Hero from '@/app/components/ui/Hero'; // Путь может отличаться
 import CtaBlock from '@/app/components/ui/CtaBlock'; // Путь может отличаться
+
+const costFactors = [
+  { title: 'Схема объекта', icon: Route },
+  { title: 'Сценарии и интеграции', icon: SlidersHorizontal },
+  { title: 'Монтаж и сопровождение', icon: Wrench },
+] as const;
 
 // Генерируем все страницы этого раздела статически при сборке
 export function generateStaticParams() {
@@ -44,6 +52,8 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
     notFound();
   }
 
+  const isCostPage = params.slug === 'stoimost-avtomatizacii-parkovki';
+
   const coverAspectClass =
     data.coverImageAspect === '1896/829'
       ? 'relative aspect-[1896/829] w-full'
@@ -71,7 +81,7 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
         cta={data.cta}
       />
 
-      {data.coverImage ? (
+      {data.coverImage && !isCostPage ? (
         <section className="mx-auto max-w-5xl px-4 pb-2 pt-8 sm:px-6">
           <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className={coverAspectClass}>
@@ -90,6 +100,16 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
             </div>
           </figure>
         </section>
+      ) : null}
+
+      {isCostPage ? (
+        <div className="mx-auto max-w-5xl px-4 pb-2 pt-8 sm:px-6">
+          <CompactInfographic
+            id="cost-factors"
+            title="Бюджет формируют три контура"
+            items={costFactors}
+          />
+        </div>
       ) : null}
 
       <div className="mx-auto max-w-4xl px-6 py-16">

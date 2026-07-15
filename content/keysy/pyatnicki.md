@@ -1,7 +1,7 @@
 ---
 title: ТЦ «Пятницкий»
 description: "Карточная система парковки: защита от стихийной стоянки жителей района, ротация мест и прозрачный учет выручки."
-coverImage: /images/cases/pyatnicki-cover.jpg
+coverImage: /images/cases/pyatnicki-cover.png
 category: Торговый центр
 tags:
   - торговые центры
