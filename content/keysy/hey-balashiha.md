@@ -1,7 +1,7 @@
 ---
 title: ТЦ «ЭйМаркет», Балашиха
 description: "Комплексная автоматизация парковки: Контроль въезда-выезда по номерам, защита от стихийной стоянки и безналичная оплата на выезде."
-coverImage: /images/cases/hey-balashiha-cover.jpg
+coverImage: /images/cases/hey-balashiha-cover.webp
 category: Торговый центр
 tags:
   - торговые центры

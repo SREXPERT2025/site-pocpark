@@ -1,7 +1,7 @@
 ---
 title: Супермаркет «EUROSPAR», Нижний Новгород
 description: "Комплексная автоматизация парковки: Интеграция с приложением «Мой Спар», въезд по QR-коду и оплата картой на выезде."
-coverImage: /images/cases/spar-nn-cover.jpg
+coverImage: /images/cases/spar-nn-cover.webp
 category: Торговый центр
 tags:
   - торговые центры
