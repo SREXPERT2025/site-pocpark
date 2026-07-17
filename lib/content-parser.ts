@@ -301,6 +301,9 @@ export function getContentBySlug<T = Record<string, any>>(
   const raw = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(raw);
   const fm: any = data || {};
+
+  if (!isPublishedContent(fm)) return null;
+
   const html = marked.parse(content) as string;
 
   const lastModified =
@@ -362,6 +365,9 @@ export function getExtendedContentBySlug(
   const raw = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(raw);
   const fm: any = data || {};
+
+  if (!isPublishedContent(fm)) return null;
+
   const html = marked.parse(content) as string;
 
   const lastModified =
