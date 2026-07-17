@@ -18,7 +18,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl('/stati') },
     { url: absoluteUrl('/vozmozhnosti') },
     { url: absoluteUrl('/resheniya') },
-    { url: absoluteUrl('/quiz') },
     { url: absoluteUrl('/privacy') },
     { url: absoluteUrl('/soglasie-na-obrabotku-personalnyh-dannyh') },
 

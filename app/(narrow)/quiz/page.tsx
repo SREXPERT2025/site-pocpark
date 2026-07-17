@@ -155,6 +155,10 @@ export const metadata: Metadata = {
   title: 'Расчёт проекта',
   description:
     'Ответьте на несколько вопросов — мы подготовим предварительную оценку конфигурации, бюджета и сценария работы парковки.',
+  robots: {
+    index: false,
+    follow: true,
+  },
   alternates: {
     canonical: canonicalUrl('/quiz'),
   },
