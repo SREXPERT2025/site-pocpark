@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="ru">
+<!--%VERSION%--><!--385-->
+<head>
+<meta charset="windows-1251">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="icon" href="gold.ico">
+<link rel="stylesheet" href="number.css" type="text/css">
+
+<script src="number.js"></script>
+
+<style>
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+body {
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    color: #202522;
+    background-color: #f3f5f4;
+}
+
+
+/* Логотип */
+
+.logo_cont {
+    width: 100%;
+    padding: 28px 16px 22px;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background-color: #ffffff;
+    border-bottom: 1px solid #edf0ee;
+}
+
+.logo {
+    display: block;
+
+    width: min(420px, 82vw);
+    max-height: 130px;
+    height: auto;
+
+    object-fit: contain;
+}
+
+
+/* Сообщение об ошибке */
+
+#error {
+    width: calc(100% - 24px);
+    max-width: 620px;
+    margin: 20px auto 0;
+
+    color: #c62828;
+    font-size: 1.15rem;
+    line-height: 1.4;
+    font-weight: 700;
+    text-align: center;
+}
+
+#error:not(:empty) {
+    padding: 12px 16px;
+
+    background-color: #fff1f1;
+    border: 1px solid #efbcbc;
+    border-radius: 10px;
+}
+
+#error:empty {
+    display: none;
+}
+
+
+/* Основная таблица клиента */
+
+body > table {
+    width: calc(100% - 32px);
+    max-width: 620px;
+    margin: 28px auto 40px;
+
+    table-layout: fixed;
+    border: 1px solid #d6ddda !important;
+    border-spacing: 0;
+    border-collapse: separate;
+
+    overflow: hidden;
+
+    background-color: #ffffff;
+    border-radius: 16px;
+
+    box-shadow: 0 10px 30px rgba(26, 45, 34, 0.12);
+}
+
+body > table > tbody > tr > td {
+    padding: 11px 14px;
+
+    border: 0;
+    border-right: 1px solid #dce2df;
+    border-bottom: 1px solid #dce2df;
+
+    font-size: 1.05rem;
+    line-height: 1.35;
+    vertical-align: middle;
+}
+
+body > table > tbody > tr > td:last-child {
+    border-right: 0;
+}
+
+body > table > tbody > tr:last-child > td {
+    border-bottom: 0;
+}
+
+body > table > tbody > tr > td:first-child:not([colspan]) {
+    width: 135px;
+
+    font-weight: 700;
+    white-space: nowrap;
+
+    background-color: #f6f8f7;
+}
+
+.client_id {
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.number {
+    font-family: monospace;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+
+/* Фотографии */
+
+.enterphoto > td {
+    padding: 0 !important;
+
+    background-color: #111111 !important;
+    border-right: 0 !important;
+}
+
+.enterphoto a {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    overflow: hidden;
+    background-color: #111111;
+}
+
+.enterphoto img {
+    display: block;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+}
+
+
+/* Счёт, сумма и сдача */
+
+#bill {
+    max-width: 100%;
+    margin: 0;
+
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+
+    font-family: monospace;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.summa > td {
+    font-size: 1.3rem !important;
+    font-weight: 700;
+}
+
+.fiscal_qr {
+    text-align: center;
+}
+
+.fiscal_qr img,
+.fiscal_qr svg,
+.fiscal_qr canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+.fiscal_bill {
+    font-size: 1.35rem;
+    text-align: center;
+}
+
+.fiscal_bill a {
+    color: #197a42;
+    font-weight: 700;
+}
+
+
+/* Форма оплаты */
+
+.pay_btn {
+    width: 100%;
+    max-width: 330px;
+    min-height: 50px;
+
+    margin: 7px 0;
+    padding: 10px 18px;
+
+    background-color: #258f4e;
+    border: 0;
+    border-radius: 10px;
+
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 1.15rem;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease;
+}
+
+.pay_btn:hover {
+    background-color: #1c703c;
+}
+
+.pay_btn:active {
+    transform: translateY(1px);
+}
+
+#notify,
+#bankname {
+    display: block;
+
+    width: 100%;
+    min-height: 48px;
+    margin-bottom: 12px;
+    padding: 11px 13px;
+
+    background-color: #ffffff;
+    border: 1px solid #bdc8c2;
+    border-radius: 8px;
+    outline: none;
+
+    color: #202522;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+#notify:focus,
+#bankname:focus,
+[name="cashsum"]:focus {
+    border-color: #258f4e;
+    box-shadow: 0 0 0 3px rgba(37, 143, 78, 0.14);
+}
+
+#printbill {
+    margin: 2px 0 14px;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    font-size: 1rem;
+    line-height: 1.35;
+}
+
+#printbill input {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+
+    flex: 0 0 auto;
+}
+
+#banklogo {
+    display: block;
+
+    max-width: 100%;
+    max-height: 64px;
+    margin: 8px auto 12px;
+
+    border: 1px solid #bdc8c2;
+    border-radius: 6px;
+}
+
+#banklogo[src=""] {
+    display: none;
+}
+
+[name="cashsum"] {
+    width: 100%;
+    max-width: 180px;
+    min-height: 46px;
+
+    margin-top: 4px;
+    padding: 10px 12px;
+
+    border: 1px solid #bdc8c2;
+    border-radius: 8px;
+    outline: none;
+
+    font-family: inherit;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+
+/* Реквизиты */
+
+.footer {
+    width: 100%;
+    margin-top: auto;
+    padding: 14px 18px;
+
+    background-color: #ffffff;
+    border-top: 1px solid #dce2df;
+
+    color: #454c48;
+    font-size: 0.7rem;
+    line-height: 1.5;
+    text-align: center;
+
+    overflow-wrap: anywhere;
+}
+
+
+/* Мобильная версия */
+
+@media (max-width: 600px) {
+    .logo_cont {
+        padding: 18px 12px 14px;
+    }
+
+    .logo {
+        width: min(280px, 82vw);
+        max-height: 90px;
+    }
+
+    #error {
+        width: calc(100% - 16px);
+        margin-top: 12px;
+
+        font-size: 1rem;
+    }
+
+    body > table {
+        width: calc(100% - 16px);
+        margin: 16px auto 24px;
+
+        border-radius: 12px;
+    }
+
+    body > table > tbody > tr > td {
+        padding: 9px 8px;
+
+        font-size: 0.92rem;
+    }
+
+    body > table > tbody > tr > td:first-child:not([colspan]) {
+        width: 92px;
+
+        white-space: normal;
+    }
+
+    .client_id {
+        font-size: 1.2rem;
+    }
+
+    .number {
+        font-size: 1.05rem;
+    }
+
+    .enterphoto a {
+        aspect-ratio: 4 / 3;
+    }
+
+    #bill {
+        font-size: 0.75rem;
+    }
+
+    .summa > td {
+        font-size: 1.05rem !important;
+    }
+
+    .fiscal_bill {
+        font-size: 1.1rem;
+    }
+
+    .pay_btn {
+        max-width: none;
+        min-height: 48px;
+
+        margin: 6px 0;
+
+        font-size: 1rem;
+    }
+
+    #notify,
+    #bankname {
+        font-size: 16px;
+    }
+
+    #printbill {
+        font-size: 0.9rem;
+    }
+
+    .footer {
+        padding: 11px 8px;
+
+        font-size: 0.61rem;
+        line-height: 1.45;
+    }
+}
+</style>
+
+<title>Оплата клиента</title>
+</head>
+
+<body>
+
+<div class="logo_cont">
+    <img src="logo.png" alt="Riga Land" class="logo">
+</div>
+
+<!--%error%--><div id=error>%value%</div>
+
+<table border="1" cellspacing="0" align="center" cols="2">
+
+<!--%id%--><tr><td>Клиент №</td><td class="client_id">%value%</td></tr>
+
+<!--%tariff%--><tr><td>Тариф</td><td>%value%</td></tr>
+
+<!--%card_code%--><tr><td>%type%</td><td id="apple_bridge_card_code">%value%</td></tr>
+
+<!--%car_number-->
+<tr>
+<td>№ авто</td>
+<td align="center" style="padding: 0px;">
+<script> write_plate('%value%'); </script>
+<noscript><span class="number">%value%</span></noscript>
+</td>
+</tr>
+<!--/car_number-->
+
+<!--%enterphoto-->
+<tr class="enterphoto">
+<td colspan="2">
+<a href="photo?link=%value%"><img src="photolink/%value%" alt="Фото въезда" title="Фото въезда"></a>
+</td>
+</tr>
+<!--/enterphoto-->
+
+<!--%exitphoto-->
+<tr class="enterphoto">
+<td colspan="2">
+<a href="photo?link=%value%"><img src="photolink/%value%" alt="Фото выезда" title="Фото выезда"></a>
+</td>
+</tr>
+<!--/exitphoto-->
+
+<!--%state%--><tr><td>Состояние</td><td bgcolor="%color%">%value%</td></tr>
+
+<!--%bill%--><tr><td colspan="2" bgcolor="white"><pre id="bill">%value%</pre></td></tr>
+
+<!--%summa%--><tr class="summa"><td>Cумма</td><td>%value%</td></tr>
+
+<!--%change%--><tr class="summa"><td>Сдача</td><td>%value%</td></tr>
+
+<!--%fiscal_qr-->
+<tr class="fiscal_qr">
+<td colspan="2">
+QR-чек %summa%<br>
+%qr%
+</td>
+</tr>
+<!--/fiscal_qr-->
+
+<!--%fiscal_bill-->
+<tr class="fiscal_bill">
+<td colspan="2">
+<a href="%value%">Электронный чек</a>
+</td>
+</tr>
+<!--/fiscal_bill-->
+
+<!--%pay_form-->
+<tr>
+<td colspan="2">
+
+<form method="post" style="margin: 0">
+
+<!--%client_id%--><input type="hidden" name="client_id" value="%value%">
+
+<!--%printbill%--><label id="printbill"><input type="checkbox" name="printbill"> Напечатать бумажный чек</label>
+
+<!--%email%--><input id="notify" name="notify" placeholder="Электронный чек на телефон/email">
+
+<center>
+
+<!--%paycard%--><input type="submit" class="pay_btn" name="paycard" value="Оплата картой"><br>
+
+<!--%payqr%--><input type="submit" class="pay_btn" name="payqr" value="Оплата СБП"><br>
+
+<!--%paybtn%--><button type="submit" class="pay_btn" name="paybtn%idx%">%name%</button><br>
+
+<!--%qrbank-->
+<input
+    type="text"
+    id="bankname"
+    placeholder="Банк по умолчанию"
+    onfocus="this.value=''; on_bank_change();"
+    onchange="this.blur(); on_bank_change();"
+    list="banklist"
+    spellcheck="false"
+>
+
+<input type="hidden" name="bank" id="bankschema">
+
+<datalist id="banklist"></datalist>
+
+<br>
+
+<img id="banklogo" alt="" src="">
+
+<script>
+var defbank = '%defbank%';
+var xhr = new XMLHttpRequest;
+
+xhr.open(
+    "GET",
+    "https://qr.nspk.ru/proxyapp/c2bmembers.json"
+);
+
+xhr.onload = function() {
+    if (this.status == 200) {
+        for (let b of JSON.parse(xhr.responseText).dictionary) {
+            let op = document.createElement("option");
+
+            op.innerText = b.bankName;
+            op.dataset.schema = b.schema;
+            op.dataset.logoURL = b.logoURL;
+
+            banklist.appendChild(op);
+
+            if (b.schema == defbank) {
+                bankname.value = b.bankName;
+            }
+        }
+    }
+
+    if (bankname.value != '') {
+        on_bank_change();
+    }
+};
+
+xhr.send();
+
+function on_bank_change() {
+    bankschema.value = '';
+    banklogo.src = '';
+    bankname.setCustomValidity("");
+
+    if (bankname.value == "") {
+        return;
+    }
+
+    for (let op of banklist.options) {
+        if (op.value == bankname.value) {
+            bankschema.value = op.dataset.schema;
+            banklogo.src = op.dataset.logoURL;
+            return;
+        }
+    }
+
+    bankname.setCustomValidity("Неизвестный банк");
+}
+</script>
+<!--/qrbank-->
+
+<!--%paycash-->
+<input type="submit" class="pay_btn" name="paycash" value="Оплатить НАЛ"><br>
+<input name="cashsum" placeholder="Сумма">
+<!--/paycash-->
+
+</center>
+</form>
+
+</td>
+</tr>
+<!--/pay_form-->
+
+</table>
+
+<div class="footer">
+ООО "СИРЕНА"
+Адрес: 143421, РОССИЯ, МОСКОВСКАЯ ОБЛАСТЬ, КРАСНОГОРСК, КМ 26-Й, Д. 5, СТР. 6, ПОМЕЩ. 11
+ИНН: 5024262540
+КПП: 502401001
+Номер счёта: 40702810501300057406
+Валюта: RUR
+Банк: АО "АЛЬФА-БАНК"
+ИНН банка: 7728168971
+БИК: 044525593
+Корреспондентский счёт: 30101810200000000593
+Адрес банка: 119180, Г. МОСКВА, УЛ. БОЛЬШАЯ ПОЛЯНКА, 61, СТР.2
+</div>
+
+
+<!-- APPLE BRIDGE TEST V1 START -->
+<script type="text/javascript">
+(function () {
+    "use strict";
+
+    var BRIDGE_URL = "https://xn--80aukedde.xn--p1ai/rigaland/payment-bridge";
+    var APPLE_BRIDGE_DEBUG = false;
+
+    function normalizeTicketCode(value) {
+        var code = String(value || "").trim();
+
+        if (
+            code.length >= 2 &&
+            code.charAt(0) === "[" &&
+            code.charAt(code.length - 1) === "]"
+        ) {
+            code = code.substring(1, code.length - 1).trim();
+        }
+
+        if (!/^[A-Za-z0-9]{1,64}$/.test(code)) {
+            return "";
+        }
+
+        return code;
+    }
+
+    function createDiagnosticMarker() {
+        if (APPLE_BRIDGE_DEBUG !== true) {
+            return null;
+        }
+
+        var marker = document.createElement("div");
+        marker.id = "apple_bridge_test_v1";
+        marker.textContent = "APPLE BRIDGE TEST V1: CHECKING";
+        marker.style.cssText = "width:calc(100% - 24px);max-width:620px;margin:12px auto 0;padding:10px 14px;border:1px solid #b18400;border-radius:8px;background:#fff8d8;color:#3b3210;font-family:Segoe UI,Tahoma,Arial,sans-serif;font-size:14px;line-height:1.4;text-align:center;font-weight:700";
+
+        var logo = document.querySelector(".logo_cont");
+        if (logo && typeof logo.insertAdjacentElement === "function") {
+            logo.insertAdjacentElement("afterend", marker);
+        } else {
+            document.body.insertBefore(marker, document.body.firstChild);
+        }
+
+        return marker;
+    }
+
+    function setMarkerState(marker, state) {
+        if (!marker) {
+            return;
+        }
+
+        marker.setAttribute("data-state", state);
+
+        if (state === "active") {
+            marker.textContent = "APPLE BRIDGE TEST V1: ACTIVE";
+            marker.style.display = "block";
+            marker.style.backgroundColor = "#e7f7ed";
+            marker.style.borderColor = "#258f4e";
+            marker.style.color = "#145f34";
+            return;
+        }
+
+        if (state === "payment-unavailable") {
+            marker.textContent = "APPLE BRIDGE TEST V1: INACTIVE \u2014 PAYMENT UNAVAILABLE";
+            marker.style.display = "block";
+            marker.style.backgroundColor = "#eef1f0";
+            marker.style.borderColor = "#87918c";
+            marker.style.color = "#454c48";
+            return;
+        }
+
+        if (state === "code-not-found") {
+            marker.textContent = "APPLE BRIDGE TEST V1: INACTIVE \u2014 CODE NOT FOUND";
+            marker.style.display = "block";
+            marker.style.backgroundColor = "#ffe6e6";
+            marker.style.borderColor = "#c62828";
+            marker.style.color = "#8b0000";
+            return;
+        }
+
+        marker.textContent = "APPLE BRIDGE TEST V1: BYPASS";
+        marker.style.display = "block";
+        marker.style.backgroundColor = "#eef1f0";
+        marker.style.borderColor = "#87918c";
+        marker.style.color = "#454c48";
+    }
+
+    function isAppleBridgeClient() {
+        var ua = navigator.userAgent || "";
+        var platform = navigator.platform || "";
+        var touchPoints = navigator.maxTouchPoints || 0;
+        var isIPhoneOrIPad =
+            /iPhone|iPad/i.test(ua) ||
+            (platform === "MacIntel" && touchPoints > 1);
+        var isMacSafari =
+            /Macintosh|Mac OS X/i.test(ua) &&
+            /Safari/i.test(ua) &&
+            !/Chrome|Chromium|CriOS|FxiOS|Edg|OPR|YaBrowser/i.test(ua);
+
+        return isIPhoneOrIPad || isMacSafari;
+    }
+
+    function isAllowedPaymentButton(control) {
+        if (!control) {
+            return false;
+        }
+
+        var name = String(control.getAttribute("name") || control.name || "");
+        var tagName = String(control.tagName || "").toLowerCase();
+        var type = String(control.getAttribute("type") || control.type || "").toLowerCase();
+        var allowedName =
+            name === "paycard" ||
+            name === "payqr" ||
+            /^paybtn[0-9]+$/.test(name);
+
+        return allowedName && type === "submit" && (tagName === "input" || tagName === "button");
+    }
+
+    function findPaymentForm() {
+        var forms = document.getElementsByTagName("form");
+
+        for (var i = 0; i < forms.length; i++) {
+            var form = forms[i];
+            if (!form.querySelector('input[name="client_id"]')) {
+                continue;
+            }
+
+            var controls = form.querySelectorAll("input[name], button[name]");
+            for (var j = 0; j < controls.length; j++) {
+                if (isAllowedPaymentButton(controls[j])) {
+                    return form;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    function installSubmitGuard(paymentForm) {
+        var submitLocked = false;
+        var lastPaymentButton = null;
+        var controls = paymentForm.querySelectorAll("input[name], button[name]");
+        var paymentButtons = [];
+
+        for (var i = 0; i < controls.length; i++) {
+            if (!isAllowedPaymentButton(controls[i])) {
+                continue;
+            }
+
+            paymentButtons.push(controls[i]);
+            (function (button) {
+                button.addEventListener("click", function () {
+                    lastPaymentButton = button;
+                }, false);
+            })(controls[i]);
+        }
+
+        paymentForm.addEventListener("submit", function (event) {
+            if (submitLocked) {
+                event.preventDefault();
+                return;
+            }
+
+            if (
+                typeof paymentForm.checkValidity === "function" &&
+                !paymentForm.checkValidity()
+            ) {
+                return;
+            }
+
+            var submitButton = event.submitter || lastPaymentButton || paymentButtons[0];
+            if (!isAllowedPaymentButton(submitButton)) {
+                return;
+            }
+
+            submitLocked = true;
+
+            var paymentField = document.createElement("input");
+            paymentField.type = "hidden";
+            paymentField.name = String(submitButton.getAttribute("name") || submitButton.name || "");
+            paymentField.value = String(submitButton.value || submitButton.getAttribute("value") || "");
+            paymentField.setAttribute("data-apple-bridge-payment-field", "V1");
+            paymentForm.appendChild(paymentField);
+
+            submitButton.disabled = true;
+            if (String(submitButton.tagName || "").toLowerCase() === "button") {
+                submitButton.textContent = "Формируем платёж…";
+            } else {
+                submitButton.value = "Формируем платёж…";
+            }
+        }, false);
+    }
+
+    function findTicketCodeInTable() {
+        var rows = document.getElementsByTagName("tr");
+        var barcodeLabel = "\u0448\u0442\u0440\u0438\u0445-\u043a\u043e\u0434";
+
+        for (var i = 0; i < rows.length; i++) {
+            var cells = rows[i].cells || rows[i].getElementsByTagName("td");
+            for (var j = 0; j + 1 < cells.length; j++) {
+                var label = String(cells[j].textContent || "")
+                    .replace(/\s+/g, " ")
+                    .trim()
+                    .replace(/:\s*$/, "")
+                    .toLowerCase();
+
+                if (label === barcodeLabel) {
+                    return normalizeTicketCode(cells[j + 1].textContent);
+                }
+            }
+        }
+
+        return "";
+    }
+
+    function activateAppleBridge() {
+        var marker = createDiagnosticMarker();
+
+        if (!isAppleBridgeClient()) {
+            setMarkerState(marker, "bypass");
+            return;
+        }
+
+        var paymentForm = findPaymentForm();
+        if (!paymentForm) {
+            setMarkerState(marker, "payment-unavailable");
+            return;
+        }
+
+        var params = new URLSearchParams(window.location.search);
+        var codes = params.getAll("code");
+        var code = "";
+
+        if (codes.length === 1) {
+            code = normalizeTicketCode(codes[0]);
+        }
+
+        if (!code) {
+            var cardCode = document.getElementById("apple_bridge_card_code");
+            if (cardCode) {
+                code = normalizeTicketCode(cardCode.textContent);
+            }
+        }
+
+        if (!code) {
+            code = findTicketCodeInTable();
+        }
+
+        if (!code) {
+            setMarkerState(marker, "code-not-found");
+            return;
+        }
+
+        var codeField = paymentForm.querySelector('input[name="code"]');
+        if (!codeField) {
+            codeField = document.createElement("input");
+            codeField.type = "hidden";
+            codeField.name = "code";
+            paymentForm.appendChild(codeField);
+        }
+        codeField.value = code;
+        paymentForm.setAttribute("method", "post");
+        paymentForm.setAttribute("action", BRIDGE_URL);
+        paymentForm.setAttribute("data-apple-bridge-test", "V1");
+        installSubmitGuard(paymentForm);
+        setMarkerState(marker, "active");
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", activateAppleBridge, false);
+    } else {
+        activateAppleBridge();
+    }
+})();
+</script>
+<!-- APPLE BRIDGE TEST V1 END -->
+
+</body>
+</html>

@@ -1,0 +1,43 @@
+[Unit]
+Description=Riga Land payment bridge
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=rigaland-bridge
+Group=rigaland-bridge
+WorkingDirectory=/opt/rigaland-payment-bridge
+ExecStart=/usr/bin/python3 /opt/rigaland-payment-bridge/bridge.py --host 127.0.0.1 --port 3102 --state-db /var/lib/rigaland-payment-bridge/state.sqlite3 --transport curl
+Environment=PYTHONDONTWRITEBYTECODE=1
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+RestartSec=3s
+UMask=0077
+
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictSUIDSGID=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictRealtime=true
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+ReadOnlyPaths=/opt/rigaland-payment-bridge
+ReadWritePaths=/var/lib/rigaland-payment-bridge
+
+[Install]
+WantedBy=multi-user.target
