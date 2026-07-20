@@ -4,7 +4,7 @@ set -Eeuo pipefail
 readonly SERVICE_NAME="rigaland-payment-bridge.service"
 readonly APP_DIR="/opt/rigaland-payment-bridge"
 readonly BACKUP_DIR="${APP_DIR}/backups"
-readonly EXPECTED_BRIDGE_SHA256="9876592bf3dc8d8a02e697a42e61089f150200655bf93962f7cc7893fec2df2a"
+readonly EXPECTED_BRIDGE_SHA256="455bd893127d51d3c02789757234d82c6453b8c7616fd1d243a59c1287a3b5f7"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"

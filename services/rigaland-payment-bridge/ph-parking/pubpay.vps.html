@@ -661,6 +661,17 @@ function on_bank_change() {
         return code;
     }
 
+    function normalizePaymentId(value) {
+        var paymentId = String(value || "");
+        var match = /^[1-9][0-9]{0,19}/.exec(paymentId);
+
+        if (!match || match[0] !== paymentId) {
+            return "";
+        }
+
+        return paymentId;
+    }
+
     function createDiagnosticMarker() {
         if (APPLE_BRIDGE_DEBUG !== true) {
             return null;
@@ -758,14 +769,23 @@ function on_bank_change() {
 
         for (var i = 0; i < forms.length; i++) {
             var form = forms[i];
-            if (!form.querySelector('input[name="client_id"]')) {
+            var clientFields = form.querySelectorAll('input[name="client_id"]');
+            if (clientFields.length !== 1) {
+                continue;
+            }
+
+            var clientId = normalizePaymentId(clientFields[0].value);
+            if (!clientId || clientFields[0].value !== clientId) {
                 continue;
             }
 
             var controls = form.querySelectorAll("input[name], button[name]");
             for (var j = 0; j < controls.length; j++) {
                 if (isAllowedPaymentButton(controls[j])) {
-                    return form;
+                    return {
+                        form: form,
+                        clientId: clientId
+                    };
                 }
             }
         }
@@ -850,6 +870,26 @@ function on_bank_change() {
         return "";
     }
 
+    function setBridgeIdentifier(paymentForm, sourceName, sourceValue) {
+        var names = ["code", "payment_id"];
+
+        for (var i = 0; i < names.length; i++) {
+            var fields = paymentForm.querySelectorAll('input[name="' + names[i] + '"]');
+            for (var j = 0; j < fields.length; j++) {
+                if (fields[j].parentNode) {
+                    fields[j].parentNode.removeChild(fields[j]);
+                }
+            }
+        }
+
+        var sourceField = document.createElement("input");
+        sourceField.type = "hidden";
+        sourceField.name = sourceName;
+        sourceField.value = sourceValue;
+        sourceField.setAttribute("data-apple-bridge-identifier", "V1");
+        paymentForm.appendChild(sourceField);
+    }
+
     function activateAppleBridge() {
         var marker = createDiagnosticMarker();
 
@@ -858,11 +898,13 @@ function on_bank_change() {
             return;
         }
 
-        var paymentForm = findPaymentForm();
-        if (!paymentForm) {
+        var paymentInfo = findPaymentForm();
+        if (!paymentInfo) {
             setMarkerState(marker, "payment-unavailable");
             return;
         }
+
+        var paymentForm = paymentInfo.form;
 
         var params = new URLSearchParams(window.location.search);
         var codes = params.getAll("code");
@@ -883,19 +925,32 @@ function on_bank_change() {
             code = findTicketCodeInTable();
         }
 
-        if (!code) {
+        var sourceName = "";
+        var sourceValue = "";
+
+        if (code) {
+            sourceName = "code";
+            sourceValue = code;
+        } else {
+            var paymentIds = params.getAll("id");
+            var paymentId = "";
+
+            if (paymentIds.length === 1) {
+                paymentId = normalizePaymentId(paymentIds[0]);
+            }
+
+            if (paymentId && paymentId === paymentInfo.clientId) {
+                sourceName = "payment_id";
+                sourceValue = paymentId;
+            }
+        }
+
+        if (!sourceName) {
             setMarkerState(marker, "code-not-found");
             return;
         }
 
-        var codeField = paymentForm.querySelector('input[name="code"]');
-        if (!codeField) {
-            codeField = document.createElement("input");
-            codeField.type = "hidden";
-            codeField.name = "code";
-            paymentForm.appendChild(codeField);
-        }
-        codeField.value = code;
+        setBridgeIdentifier(paymentForm, sourceName, sourceValue);
         paymentForm.setAttribute("method", "post");
         paymentForm.setAttribute("action", BRIDGE_URL);
         paymentForm.setAttribute("data-apple-bridge-test", "V1");

@@ -65,10 +65,13 @@ SECURITY_HEADERS = {
     "Content-Security-Policy": CSP,
 }
 
-FIELD_NAME_RE = re.compile(r"^(?:client_id|code|notify|printbill|paycard|payqr|bank|paybtn[0-9]+)$")
+FIELD_NAME_RE = re.compile(
+    r"^(?:client_id|code|payment_id|notify|printbill|paycard|payqr|bank|paybtn[0-9]+)$"
+)
 PAYMENT_FIELD_RE = re.compile(r"^(?:paycard|payqr|paybtn[0-9]+)$")
 CLIENT_ID_RE = re.compile(r"^[0-9]{1,20}$")
 CODE_RE = re.compile(r"^[A-Za-z0-9]{1,64}$")
+PAYMENT_ID_RE = re.compile(r"^[1-9][0-9]{0,19}$")
 COOKIE_NAME_RE = re.compile(r"^[!#$%&'*+.^_`|~0-9A-Za-z-]+$")
 HEX_BYTES = frozenset(b"0123456789abcdefABCDEF")
 CLIENT_ID_HASH_KEY = os.urandom(32)
@@ -86,6 +89,8 @@ DIAGNOSTIC_CODE_BY_REASON = {
     "invalid_required_field": "BRIDGE-INVALID-REQUEST",
     "invalid_client_id": "BRIDGE-INVALID-REQUEST",
     "invalid_code": "BRIDGE-INVALID-REQUEST",
+    "invalid_payment_id": "BRIDGE-INVALID-REQUEST",
+    "invalid_payment_source": "BRIDGE-INVALID-REQUEST",
     "invalid_notify": "BRIDGE-INVALID-REQUEST",
     "invalid_field_value": "BRIDGE-INVALID-REQUEST",
     "invalid_payment_action": "BRIDGE-INVALID-REQUEST",
@@ -162,7 +167,8 @@ class BridgeError(Exception):
 @dataclass(frozen=True)
 class ParsedForm:
     client_id: str
-    code: str
+    source_kind: str
+    source_value: str
     upstream_body: bytes
     payment_field: str
 
@@ -279,13 +285,18 @@ class PseudoHeaderBlock:
 
 
 class Upstream(Protocol):
-    def create_payment(self, code: str, body: bytes) -> UpstreamResponse: ...
+    def create_payment(
+        self,
+        source_kind: str,
+        source_value: str,
+        body: bytes,
+    ) -> UpstreamResponse: ...
 
     def check_payment(self, client_id: str, cookie_header: str | None, timeout: float) -> UpstreamResponse: ...
 
 
 class RateLimitStore(Protocol):
-    def claim(self, client_id: str, code: str) -> RateLimitResult: ...
+    def claim(self, source_kind: str, client_id: str, source_value: str) -> RateLimitResult: ...
 
 
 def client_id_hash(client_id: str) -> str:
@@ -353,7 +364,6 @@ def parse_form_body(raw_body: bytes) -> ParsedForm:
 
     try:
         client_id = decoded["client_id"].decode("ascii")
-        code = decoded["code"].decode("ascii")
     except KeyError as exc:
         raise BridgeError(400, "missing_required_field", "Не заполнены обязательные поля.") from exc
     except UnicodeDecodeError as exc:
@@ -361,8 +371,24 @@ def parse_form_body(raw_body: bytes) -> ParsedForm:
 
     if not CLIENT_ID_RE.fullmatch(client_id) or int(client_id) <= 0:
         raise BridgeError(400, "invalid_client_id", "Некорректный номер клиента.")
-    if not CODE_RE.fullmatch(code):
-        raise BridgeError(400, "invalid_code", "Некорректный код билета.")
+
+    source_fields = [name for name in ("code", "payment_id") if name in decoded]
+    if not source_fields:
+        raise BridgeError(400, "missing_required_field", "Не заполнены обязательные поля.")
+    if len(source_fields) != 1:
+        raise BridgeError(400, "invalid_payment_source", "Переданы несовместимые данные оплаты.")
+
+    source_kind = source_fields[0]
+    try:
+        source_value = decoded[source_kind].decode("ascii")
+    except UnicodeDecodeError as exc:
+        raise BridgeError(400, "invalid_required_field", "Некорректные данные формы.") from exc
+
+    if source_kind == "code":
+        if not CODE_RE.fullmatch(source_value):
+            raise BridgeError(400, "invalid_code", "Некорректный код билета.")
+    elif not PAYMENT_ID_RE.fullmatch(source_value) or source_value != client_id:
+        raise BridgeError(400, "invalid_payment_id", "Некорректный номер платежа.")
 
     notify_bytes = decoded.get("notify")
     if notify_bytes is not None:
@@ -371,7 +397,7 @@ def parse_form_body(raw_body: bytes) -> ParsedForm:
             raise BridgeError(400, "invalid_notify", "Некорректные данные для электронного чека.")
 
     for name, value in decoded.items():
-        if name in {"client_id", "code", "notify"}:
+        if name in {"client_id", "code", "payment_id", "notify"}:
             continue
         text = _decode_text(value)
         if _contains_control_characters(text):
@@ -381,13 +407,26 @@ def parse_form_body(raw_body: bytes) -> ParsedForm:
     if len(payment_fields) != 1:
         raise BridgeError(400, "invalid_payment_action", "Выберите один способ оплаты.")
 
-    upstream_body = b"&".join(raw_field for name, raw_field in raw_fields if name != "code")
+    upstream_body = b"&".join(
+        raw_field for name, raw_field in raw_fields if name not in {"code", "payment_id"}
+    )
     return ParsedForm(
         client_id=client_id,
-        code=code,
+        source_kind=source_kind,
+        source_value=source_value,
         upstream_body=upstream_body,
         payment_field=payment_fields[0],
     )
+
+
+def upstream_payment_path(source_kind: str, source_value: str) -> str:
+    if source_kind == "code" and CODE_RE.fullmatch(source_value):
+        query_name = "code"
+    elif source_kind == "payment_id" and PAYMENT_ID_RE.fullmatch(source_value):
+        query_name = "id"
+    else:
+        raise BridgeError(400, "invalid_payment_source", "Некорректные данные оплаты.")
+    return f"{UPSTREAM_POST_PATH}?{query_name}={quote(source_value, safe='')}"
 
 
 class SQLiteRateLimiter:
@@ -418,14 +457,14 @@ class SQLiteRateLimiter:
         os.chmod(self.database_path, 0o600)
 
     @staticmethod
-    def _fingerprint(client_id: str, code: str) -> str:
-        material = f"{client_id}\x00{code}".encode("ascii")
+    def _fingerprint(source_kind: str, client_id: str, source_value: str) -> str:
+        material = f"v2\x00{source_kind}\x00{client_id}\x00{source_value}".encode("ascii")
         return hashlib.sha256(material).hexdigest()
 
-    def claim(self, client_id: str, code: str) -> RateLimitResult:
+    def claim(self, source_kind: str, client_id: str, source_value: str) -> RateLimitResult:
         now = self.clock()
         cutoff = now - self.window_seconds
-        fingerprint = self._fingerprint(client_id, code)
+        fingerprint = self._fingerprint(source_kind, client_id, source_value)
 
         try:
             connection = self._connect()
@@ -758,8 +797,13 @@ class FixedPHUpstream:
             if connection is not None:
                 connection.close()
 
-    def create_payment(self, code: str, body: bytes) -> UpstreamResponse:
-        path = f"{UPSTREAM_POST_PATH}?code={quote(code, safe='')}"
+    def create_payment(
+        self,
+        source_kind: str,
+        source_value: str,
+        body: bytes,
+    ) -> UpstreamResponse:
+        path = upstream_payment_path(source_kind, source_value)
         return self._request("POST", path, body, None, UPSTREAM_TIMEOUT_SECONDS)
 
     def check_payment(self, client_id: str, cookie_header: str | None, timeout: float) -> UpstreamResponse:
@@ -1741,8 +1785,13 @@ class CurlPHUpstream:
             root = exc.__cause__ if isinstance(exc, BridgeError) and exc.__cause__ is not None else exc
             raise failure from root
 
-    def create_payment(self, code: str, body: bytes) -> UpstreamResponse:
-        path = f"{UPSTREAM_POST_PATH}?code={quote(code, safe='')}"
+    def create_payment(
+        self,
+        source_kind: str,
+        source_value: str,
+        body: bytes,
+    ) -> UpstreamResponse:
+        path = upstream_payment_path(source_kind, source_value)
         return self._request("POST", path, body, None, UPSTREAM_TIMEOUT_SECONDS)
 
     def check_payment(self, client_id: str, cookie_header: str | None, timeout: float) -> UpstreamResponse:
@@ -2263,7 +2312,11 @@ class PaymentBridge:
             client_id_hash(parsed.client_id),
             max(0, round((time.monotonic() - process_started) * 1000)),
         )
-        claim_result = self.rate_limiter.claim(parsed.client_id, parsed.code)
+        claim_result = self.rate_limiter.claim(
+            parsed.source_kind,
+            parsed.client_id,
+            parsed.source_value,
+        )
         if not claim_result.allowed:
             raise BridgeError(
                 429,
@@ -2274,7 +2327,11 @@ class PaymentBridge:
 
         cookie_jar = ResponseCookieJar()
         try:
-            initial = self.upstream.create_payment(parsed.code, parsed.upstream_body)
+            initial = self.upstream.create_payment(
+                parsed.source_kind,
+                parsed.source_value,
+                parsed.upstream_body,
+            )
         except BridgeError as exc:
             _log_upstream_failure("upstream_post_failed", request_id, parsed.client_id, exc)
             raise

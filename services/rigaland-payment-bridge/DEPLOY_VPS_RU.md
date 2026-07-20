@@ -89,7 +89,7 @@ sha256sum services/rigaland-payment-bridge/bridge.py
 
 Ожидаемый SHA-256:
 
-`9876592bf3dc8d8a02e697a42e61089f150200655bf93962f7cc7893fec2df2a`
+`455bd893127d51d3c02789757234d82c6453b8c7616fd1d243a59c1287a3b5f7`
 
 ## 3. Локальные тесты перед установкой
 
@@ -177,17 +177,12 @@ curl -sS -D - -o /dev/null https://xn--80aukedde.xn--p1ai/rigaland/payment-bridg
 
 Ожидается `405`. Порт 3102 наружу не публикуется.
 
-## 6. PH Parking файл для будущего VPS
+## 6. Порядок обновления bridge и PH Parking
 
-Для будущего переключения PH Parking использовать:
+Порядок обязателен: новая клиентская форма не должна появиться раньше серверной
+поддержки `payment_id`.
 
-`ph-parking/pubpay.vps.html`
-
-Текущий `ph-parking/pubpay.html` продолжает указывать на действующий мост Mac
-Studio. Обе копии — Windows-1251, CRLF, без BOM. Перед фактической заменой PH
-файла необходим отдельный согласованный шаг и контролируемая проверка.
-
-## 7. Обновление bridge.py
+### Шаг 1. Сначала обновить bridge.py на VPS
 
 Из `services/rigaland-payment-bridge` нового checkout:
 
@@ -205,7 +200,37 @@ sudo bash deploy/update-vps.sh
 sudo bash deploy/check-vps.sh
 ```
 
-## 8. Ручной rollback
+Безопасный GET должен вернуть 405. POST на этом шаге не выполнять.
+
+### Шаг 2. Затем установить pubpay.vps.html на PH Parking
+
+Готовый файл:
+
+`services/rigaland-payment-bridge/ph-parking/pubpay.vps.html`
+
+Он указывает только на VPS-маршрут
+`https://xn--80aukedde.xn--p1ai/rigaland/payment-bridge`. Текущий
+`ph-parking/pubpay.html` продолжает указывать на резервный мост Mac Studio.
+Обе копии — Windows-1251, CRLF, без BOM. Установка файла на PH Parking —
+отдельный ручной согласованный шаг.
+
+### Шаг 3. Проверить QR-сценарий
+
+После установки клиентского файла выполнить один контролируемый тест оплаты по
+QR-билету. Ожидается передача `code` в bridge и прямой HTTP 303 на разрешённый
+checkout URL.
+
+### Шаг 4. Проверить поиск по государственному номеру
+
+На отдельном действующем клиенте выполнить один контролируемый тест после
+поиска автомобиля. Для страницы `/pub/pay?id=<id>` значение должно совпасть с
+`client_id` формы; bridge получает `payment_id` и обращается к фиксированному
+upstream-пути `/pub/pay?id=<id>`, после чего также возвращает прямой HTTP 303.
+
+Автоматически или в рамках install/update-скриптов реальные платёжные POST не
+выполняются.
+
+## 7. Ручной rollback
 
 ```bash
 sudo bash deploy/rollback-vps.sh
@@ -214,7 +239,7 @@ sudo bash deploy/rollback-vps.sh
 Скрипт выбирает последнюю резервную копию, атомарно восстанавливает
 `bridge.py`, перезапускает только bridge и проверяет GET=405.
 
-## 9. Что не должно происходить
+## 8. Что не должно происходить
 
 - запуск PM2;
 - restart/reload сайта;

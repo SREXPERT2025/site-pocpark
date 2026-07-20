@@ -3,6 +3,7 @@ from __future__ import annotations
 import http.client
 import io
 import logging
+import sqlite3
 import subprocess
 import tempfile
 import threading
@@ -36,10 +37,10 @@ class MemoryRateLimiter:
     def __init__(self, allowed: bool = True, retry_after_seconds: int = 29) -> None:
         self.allowed = allowed
         self.retry_after_seconds = retry_after_seconds
-        self.calls: list[tuple[str, str]] = []
+        self.calls: list[tuple[str, str, str]] = []
 
-    def claim(self, client_id: str, code: str) -> bridge.RateLimitResult:
-        self.calls.append((client_id, code))
+    def claim(self, source_kind: str, client_id: str, source_value: str) -> bridge.RateLimitResult:
+        self.calls.append((source_kind, client_id, source_value))
         return bridge.RateLimitResult(
             allowed=self.allowed,
             retry_after_seconds=0 if self.allowed else self.retry_after_seconds,
@@ -51,11 +52,16 @@ class FakeUpstream:
     def __init__(self, initial: bridge.UpstreamResponse, polls: list[bridge.UpstreamResponse] | None = None) -> None:
         self.initial = initial
         self.polls = list(polls or [])
-        self.create_calls: list[tuple[str, bytes]] = []
+        self.create_calls: list[tuple[str, str, bytes]] = []
         self.poll_calls: list[tuple[str, str | None, float]] = []
 
-    def create_payment(self, code: str, body: bytes) -> bridge.UpstreamResponse:
-        self.create_calls.append((code, body))
+    def create_payment(
+        self,
+        source_kind: str,
+        source_value: str,
+        body: bytes,
+    ) -> bridge.UpstreamResponse:
+        self.create_calls.append((source_kind, source_value, body))
         return self.initial
 
     def check_payment(self, client_id: str, cookie_header: str | None, timeout: float) -> bridge.UpstreamResponse:
@@ -91,7 +97,8 @@ class FormParsingTests(unittest.TestCase):
         parsed = bridge.parse_form_body(body)
 
         self.assertEqual(parsed.client_id, "42")
-        self.assertEqual(parsed.code, "AB12CD")
+        self.assertEqual(parsed.source_kind, "code")
+        self.assertEqual(parsed.source_value, "AB12CD")
         self.assertEqual(parsed.payment_field, "paycard")
         self.assertEqual(
             parsed.upstream_body,
@@ -102,6 +109,87 @@ class FormParsingTests(unittest.TestCase):
     def test_accepts_numeric_paybtn(self) -> None:
         parsed = bridge.parse_form_body(b"client_id=7&notify=&paybtn12=&bank=test&code=XYZ9")
         self.assertEqual(parsed.payment_field, "paybtn12")
+
+    def test_accepts_matching_payment_id_and_preserves_native_form_bytes(self) -> None:
+        body = (
+            b"client_id=1609&printbill=on&notify=%F2%E5%F1%F2%40mail.ru&"
+            b"paycard=%CE%EF%EB%E0%F2%E0+%EA%E0%F0%F2%EE%E9&bank=&payment_id=1609"
+        )
+        parsed = bridge.parse_form_body(body)
+
+        self.assertEqual(parsed.client_id, "1609")
+        self.assertEqual(parsed.source_kind, "payment_id")
+        self.assertEqual(parsed.source_value, "1609")
+        self.assertEqual(
+            parsed.upstream_body,
+            b"client_id=1609&printbill=on&notify=%F2%E5%F1%F2%40mail.ru&"
+            b"paycard=%CE%EF%EB%E0%F2%E0+%EA%E0%F0%F2%EE%E9&bank=",
+        )
+
+    def test_rejects_invalid_payment_id_variants(self) -> None:
+        invalid_values = (
+            b"0",
+            b"-1",
+            b"abc",
+            b"1.5",
+            b"+1609",
+            b"%201609",
+            b"1609%0A",
+            b"1" * 21,
+        )
+        for value in invalid_values:
+            with self.subTest(value=value):
+                body = b"client_id=1609&paycard=x&payment_id=" + value
+                with self.assertRaises(bridge.BridgeError):
+                    bridge.parse_form_body(body)
+
+    def test_rejects_duplicate_mismatched_or_ambiguous_payment_source(self) -> None:
+        bodies = (
+            b"client_id=1609&paycard=x&payment_id=1609&payment_id=1609",
+            b"client_id=1609&paycard=x&payment_id=1610",
+            b"client_id=1609&paycard=x&code=ABC123&payment_id=1609",
+            b"client_id=1609&paycard=x",
+        )
+        for body in bodies:
+            with self.subTest(body=body):
+                with self.assertRaises(bridge.BridgeError):
+                    bridge.parse_form_body(body)
+
+    def test_rejects_arbitrary_upstream_destination_fields(self) -> None:
+        for field_name in (
+            b"target_url",
+            b"upstream_url",
+            b"redirect_url",
+            b"hostname",
+            b"pathname",
+            b"path",
+        ):
+            with self.subTest(field_name=field_name):
+                body = (
+                    b"client_id=1609&paycard=x&payment_id=1609&"
+                    + field_name
+                    + b"=%2Fpub%2Fpay%3Fid%3D1609"
+                )
+                with self.assertRaisesRegex(bridge.BridgeError, "unknown_field"):
+                    bridge.parse_form_body(body)
+
+    def test_builds_only_fixed_code_or_payment_id_upstream_paths(self) -> None:
+        self.assertEqual(
+            bridge.upstream_payment_path("code", "ABC123"),
+            "/pub/pay?code=ABC123",
+        )
+        self.assertEqual(
+            bridge.upstream_payment_path("payment_id", "1609"),
+            "/pub/pay?id=1609",
+        )
+        for source_kind, value in (
+            ("payment_id", "../1609"),
+            ("payment_id", "https://evil.example"),
+            ("path", "/pub/pay?id=1609"),
+        ):
+            with self.subTest(source_kind=source_kind, value=value):
+                with self.assertRaises(bridge.BridgeError):
+                    bridge.upstream_payment_path(source_kind, value)
 
     def test_rejects_unknown_target_url_field(self) -> None:
         with self.assertRaisesRegex(bridge.BridgeError, "unknown_field"):
@@ -280,7 +368,11 @@ class StrictHTTPParserTests(unittest.TestCase):
         )
 
         with self.assertRaises(bridge.BridgeError) as caught:
-            bridge.FixedPHUpstream().create_payment("ABC123", b"client_id=42&paycard=x")
+            bridge.FixedPHUpstream().create_payment(
+                "code",
+                "ABC123",
+                b"client_id=42&paycard=x",
+            )
 
         error = caught.exception
         self.assertEqual(error.reason, "upstream_request_failure")
@@ -958,6 +1050,47 @@ class TolerantCurlParserTests(unittest.TestCase):
 
 
 class CurlTransportTests(unittest.TestCase):
+    def test_create_payment_uses_server_built_code_and_payment_id_paths(self) -> None:
+        observed_configs: list[str] = []
+
+        def fake_runner(arguments: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+            del kwargs
+            config_path = Path(arguments[arguments.index("--config") + 1])
+            header_path = Path(arguments[arguments.index("--dump-header") + 1])
+            observed_configs.append(config_path.read_text("ascii"))
+            header_path.write_bytes(
+                b"HTTP/1.1 303 See Other\r\n"
+                b"Location: https://yoomoney.ru/checkout/order?orderId=opaque\r\n"
+                b"Content-Length: 0\r\n\r\n"
+            )
+            return subprocess.CompletedProcess(arguments, 0, stdout=b"", stderr=b"")
+
+        transport = bridge.CurlPHUpstream(
+            runner=fake_runner,
+            resolver=lambda host: "93.184.216.34",
+        )
+
+        code_response = transport.create_payment(
+            "code",
+            "ABC123",
+            b"client_id=42&paycard=x",
+        )
+        payment_id_response = transport.create_payment(
+            "payment_id",
+            "1609",
+            b"client_id=1609&paycard=x",
+        )
+
+        self.assertEqual(code_response.status, 303)
+        self.assertEqual(payment_id_response.status, 303)
+        self.assertEqual(
+            observed_configs,
+            [
+                'url = "https://parking.rigaland.ru/pub/pay?code=ABC123"\n',
+                'url = "https://parking.rigaland.ru/pub/pay?id=1609"\n',
+            ],
+        )
+
     def test_curl_transport_is_http11_pinned_and_cleans_all_temporary_files(self) -> None:
         observed: dict[str, object] = {}
 
@@ -1043,7 +1176,7 @@ class CurlTransportTests(unittest.TestCase):
             resolver=lambda host: "93.184.216.34",
         )
         with self.assertRaises(bridge.BridgeError) as caught:
-            transport.create_payment("ABC123", b"client_id=42&paycard=x")
+            transport.create_payment("code", "ABC123", b"client_id=42&paycard=x")
 
         error = caught.exception
         self.assertEqual(error.stage, "tls")
@@ -1096,7 +1229,7 @@ class CurlTransportTests(unittest.TestCase):
             runner=fake_runner,
             resolver=lambda host: "93.184.216.34",
         )
-        response = transport.create_payment("ABC123", b"client_id=42&paycard=x")
+        response = transport.create_payment("code", "ABC123", b"client_id=42&paycard=x")
 
         self.assertEqual(response.status, 303)
         self.assertEqual(response.response_mode, "pseudo_headers")
@@ -1154,7 +1287,7 @@ class CurlTransportTests(unittest.TestCase):
             resolver=lambda host: "93.184.216.34",
         )
         with self.assertRaises(bridge.BridgeError) as caught:
-            transport.create_payment("ABC123", b"client_id=42&paycard=x")
+            transport.create_payment("code", "ABC123", b"client_id=42&paycard=x")
 
         error = caught.exception
         self.assertEqual(error.stage, "read_status")
@@ -1176,7 +1309,7 @@ class CurlTransportTests(unittest.TestCase):
             resolver=lambda host: "93.184.216.34",
         )
         with self.assertRaises(bridge.BridgeError) as caught:
-            transport.create_payment("ABC123", b"client_id=42&paycard=x")
+            transport.create_payment("code", "ABC123", b"client_id=42&paycard=x")
 
         error = caught.exception
         self.assertEqual(error.diagnostic_code, "BRIDGE-UPSTREAM-PARSE")
@@ -1206,8 +1339,22 @@ class PaymentFlowTests(unittest.TestCase):
         result = service.process(b"client_id=42&notify=&payqr=x&bank=&code=ABC123")
 
         self.assertEqual(result, checkout)
-        self.assertEqual(upstream.create_calls[0][0], "ABC123")
-        self.assertNotIn(b"code=", upstream.create_calls[0][1])
+        self.assertEqual(upstream.create_calls[0][:2], ("code", "ABC123"))
+        self.assertNotIn(b"code=", upstream.create_calls[0][2])
+        self.assertEqual(limiter.calls, [("code", "42", "ABC123")])
+
+    def test_direct_payment_id_checkout_response(self) -> None:
+        checkout = "https://yoomoney.ru/checkout/order?id=opaque"
+        upstream = FakeUpstream(bridge.UpstreamResponse(303, checkout, ()))
+        limiter = MemoryRateLimiter()
+        service = bridge.PaymentBridge(upstream, limiter)
+
+        result = service.process(b"client_id=1609&notify=&paycard=x&bank=&payment_id=1609")
+
+        self.assertEqual(result, checkout)
+        self.assertEqual(upstream.create_calls[0][:2], ("payment_id", "1609"))
+        self.assertNotIn(b"payment_id=", upstream.create_calls[0][2])
+        self.assertEqual(limiter.calls, [("payment_id", "1609", "1609")])
 
     def test_wait_poll_forwards_cookie_and_stops_on_checkout(self) -> None:
         checkout = "https://yoomoney.ru/checkout/order?id=opaque"
@@ -1449,24 +1596,24 @@ class SQLiteRateLimiterTests(unittest.TestCase):
                 clock=clock.time,
             )
 
-            first = limiter.claim("42", "ABC123")
+            first = limiter.claim("code", "42", "ABC123")
             self.assertTrue(first.allowed)
             self.assertEqual(first.retry_after_seconds, 0)
             self.assertEqual(first.claim_age_seconds, 0.0)
 
             clock.value += 1
-            after_one_second = limiter.claim("42", "ABC123")
+            after_one_second = limiter.claim("code", "42", "ABC123")
             self.assertFalse(after_one_second.allowed)
             self.assertEqual(after_one_second.retry_after_seconds, 29)
             self.assertEqual(after_one_second.claim_age_seconds, 1.0)
 
             clock.value += 28
-            after_twenty_nine_seconds = limiter.claim("42", "ABC123")
+            after_twenty_nine_seconds = limiter.claim("code", "42", "ABC123")
             self.assertFalse(after_twenty_nine_seconds.allowed)
             self.assertEqual(after_twenty_nine_seconds.retry_after_seconds, 1)
 
             clock.value += 1
-            after_thirty_seconds = limiter.claim("42", "ABC123")
+            after_thirty_seconds = limiter.claim("code", "42", "ABC123")
             self.assertTrue(after_thirty_seconds.allowed)
             self.assertEqual(after_thirty_seconds.retry_after_seconds, 0)
 
@@ -1474,9 +1621,49 @@ class SQLiteRateLimiterTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             limiter = bridge.SQLiteRateLimiter(Path(temp_dir) / "claims.sqlite3")
 
-            self.assertTrue(limiter.claim("42", "ABC123").allowed)
-            self.assertTrue(limiter.claim("42", "XYZ789").allowed)
-            self.assertTrue(limiter.claim("43", "ABC123").allowed)
+            self.assertTrue(limiter.claim("code", "42", "ABC123").allowed)
+            self.assertTrue(limiter.claim("code", "42", "XYZ789").allowed)
+            self.assertTrue(limiter.claim("code", "43", "ABC123").allowed)
+
+    def test_payment_id_claims_are_isolated_by_value_client_and_source_kind(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            limiter = bridge.SQLiteRateLimiter(Path(temp_dir) / "claims.sqlite3")
+
+            self.assertTrue(limiter.claim("payment_id", "1609", "1609").allowed)
+            self.assertFalse(limiter.claim("payment_id", "1609", "1609").allowed)
+            self.assertTrue(limiter.claim("payment_id", "1610", "1610").allowed)
+            self.assertTrue(limiter.claim("code", "1609", "1609").allowed)
+            self.assertNotEqual(
+                limiter._fingerprint("code", "1609", "1609"),
+                limiter._fingerprint("payment_id", "1609", "1609"),
+            )
+
+    def test_existing_sqlite_schema_and_rows_remain_compatible(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            database_path = Path(temp_dir) / "claims.sqlite3"
+            connection = sqlite3.connect(database_path)
+            try:
+                connection.execute(
+                    "CREATE TABLE payment_claims ("
+                    "fingerprint TEXT PRIMARY KEY, claimed_at REAL NOT NULL)"
+                )
+                connection.execute(
+                    "INSERT INTO payment_claims (fingerprint, claimed_at) VALUES (?, ?)",
+                    ("legacy-fingerprint", 999.0),
+                )
+                connection.commit()
+            finally:
+                connection.close()
+
+            limiter = bridge.SQLiteRateLimiter(database_path, clock=lambda: 1_000.0)
+            self.assertTrue(limiter.claim("payment_id", "1609", "1609").allowed)
+
+            connection = sqlite3.connect(database_path)
+            try:
+                columns = [row[1:3] for row in connection.execute("PRAGMA table_info(payment_claims)")]
+            finally:
+                connection.close()
+            self.assertEqual(columns, [("fingerprint", "TEXT"), ("claimed_at", "REAL")])
 
     def test_rate_limit_survives_new_store_instance(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1485,8 +1672,8 @@ class SQLiteRateLimiterTests(unittest.TestCase):
             first = bridge.SQLiteRateLimiter(database_path, clock=clock.time)
             second = bridge.SQLiteRateLimiter(database_path, clock=clock.time)
 
-            self.assertTrue(first.claim("42", "ABC123").allowed)
-            repeated = second.claim("42", "ABC123")
+            self.assertTrue(first.claim("code", "42", "ABC123").allowed)
+            repeated = second.claim("code", "42", "ABC123")
             self.assertFalse(repeated.allowed)
             self.assertEqual(repeated.retry_after_seconds, 30)
 
@@ -1668,6 +1855,28 @@ class HTTPHandlerTests(unittest.TestCase):
         self.assertIsNone(redirected.data)
         self.assertEqual(redirected.full_url, StaticBridge.checkout_url)
 
+    def test_payment_id_flow_returns_direct_303_with_security_headers(self) -> None:
+        checkout = "https://yoomoney.ru/checkout/order?orderId=vehicle-search"
+        upstream = FakeUpstream(bridge.UpstreamResponse(303, checkout, ()))
+        limiter = MemoryRateLimiter()
+        self.server.bridge = bridge.PaymentBridge(upstream, limiter)  # type: ignore[assignment]
+
+        response = self.request(
+            "POST",
+            bridge.BRIDGE_PATH,
+            b"client_id=1609&paycard=x&payment_id=1609",
+        )
+
+        self.assertEqual(response.status, 303)
+        self.assertEqual(response.getheader("Location"), checkout)
+        self.assertEqual(response.getheader("Cache-Control"), "no-store")
+        self.assertEqual(response.getheader("Referrer-Policy"), "no-referrer")
+        self.assertEqual(response.getheader("X-Content-Type-Options"), "nosniff")
+        self.assertEqual(response.getheader("X-Bridge-Result"), "BRIDGE-OK")
+        self.assertEqual(response.body, b"")  # type: ignore[attr-defined]
+        self.assertEqual(upstream.create_calls[0][:2], ("payment_id", "1609"))
+        self.assertEqual(limiter.calls, [("payment_id", "1609", "1609")])
+
     def test_invalid_checkout_url_is_never_sent_as_location(self) -> None:
         invalid_urls = (
             "http://yoomoney.ru/checkout/order?orderId=invalid",
@@ -1719,10 +1928,47 @@ class HTTPHandlerTests(unittest.TestCase):
         self.assertIn("event=request_finished", log_text)
         self.assertIn("http_status=303", log_text)
         self.assertIn("final_reason=payment_ready", log_text)
-        self.assertNotIn("yoomoney.ru", log_text)
-        self.assertNotIn("/checkout/", log_text)
+        self.assertNotIn(StaticBridge.checkout_url, log_text)
+        self.assertNotIn("?orderId=", log_text)
         self.assertNotIn("orderId", log_text)
         self.assertNotIn("opaque", log_text)
+        self.assertNotIn("ABC123", log_text)
+
+    def test_source_identifiers_and_checkout_details_are_not_logged(self) -> None:
+        checkout = "https://yoomoney.ru/checkout/order?orderId=hidden-order"
+        upstream = FakeUpstream(bridge.UpstreamResponse(303, checkout, ()))
+        self.server.bridge = bridge.PaymentBridge(upstream, MemoryRateLimiter())  # type: ignore[assignment]
+        root_logger = logging.getLogger()
+        previous_level = root_logger.level
+        handler = RequestFinishedLogHandler()
+        root_logger.addHandler(handler)
+        root_logger.setLevel(logging.INFO)
+        try:
+            fixed_uuid = mock.Mock(hex="safe-request-id")
+            with (
+                mock.patch.object(bridge.uuid, "uuid4", return_value=fixed_uuid),
+                mock.patch.object(bridge, "client_id_hash", return_value="safe-client-hash"),
+            ):
+                response = self.request(
+                    "POST",
+                    bridge.BRIDGE_PATH,
+                    b"client_id=1609&paycard=x&payment_id=1609",
+                )
+            request_id = response.getheader("X-Bridge-Request-Id", "")
+            self.assertTrue(handler.wait_for_success_finished(request_id))
+        finally:
+            root_logger.removeHandler(handler)
+            root_logger.setLevel(previous_level)
+
+        log_text = handler.text()
+        self.assertEqual(response.status, 303)
+        self.assertIn("event=request_finished", log_text)
+        self.assertNotIn(checkout, log_text)
+        self.assertNotIn("?orderId=", log_text)
+        self.assertNotIn("orderId", log_text)
+        self.assertNotIn("hidden-order", log_text)
+        self.assertNotIn("payment_id", log_text)
+        self.assertNotIn("1609", log_text)
 
     def test_error_page_contains_safe_diagnostic_and_request_id(self) -> None:
         self.server.bridge = ErrorBridge()  # type: ignore[assignment]

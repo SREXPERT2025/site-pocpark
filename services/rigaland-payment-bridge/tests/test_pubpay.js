@@ -37,6 +37,8 @@ function runScenario({
     hasPaymentForm = true,
     hasPaymentButton = true,
     paymentButtonName = "paycard",
+    clientIdValue = "42",
+    clientIdCount = 1,
     formValid = true,
     debug = false,
     tableRows = [],
@@ -54,6 +56,11 @@ function runScenario({
     const appendedFields = [];
     let acceptedSubmissions = 0;
     let codeField = null;
+    let paymentIdField = null;
+    const clientFields = Array.from({ length: clientIdCount }, () => ({
+        name: "client_id",
+        value: clientIdValue,
+    }));
     const paymentButton = {
         tagName: paymentButtonName.startsWith("paybtn") ? "BUTTON" : "INPUT",
         name: paymentButtonName,
@@ -74,17 +81,34 @@ function runScenario({
     };
     const form = {
         querySelector(selector) {
-            if (selector === 'input[name="client_id"]') return { value: "42" };
+            if (selector === 'input[name="client_id"]') return clientFields[0] || null;
             if (selector === 'input[name="code"]') return codeField;
+            if (selector === 'input[name="payment_id"]') return paymentIdField;
             return null;
         },
         querySelectorAll(selector) {
-            assert.equal(selector, "input[name], button[name]");
-            return hasPaymentButton ? [paymentButton] : [];
+            if (selector === "input[name], button[name]") {
+                return hasPaymentButton ? [paymentButton] : [];
+            }
+            if (selector === 'input[name="client_id"]') return clientFields;
+            if (selector === 'input[name="code"]') return codeField ? [codeField] : [];
+            if (selector === 'input[name="payment_id"]') {
+                return paymentIdField ? [paymentIdField] : [];
+            }
+            assert.fail(`unexpected selector: ${selector}`);
         },
         appendChild(element) {
+            element.parentNode = form;
             appendedFields.push(element);
             if (element.name === "code") codeField = element;
+            if (element.name === "payment_id") paymentIdField = element;
+        },
+        removeChild(element) {
+            const index = appendedFields.indexOf(element);
+            if (index !== -1) appendedFields.splice(index, 1);
+            if (element === codeField) codeField = null;
+            if (element === paymentIdField) paymentIdField = null;
+            element.parentNode = null;
         },
         setAttribute(name, value) {
             formAttributes[name] = value;
@@ -190,7 +214,12 @@ function runScenario({
         get markerCreationCount() {
             return markerCreationCount;
         },
-        codeField,
+        get codeField() {
+            return codeField;
+        },
+        get paymentIdField() {
+            return paymentIdField;
+        },
         paymentButton,
         appendedFields,
         submit,
@@ -222,6 +251,20 @@ function assertActive(result, expectedCode) {
     assert.equal(result.formAttributes["data-apple-bridge-test"], "V1");
     assert.equal(result.codeField.name, "code");
     assert.equal(result.codeField.value, expectedCode);
+    assert.equal(result.codeField.type, "hidden");
+    assert.equal(result.paymentIdField, null);
+    assert.equal(result.marker, null);
+    assert.equal(result.markerCreationCount, 0);
+}
+
+function assertPaymentIdActive(result, expectedPaymentId) {
+    assert.equal(result.formAttributes.action, expectedBridgeUrl);
+    assert.equal(result.formAttributes.method, "post");
+    assert.equal(result.formAttributes["data-apple-bridge-test"], "V1");
+    assert.equal(result.paymentIdField.name, "payment_id");
+    assert.equal(result.paymentIdField.value, expectedPaymentId);
+    assert.equal(result.paymentIdField.type, "hidden");
+    assert.equal(result.codeField, null);
     assert.equal(result.marker, null);
     assert.equal(result.markerCreationCount, 0);
 }
@@ -229,6 +272,7 @@ function assertActive(result, expectedCode) {
 function assertCodeNotFound(result) {
     assert.equal(result.formAttributes.action, undefined);
     assert.equal(result.codeField, null);
+    assert.equal(result.paymentIdField, null);
     assert.equal(result.marker, null);
     assert.equal(result.markerCreationCount, 0);
 }
@@ -237,6 +281,7 @@ function assertPaymentUnavailable(result) {
     assert.equal(result.formAttributes.action, undefined);
     assert.equal(result.formAttributes.method, undefined);
     assert.equal(result.codeField, null);
+    assert.equal(result.paymentIdField, null);
     assert.equal(result.marker, null);
     assert.equal(result.markerCreationCount, 0);
     assert.equal(result.paymentButton.disabled, false);
@@ -260,6 +305,23 @@ for (const search of [
     assertActive(runIPhone(search), "TESTCODE01");
 }
 
+const exactQrMode = runIPhone("?code=%5B67BDE3CDF1%5D", null, {
+    clientIdValue: "1609",
+    debug: true,
+});
+assert.equal(exactQrMode.formAttributes.action, expectedBridgeUrl);
+assert.equal(exactQrMode.codeField.value, "67BDE3CDF1");
+assert.equal(exactQrMode.paymentIdField, null);
+assertDebugState(
+    exactQrMode,
+    "active",
+    "APPLE BRIDGE TEST V1: ACTIVE",
+    "#258f4e",
+);
+assert.equal(exactQrMode.submit().defaultPrevented, false);
+assert.equal(exactQrMode.submit().defaultPrevented, true);
+assert.equal(exactQrMode.acceptedSubmissions, 1);
+
 const guardedSubmit = runIPhone("?code=TESTCODE01");
 assertActive(guardedSubmit, "TESTCODE01");
 const firstSubmitEvent = guardedSubmit.submit();
@@ -279,6 +341,36 @@ const secondSubmitEvent = guardedSubmit.submit();
 assert.equal(secondSubmitEvent.defaultPrevented, true);
 assert.equal(guardedSubmit.acceptedSubmissions, 1);
 assert.equal(guardedSubmit.appendedFields.length, appendedAfterFirstSubmit);
+
+const vehicleSearch = runIPhone("?id=1609", null, {
+    clientIdValue: "1609",
+});
+assertPaymentIdActive(vehicleSearch, "1609");
+const vehicleFirstSubmit = vehicleSearch.submit();
+assert.equal(vehicleFirstSubmit.defaultPrevented, false);
+assert.equal(vehicleSearch.acceptedSubmissions, 1);
+assert.equal(vehicleSearch.paymentButton.disabled, true);
+assert.equal(vehicleSearch.paymentButton.value, "Формируем платёж…");
+const vehiclePaymentFieldProxy = vehicleSearch.appendedFields.find(
+    (field) => field.attributes["data-apple-bridge-payment-field"] === "V1",
+);
+assert.ok(vehiclePaymentFieldProxy);
+const vehicleSecondSubmit = vehicleSearch.submit();
+assert.equal(vehicleSecondSubmit.defaultPrevented, true);
+assert.equal(vehicleSearch.acceptedSubmissions, 1);
+
+const debugVehicleSearch = runIPhone("?id=1609", null, {
+    clientIdValue: "1609",
+    debug: true,
+});
+assert.equal(debugVehicleSearch.paymentIdField.value, "1609");
+assert.equal(debugVehicleSearch.codeField, null);
+assertDebugState(
+    debugVehicleSearch,
+    "active",
+    "APPLE BRIDGE TEST V1: ACTIVE",
+    "#258f4e",
+);
 
 const invalidFormSubmit = runIPhone("?code=TESTCODE01", null, {
     formValid: false,
@@ -316,6 +408,65 @@ assertCodeNotFound(invalidCode);
 
 const missingCode = runIPhone("?id=9001");
 assertCodeNotFound(missingCode);
+
+const mismatchedPaymentId = runIPhone("?id=1609", null, {
+    clientIdValue: "1610",
+    debug: true,
+});
+assert.equal(mismatchedPaymentId.formAttributes.action, undefined);
+assert.equal(mismatchedPaymentId.codeField, null);
+assert.equal(mismatchedPaymentId.paymentIdField, null);
+assertDebugState(
+    mismatchedPaymentId,
+    "code-not-found",
+    "APPLE BRIDGE TEST V1: INACTIVE — CODE NOT FOUND",
+    "#c62828",
+);
+
+for (const search of [
+    "?id=0",
+    "?id=-1",
+    "?id=abc",
+    "?id=1.5",
+    "?id=%20",
+    "?id=1609%0A",
+    "?id=123456789012345678901",
+    "?id=1609&id=1609",
+    "?id=",
+]) {
+    const invalidPaymentId = runIPhone(search, null, { clientIdValue: "1609" });
+    assertCodeNotFound(invalidPaymentId);
+}
+
+const codeHasPriority = runIPhone("?code=67BDE3CDF1&id=1609", null, {
+    clientIdValue: "1609",
+});
+assertActive(codeHasPriority, "67BDE3CDF1");
+
+const invalidClientId = runIPhone("?id=1609", null, {
+    clientIdValue: "01609",
+    debug: true,
+});
+assertDebugState(
+    invalidClientId,
+    "payment-unavailable",
+    "APPLE BRIDGE TEST V1: INACTIVE — PAYMENT UNAVAILABLE",
+    "#87918c",
+);
+assert.equal(invalidClientId.formAttributes.action, undefined);
+
+const duplicateClientId = runIPhone("?id=1609", null, {
+    clientIdValue: "1609",
+    clientIdCount: 2,
+    debug: true,
+});
+assertDebugState(
+    duplicateClientId,
+    "payment-unavailable",
+    "APPLE BRIDGE TEST V1: INACTIVE — PAYMENT UNAVAILABLE",
+    "#87918c",
+);
+assert.equal(duplicateClientId.formAttributes.action, undefined);
 
 const queryCannotEnableDebug = runIPhone(
     "?code=TESTCODE01&APPLE_BRIDGE_DEBUG=true",
@@ -361,6 +512,17 @@ const androidChrome = runScenario({
     search: "?code=TESTCODE01",
 });
 assert.equal(androidChrome.formAttributes.action, undefined);
+
+const androidVehicleSearch = runScenario({
+    userAgent: "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/136.0.0.0 Mobile Safari/537.36",
+    platform: "Linux armv8l",
+    maxTouchPoints: 5,
+    search: "?id=1609",
+    clientIdValue: "1609",
+});
+assert.equal(androidVehicleSearch.formAttributes.action, undefined);
+assert.equal(androidVehicleSearch.codeField, null);
+assert.equal(androidVehicleSearch.paymentIdField, null);
 assert.equal(androidChrome.codeField, null);
 assert.equal(androidChrome.marker, null);
 assert.equal(androidChrome.markerCreationCount, 0);
@@ -378,6 +540,16 @@ const macChrome = runScenario({
 assert.equal(macChrome.formAttributes.action, undefined);
 assert.equal(macChrome.marker, null);
 assert.equal(macChrome.markerCreationCount, 0);
+
+const macChromeVehicleSearch = runScenario({
+    userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/136.0.0.0 Safari/537.36",
+    platform: "MacIntel",
+    maxTouchPoints: 0,
+    search: "?id=1609",
+    clientIdValue: "1609",
+});
+assert.equal(macChromeVehicleSearch.formAttributes.action, undefined);
+assert.equal(macChromeVehicleSearch.paymentIdField, null);
 
 const debugActive = runIPhone("?code=TESTCODE01", null, { debug: true });
 assertDebugState(
