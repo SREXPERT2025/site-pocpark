@@ -8,7 +8,7 @@ readonly APP_DIR="/opt/rigaland-payment-bridge"
 readonly STATE_DIR="/var/lib/rigaland-payment-bridge"
 readonly UNIT_PATH="/etc/systemd/system/${SERVICE_NAME}"
 readonly NGINX_SNIPPET_PATH="/etc/nginx/snippets/rigaland-payment-bridge.conf"
-readonly EXPECTED_BRIDGE_SHA256="68b40179f647cdaf530680aa4701c7ff9482940b8724c6290002cab202e41b2a"
+readonly EXPECTED_BRIDGE_SHA256="9876592bf3dc8d8a02e697a42e61089f150200655bf93962f7cc7893fec2df2a"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"

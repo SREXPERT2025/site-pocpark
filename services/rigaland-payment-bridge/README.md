@@ -2,8 +2,8 @@
 
 Изолированный серверный мост для формы PH Parking Riga Land. Мост принимает
 штатный POST формы, обращается только к фиксированному upstream PH Parking и
-возвращает браузеру обычную HTML-страницу перехода. Интеграции с API ЮKassa,
-ключей ЮKassa и произвольного целевого URL в проекте нет.
+при успехе возвращает браузеру прямой HTTP 303 на проверенный checkout URL.
+Интеграции с API ЮKassa, ключей ЮKassa и произвольного целевого URL в проекте нет.
 
 ## Изоляция от сайта
 
@@ -20,7 +20,7 @@ PM2 или обычного site-deploy. Установка выполняетс
 
 ## Состав
 
-- `bridge.py` — точная проверенная версия Mac Studio;
+- `bridge.py` — VPS-версия проверенного моста с прямым успешным HTTP 303;
 - `tests/test_bridge.py` — Python-тесты транспорта, parser, allowlist и flow;
 - `tests/test_pubpay.js` — тесты Apple routing, fallback и submit guard;
 - `ph-parking/pubpay.html` — текущая релизная PH-копия с действующим адресом Mac Studio;
@@ -35,11 +35,13 @@ PM2 или обычного site-deploy. Установка выполняетс
 
 ## Контрольные суммы этой версии
 
-- `bridge.py`: `68b40179f647cdaf530680aa4701c7ff9482940b8724c6290002cab202e41b2a`;
+- `bridge.py`: `9876592bf3dc8d8a02e697a42e61089f150200655bf93962f7cc7893fec2df2a`;
 - `ph-parking/pubpay.html`: `6d2feb75c04a050eedc8a148cfa683993948c345f48504b1a2f2991701fedc08`.
 
 Хеш `bridge.py` также закреплён в install/update-скриптах. При следующем
 осознанном релизе `bridge.py` его нужно обновить там одновременно с кодом.
+
+Резервный мост Mac Studio не обновляется и не удаляется этими файлами.
 
 ## Runtime
 

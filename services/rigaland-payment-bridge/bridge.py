@@ -1782,7 +1782,9 @@ class ResponseCookieJar:
 def yoomoney_checkout_url(location: str | None) -> str | None:
     if not location:
         return None
-    if any(char.isspace() or char in "\"'<>`\\" or ord(char) == 0x7F for char in location):
+    if _contains_control_characters(location) or any(
+        char.isspace() or char in "\"'<>`\\" for char in location
+    ):
         return None
     parsed = urlsplit(location)
     try:
@@ -2407,39 +2409,6 @@ class PaymentBridge:
             next_check += POLL_INTERVAL_SECONDS
 
 
-def render_checkout_page(checkout_url: str) -> bytes:
-    escaped_url = html.escape(checkout_url, quote=True)
-    script_url = json.dumps(checkout_url).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
-    document = f"""<!doctype html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Платёж сформирован</title>
-<style>
-html,body{{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;background:#f3f5f4;color:#202522}}
-body{{display:grid;place-items:center;padding:20px;box-sizing:border-box}}
-main{{width:min(560px,100%);padding:32px 24px;background:#fff;border:1px solid #d6ddda;border-radius:16px;box-shadow:0 12px 36px rgba(26,45,34,.14);text-align:center}}
-h1{{margin:0 0 16px;font-size:clamp(28px,7vw,40px)}}
-p{{font-size:18px;line-height:1.5}}
-.button{{display:block;margin:24px auto 16px;padding:17px 22px;border-radius:12px;background:#258f4e;color:#fff;text-decoration:none;font-size:21px;font-weight:750}}
-.fallback{{overflow-wrap:anywhere;color:#145f34}}
-</style>
-</head>
-<body>
-<main>
-<h1>Платёж сформирован</h1>
-<p>Сейчас откроется защищённая страница оплаты.</p>
-<a class="button" href="{escaped_url}" rel="noreferrer">Перейти к оплате</a>
-<p>Если переход не произошёл, используйте <a class="fallback" href="{escaped_url}" rel="noreferrer">обычную ссылку</a>.</p>
-</main>
-<script>window.setTimeout(function(){{window.location.assign({script_url});}},700);</script>
-</body>
-</html>
-"""
-    return document.encode("utf-8")
-
-
 def _render_ticket_return_page(
     title: str,
     message_html: str,
@@ -2591,6 +2560,33 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
             final_reason or result_code,
         )
 
+    def _send_checkout_redirect(self, checkout_url: str) -> None:
+        validated_checkout_url = yoomoney_checkout_url(checkout_url)
+        if validated_checkout_url is None:
+            raise BridgeError(
+                502,
+                "unexpected_upstream_redirect",
+                PAYMENT_LINK_FAILURE_MESSAGE,
+                stage="parse_location",
+            )
+
+        self.send_response(303)
+        for name, value in SECURITY_HEADERS.items():
+            self.send_header(name, value)
+        self.send_header("X-Bridge-Request-Id", self.request_id)
+        self.send_header("X-Bridge-Result", "BRIDGE-OK")
+        self.send_header("Location", validated_checkout_url)
+        self.send_header("Content-Length", "0")
+        self.send_header("Connection", "close")
+        self.end_headers()
+        self.close_connection = True
+        logging.info(
+            "event=request_finished request_id=%s elapsed_ms=%s http_status=303 "
+            "final_reason=payment_ready",
+            self.request_id,
+            max(0, round((time.monotonic() - self.request_started_at) * 1000)),
+        )
+
     def _not_found(self, *, head_only: bool = False) -> None:
         result = "BRIDGE-NOT-FOUND"
         self._send_html(
@@ -2662,7 +2658,7 @@ class BridgeRequestHandler(BaseHTTPRequestHandler):
         try:
             checkout_url = self.server.bridge.process(raw_body, self.request_id)
             logging.info("event=payment_ready request_id=%s", self.request_id)
-            self._send_html(200, render_checkout_page(checkout_url), "BRIDGE-OK", final_reason="payment_ready")
+            self._send_checkout_redirect(checkout_url)
         except BridgeError as exc:
             logging.warning(
                 "event=request_failed request_id=%s stage=%s exception_class=%s "

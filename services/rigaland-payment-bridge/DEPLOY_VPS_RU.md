@@ -89,7 +89,7 @@ sha256sum services/rigaland-payment-bridge/bridge.py
 
 Ожидаемый SHA-256:
 
-`68b40179f647cdaf530680aa4701c7ff9482940b8724c6290002cab202e41b2a`
+`9876592bf3dc8d8a02e697a42e61089f150200655bf93962f7cc7893fec2df2a`
 
 ## 3. Локальные тесты перед установкой
 

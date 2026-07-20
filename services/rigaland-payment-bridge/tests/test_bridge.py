@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import threading
 import unittest
+import urllib.request
 from pathlib import Path
 from unittest import mock
 
@@ -145,6 +146,7 @@ class RedirectPolicyTests(unittest.TestCase):
             "https://yoomoney.ru:444/checkout/x",
             "https://yoomoney.ru/not-checkout/x",
             "https://yoomoney.ru/checkout/x\tignored",
+            "https://yoomoney.ru/checkout/x\x01",
             "https://yoomoney.ru/checkout/x<script>",
             "https://127.0.0.1/checkout/x",
             "https://10.0.0.1/checkout/x",
@@ -1490,9 +1492,20 @@ class SQLiteRateLimiterTests(unittest.TestCase):
 
 
 class StaticBridge:
+    checkout_url = "https://yoomoney.ru/checkout/order?orderId=opaque"
+
     def process(self, raw_body: bytes, request_id: str | None = None) -> str:
         del raw_body, request_id
-        return "https://yoomoney.ru/checkout/order?id=opaque"
+        return self.checkout_url
+
+
+class CheckoutURLBridge:
+    def __init__(self, checkout_url: str) -> None:
+        self.checkout_url = checkout_url
+
+    def process(self, raw_body: bytes, request_id: str | None = None) -> str:
+        del raw_body, request_id
+        return self.checkout_url
 
 
 class ErrorBridge:
@@ -1579,7 +1592,7 @@ class HTTPHandlerTests(unittest.TestCase):
                 self.assertRegex(response.getheader("X-Bridge-Request-Id", ""), r"^[0-9a-f]{32}$")
                 self.assertEqual(response.getheader("X-Bridge-Result"), "BRIDGE-NOT-FOUND")
 
-    def test_bridge_get_is_405_and_post_returns_well_formed_html(self) -> None:
+    def test_bridge_get_is_405_and_successful_post_returns_direct_303(self) -> None:
         response = self.request("GET", bridge.BRIDGE_PATH)
         self.assertEqual(response.status, 405)
         self.assertEqual(response.getheader("Allow"), "POST")
@@ -1589,13 +1602,79 @@ class HTTPHandlerTests(unittest.TestCase):
             bridge.BRIDGE_PATH,
             b"client_id=42&paycard=x&code=ABC123",
         )
-        self.assertEqual(response.status, 200)
+        self.assertEqual(response.status, 303)
+        self.assertEqual(response.reason, "See Other")
+        self.assertEqual(response.getheader("Location"), StaticBridge.checkout_url)
+        self.assertEqual(response.getheader("Cache-Control"), "no-store")
+        self.assertEqual(response.getheader("Referrer-Policy"), "no-referrer")
         self.assertEqual(response.getheader("X-Content-Type-Options"), "nosniff")
         self.assertRegex(response.getheader("X-Bridge-Request-Id", ""), r"^[0-9a-f]{32}$")
         self.assertEqual(response.getheader("X-Bridge-Result"), "BRIDGE-OK")
-        self.assertIn(b"700", response.body)  # type: ignore[attr-defined]
-        self.assertIn("Платёж сформирован".encode(), response.body)  # type: ignore[attr-defined]
-        self.assertIn("Перейти к оплате".encode(), response.body)  # type: ignore[attr-defined]
+        self.assertEqual(response.getheader("Content-Length"), "0")
+        self.assertIsNone(response.getheader("Content-Type"))
+        self.assertEqual(response.body, b"")  # type: ignore[attr-defined]
+
+    def test_http_303_redirect_semantics_convert_post_to_get(self) -> None:
+        original = urllib.request.Request(
+            "https://bridge.example/rigaland/payment-bridge",
+            data=b"client_id=42&paycard=x&code=ABC123",
+            method="POST",
+        )
+        redirected = urllib.request.HTTPRedirectHandler().redirect_request(
+            original,
+            None,
+            303,
+            "See Other",
+            {},
+            StaticBridge.checkout_url,
+        )
+
+        self.assertIsNotNone(redirected)
+        assert redirected is not None
+        self.assertEqual(redirected.get_method(), "GET")
+        self.assertIsNone(redirected.data)
+        self.assertEqual(redirected.full_url, StaticBridge.checkout_url)
+
+    def test_invalid_checkout_url_is_never_sent_as_location(self) -> None:
+        invalid_urls = (
+            "http://yoomoney.ru/checkout/order?orderId=invalid",
+            "https://evil.example/checkout/order?orderId=invalid",
+            "https://user@yoomoney.ru/checkout/order?orderId=invalid",
+            "https://yoomoney.ru:444/checkout/order?orderId=invalid",
+            "https://yoomoney.ru/payment/order?orderId=invalid",
+            "https://yoomoney.ru/checkout/order?orderId=invalid\x01",
+        )
+
+        for invalid_url in invalid_urls:
+            with self.subTest(invalid_url=invalid_url):
+                self.server.bridge = CheckoutURLBridge(invalid_url)  # type: ignore[assignment]
+                response = self.request(
+                    "POST",
+                    bridge.BRIDGE_PATH,
+                    b"client_id=42&paycard=x&code=ABC123",
+                )
+
+                self.assertEqual(response.status, 502)
+                self.assertIsNone(response.getheader("Location"))
+                self.assertEqual(response.getheader("X-Bridge-Result"), "BRIDGE-INVALID-REDIRECT")
+                self.assertNotIn(invalid_url.encode(), response.body)  # type: ignore[attr-defined]
+
+    def test_success_logs_do_not_contain_checkout_url_or_order_id(self) -> None:
+        with self.assertLogs(level="INFO") as captured:
+            response = self.request(
+                "POST",
+                bridge.BRIDGE_PATH,
+                b"client_id=42&paycard=x&code=ABC123",
+            )
+
+        log_text = "\n".join(captured.output)
+        self.assertEqual(response.status, 303)
+        self.assertIn("event=payment_ready", log_text)
+        self.assertIn("http_status=303", log_text)
+        self.assertNotIn("yoomoney.ru", log_text)
+        self.assertNotIn("/checkout/", log_text)
+        self.assertNotIn("orderId", log_text)
+        self.assertNotIn("opaque", log_text)
 
     def test_error_page_contains_safe_diagnostic_and_request_id(self) -> None:
         self.server.bridge = ErrorBridge()  # type: ignore[assignment]
