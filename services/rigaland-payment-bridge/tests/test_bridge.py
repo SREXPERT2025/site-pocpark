@@ -1559,6 +1559,39 @@ class NoLocationBridge:
         )
 
 
+class RequestFinishedLogHandler(logging.Handler):
+    def __init__(self) -> None:
+        super().__init__(level=logging.INFO)
+        self._condition = threading.Condition()
+        self._messages: list[str] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        message = record.getMessage()
+        with self._condition:
+            self._messages.append(message)
+            self._condition.notify_all()
+
+    def wait_for_success_finished(self, request_id: str, timeout: float = 2.0) -> bool:
+        required = (
+            "event=request_finished",
+            f"request_id={request_id}",
+            "http_status=303",
+            "final_reason=payment_ready",
+        )
+        with self._condition:
+            return self._condition.wait_for(
+                lambda: any(
+                    all(marker in message for marker in required)
+                    for message in self._messages
+                ),
+                timeout=timeout,
+            )
+
+    def text(self) -> str:
+        with self._condition:
+            return "\n".join(self._messages)
+
+
 class HTTPHandlerTests(unittest.TestCase):
     def setUp(self) -> None:
         self.server = bridge.BridgeHTTPServer(("127.0.0.1", 0), StaticBridge())  # type: ignore[arg-type]
@@ -1660,17 +1693,32 @@ class HTTPHandlerTests(unittest.TestCase):
                 self.assertNotIn(invalid_url.encode(), response.body)  # type: ignore[attr-defined]
 
     def test_success_logs_do_not_contain_checkout_url_or_order_id(self) -> None:
-        with self.assertLogs(level="INFO") as captured:
+        root_logger = logging.getLogger()
+        previous_level = root_logger.level
+        handler = RequestFinishedLogHandler()
+        root_logger.addHandler(handler)
+        root_logger.setLevel(logging.INFO)
+        try:
             response = self.request(
                 "POST",
                 bridge.BRIDGE_PATH,
                 b"client_id=42&paycard=x&code=ABC123",
             )
+            request_id = response.getheader("X-Bridge-Request-Id", "")
+            self.assertTrue(
+                handler.wait_for_success_finished(request_id),
+                "timed out waiting for the complete request_finished success log",
+            )
+        finally:
+            root_logger.removeHandler(handler)
+            root_logger.setLevel(previous_level)
 
-        log_text = "\n".join(captured.output)
+        log_text = handler.text()
         self.assertEqual(response.status, 303)
         self.assertIn("event=payment_ready", log_text)
+        self.assertIn("event=request_finished", log_text)
         self.assertIn("http_status=303", log_text)
+        self.assertIn("final_reason=payment_ready", log_text)
         self.assertNotIn("yoomoney.ru", log_text)
         self.assertNotIn("/checkout/", log_text)
         self.assertNotIn("orderId", log_text)
