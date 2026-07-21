@@ -1,9 +1,14 @@
 import 'server-only';
 
 import { randomBytes } from 'node:crypto';
-import { mkdirSync } from 'node:fs';
-import path from 'node:path';
 import Database from 'better-sqlite3';
+import {
+  DEMO_TEST_TENANT_ID,
+  DEMO_USER_REQUEST_LIMIT,
+  DEMO_USER_TTL_MS,
+  GUEST_REQUEST_HOURLY_RATE,
+} from './demo-config';
+import { getDemoDatabase } from './demo-database';
 
 export type DemoRequestStatus = 'waiting' | 'cancelled' | 'active' | 'completed';
 export type DemoRequestType = 'single' | 'multiple';
@@ -34,6 +39,7 @@ type DemoRequestRow = {
   created_at: string;
   expires_at: number | null;
   tenant: string;
+  tenant_id: string | null;
   guest_name: string;
   valid_from: string;
   valid_until: string;
@@ -52,53 +58,6 @@ type CreateDemoRequestInput = Pick<
   DemoGuestRequest,
   'guestName' | 'validFrom' | 'validUntil' | 'requestType' | 'phone' | 'vehicleNumber' | 'note'
 >;
-
-const USER_TTL_MS = 24 * 60 * 60 * 1000;
-const DEMO_HOURLY_RATE = 100;
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __rosparkDemoDb: Database.Database | undefined;
-}
-
-function databasePath() {
-  return process.env.DEMO_REQUESTS_DB_PATH || path.join(process.cwd(), '.data', 'guest-requests.sqlite');
-}
-
-function openDatabase() {
-  if (global.__rosparkDemoDb) return global.__rosparkDemoDb;
-  const filePath = databasePath();
-  mkdirSync(path.dirname(filePath), { recursive: true });
-  const db = new Database(filePath);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS demo_guest_requests (
-      id TEXT PRIMARY KEY,
-      public_token TEXT NOT NULL UNIQUE,
-      session_id TEXT,
-      created_at TEXT NOT NULL,
-      expires_at INTEGER,
-      tenant TEXT NOT NULL,
-      guest_name TEXT NOT NULL,
-      valid_from TEXT NOT NULL,
-      valid_until TEXT NOT NULL,
-      request_type TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      vehicle_number TEXT NOT NULL,
-      note TEXT NOT NULL DEFAULT '',
-      status TEXT NOT NULL,
-      entered_at TEXT,
-      exited_at TEXT,
-      hourly_rate INTEGER,
-      is_seed INTEGER NOT NULL DEFAULT 0
-    );
-    CREATE INDEX IF NOT EXISTS idx_demo_requests_session ON demo_guest_requests(session_id);
-    CREATE INDEX IF NOT EXISTS idx_demo_requests_expiry ON demo_guest_requests(expires_at);
-  `);
-  global.__rosparkDemoDb = db;
-  return db;
-}
 
 function shiftedIso(base: Date, minutes: number) {
   return new Date(base.getTime() + minutes * 60_000).toISOString();
@@ -131,7 +90,7 @@ function seedRequests(): Array<DemoGuestRequest & { expiresAt: null }> {
     vehicleNumber: plates[index],
     note: index % 3 === 0 ? 'Встреча в офисе арендатора' : 'Гостевой визит',
     status,
-    hourlyRate: DEMO_HOURLY_RATE,
+    hourlyRate: GUEST_REQUEST_HOURLY_RATE,
     isSeed: true,
   });
   const waiting = [0, 1].map((index) => ({
@@ -183,11 +142,11 @@ function rowToRequest(row: DemoRequestRow): DemoGuestRequest {
 function upsertSeeds(db: Database.Database) {
   const statement = db.prepare(`
     INSERT INTO demo_guest_requests (
-      id, public_token, session_id, created_at, expires_at, tenant, guest_name,
+      id, public_token, session_id, created_at, expires_at, tenant, tenant_id, guest_name,
       valid_from, valid_until, request_type, phone, vehicle_number, note, status,
       entered_at, exited_at, hourly_rate, is_seed
     ) VALUES (
-      @id, @publicToken, NULL, @createdAt, @expiresAt, @tenant, @guestName,
+      @id, @publicToken, NULL, @createdAt, @expiresAt, @tenant, @tenantId, @guestName,
       @validFrom, @validUntil, @requestType, @phone, @vehicleNumber, @note, @status,
       @enteredAt, @exitedAt, @hourlyRate, 1
     )
@@ -198,18 +157,24 @@ function upsertSeeds(db: Database.Database) {
       status=excluded.status,
       entered_at=excluded.entered_at,
       exited_at=excluded.exited_at,
-      hourly_rate=excluded.hourly_rate
+      hourly_rate=excluded.hourly_rate,
+      tenant_id=excluded.tenant_id
   `);
   const transaction = db.transaction(() => {
     for (const request of seedRequests()) {
-      statement.run({ ...request, enteredAt: request.enteredAt ?? null, exitedAt: request.exitedAt ?? null });
+      statement.run({
+        ...request,
+        tenantId: DEMO_TEST_TENANT_ID,
+        enteredAt: request.enteredAt ?? null,
+        exitedAt: request.exitedAt ?? null,
+      });
     }
   });
   transaction();
 }
 
 function prepareStore() {
-  const db = openDatabase();
+  const db = getDemoDatabase();
   db.prepare('DELETE FROM demo_guest_requests WHERE is_seed = 0 AND expires_at <= ?').run(Date.now());
   upsertSeeds(db);
   return db;
@@ -235,17 +200,17 @@ export function createDemoRequest(sessionId: string, input: CreateDemoRequestInp
     tenant: 'TEST',
     ...input,
     status: 'waiting',
-    hourlyRate: DEMO_HOURLY_RATE,
+    hourlyRate: GUEST_REQUEST_HOURLY_RATE,
   };
   db.prepare(`
     INSERT INTO demo_guest_requests (
-      id, public_token, session_id, created_at, expires_at, tenant, guest_name,
+      id, public_token, session_id, created_at, expires_at, tenant, tenant_id, guest_name,
       valid_from, valid_until, request_type, phone, vehicle_number, note, status,
       hourly_rate, is_seed
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
   `).run(
-    request.id, request.publicToken, sessionId, request.createdAt, Date.now() + USER_TTL_MS,
-    request.tenant, request.guestName, request.validFrom, request.validUntil,
+    request.id, request.publicToken, sessionId, request.createdAt, Date.now() + DEMO_USER_TTL_MS,
+    request.tenant, DEMO_TEST_TENANT_ID, request.guestName, request.validFrom, request.validUntil,
     request.requestType, request.phone, request.vehicleNumber, request.note,
     request.status, request.hourlyRate
   );
@@ -255,7 +220,7 @@ export function createDemoRequest(sessionId: string, input: CreateDemoRequestInp
       SELECT id FROM demo_guest_requests
       WHERE session_id = ? AND is_seed = 0
       ORDER BY created_at DESC
-      LIMIT 20
+      LIMIT ${DEMO_USER_REQUEST_LIMIT}
     )
   `).run(sessionId, sessionId);
   return request;
