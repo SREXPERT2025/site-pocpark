@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { absoluteUrl } from '@/app/config/site-url';
+import { getDemoRequestForSession } from '@/app/lib/demo-request-store';
+import { readDemoSession } from '@/app/lib/demo-session';
 
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 5;
@@ -19,6 +22,13 @@ function normalizeApiUrl(value: string) {
   return value.trim().replace(/\/+$/, '');
 }
 
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat('ru-RU', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    timeZone: 'Europe/Moscow',
+  }).format(new Date(value));
+}
+
 export async function POST(request: NextRequest) {
   if (process.env.DEMO_MAX_ENABLED !== 'true') {
     return NextResponse.json({ error: 'Серверная отправка MAX отключена.' }, { status: 503 });
@@ -37,12 +47,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Слишком много попыток. Повторите через минуту.' }, { status: 429 });
   }
 
-  const payload = (await request.json().catch(() => null)) as { phone?: unknown; message?: unknown } | null;
-  const phone = typeof payload?.phone === 'string' ? payload.phone.replace(/\D/g, '') : '';
-  const message = typeof payload?.message === 'string' ? payload.message.trim() : '';
-  if (!/^7\d{10}$/.test(phone) || !message || message.length > 1000) {
-    return NextResponse.json({ error: 'Некорректный телефон или текст сообщения.' }, { status: 400 });
+  const sessionId = readDemoSession(request);
+  if (!sessionId) return NextResponse.json({ error: 'Сессия demo-кабинета не найдена.' }, { status: 401 });
+  const payload = (await request.json().catch(() => null)) as { requestId?: unknown } | null;
+  const requestId = typeof payload?.requestId === 'string' ? payload.requestId.toUpperCase() : '';
+  const guestRequest = requestId ? getDemoRequestForSession(sessionId, requestId) : null;
+  if (!guestRequest || guestRequest.isSeed) {
+    return NextResponse.json({ error: 'Для отправки создайте собственную demo-заявку.' }, { status: 400 });
   }
+  const publicUrl = absoluteUrl(`/demo/arendar/${guestRequest.publicToken}`);
+  const message = `Демо-заявка РОСПАРК № ${guestRequest.id}. Действует: ${formatDateTime(guestRequest.validFrom)} — ${formatDateTime(guestRequest.validUntil)}. ${publicUrl}`;
 
   try {
     const response = await fetch(
@@ -50,7 +64,7 @@ export async function POST(request: NextRequest) {
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId: `${phone}@c.us`, message }),
+        body: JSON.stringify({ chatId: `${guestRequest.phone}@c.us`, message }),
         cache: 'no-store',
       }
     );

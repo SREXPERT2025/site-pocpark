@@ -3,6 +3,7 @@ node_modules/
 .next/
 out/
 dist/
+.data/
 
 # Python
 __pycache__/

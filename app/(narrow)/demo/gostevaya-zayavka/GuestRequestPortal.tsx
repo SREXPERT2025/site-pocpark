@@ -35,6 +35,7 @@ type RequestsLayout = 'rows' | 'cards';
 
 type GuestRequest = {
   id: string;
+  publicToken: string;
   createdAt: string;
   tenant: 'TEST';
   guestName: string;
@@ -51,9 +52,6 @@ type GuestRequest = {
   isSeed?: boolean;
 };
 
-const STORAGE_KEY = 'rospark_demo_guest_requests_v2';
-const STORAGE_TTL_MS = 24 * 60 * 60 * 1000;
-const MAX_STORED_REQUESTS = 20;
 const DEMO_HOURLY_RATE = 100;
 const PAGE_PATH = '/demo/gostevaya-zayavka';
 
@@ -107,79 +105,6 @@ function normalizeVehicleNumber(value: string) {
   return value.toUpperCase().replace(/\s+/g, '').trim();
 }
 
-function shiftedIso(base: Date, minutes: number) {
-  return new Date(base.getTime() + minutes * 60_000).toISOString();
-}
-
-function createSeedRequests(): GuestRequest[] {
-  const now = new Date();
-  const names = [
-    'Игорь Николаевич',
-    'Марина Соколова',
-    'Андрей Родионов',
-    'Виталий Васильев',
-    'Дмитрий Орлов',
-    'Анна Морозова',
-    'Сергей Иванов',
-    'Ольга Петрова',
-    'Алексей Смирнов',
-    'Елена Волкова',
-    'Михаил Кузнецов',
-    'Наталья Фёдорова',
-    'Роман Лебедев',
-    'Ирина Павлова',
-    'Константин Егоров',
-  ];
-  const plates = [
-    'У545КА90', 'У732РН190', 'А777АА250', 'Х938ВЕ977', 'Т555ТТ77',
-    'К880АА790', 'Е777ЕЕ97', 'М123ММ77', 'С456СС197', 'Н909НН50',
-    'В234ВВ799', 'Р678РР77', 'О001ОО99', 'А321ВС77', 'К456МН190',
-  ];
-  const phones = names.map((_, index) => `7999000${String(index + 1).padStart(4, '0')}`);
-  const base = (index: number, status: StoredStatus): GuestRequest => ({
-    id: `D3M02026${String(index + 1).padStart(8, '0')}`,
-    createdAt: shiftedIso(now, -(index + 1) * 70),
-    tenant: 'TEST',
-    guestName: names[index],
-    validFrom: shiftedIso(now, -60),
-    validUntil: shiftedIso(now, 8 * 60),
-    requestType: index % 4 === 0 ? 'multiple' : 'single',
-    phone: phones[index],
-    vehicleNumber: plates[index],
-    note: index % 3 === 0 ? 'Встреча в офисе арендатора' : 'Гостевой визит',
-    status,
-    hourlyRate: DEMO_HOURLY_RATE,
-    isSeed: true,
-  });
-
-  const waiting = [0, 1].map((index) => ({
-    ...base(index, 'waiting'),
-    validFrom: shiftedIso(now, (index + 1) * 60),
-    validUntil: shiftedIso(now, (index + 3) * 60),
-  }));
-  const activeMinutes = [35, 75, 125, 190, 260, 340, 430];
-  const active = activeMinutes.map((minutes, offset) => ({
-    ...base(offset + 2, 'active'),
-    enteredAt: shiftedIso(now, -minutes),
-    validFrom: shiftedIso(now, -minutes - 30),
-    validUntil: shiftedIso(now, 10 * 60),
-  }));
-  const completedMinutes = [45, 90, 135, 200, 310, 420];
-  const completed = completedMinutes.map((minutes, offset) => {
-    const index = offset + 9;
-    const exitOffset = -(offset + 1) * 180;
-    return {
-      ...base(index, 'completed'),
-      enteredAt: shiftedIso(now, exitOffset - minutes),
-      exitedAt: shiftedIso(now, exitOffset),
-      validFrom: shiftedIso(now, exitOffset - minutes - 30),
-      validUntil: shiftedIso(now, exitOffset + 60),
-    };
-  });
-
-  return [...waiting, ...active, ...completed];
-}
-
 function getStayMinutes(request: GuestRequest, nowMs = Date.now()) {
   if (!request.enteredAt) return 0;
   const end = request.exitedAt ? new Date(request.exitedAt).getTime() : nowMs;
@@ -204,38 +129,12 @@ function formatRubles(value: number) {
   return `${new Intl.NumberFormat('ru-RU').format(value)} ₽`;
 }
 
-function generateRequestId() {
-  const bytes = new Uint8Array(8);
-  window.crypto.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('').toUpperCase();
-}
-
 function getDisplayStatus(request: GuestRequest): DisplayStatus {
   if (request.status === 'cancelled') return 'cancelled';
   if (request.status === 'active') return 'active';
   if (request.status === 'completed') return 'completed';
   if (new Date(request.validUntil).getTime() < Date.now()) return 'expired';
   return 'waiting';
-}
-
-function readStoredRequests(): GuestRequest[] {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as GuestRequest[];
-    if (!Array.isArray(parsed)) return [];
-    const cutoff = Date.now() - STORAGE_TTL_MS;
-    return parsed
-      .filter((item) => item && new Date(item.createdAt).getTime() >= cutoff)
-      .slice(0, MAX_STORED_REQUESTS);
-  } catch {
-    return [];
-  }
-}
-
-function writeStoredRequests(requests: GuestRequest[]) {
-  const userRequests = requests.filter((request) => !request.isSeed).slice(0, MAX_STORED_REQUESTS);
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(userRequests));
 }
 
 function RequestQr({ value }: { value: string }) {
@@ -283,7 +182,6 @@ function RequestStatus({ status }: { status: DisplayStatus }) {
 export default function GuestRequestPortal() {
   const initialDates = useMemo(() => defaultDates(), []);
   const [authenticated, setAuthenticated] = useState(false);
-  const [publicMode, setPublicMode] = useState(false);
   const [login, setLogin] = useState('TEST');
   const [password, setPassword] = useState('TEST');
   const [loginError, setLoginError] = useState('');
@@ -303,23 +201,6 @@ export default function GuestRequestPortal() {
   const [notice, setNotice] = useState('');
 
   useEffect(() => {
-    const stored = readStoredRequests();
-    const allRequests = [...stored, ...createSeedRequests()];
-    setRequests(allRequests);
-    writeStoredRequests(allRequests);
-    const requestId = new URLSearchParams(window.location.search).get('request');
-    const publicRequest = requestId
-      ? allRequests.find((request) => request.id === requestId.toUpperCase())
-      : undefined;
-    if (publicRequest) {
-      setSelectedId(publicRequest.id);
-      setAuthenticated(true);
-      setPublicMode(true);
-      setView('detail');
-    }
-  }, []);
-
-  useEffect(() => {
     const interval = window.setInterval(() => setClockMs(Date.now()), 60_000);
     return () => window.clearInterval(interval);
   }, []);
@@ -336,46 +217,47 @@ export default function GuestRequestPortal() {
     return { ...counts, totalCost };
   }, [clockMs, requests]);
 
-  function persist(next: GuestRequest[]) {
-    const seedRequests = next.filter((request) => request.isSeed);
-    const userRequests = next.filter((request) => !request.isSeed).slice(0, MAX_STORED_REQUESTS);
-    const limited = [...userRequests, ...seedRequests];
-    setRequests(limited);
-    writeStoredRequests(limited);
+  async function loadRequests() {
+    const response = await fetch('/api/demo/requests', { cache: 'no-store' });
+    const payload = (await response.json().catch(() => null)) as { requests?: GuestRequest[]; error?: string } | null;
+    if (!response.ok || !payload?.requests) throw new Error(payload?.error || 'Не удалось загрузить demo-заявки.');
+    setRequests(payload.requests);
   }
 
-  function handleLogin(event: React.FormEvent<HTMLFormElement>) {
+  async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (login.trim().toUpperCase() !== 'TEST' || password !== 'TEST') {
-      setLoginError('Для демо используйте логин TEST и пароль TEST.');
-      return;
-    }
     setLoginError('');
-    setNotice('');
-    setPublicMode(false);
-    setAuthenticated(true);
-    setView('new');
-    dispatchDemoEvent('demo_login', { demo_name: 'guest_request_portal' });
+    try {
+      const response = await fetch('/api/demo/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ login, password }),
+      });
+      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+      if (!response.ok) {
+        setLoginError(payload?.error || 'Для демо используйте логин TEST и пароль TEST.');
+        return;
+      }
+      await loadRequests();
+      setNotice('');
+      setAuthenticated(true);
+      setView('new');
+      dispatchDemoEvent('demo_login', { demo_name: 'guest_request_portal' });
+    } catch {
+      setLoginError('Сервер demo-кабинета временно недоступен.');
+    }
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    await fetch('/api/demo/session', { method: 'DELETE' }).catch(() => undefined);
     setAuthenticated(false);
-    setPublicMode(false);
     setPassword('TEST');
     setView('new');
     setSelectedId(null);
+    setRequests([]);
     setNotice('');
     window.history.replaceState({}, '', PAGE_PATH);
     dispatchDemoEvent('demo_logout', { demo_name: 'guest_request_portal' });
-  }
-
-  function closePublicView() {
-    setAuthenticated(false);
-    setPublicMode(false);
-    setView('new');
-    setSelectedId(null);
-    setNotice('');
-    window.history.replaceState({}, '', PAGE_PATH);
   }
 
   function resetForm() {
@@ -390,7 +272,7 @@ export default function GuestRequestPortal() {
     setFormError('');
   }
 
-  function handleCreate(event: React.FormEvent<HTMLFormElement>) {
+  async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError('');
     const normalizedPhone = normalizePhone(phone);
@@ -413,29 +295,37 @@ export default function GuestRequestPortal() {
       return;
     }
 
-    const request: GuestRequest = {
-      id: generateRequestId(),
-      createdAt: new Date().toISOString(),
-      tenant: 'TEST',
-      guestName: guestName.trim(),
-      validFrom: new Date(validFrom).toISOString(),
-      validUntil: new Date(validUntil).toISOString(),
-      requestType,
-      phone: normalizedPhone,
-      vehicleNumber: normalizedVehicle,
-      note: note.trim(),
-      status: 'waiting',
-    };
-
-    persist([request, ...requests]);
-    setSelectedId(request.id);
-    setView('detail');
-    resetForm();
-    dispatchDemoEvent('demo_request_create', {
-      demo_name: 'guest_request_portal',
-      request_type: requestType,
-      status: 'waiting',
-    });
+    try {
+      const response = await fetch('/api/demo/requests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          guestName: guestName.trim(),
+          validFrom: new Date(validFrom).toISOString(),
+          validUntil: new Date(validUntil).toISOString(),
+          requestType,
+          phone: normalizedPhone,
+          vehicleNumber: normalizedVehicle,
+          note: note.trim(),
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as { request?: GuestRequest; error?: string } | null;
+      if (!response.ok || !payload?.request) {
+        setFormError(payload?.error || 'Не удалось создать заявку.');
+        return;
+      }
+      setRequests((current) => [payload.request as GuestRequest, ...current]);
+      setSelectedId(payload.request.id);
+      setView('detail');
+      resetForm();
+      dispatchDemoEvent('demo_request_create', {
+        demo_name: 'guest_request_portal',
+        request_type: requestType,
+        status: 'waiting',
+      });
+    } catch {
+      setFormError('Сервер demo-заявок временно недоступен.');
+    }
   }
 
   function openRequest(id: string) {
@@ -444,28 +334,33 @@ export default function GuestRequestPortal() {
     dispatchDemoEvent('demo_request_view', { demo_name: 'guest_request_portal' });
   }
 
-  function cancelRequest(id: string) {
+  async function cancelRequest(id: string) {
     const target = requests.find((request) => request.id === id);
     if (!target || getDisplayStatus(target) !== 'waiting') return;
-    const next = requests.map((request) =>
-      request.id === id ? { ...request, status: 'cancelled' as const } : request
-    );
-    persist(next);
-    setNotice('Заявка отменена. В реальной системе это действие попадёт в журнал аудита.');
-    dispatchDemoEvent('demo_request_cancel', {
-      demo_name: 'guest_request_portal',
-      status: 'cancelled',
+    const response = await fetch(`/api/demo/requests/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'cancel' }),
     });
+    const payload = (await response.json().catch(() => null)) as { request?: GuestRequest; error?: string } | null;
+    if (!response.ok || !payload?.request) {
+      setNotice(payload?.error || 'Не удалось отменить заявку.');
+      return;
+    }
+    setRequests((current) => current.map((request) => request.id === id ? payload.request as GuestRequest : request));
+    setNotice('Заявка отменена и сохранена в серверном журнале demo.');
+    dispatchDemoEvent('demo_request_cancel', { demo_name: 'guest_request_portal', status: 'cancelled' });
   }
 
   function getPublicUrl(request: GuestRequest) {
-    if (typeof window === 'undefined') return `${PAGE_PATH}?request=${request.id}`;
-    return `${window.location.origin}${PAGE_PATH}?request=${request.id}`;
+    const path = `/demo/arendar/${request.publicToken}`;
+    if (typeof window === 'undefined') return path;
+    return `${window.location.origin}${path}`;
   }
 
   async function copyPublicLink(request: GuestRequest) {
     await navigator.clipboard.writeText(getPublicUrl(request));
-    setNotice('Демо-ссылка скопирована. Она открывает заявку только в этом браузере, пока нет серверного хранилища.');
+    setNotice('Публичная ссылка скопирована. Заявка откроется на другом устройстве в течение 24 часов.');
     dispatchDemoEvent('demo_share', { demo_name: 'guest_request_portal', channel: 'copy' });
   }
 
@@ -477,12 +372,11 @@ export default function GuestRequestPortal() {
   }
 
   async function sendToMax(request: GuestRequest) {
-    const message = `Демо-заявка РОСПАРК № ${request.id}. Действует: ${formatDateTime(request.validFrom)} — ${formatDateTime(request.validUntil)}. ${getPublicUrl(request)}`;
     try {
       const response = await fetch('/api/demo/share/max', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: request.phone, message }),
+        body: JSON.stringify({ requestId: request.id }),
       });
       if (response.ok) {
         setNotice('Заявка отправлена в MAX через защищённую серверную интеграцию GREEN-API.');
@@ -522,7 +416,7 @@ export default function GuestRequestPortal() {
           Личный кабинет арендатора
         </h2>
         <p className="mt-3 max-w-3xl leading-7 text-slate-600">
-          Внутри показан интерфейс так, как арендатор увидит его в обычном браузере. Добавленные вами заявки хранятся локально до 24 часов.
+          Внутри показан интерфейс так, как арендатор увидит его в обычном браузере. Добавленные заявки хранятся в demo-базе до 24 часов.
         </p>
       </div>
 
@@ -599,18 +493,11 @@ export default function GuestRequestPortal() {
                     <p className="text-xs text-slate-400">Кабинет арендатора · TEST</p>
                   </div>
                 </div>
-                {publicMode ? (
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="rounded-full border border-blue-400/30 bg-blue-400/10 px-3 py-1.5 text-xs font-semibold text-blue-200">Публичный demo-просмотр</span>
-                    <button type="button" onClick={closePublicView} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10"><LogOut aria-hidden="true" size={17} />Закрыть</button>
-                  </div>
-                ) : (
                 <nav aria-label="Навигация личного кабинета" className="flex flex-wrap gap-2">
                   <button type="button" onClick={() => { setView('new'); setNotice(''); }} className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${view === 'new' ? 'bg-white text-slate-950' : 'text-slate-200 hover:bg-white/10'}`}><FilePlus2 aria-hidden="true" size={17} />Новая заявка</button>
                   <button type="button" onClick={() => { setView('requests'); setNotice(''); }} className={`inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition ${view === 'requests' || view === 'detail' ? 'bg-white text-slate-950' : 'text-slate-200 hover:bg-white/10'}`}><ClipboardList aria-hidden="true" size={17} />Мои заявки <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs text-slate-700">{requests.length}</span></button>
                   <button type="button" onClick={handleLogout} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-300 transition hover:bg-rose-500/15 hover:text-rose-200"><LogOut aria-hidden="true" size={17} />Выйти</button>
                 </nav>
-                )}
               </div>
             </header>
 
@@ -640,7 +527,7 @@ export default function GuestRequestPortal() {
                     </div>
                     {formError ? <p role="alert" className="mt-5 text-sm font-medium text-rose-700">{formError}</p> : null}
                     <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-xs leading-5 text-slate-500">Данные останутся только в этом браузере и удалятся автоматически.</p>
+                      <p className="text-xs leading-5 text-slate-500">Заявка хранится на demo-сервере до 24 часов и доступна гостю по публичной ссылке.</p>
                       <button type="submit" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent-primary px-6 py-3 font-semibold text-white transition hover:bg-state-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2"><QrCodeIcon aria-hidden="true" size={19} />Создать заявку</button>
                     </div>
                   </form>
@@ -706,7 +593,7 @@ export default function GuestRequestPortal() {
 
               {view === 'detail' && selectedRequest ? (
                 <div className="mx-auto max-w-4xl">
-                  {!publicMode ? <button type="button" onClick={() => setView('requests')} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-blue-700"><ArrowLeft aria-hidden="true" size={17} />К моим заявкам</button> : null}
+                  <button type="button" onClick={() => setView('requests')} className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700 hover:text-blue-700"><ArrowLeft aria-hidden="true" size={17} />К моим заявкам</button>
                   <div className="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
                     <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-950 px-5 py-6 text-white sm:flex-row sm:items-center sm:justify-between sm:px-8"><div><p className="text-xs uppercase tracking-[0.14em] text-blue-300">Гостевая заявка</p><h3 className="mt-2 break-all font-mono text-xl font-bold sm:text-2xl">№ {selectedRequest.id}</h3></div><RequestStatus status={getDisplayStatus(selectedRequest)} /></div>
                     <div className="grid lg:grid-cols-[1fr_280px]">
@@ -734,7 +621,7 @@ export default function GuestRequestPortal() {
                         <button type="button" onClick={() => copyPublicLink(selectedRequest)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"><Copy aria-hidden="true" size={17} />Копировать ссылку</button>
                         <button type="button" onClick={() => openWhatsApp(selectedRequest)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"><MessageCircle aria-hidden="true" size={17} />WhatsApp</button>
                         <button type="button" onClick={() => sendToMax(selectedRequest)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"><MessageCircle aria-hidden="true" size={17} />Отправить в MAX</button>
-                        {!publicMode && !selectedRequest.isSeed && getDisplayStatus(selectedRequest) === 'waiting' ? <button type="button" onClick={() => cancelRequest(selectedRequest.id)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"><Trash2 aria-hidden="true" size={17} />Отменить</button> : <div className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-sm font-medium text-slate-500">{publicMode ? 'Только просмотр' : selectedRequest.isSeed ? 'Постоянный demo-пример' : 'Изменение закрыто'}</div>}
+                        {!selectedRequest.isSeed && getDisplayStatus(selectedRequest) === 'waiting' ? <button type="button" onClick={() => cancelRequest(selectedRequest.id)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"><Trash2 aria-hidden="true" size={17} />Отменить</button> : <div className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-sm font-medium text-slate-500">{selectedRequest.isSeed ? 'Постоянный demo-пример' : 'Изменение закрыто'}</div>}
                       </div>
                       <p className="mt-4 text-xs leading-5 text-slate-500">MAX отправляет через серверную интеграцию GREEN-API, если она включена; иначе используется системное меню «Поделиться». WhatsApp открывает экран подготовки сообщения и требует подтверждения пользователя.</p>
                     </div>
@@ -747,7 +634,7 @@ export default function GuestRequestPortal() {
       </div>
 
       <div className="mt-5 grid gap-3 text-sm leading-6 text-slate-600 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4"><ShieldCheck aria-hidden="true" size={20} className="text-blue-700" /><p className="mt-2 font-semibold text-slate-900">Демо без рабочей базы</p><p className="mt-1">15 постоянных примеров создаются локально; серверная отправка включается отдельно.</p></div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4"><ShieldCheck aria-hidden="true" size={20} className="text-blue-700" /><p className="mt-2 font-semibold text-slate-900">Изолированная demo-база</p><p className="mt-1">Каждый браузер видит только свои заявки и 15 постоянных примеров.</p></div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4"><Clock3 aria-hidden="true" size={20} className="text-blue-700" /><p className="mt-2 font-semibold text-slate-900">Автоочистка</p><p className="mt-1">До 20 ваших заявок, срок хранения — 24 часа.</p></div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4"><UserRound aria-hidden="true" size={20} className="text-blue-700" /><p className="mt-2 font-semibold text-slate-900">Демо-доступ</p><p className="mt-1">TEST/TEST работает только внутри этой страницы.</p></div>
       </div>
