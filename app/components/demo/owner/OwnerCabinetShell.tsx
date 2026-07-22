@@ -1,12 +1,12 @@
 'use client';
 
-import { BarChart3, Building2, CalendarRange } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { BadgePercent, BarChart3, Building2, CalendarRange, ClipboardList, ListChecks } from 'lucide-react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import DemoCabinetHeader from '@/app/components/demo/DemoCabinetHeader';
 import OwnerPeriodSwitcher from './OwnerPeriodSwitcher';
 import type { OwnerPeriod, OwnerPeriodMode } from './owner-types';
 
-export type OwnerCabinetTab = 'overview' | 'tenants';
+export type OwnerCabinetTab = 'overview' | 'tenants' | 'guest-requests' | 'parking-payments' | 'operations';
 
 type OwnerCabinetShellProps = {
   activeTab: OwnerCabinetTab;
@@ -22,6 +22,9 @@ type OwnerCabinetShellProps = {
 const tabs: Array<{ id: OwnerCabinetTab; label: string; icon: typeof BarChart3 }> = [
   { id: 'overview', label: 'Обзор', icon: BarChart3 },
   { id: 'tenants', label: 'Арендаторы', icon: Building2 },
+  { id: 'guest-requests', label: 'Гостевые заявки', icon: ClipboardList },
+  { id: 'parking-payments', label: 'Оплата парковки гостей', icon: BadgePercent },
+  { id: 'operations', label: 'Все операции', icon: ListChecks },
 ];
 
 export default function OwnerCabinetShell({
@@ -34,6 +37,16 @@ export default function OwnerCabinetShell({
   onPeriodChange,
   onLogout,
 }: OwnerCabinetShellProps) {
+  const tabScrollerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const scroller = tabScrollerRef.current;
+    const activeButton = document.getElementById(`owner-tab-${activeTab}`);
+    if (!scroller || !activeButton) return;
+    const targetLeft = activeButton.offsetLeft - ((scroller.clientWidth - activeButton.offsetWidth) / 2);
+    scroller.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
+  }, [activeTab]);
+
   function handleTabKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();
@@ -78,34 +91,36 @@ export default function OwnerCabinetShell({
 
         <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end">
           <div>
-            <div
-              role="tablist"
-              aria-label="Разделы кабинета владельца"
-              onKeyDown={handleTabKeyDown}
-              className="inline-flex w-full rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm sm:w-auto"
-            >
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const selected = tab.id === activeTab;
-                return (
-                  <button
-                    key={tab.id}
-                    id={`owner-tab-${tab.id}`}
-                    type="button"
-                    role="tab"
-                    aria-selected={selected}
-                    aria-controls={`owner-panel-${tab.id}`}
-                    tabIndex={selected ? 0 : -1}
-                    onClick={() => onTabChange(tab.id)}
-                    className={`inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:flex-none ${selected ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'}`}
-                  >
-                    <Icon aria-hidden="true" size={17} />
-                    {tab.label}
-                  </button>
-                );
-              })}
+            <div ref={tabScrollerRef} className="max-w-full overflow-x-auto pb-1 [scrollbar-width:thin]">
+              <div
+                role="tablist"
+                aria-label="Разделы кабинета владельца"
+                onKeyDown={handleTabKeyDown}
+                className="inline-flex min-w-max rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm"
+              >
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const selected = tab.id === activeTab;
+                  return (
+                    <button
+                      key={tab.id}
+                      id={`owner-tab-${tab.id}`}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      aria-controls={`owner-panel-${tab.id}`}
+                      tabIndex={selected ? 0 : -1}
+                      onClick={() => onTabChange(tab.id)}
+                      className={`inline-flex min-h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${selected ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'}`}
+                    >
+                      <Icon aria-hidden="true" size={17} />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <p className="mt-2 text-xs text-slate-500">Детальные реестры заявок и операций будут добавлены на следующем этапе.</p>
+            <p className="mt-2 text-xs text-slate-500">Сводка и детальные реестры используют один выбранный отчётный период.</p>
           </div>
 
           <OwnerPeriodSwitcher

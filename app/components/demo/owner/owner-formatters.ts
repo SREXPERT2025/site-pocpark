@@ -1,6 +1,9 @@
 import type {
   OwnerObjectType,
+  OwnerGuestRequestStatus,
+  OwnerGuestRequestType,
   OwnerOperationStatus,
+  OwnerOperationSource,
   OwnerOperationType,
   OwnerVehicleType,
 } from './owner-types';
@@ -32,6 +35,24 @@ const operationStatusLabels: Record<OwnerOperationStatus, string> = {
 const vehicleTypeLabels: Record<OwnerVehicleType, string> = {
   car: 'Легковой',
   truck: 'Грузовой',
+};
+
+const requestTypeLabels: Record<OwnerGuestRequestType, string> = {
+  single: 'Одноразовая заявка',
+  multi: 'Многоразовая заявка',
+};
+
+const requestStatusLabels: Record<OwnerGuestRequestStatus, string> = {
+  waiting: 'Ожидает въезда',
+  active: 'Действует',
+  completed: 'Завершена',
+  cancelled: 'Отменена',
+  expired: 'Истекла',
+};
+
+const operationSourceLabels: Record<OwnerOperationSource, string> = {
+  historical: 'Исторический demo-отчёт',
+  current_session: 'Текущая demo-сессия',
 };
 
 export function formatOwnerMoney(value: number) {
@@ -89,4 +110,16 @@ export function ownerOperationStatusLabel(value: OwnerOperationStatus) {
 
 export function ownerVehicleTypeLabel(value: OwnerVehicleType) {
   return vehicleTypeLabels[value];
+}
+
+export function ownerGuestRequestTypeLabel(value: OwnerGuestRequestType) {
+  return requestTypeLabels[value];
+}
+
+export function ownerGuestRequestStatusLabel(value: OwnerGuestRequestStatus) {
+  return requestStatusLabels[value];
+}
+
+export function ownerOperationSourceLabel(value: OwnerOperationSource) {
+  return operationSourceLabels[value];
 }

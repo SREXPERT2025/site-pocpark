@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs';
+import type { OwnerCabinetTab } from '@/app/components/demo/owner/OwnerCabinetShell';
 import OwnerParkingPortal from './OwnerParkingPortal';
 
 export const metadata: Metadata = {
@@ -13,7 +14,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function OwnerParkingDemoPage() {
+const ownerSections = new Set<OwnerCabinetTab>([
+  'overview',
+  'tenants',
+  'guest-requests',
+  'parking-payments',
+  'operations',
+]);
+
+export default function OwnerParkingDemoPage({ searchParams }: { searchParams?: { section?: string | string[] } }) {
+  const rawSection = Array.isArray(searchParams?.section) ? searchParams?.section[0] : searchParams?.section;
+  const initialSection = rawSection && ownerSections.has(rawSection as OwnerCabinetTab)
+    ? rawSection as OwnerCabinetTab
+    : 'overview';
+
   return (
     <div className="pb-10">
       <Breadcrumbs
@@ -36,7 +50,7 @@ export default function OwnerParkingDemoPage() {
         </p>
       </section>
 
-      <OwnerParkingPortal />
+      <OwnerParkingPortal initialSection={initialSection} />
     </div>
   );
 }

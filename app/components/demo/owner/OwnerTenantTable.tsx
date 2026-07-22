@@ -250,7 +250,7 @@ export default function OwnerTenantTable({
                     <th scope="col" className="w-[10%] px-2 py-3 font-semibold">Тип объекта</th>
                     <th scope="col" className="w-[7%] px-2 py-3 text-right font-semibold">Гостевые заявки</th>
                     <th scope="col" className="w-[10%] px-2 py-3 text-right font-semibold">Гостевые проезды</th>
-                    <th scope="col" className="w-[10%] px-2 py-3 text-right font-semibold">Оплаты, шт.</th>
+                    <th scope="col" className="w-[10%] px-2 py-3 text-right font-semibold">Оплачено парковок</th>
                     <th scope="col" className="w-[10%] px-2 py-3 text-right font-semibold">Легковые, ₽</th>
                     <th scope="col" className="w-[10%] px-2 py-3 text-right font-semibold">Грузовые, ₽</th>
                     <th scope="col" className="w-[12%] px-3 py-3 text-right font-semibold">Итого, ₽</th>

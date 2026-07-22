@@ -4,12 +4,16 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import DemoBrowserFrame from '@/app/components/demo/DemoBrowserFrame';
 import OwnerCabinetShell, { type OwnerCabinetTab } from '@/app/components/demo/owner/OwnerCabinetShell';
+import OwnerGuestRequestsRegistry from '@/app/components/demo/owner/OwnerGuestRequestsRegistry';
 import OwnerLoginView from '@/app/components/demo/owner/OwnerLoginView';
+import OwnerOperationsRegistry from '@/app/components/demo/owner/OwnerOperationsRegistry';
 import OwnerOverview from '@/app/components/demo/owner/OwnerOverview';
+import OwnerParkingPaymentsRegistry from '@/app/components/demo/owner/OwnerParkingPaymentsRegistry';
 import OwnerTenantDrawer from '@/app/components/demo/owner/OwnerTenantDrawer';
 import OwnerTenantTable from '@/app/components/demo/owner/OwnerTenantTable';
 import type {
   OwnerObjectType,
+  OwnerOperationType,
   OwnerOperationsResponse,
   OwnerPeriodMode,
   OwnerSummary,
@@ -62,13 +66,21 @@ const emptyTenants: OwnerTenantsResponse = {
   totalPages: 0,
 };
 
-export default function OwnerParkingPortal() {
+const ownerSections = new Set<OwnerCabinetTab>([
+  'overview',
+  'tenants',
+  'guest-requests',
+  'parking-payments',
+  'operations',
+]);
+
+export default function OwnerParkingPortal({ initialSection = 'overview' }: { initialSection?: OwnerCabinetTab }) {
   const [authState, setAuthState] = useState<AuthState>('checking');
   const [login, setLogin] = useState('TEST');
   const [password, setPassword] = useState('TEST');
   const [loginError, setLoginError] = useState('');
   const [loginBusy, setLoginBusy] = useState(false);
-  const [activeTab, setActiveTab] = useState<OwnerCabinetTab>('overview');
+  const [activeTab, setActiveTab] = useState<OwnerCabinetTab>(initialSection);
   const [periodMode, setPeriodMode] = useState<OwnerPeriodMode>('previous-month');
 
   const [summary, setSummary] = useState<OwnerSummary | null>(null);
@@ -90,6 +102,13 @@ export default function OwnerParkingPortal() {
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [drawerError, setDrawerError] = useState('');
   const [drawerTrigger, setDrawerTrigger] = useState<HTMLElement | null>(null);
+  const [operationsIntent, setOperationsIntent] = useState<{
+    key: number;
+    operationType: OwnerOperationType | '';
+    search: string;
+    tenantId: string;
+  }>({ key: 0, operationType: '', search: '', tenantId: '' });
+  const [paymentsIntent, setPaymentsIntent] = useState<{ key: number; tenantId: string }>({ key: 0, tenantId: '' });
 
   const overviewAbortRef = useRef<AbortController | null>(null);
   const tenantsAbortRef = useRef<AbortController | null>(null);
@@ -121,7 +140,7 @@ export default function OwnerParkingPortal() {
       const query = `period=${encodeURIComponent(mode)}`;
       const [summaryResponse, tenantsResponse, operationsResponse] = await Promise.all([
         fetch(`/api/demo/owner/summary?${query}`, { cache: 'no-store', signal: controller.signal }),
-        fetch(`/api/demo/owner/tenants?${query}&page=1&pageSize=100&sort=totalAmount&order=desc`, { cache: 'no-store', signal: controller.signal }),
+        fetch(`/api/demo/owner/tenants?${query}&page=1&pageSize=100&sort=shortName&order=asc`, { cache: 'no-store', signal: controller.signal }),
         fetch(`/api/demo/owner/operations?${query}&page=1&pageSize=20&sort=enteredAt&order=desc`, { cache: 'no-store', signal: controller.signal }),
       ]);
       if ([summaryResponse, tenantsResponse, operationsResponse].some((response) => response.status === 401)) {
@@ -238,6 +257,24 @@ export default function OwnerParkingPortal() {
     void loadTenants();
   }, [activeTab, authState, loadTenants]);
 
+  useEffect(() => {
+    function handlePopState() {
+      const section = new URLSearchParams(window.location.search).get('section');
+      const next = section && ownerSections.has(section as OwnerCabinetTab) ? section as OwnerCabinetTab : 'overview';
+      setActiveTab(next);
+      setDrawerTenantId(null);
+      setDrawerDetail(null);
+    }
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    setActiveTab(initialSection);
+    setDrawerTenantId(null);
+    setDrawerDetail(null);
+  }, [initialSection]);
+
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoginBusy(true);
@@ -292,12 +329,39 @@ export default function OwnerParkingPortal() {
     setOverviewTenants([]);
     setRecentOperations([]);
     setTenantList(emptyTenants);
+    setOperationsIntent((current) => ({ key: current.key + 1, operationType: '', search: '', tenantId: '' }));
+    setPaymentsIntent((current) => ({ key: current.key + 1, tenantId: '' }));
     void loadOverview(mode);
   }
 
   function handleTabChange(tab: OwnerCabinetTab) {
     setActiveTab(tab);
     if (tab === 'tenants') setTenantPage(1);
+    setDrawerTenantId(null);
+    setDrawerDetail(null);
+    setDrawerError('');
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (tab === 'overview') url.searchParams.delete('section');
+      else url.searchParams.set('section', tab);
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+      window.requestAnimationFrame(() => document.getElementById(`owner-tab-${tab}`)?.focus());
+    }
+  }
+
+  function openOperations(options: { operationType?: OwnerOperationType | ''; search?: string; tenantId?: string } = {}) {
+    setOperationsIntent((current) => ({
+      key: current.key + 1,
+      operationType: options.operationType ?? '',
+      search: options.search ?? '',
+      tenantId: options.tenantId ?? '',
+    }));
+    handleTabChange('operations');
+  }
+
+  function openPayments(tenantId = '') {
+    setPaymentsIntent((current) => ({ key: current.key + 1, tenantId }));
+    handleTabChange('parking-payments');
   }
 
   function openTenant(tenantId: string, trigger: HTMLElement) {
@@ -370,8 +434,16 @@ export default function OwnerParkingPortal() {
                 error={overviewError}
                 onRetry={() => void loadOverview(periodMode)}
                 onOpenTenant={openTenant}
+                onOpenGuestRequests={() => handleTabChange('guest-requests')}
+                onOpenGuestPassages={() => openOperations({ operationType: 'guest_passage' })}
+                onOpenPayments={() => openPayments()}
+                onOpenOperations={(operation) => {
+                  if (!operation) openOperations();
+                  else if (operation.operationType === 'web_discount') openPayments(operation.tenantId);
+                  else openOperations({ operationType: 'guest_passage', search: operation.basisNumber, tenantId: operation.tenantId });
+                }}
               />
-            ) : (
+            ) : activeTab === 'tenants' ? (
               <OwnerTenantTable
                 items={tenantList.items}
                 total={tenantList.total}
@@ -390,6 +462,35 @@ export default function OwnerParkingPortal() {
                 onPageChange={setTenantPage}
                 onOpenTenant={openTenant}
                 onRetry={() => void loadTenants()}
+              />
+            ) : activeTab === 'guest-requests' ? (
+              <OwnerGuestRequestsRegistry
+                key={`guest-requests-${periodMode}`}
+                periodMode={periodMode}
+                summary={summary}
+                tenants={overviewTenants}
+                onUnauthorized={handleUnauthorized}
+              />
+            ) : activeTab === 'parking-payments' ? (
+              <OwnerParkingPaymentsRegistry
+                key={`payments-${periodMode}-${paymentsIntent.key}`}
+                periodMode={periodMode}
+                summary={summary}
+                tenants={overviewTenants}
+                initialTenantId={paymentsIntent.tenantId}
+                onUnauthorized={handleUnauthorized}
+              />
+            ) : (
+              <OwnerOperationsRegistry
+                key={`operations-${periodMode}-${operationsIntent.key}`}
+                periodMode={periodMode}
+                summary={summary}
+                tenants={overviewTenants}
+                initialOperationType={operationsIntent.operationType}
+                initialSearch={operationsIntent.search}
+                initialTenantId={operationsIntent.tenantId}
+                onUnauthorized={handleUnauthorized}
+                onOpenPayments={openPayments}
               />
             )}
           </OwnerCabinetShell>

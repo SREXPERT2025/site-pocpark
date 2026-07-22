@@ -7,6 +7,8 @@ type ChargeRow = {
   amount: number;
   count: number;
   colorClass: string;
+  actionLabel: string;
+  onOpen: () => void;
 };
 
 function share(amount: number, total: number) {
@@ -34,6 +36,13 @@ function ChargeBar({ row, total }: { row: ChargeRow; total: number }) {
       >
         <div className={`h-full rounded-full ${row.colorClass}`} style={{ width: `${percent}%` }} />
       </div>
+      <button
+        type="button"
+        onClick={row.onOpen}
+        className="mt-3 inline-flex min-h-11 items-center px-1 text-sm font-semibold text-blue-700 underline-offset-4 hover:text-blue-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      >
+        {row.actionLabel}
+      </button>
     </div>
   );
 }
@@ -42,10 +51,14 @@ export default function OwnerChargeStructure({
   summary,
   carAmount,
   truckAmount,
+  onOpenGuestPassages,
+  onOpenPayments,
 }: {
   summary: OwnerSummary;
   carAmount: number;
   truckAmount: number;
+  onOpenGuestPassages: () => void;
+  onOpenPayments: () => void;
 }) {
   const total = summary.amounts.totalTenantCharges;
   const chargeRows: ChargeRow[] = [
@@ -54,12 +67,16 @@ export default function OwnerChargeStructure({
       amount: summary.amounts.guestPassages,
       count: summary.guestPassageCount,
       colorClass: 'bg-blue-600',
+      actionLabel: 'Открыть реестр проездов',
+      onOpen: onOpenGuestPassages,
     },
     {
       label: 'Оплата парковки гостей',
       amount: summary.amounts.webDiscounts,
       count: summary.webDiscountCount,
       colorClass: 'bg-emerald-500',
+      actionLabel: 'Открыть реестр оплат',
+      onOpen: onOpenPayments,
     },
   ];
 

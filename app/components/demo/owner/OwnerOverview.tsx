@@ -18,6 +18,10 @@ type OwnerOverviewProps = {
   error: string;
   onRetry: () => void;
   onOpenTenant: (tenantId: string, trigger: HTMLElement) => void;
+  onOpenGuestRequests: () => void;
+  onOpenGuestPassages: () => void;
+  onOpenPayments: () => void;
+  onOpenOperations: (operation?: OwnerOperation) => void;
 };
 
 export default function OwnerOverview({
@@ -29,6 +33,10 @@ export default function OwnerOverview({
   error,
   onRetry,
   onOpenTenant,
+  onOpenGuestRequests,
+  onOpenGuestPassages,
+  onOpenPayments,
+  onOpenOperations,
 }: OwnerOverviewProps) {
   if (loading && !summary) return <OwnerLoadingState label="Собираем сводку парковки…" />;
   if (error && !summary) return <OwnerErrorState message={error} onRetry={onRetry} />;
@@ -84,17 +92,29 @@ export default function OwnerOverview({
         </div>
       </section>
 
-      <OwnerSummaryCards summary={summary} />
+      <OwnerSummaryCards
+        summary={summary}
+        onOpenGuestRequests={onOpenGuestRequests}
+        onOpenGuestPassages={onOpenGuestPassages}
+        onOpenPayments={onOpenPayments}
+      />
 
       <OwnerChargeStructure
         summary={summary}
         carAmount={carAmount}
         truckAmount={truckAmount}
+        onOpenGuestPassages={onOpenGuestPassages}
+        onOpenPayments={onOpenPayments}
       />
 
       <div className="grid gap-6 xl:grid-cols-[0.92fr_1.08fr] xl:items-start">
         <OwnerTopTenants tenants={tenants.slice(0, 5)} onOpenTenant={onOpenTenant} />
-        <OwnerRecentOperations operations={operations} timezone={summary.period.timezone} />
+        <OwnerRecentOperations
+          operations={operations}
+          timezone={summary.period.timezone}
+          onOpenAll={() => onOpenOperations()}
+          onOpenOperation={onOpenOperations}
+        />
       </div>
     </div>
   );

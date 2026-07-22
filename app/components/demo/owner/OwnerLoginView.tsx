@@ -46,7 +46,7 @@ export default function OwnerLoginView({
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             <strong className="block text-xl">2 сценария</strong>
-            <span className="mt-1 block text-slate-400">заявки и WEB-оплата</span>
+            <span className="mt-1 block text-slate-400">заявки и оплата парковки гостей</span>
           </div>
         </div>
       </div>
