@@ -25,6 +25,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import QRCode from 'qrcode';
+import DemoScenarioNav from '@/app/components/demo/DemoScenarioNav';
 import { dispatchDemoEvent } from '@/app/lib/analytics-events';
 
 type PortalView = 'new' | 'requests' | 'detail';
@@ -499,6 +500,7 @@ export default function GuestRequestPortal() {
                   <button type="button" onClick={handleLogout} className="inline-flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-300 transition hover:bg-rose-500/15 hover:text-rose-200"><LogOut aria-hidden="true" size={17} />Выйти</button>
                 </nav>
               </div>
+              <DemoScenarioNav active="guest-requests" />
             </header>
 
             <div className="p-4 sm:p-7 lg:p-9">
