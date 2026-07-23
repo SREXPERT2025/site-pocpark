@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Hero from '@/app/components/ui/Hero';
 import Breadcrumbs from '@/app/components/ui/Breadcrumbs';
 import CtaBlock from '@/app/components/ui/CtaBlock';
+import DemoCommercialCallout from '@/app/components/demo/DemoCommercialCallout';
 import FeatureExplainerVisual from '@/app/components/content/FeatureExplainerVisual';
 import TrustConversionBlocks from '@/app/components/content/TrustConversionBlocks';
 import { canonicalUrl } from '@/app/config/site-url';
@@ -18,6 +19,12 @@ const featureVisuals: Record<string, { src: string; alt: string }> = {
     alt: 'Камера распознаёт номер автомобиля перед автоматическим проездом через шлагбаум',
   },
 };
+
+const demoRelevantFeatures = new Set([
+  'arendnie-klienti',
+  'gostevie-klienti',
+  'onlain-oplata',
+]);
 
 export function generateStaticParams() {
   return getAllContentMeta('vozmozhnosti').map((m) => ({ slug: m.slug }));
@@ -68,6 +75,8 @@ export default function VozmozhnostiPage({ params }: { params: { slug: string } 
       <div className="mt-12">
         <TrustConversionBlocks variant="features" />
       </div>
+
+      {demoRelevantFeatures.has(params.slug) ? <DemoCommercialCallout /> : null}
 
       {data.ctas?.length ? (
         <div className="mt-8">

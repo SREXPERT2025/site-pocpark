@@ -6,6 +6,7 @@ import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
 import SolutionVisual from '@/app/components/content/SolutionVisual';
+import DemoCommercialCallout from '@/app/components/demo/DemoCommercialCallout';
 import LeadForm from '@/app/components/forms/LeadForm';
 import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
@@ -107,6 +108,10 @@ export default function BiznesCentresPage() {
         lead={answerLead}
         bullets={answerBullets}
       />
+
+      <div className="container mx-auto max-w-6xl px-4">
+        <DemoCommercialCallout />
+      </div>
 
       <ExtendedInfo
         section="resheniya"
