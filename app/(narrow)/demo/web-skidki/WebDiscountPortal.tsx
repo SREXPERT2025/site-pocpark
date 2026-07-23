@@ -22,6 +22,7 @@ import {
 import DemoBrowserFrame from '@/app/components/demo/DemoBrowserFrame';
 import DemoCabinetHeader from '@/app/components/demo/DemoCabinetHeader';
 import DemoStatusBadge from '@/app/components/demo/DemoStatusBadge';
+import { dispatchDemoEvent } from '@/app/lib/analytics-events';
 
 type AuthState = 'checking' | 'guest' | 'authenticated';
 type SearchMode = 'ticket' | 'vehicle';
@@ -179,6 +180,10 @@ export default function WebDiscountPortal() {
     window.requestAnimationFrame(() => confirmTriggerRef.current?.focus());
   }, []);
 
+  useEffect(() => {
+    dispatchDemoEvent('demo_scenario_view', { demo_name: 'guest_parking_payment' });
+  }, []);
+
   async function loadActiveSessions() {
     const response = await fetch('/api/demo/parking-sessions?status=active&page=1&pageSize=10', { cache: 'no-store' });
     if (response.status === 401) throw new Error('UNAUTHORIZED');
@@ -261,6 +266,7 @@ export default function WebDiscountPortal() {
       }
       setAuthState('authenticated');
       await loadPortalData();
+      dispatchDemoEvent('demo_login', { demo_name: 'guest_parking_payment' });
     } catch {
       setLoginError('Demo-сервер временно недоступен.');
     }
@@ -276,12 +282,14 @@ export default function WebDiscountPortal() {
     setSearchResults([]);
     setSuccess(null);
     setOperationError('');
+    dispatchDemoEvent('demo_logout', { demo_name: 'guest_parking_payment' });
   }
 
   function selectSession(session: ParkingSession) {
     setSelected(session);
     setSuccess(null);
     setOperationError('');
+    dispatchDemoEvent('demo_session_select', { demo_name: 'guest_parking_payment' });
     window.requestAnimationFrame(() => selectedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
@@ -311,12 +319,27 @@ export default function WebDiscountPortal() {
       if (!payload.items.length) {
         setSelected(null);
         setSearchMessage('Посетитель не найден. Проверьте талон или номер автомобиля.');
+        dispatchDemoEvent('demo_search', {
+          demo_name: 'guest_parking_payment',
+          search_mode: searchMode,
+          result: 'empty',
+        });
         return;
       }
       setSearchMessage(`Найдено: ${payload.items.length}`);
+      dispatchDemoEvent('demo_search', {
+        demo_name: 'guest_parking_payment',
+        search_mode: searchMode,
+        result: 'success',
+      });
       selectSession(payload.items[0]);
     } catch {
       setSearchMessage('Demo-сервер временно недоступен.');
+      dispatchDemoEvent('demo_search', {
+        demo_name: 'guest_parking_payment',
+        search_mode: searchMode,
+        result: 'error',
+      });
     } finally {
       setSearching(false);
     }
@@ -329,6 +352,12 @@ export default function WebDiscountPortal() {
     setSelected(null);
     setSuccess(null);
     setOperationError('');
+  }
+
+  function openConfirmation() {
+    setOperationError('');
+    setConfirmOpen(true);
+    dispatchDemoEvent('demo_payment_confirm', { demo_name: 'guest_parking_payment' });
   }
 
   async function applyDiscount() {
@@ -355,6 +384,10 @@ export default function WebDiscountPortal() {
           setSelected((current) => current ? { ...current, discountApplied: true } : current);
         }
         setConfirmOpen(false);
+        dispatchDemoEvent('demo_payment_complete', {
+          demo_name: 'guest_parking_payment',
+          result: 'error',
+        });
         return;
       }
       const result = payload.discount;
@@ -365,9 +398,17 @@ export default function WebDiscountPortal() {
       setHistory((current) => [result, ...current.filter((item) => item.id !== result.id)]);
       setConfirmOpen(false);
       await Promise.all([loadActiveSessions(), loadHistory()]);
+      dispatchDemoEvent('demo_payment_complete', {
+        demo_name: 'guest_parking_payment',
+        result: 'success',
+      });
     } catch {
       setOperationError('Demo-сервер временно недоступен. Попробуйте ещё раз.');
       setConfirmOpen(false);
+      dispatchDemoEvent('demo_payment_complete', {
+        demo_name: 'guest_parking_payment',
+        result: 'error',
+      });
     } finally {
       setApplying(false);
     }
@@ -572,7 +613,7 @@ export default function WebDiscountPortal() {
                         <button
                           ref={confirmTriggerRef}
                           type="button"
-                          onClick={() => { setOperationError(''); setConfirmOpen(true); }}
+                          onClick={openConfirmation}
                           disabled={selected.discountApplied || selected.status === 'completed'}
                           className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600"
                         >

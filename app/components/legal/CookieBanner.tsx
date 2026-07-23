@@ -2,24 +2,25 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-
-const COOKIE_CONSENT_KEY = 'rospark_cookie_consent';
-
-type CookieConsentValue = 'accepted' | 'declined';
+import {
+  readAnalyticsConsent,
+  saveAnalyticsConsent,
+  type AnalyticsConsentValue,
+} from '@/app/lib/analytics-consent';
 
 export default function CookieBanner() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const savedConsent = window.localStorage.getItem(COOKIE_CONSENT_KEY);
+    const savedConsent = readAnalyticsConsent();
 
     if (savedConsent !== 'accepted' && savedConsent !== 'declined') {
       setIsVisible(true);
     }
   }, []);
 
-  const saveConsent = (value: CookieConsentValue) => {
-    window.localStorage.setItem(COOKIE_CONSENT_KEY, value);
+  const saveConsent = (value: AnalyticsConsentValue) => {
+    saveAnalyticsConsent(value);
     setIsVisible(false);
   };
 

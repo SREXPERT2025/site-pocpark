@@ -213,6 +213,10 @@ export default function GuestRequestPortal() {
     return () => window.clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    dispatchDemoEvent('demo_scenario_view', { demo_name: 'guest_request_portal' });
+  }, []);
+
   const selectedRequest = requests.find((request) => request.id === selectedId) ?? null;
   const requestSummary = useMemo(() => {
     const counts = { waiting: 0, active: 0, completed: 0 };
@@ -381,11 +385,29 @@ export default function GuestRequestPortal() {
           consent: true,
         }),
       });
-      if (!response.ok) return 'failed' as const;
-      return 'saved' as const;
+      const result = response.ok ? 'saved' as const : 'failed' as const;
+      dispatchDemoEvent('demo_feedback_lead', {
+        demo_name: 'guest_request_portal',
+        channel,
+        result,
+      });
+      return result;
     } catch {
+      dispatchDemoEvent('demo_feedback_lead', {
+        demo_name: 'guest_request_portal',
+        channel,
+        result: 'failed',
+      });
       return 'failed' as const;
     }
+  }
+
+  function handleFeedbackConsentChange(granted: boolean) {
+    setFeedbackConsent(granted);
+    dispatchDemoEvent('demo_feedback_consent', {
+      demo_name: 'guest_request_portal',
+      consent: granted ? 'granted' : 'revoked',
+    });
   }
 
   function shareNotice(baseNotice: string, feedbackResult: 'saved' | 'not-requested' | 'failed') {
@@ -697,7 +719,7 @@ export default function GuestRequestPortal() {
                             <input
                               type="checkbox"
                               checked={feedbackConsent}
-                              onChange={(event) => setFeedbackConsent(event.target.checked)}
+                              onChange={(event) => handleFeedbackConsentChange(event.target.checked)}
                               aria-describedby="demo-feedback-consent-note"
                               className="mt-1 h-5 w-5 shrink-0 rounded border-slate-400 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                             />

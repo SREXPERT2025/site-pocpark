@@ -1,0 +1,132 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import ts from 'typescript';
+
+const projectRoot = process.cwd();
+
+function loadTypeScriptModule(relativePath, dependencies = {}) {
+  const filename = resolve(projectRoot, relativePath);
+  const source = readFileSync(filename, 'utf8');
+  const output = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+    },
+    fileName: filename,
+  }).outputText;
+  const module = { exports: {} };
+  const localRequire = (specifier) => {
+    if (Object.hasOwn(dependencies, specifier)) return dependencies[specifier];
+    throw new Error(`Unexpected test dependency: ${specifier}`);
+  };
+
+  new Function('require', 'module', 'exports', output)(
+    localRequire,
+    module,
+    module.exports,
+  );
+
+  return module.exports;
+}
+
+let storedConsent = null;
+const browserEvents = [];
+
+globalThis.CustomEvent = class TestCustomEvent {
+  constructor(type, init = {}) {
+    this.type = type;
+    this.detail = init.detail;
+  }
+};
+
+globalThis.window = {
+  localStorage: {
+    getItem() {
+      return storedConsent;
+    },
+    setItem(_key, value) {
+      storedConsent = value;
+    },
+  },
+  dispatchEvent(event) {
+    browserEvents.push(event);
+    return true;
+  },
+};
+
+const consent = loadTypeScriptModule('app/lib/analytics-consent.ts');
+const analytics = loadTypeScriptModule('app/lib/analytics-events.ts', {
+  '@/app/lib/analytics-consent': consent,
+});
+
+analytics.dispatchDemoEvent('demo_scenario_view', {
+  demo_name: 'guest_request_portal',
+});
+assert.equal(window.dataLayer, undefined, 'dataLayer must stay absent before consent');
+assert.equal(browserEvents.length, 0, 'analytics events must stay absent before consent');
+
+consent.saveAnalyticsConsent('declined');
+analytics.dispatchDemoEvent('demo_login', {
+  demo_name: 'guest_request_portal',
+});
+assert.equal(window.dataLayer, undefined, 'dataLayer must stay absent after decline');
+assert.equal(browserEvents.length, 1, 'only the local consent event is allowed after decline');
+assert.equal(browserEvents[0].type, 'rospark:analytics_consent_change');
+
+consent.saveAnalyticsConsent('accepted');
+browserEvents.length = 0;
+
+analytics.dispatchLeadFormEvent('form_submit', {
+  form_name: 'lead_form',
+  source_page: 'https://www.роспарк.рф/quiz?name=Visitor&gclid=private-click-id',
+  source_section: 'quiz:kp',
+  phone: '+7 999 000-00-00',
+});
+
+assert.deepEqual(window.dataLayer[0], {
+  event: 'rospark_form_submit',
+  form_name: 'lead_form',
+  source_page: '/quiz',
+  source_section: 'quiz:kp',
+});
+assert.equal('phone' in window.dataLayer[0], false, 'unexpected PII fields must be dropped');
+assert.equal(
+  JSON.stringify(window.dataLayer[0]).includes('private-click-id'),
+  false,
+  'query identifiers must be removed',
+);
+
+analytics.dispatchDemoEvent('demo_search', {
+  demo_name: 'guest_parking_payment',
+  search_mode: 'vehicle',
+  result: 'success',
+  vehicle_number: 'А123АА77',
+  search_query: 'А123АА77',
+});
+
+assert.deepEqual(window.dataLayer[1], {
+  event: 'rospark_demo_search',
+  demo_name: 'guest_parking_payment',
+  search_mode: 'vehicle',
+  result: 'success',
+});
+assert.equal('vehicle_number' in window.dataLayer[1], false);
+assert.equal('search_query' in window.dataLayer[1], false);
+
+assert.equal(browserEvents.length, 2, 'accepted events must reach the local browser contract');
+assert.equal(browserEvents[0].type, 'rospark:lead_form_event');
+assert.equal(browserEvents[1].type, 'rospark:demo_event');
+
+const acceptedEventCount = window.dataLayer.length;
+consent.saveAnalyticsConsent('declined');
+analytics.dispatchDemoEvent('demo_logout', {
+  demo_name: 'guest_parking_payment',
+});
+assert.equal(
+  window.dataLayer.length,
+  acceptedEventCount,
+  'events must stop immediately after consent is declined',
+);
+
+console.log('analytics privacy smoke: OK');

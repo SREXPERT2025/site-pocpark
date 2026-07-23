@@ -7,6 +7,40 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-07-23 — локальная analytics-основа
+
+### Что изменено
+
+- cookie banner и analytics dispatcher используют единый consent-helper;
+- analytics-события работают только после `accepted` и fail-closed при отказе,
+  отсутствии выбора или недоступном storage;
+- `dataLayer` создаётся только после согласия и первого разрешённого события;
+- payload строится из явного privacy allowlist;
+- `source_page` очищается от query string и click identifiers;
+- события добавлены для гостевых заявок, оплаты парковки и owner cabinet;
+- добавлен воспроизводимый privacy smoke dispatcher;
+- создан `docs/site/ANALYTICS_PLAN_20260723.md`.
+
+### Не изменялось
+
+Внешний счётчик, Яндекс Метрика, GTM, GA4, Webvisor, DNS, production, VPS,
+формы API, SQLite, персональные данные и зависимости не изменялись.
+
+### Рабочая ветка
+
+```text
+feature/site-20260723-analytics-foundation
+```
+
+### Локальная проверка
+
+- `npm run typecheck` под Node.js 22 — пройден;
+- `npm run lint` — пройден без предупреждений и ошибок;
+- `npm run build` — пройден, сгенерированы 100 маршрутов;
+- `node scripts/test_analytics_privacy.mjs` — пройден;
+- browser smoke: decline сохраняется, события при отказе отсутствуют,
+  demo-вход работает, ошибок console нет.
+
 ## 2026-07-23 — локальное исправление metadata юридических страниц
 
 ### Что изменено

@@ -11,6 +11,7 @@ import OwnerOverview from '@/app/components/demo/owner/OwnerOverview';
 import OwnerParkingPaymentsRegistry from '@/app/components/demo/owner/OwnerParkingPaymentsRegistry';
 import OwnerTenantDrawer from '@/app/components/demo/owner/OwnerTenantDrawer';
 import OwnerTenantTable from '@/app/components/demo/owner/OwnerTenantTable';
+import { dispatchDemoEvent } from '@/app/lib/analytics-events';
 import type {
   OwnerObjectType,
   OwnerOperationType,
@@ -116,6 +117,17 @@ export default function OwnerParkingPortal({ initialSection = 'overview' }: { in
   const overviewGenerationRef = useRef(0);
   const tenantGenerationRef = useRef(0);
   const drawerGenerationRef = useRef(0);
+
+  useEffect(() => {
+    dispatchDemoEvent('demo_scenario_view', { demo_name: 'owner_portal' });
+  }, []);
+
+  useEffect(() => {
+    dispatchDemoEvent('demo_owner_section_view', {
+      demo_name: 'owner_portal',
+      section: activeTab,
+    });
+  }, [activeTab]);
 
   const handleUnauthorized = useCallback(() => {
     setAuthState('guest');
@@ -292,6 +304,7 @@ export default function OwnerParkingPortal({ initialSection = 'overview' }: { in
       }
       setAuthState('authenticated');
       await loadOverview(periodMode);
+      dispatchDemoEvent('demo_login', { demo_name: 'owner_portal' });
     } catch {
       setLoginError('Demo-сервер временно недоступен.');
     } finally {
@@ -313,6 +326,7 @@ export default function OwnerParkingPortal({ initialSection = 'overview' }: { in
     setTenantList(emptyTenants);
     setDrawerTenantId(null);
     setDrawerDetail(null);
+    dispatchDemoEvent('demo_logout', { demo_name: 'owner_portal' });
   }
 
   function handlePeriodChange(mode: OwnerPeriodMode) {
@@ -332,6 +346,10 @@ export default function OwnerParkingPortal({ initialSection = 'overview' }: { in
     setOperationsIntent((current) => ({ key: current.key + 1, operationType: '', search: '', tenantId: '' }));
     setPaymentsIntent((current) => ({ key: current.key + 1, tenantId: '' }));
     void loadOverview(mode);
+    dispatchDemoEvent('demo_owner_period_change', {
+      demo_name: 'owner_portal',
+      period: mode,
+    });
   }
 
   function handleTabChange(tab: OwnerCabinetTab) {
@@ -368,6 +386,10 @@ export default function OwnerParkingPortal({ initialSection = 'overview' }: { in
     setDrawerTrigger(trigger);
     setDrawerTenantId(tenantId);
     void loadTenantDetail(tenantId);
+    dispatchDemoEvent('demo_owner_detail_view', {
+      demo_name: 'owner_portal',
+      section: 'tenants',
+    });
   }
 
   function closeDrawer() {

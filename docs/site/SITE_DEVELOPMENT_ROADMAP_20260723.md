@@ -226,6 +226,17 @@ Verification TXT не удалять.
 Код уже создаёт privacy-safe события форм и гостевого demo, но в репозитории
 нет подтверждённого счётчика Метрики, GTM или другого потребителя `dataLayer`.
 
+Локальный статус `ANALYTICS-001-A`:
+
+- подготовлен единый consent-gate для cookie banner и dispatcher;
+- payload ограничен allowlist и удаляет query string из `source_page`;
+- событиями покрыты формы, гостевые заявки, оплата парковки и owner cabinet;
+- typecheck, lint, production build, privacy smoke и локальный browser smoke
+  пройдены;
+- внешний loader, ID счётчика и production не изменялись;
+- подробный контракт и этапы зафиксированы в
+  `docs/site/ANALYTICS_PLAN_20260723.md`.
+
 Нужно:
 
 - выбрать владельца счётчика;
@@ -400,7 +411,9 @@ production-зависимостей уровня high, включая прямы
 2. `SEO-OPS-001-B` — повторить срез после обработки sitemap; подключение
    кабинетов, отправка sitemap и публичная техническая часть выполнены
    2026-07-23.
-3. `ANALYTICS-001` — Метрика и полная demo-воронка.
+3. `ANALYTICS-001` — локальная provider-neutral основа подготовлена в
+   `ANALYTICS-001-A`; далее выбрать сервис/владельца, подключить test property
+   и собрать полную demo-воронку.
 4. `LEAD-OPS-002` — CRM/реестр, outbox, владелец и SLA.
 5. `DEMO-GROWTH-001` — коммерческая упаковка demo.
 6. `CONTENT-DEMO-001` — первые три demo-кластера.
