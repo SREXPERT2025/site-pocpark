@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Гостевая заявка — demo РОСПАРК',
-  description: 'Публичный demo-просмотр гостевой заявки бизнес-центра.',
+  description: 'Публичный demo-просмотр гостевой заявки бизнес-центра РОСПАРК.',
   robots: { index: false, follow: false, nocache: true },
 };
 
@@ -62,12 +62,12 @@ export default async function PublicDemoRequestPage({ params }: { params: { toke
   return (
     <div className="bg-slate-50 py-10 sm:py-14">
       <div className="container mx-auto max-w-5xl px-4 sm:px-6">
-        <Breadcrumbs items={[{ label: 'Главная', href: '/' }, { label: 'Demo заявок', href: '/demo/gostevaya-zayavka' }, { label: `Заявка № ${request.id}` }]} />
+        <Breadcrumbs items={[{ label: 'Главная', href: '/' }, { label: 'Все демо', href: '/demo' }, { label: 'Гостевые заявки', href: '/demo/gostevaya-zayavka' }, { label: `Заявка № ${request.id}` }]} />
         <div className="mt-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
           <header className="flex flex-col gap-5 bg-slate-950 px-6 py-7 text-white sm:flex-row sm:items-center sm:justify-between sm:px-9">
             <div className="flex items-center gap-4">
               <span className="rounded-2xl bg-blue-600 p-3"><Building2 aria-hidden="true" size={25} /></span>
-              <div><p className="text-sm text-blue-200">БЦ «Северная башня»</p><h1 className="mt-1 text-2xl font-bold sm:text-3xl">Гостевая заявка</h1></div>
+              <div><p className="text-sm text-blue-200">Бизнес-центр «РОСПАРК»</p><h1 className="mt-1 text-2xl font-bold sm:text-3xl">Гостевая заявка</h1></div>
             </div>
             <span className={`inline-flex self-start rounded-full border px-3 py-1.5 text-sm font-semibold ${statusClasses[request.status]}`}>{statusLabels[request.status]}</span>
           </header>

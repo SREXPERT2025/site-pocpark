@@ -17,8 +17,8 @@ export default function WebDiscountDemoPage() {
     <div className="pb-10">
       <Breadcrumbs items={[
         { label: 'Главная', href: '/' },
-        { label: 'Возможности', href: '/vozmozhnosti' },
-        { label: 'Демо WEB-скидок' },
+        { label: 'Демо ПО', href: '/demo' },
+        { label: 'Оплата парковки гостей' },
       ]} />
 
       <section className="rounded-3xl border border-blue-100 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 px-5 py-6 text-white sm:px-9 sm:py-10">

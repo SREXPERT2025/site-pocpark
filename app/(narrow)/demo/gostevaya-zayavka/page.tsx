@@ -22,7 +22,7 @@ const faq = [
   {
     question: 'Можно ли отправить заявку гостю в MAX?',
     answer:
-      'Да. Для demo предусмотрена серверная отправка через MAX-инстанс GREEN-API. Пока интеграция не включена, интерфейс использует системное меню отправки или копирование текста и ссылки.',
+      'Да. Для demo предусмотрен сервис уведомлений РОСПАРК. Пока отправка не включена, интерфейс использует системное меню или копирование текста и ссылки.',
   },
   {
     question: 'Можно ли отменить заявку?',
@@ -42,14 +42,19 @@ export const metadata: Metadata = {
     url: canonicalUrl(pagePath),
     type: 'website',
   },
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+  },
 };
 
 export default function GuestRequestDemoPage() {
   return (
     <div className="pb-8">
-      <BreadcrumbJsonLd items={[{ name: 'Главная', url: '/' }, { name: 'Возможности', url: '/vozmozhnosti' }, { name: 'Демо гостевых заявок', url: pagePath }]} />
+      <BreadcrumbJsonLd items={[{ name: 'Главная', url: '/' }, { name: 'Демо ПО', url: '/demo' }, { name: 'Демо гостевых заявок', url: pagePath }]} />
       <FaqJsonLd items={faq} />
-      <Breadcrumbs items={[{ label: 'Главная', href: '/' }, { label: 'Возможности', href: '/vozmozhnosti' }, { label: 'Демо гостевых заявок' }]} />
+      <Breadcrumbs items={[{ label: 'Главная', href: '/' }, { label: 'Демо ПО', href: '/demo' }, { label: 'Демо гостевых заявок' }]} />
 
       <section className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-slate-50 px-5 py-9 sm:px-9 sm:py-12">
         <p className="text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">Интерактивное demo РОСПАРК</p>

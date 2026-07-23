@@ -65,7 +65,7 @@ export function generateDemoTenants(seed = TENANT_SEED): DemoTenant[] {
   const testTenant: DemoTenant = {
     id: DEMO_TEST_TENANT_ID,
     shortName: 'TEST',
-    legalName: 'ООО «Северная башня — демо»',
+    legalName: 'ООО «Бизнес-центр РОСПАРК — демо»',
     inn: createOrganizationInn(random, usedInns),
     objectType: 'office',
     isSeed: true,

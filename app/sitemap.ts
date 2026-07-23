@@ -13,7 +13,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl('/') },
     { url: absoluteUrl('/o-kompanii') },
     { url: absoluteUrl('/contacts') },
-    { url: absoluteUrl('/demo/gostevaya-zayavka') },
+    { url: absoluteUrl('/demo') },
     { url: absoluteUrl('/oborudovanie') },
     { url: absoluteUrl('/keysy') },
     { url: absoluteUrl('/stati') },

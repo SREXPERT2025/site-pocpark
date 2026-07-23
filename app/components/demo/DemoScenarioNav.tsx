@@ -1,16 +1,23 @@
 import Link from 'next/link';
-import { BadgePercent, ClipboardList, LineChart } from 'lucide-react';
+import { BadgePercent, ClipboardList, House, LineChart } from 'lucide-react';
 
 type DemoScenarioNavProps = {
   active: 'guest-requests' | 'web-discounts' | 'owner';
 };
 
-const baseClass = 'inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition';
+const baseClass = 'inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition';
 
 export default function DemoScenarioNav({ active }: DemoScenarioNavProps) {
   return (
-    <nav aria-label="Сценарии demo-системы" className="overflow-x-auto border-t border-white/10 px-4 py-3 sm:px-7">
+    <nav aria-label="Разделы демонстрации ПО РОСПАРК" className="overflow-x-auto border-t border-white/10 px-4 py-3 sm:px-7">
       <div className="flex min-w-max gap-2">
+        <Link
+          href="/demo"
+          className={`${baseClass} text-slate-200 hover:bg-white/10`}
+        >
+          <House aria-hidden="true" size={17} />
+          Все демо
+        </Link>
         <Link
           href="/demo/gostevaya-zayavka"
           aria-current={active === 'guest-requests' ? 'page' : undefined}

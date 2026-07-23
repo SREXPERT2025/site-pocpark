@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   const idInstance = process.env.GREEN_API_ID_INSTANCE;
   const apiTokenInstance = process.env.GREEN_API_TOKEN_INSTANCE;
   if (!apiUrl || !idInstance || !apiTokenInstance) {
-    return NextResponse.json({ error: 'Интеграция MAX не настроена.' }, { status: 503 });
+    return NextResponse.json({ error: 'Сервис уведомлений MAX не настроен.' }, { status: 503 });
   }
 
   const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
@@ -69,10 +69,10 @@ export async function POST(request: NextRequest) {
       }
     );
     if (!response.ok) {
-      return NextResponse.json({ error: 'MAX-провайдер отклонил отправку.' }, { status: 502 });
+      return NextResponse.json({ error: 'Сервис уведомлений MAX отклонил отправку.' }, { status: 502 });
     }
     return NextResponse.json({ ok: true });
   } catch {
-    return NextResponse.json({ error: 'MAX-провайдер временно недоступен.' }, { status: 502 });
+    return NextResponse.json({ error: 'Сервис уведомлений MAX временно недоступен.' }, { status: 502 });
   }
 }

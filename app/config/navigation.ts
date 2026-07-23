@@ -182,6 +182,10 @@ export const navigation: NavItem[] = [
     ],
   },
   {
+    label: 'Демо ПО',
+    href: '/demo',
+  },
+  {
     label: 'Проекты',
     href: '/keysy',
   },

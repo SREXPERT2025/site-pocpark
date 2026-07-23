@@ -33,7 +33,7 @@ export default function OwnerParkingDemoPage({ searchParams }: { searchParams?: 
       <Breadcrumbs
         items={[
           { label: 'Главная', href: '/' },
-          { label: 'Возможности', href: '/vozmozhnosti' },
+          { label: 'Демо ПО', href: '/demo' },
           { label: 'Демо кабинета владельца' },
         ]}
       />
