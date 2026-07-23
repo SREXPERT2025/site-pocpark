@@ -1,3 +1,16 @@
+import type { Metadata } from 'next';
+
+import { canonicalUrl } from '@/app/config/site-url';
+
+export const metadata: Metadata = {
+  title: 'Политика обработки персональных данных',
+  description:
+    'Политика обработки и защиты персональных данных пользователей сайта РОСПАРК оператором ООО «СР Эксперт».',
+  alternates: {
+    canonical: canonicalUrl('/privacy'),
+  },
+};
+
 type LegalBlock =
   | { type: "p"; text: string }
   | { type: "ul"; items: string[] };

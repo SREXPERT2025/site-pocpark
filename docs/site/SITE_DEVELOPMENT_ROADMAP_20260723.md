@@ -167,8 +167,10 @@ Node.js 26 воспроизвёл `500` в demo API при обращении к
 - внутренние demo-сценарии и `/quiz` корректно исключены из sitemap и закрыты
   `noindex`;
 - HTTPS non-`www` доступен с `200`, хотя canonical указывает на `www`;
-- `/privacy` и `/soglasie-na-obrabotku-personalnyh-dannyh` не имеют
-  собственных metadata/canonical.
+- в публичном production `/privacy` и
+  `/soglasie-na-obrabotku-personalnyh-dannyh` не имеют собственных
+  metadata/canonical; локальное исправление подготовлено в
+  `fix/site-20260723-legal-metadata`.
 
 Осталось получить фактические данные Google Search Console и Яндекс Вебмастера:
 
@@ -215,7 +217,8 @@ Verification TXT не удалять.
 
 - `SEO-WEBMASTER-ENROLL-001` — подключение и DNS-верификация кабинетов;
 - `SEO-SITEMAP-SUBMIT-001` — отправка проверенного sitemap в оба кабинета;
-- `SEO-META-LEGAL-001` — metadata и self-canonical юридических страниц;
+- `SEO-META-LEGAL-001` — локально реализованные и проверенные metadata и
+  self-canonical юридических страниц; нужны review, отдельный commit и release;
 - `SEO-CANONICAL-001` — согласованный Nginx redirect non-`www` → `www`.
 
 ### ANALYTICS-001 — подключить потребителя событий

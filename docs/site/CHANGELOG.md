@@ -7,6 +7,48 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-07-23 — локальное исправление metadata юридических страниц
+
+### Что изменено
+
+- `/privacy` получил уникальные title, description и self-canonical;
+- `/soglasie-na-obrabotku-personalnyh-dannyh` получил уникальные title,
+  description и self-canonical;
+- canonical формируется через общий `canonicalUrl(...)`;
+- roadmap и SEO/GEO baseline дополнены локальным статусом
+  `SEO-META-LEGAL-001`.
+
+### Не изменялось
+
+Юридический текст, sitemap, robots, формы, API, аналитика, DNS, поисковые
+кабинеты, production, Nginx, Caddy, SQLite и зависимости не изменялись.
+
+### Рабочая ветка
+
+```text
+fix/site-20260723-legal-metadata
+```
+
+### Затронутые файлы
+
+```text
+app/(narrow)/privacy/page.tsx
+app/(narrow)/soglasie-na-obrabotku-personalnyh-dannyh/page.tsx
+docs/site/SEO_GEO_BASELINE_20260723.md
+docs/site/SITE_DEVELOPMENT_ROADMAP_20260723.md
+docs/site/CHANGELOG.md
+```
+
+### Локальная проверка
+
+- `npm run typecheck` под Node.js 22 — пройден;
+- `npm run lint` — пройден без предупреждений и ошибок;
+- `npm run build` — пройден, обе страницы статически сгенерированы;
+- в сгенерированном HTML подтверждены уникальные title, description и
+  self-canonical обеих страниц;
+- canonical домена сериализован URL API в эквивалентной Punycode-форме
+  `www.xn--80aukedde.xn--p1ai`.
+
 ## 2026-07-23 — публичный SEO/GEO baseline
 
 ### Что проверено

@@ -1,3 +1,16 @@
+import type { Metadata } from 'next';
+
+import { canonicalUrl } from '@/app/config/site-url';
+
+export const metadata: Metadata = {
+  title: 'Согласие на обработку персональных данных',
+  description:
+    'Условия согласия на обработку персональных данных пользователей сайта РОСПАРК оператором ООО «СР Эксперт».',
+  alternates: {
+    canonical: canonicalUrl('/soglasie-na-obrabotku-personalnyh-dannyh'),
+  },
+};
+
 type LegalBlock =
   | { type: "p"; text: string }
   | { type: "ul"; items: string[] };
