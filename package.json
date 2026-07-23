@@ -2,6 +2,9 @@
   "name": "rospark-frontend",
   "version": "1.2.0",
   "private": true,
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
