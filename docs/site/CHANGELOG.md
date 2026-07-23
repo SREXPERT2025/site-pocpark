@@ -21,10 +21,26 @@
 - добавлен воспроизводимый privacy smoke dispatcher;
 - создан `docs/site/ANALYTICS_PLAN_20260723.md`.
 
+### Дополнение `ANALYTICS-001-B`
+
+- выбран прямой loader Яндекс Метрики без GTM/GA4;
+- создан и подтверждён счётчик `110980303`;
+- ID добавлен в `.env.example` как
+  `NEXT_PUBLIC_YANDEX_METRIKA_ID=110980303`;
+- loader не создаёт запросов до `accepted`;
+- Webvisor, clickmap, e-commerce и передача title выключены;
+- e-commerce и встроенный Yandex Tag Manager выключены в настройках счётчика;
+- client-side pageview и privacy-safe события передаются через `hit` и
+  `reachGoal`;
+- в footer добавлена кнопка `Настройки cookie`;
+- browser smoke подтвердил отсутствие скрипта до согласия, загрузку
+  `tag.js?id=110980303` после согласия и отсутствие скрипта после отзыва и
+  reload.
+
 ### Не изменялось
 
-Внешний счётчик, Яндекс Метрика, GTM, GA4, Webvisor, DNS, production, VPS,
-формы API, SQLite, персональные данные и зависимости не изменялись.
+GTM, GA4, Webvisor, DNS, production, VPS, формы API, SQLite, персональные
+данные и зависимости не изменялись.
 
 ### Рабочая ветка
 

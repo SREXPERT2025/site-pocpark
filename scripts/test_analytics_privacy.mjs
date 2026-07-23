@@ -59,6 +59,7 @@ const consent = loadTypeScriptModule('app/lib/analytics-consent.ts');
 const analytics = loadTypeScriptModule('app/lib/analytics-events.ts', {
   '@/app/lib/analytics-consent': consent,
 });
+const metrika = loadTypeScriptModule('app/lib/yandex-metrika.ts');
 
 analytics.dispatchDemoEvent('demo_scenario_view', {
   demo_name: 'guest_request_portal',
@@ -128,5 +129,72 @@ assert.equal(
   acceptedEventCount,
   'events must stop immediately after consent is declined',
 );
+
+assert.equal(metrika.parseYandexMetrikaId('110980303'), 110980303);
+assert.equal(metrika.parseYandexMetrikaId('not-a-counter'), null);
+
+const appendedScripts = [];
+const fakeDocument = {
+  getElementById(id) {
+    return appendedScripts.find((script) => script.id === id) ?? null;
+  },
+  createElement(tagName) {
+    assert.equal(tagName, 'script');
+    return {
+      async: false,
+      dataset: {},
+      id: '',
+      src: '',
+    };
+  },
+  head: {
+    appendChild(script) {
+      appendedScripts.push(script);
+    },
+  },
+};
+const metrikaWindow = {};
+
+metrika.initializeYandexMetrika(
+  metrikaWindow,
+  fakeDocument,
+  110980303,
+);
+metrika.initializeYandexMetrika(
+  metrikaWindow,
+  fakeDocument,
+  110980303,
+);
+
+assert.equal(appendedScripts.length, 1, 'Metrika script must be appended once');
+assert.equal(
+  appendedScripts[0].src,
+  'https://mc.yandex.ru/metrika/tag.js?id=110980303',
+);
+assert.deepEqual(metrikaWindow.ym.a[0], [
+  110980303,
+  'init',
+  {
+    accurateTrackBounce: true,
+    clickmap: false,
+    ecommerce: false,
+    sendTitle: false,
+    trackLinks: true,
+    webvisor: false,
+  },
+]);
+
+metrika.sendYandexMetrikaGoal(
+  metrikaWindow,
+  110980303,
+  'rospark_form_success',
+  { form_name: 'lead_form' },
+);
+assert.deepEqual(metrikaWindow.ym.a[1], [
+  110980303,
+  'reachGoal',
+  'rospark_form_success',
+  { form_name: 'lead_form' },
+]);
 
 console.log('analytics privacy smoke: OK');
