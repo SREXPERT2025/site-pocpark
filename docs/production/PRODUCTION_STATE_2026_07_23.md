@@ -58,13 +58,15 @@ PM2, SQLite или зависимости.
 
 ## TODO production
 
-Перенос SQLite остаётся ближайшей отдельной production-задачей. Обновление
-зависимостей и связанный security audit по решению владельца от 2026-07-23
-перенесены на последний этап актуального roadmap. Условия досрочного возврата
-security-этапа описаны в
+Перенос SQLite подготовлен, но отложен по решению владельца от 2026-07-23:
+текущая база исправна, свежий проверенный backup создан, production продолжает
+работать со старым путём. Обновление зависимостей и связанный security audit
+также перенесены на последний этап актуального roadmap. Условия возврата задач
+описаны в
 `docs/site/SITE_DEVELOPMENT_ROADMAP_20260723.md`.
 
-1. Перенести SQLite в постоянный каталог вне Git checkout:
+1. Перед следующим крупным production-изменением вернуться к переносу SQLite в
+   постоянный каталог вне Git checkout:
 
    ```text
    /var/lib/rospark-demo
@@ -84,6 +86,7 @@ security-этапа описаны в
 ## Связанные актуальные документы
 
 - `docs/site/SITE_DEVELOPMENT_ROADMAP_20260723.md`;
+- `docs/production/PROD_DATA_OPS_PLAN_20260723.md`;
 - `docs/site/AI_WIDGET_ROADMAP_20260723.md`;
 - `docs/deployment/AFTER_DEPLOY_GUEST_DEMO_MAX.md`;
 - `docs/site/ARCHITECTURE.md`;

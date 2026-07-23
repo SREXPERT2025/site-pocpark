@@ -75,7 +75,12 @@ Production, публикация контента, изменение инфра
 
 ## 2. Главные расхождения и риски
 
-### P0. PROD-DATA-OPS — вынести SQLite из Git checkout
+### Отложено. PROD-DATA-OPS — вынести SQLite из Git checkout
+
+Статус: перенос отложен по решению владельца от 2026-07-23. Локальный аудит,
+read-only VPS preflight и свежий проверенный online backup завершены; план
+подготовлен в `docs/production/PROD_DATA_OPS_PLAN_20260723.md`. Текущая база
+остаётся на старом пути, maintenance window не выполнялось.
 
 Текущая production-база находится в:
 
@@ -102,6 +107,9 @@ Production, публикация контента, изменение инфра
 - сохранить rollback.
 
 Обычное копирование работающей SQLite/WAL не считается безопасным переносом.
+
+Вернуть задачу в активный план перед заменой production checkout, изменением
+deploy-схемы или следующим крупным production-релизом.
 
 ### P0. RUNTIME-001 — обязательный Node.js 22
 
@@ -337,16 +345,16 @@ production-зависимостей уровня high, включая прямы
 
 1. `DOCS-RECONCILE-20260723` — выполнен 2026-07-23; повторять после каждого
    принятого крупного блока.
-2. `PROD-DATA-OPS` — SQLite вне checkout.
-3. `SEO-OPS-001` — Search Console и Яндекс Вебмастер.
-4. `ANALYTICS-001` — Метрика и полная demo-воронка.
-5. `LEAD-OPS-002` — CRM/реестр, outbox, владелец и SLA.
-6. `DEMO-GROWTH-001` — коммерческая упаковка demo.
-7. `CONTENT-DEMO-001` — первые три demo-кластера.
-8. `AI-WIDGET-PILOT` — закрытый стенд и подготовка к пилоту.
-9. `GEO-CONTENT-001` — schema, кейсы, entity и article provenance.
-10. `CONTENT-INTELLIGENCE-001` — ручной, затем локальный approval-gated runner.
-11. `PERFORMANCE-002` — видео, master assets и Nginx cache.
+2. `SEO-OPS-001` — Search Console и Яндекс Вебмастер.
+3. `ANALYTICS-001` — Метрика и полная demo-воронка.
+4. `LEAD-OPS-002` — CRM/реестр, outbox, владелец и SLA.
+5. `DEMO-GROWTH-001` — коммерческая упаковка demo.
+6. `CONTENT-DEMO-001` — первые три demo-кластера.
+7. `AI-WIDGET-PILOT` — закрытый стенд и подготовка к пилоту.
+8. `GEO-CONTENT-001` — schema, кейсы, entity и article provenance.
+9. `CONTENT-INTELLIGENCE-001` — ручной, затем локальный approval-gated runner.
+10. `PERFORMANCE-002` — видео, master assets и Nginx cache.
+11. `PROD-DATA-OPS` — отложен; вернуть перед крупным production-изменением.
 12. `SECURITY-RELEASE-2` — последний этап: зависимости и повторная приёмка.
 
 ## 10. Решения директора

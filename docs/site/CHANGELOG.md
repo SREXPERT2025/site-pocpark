@@ -7,6 +7,38 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-07-23 — read-only подготовка PROD-DATA-OPS
+
+### Что изменено
+
+- проведён локальный аудит SQLite-подключения, WAL, миграций и runtime;
+- выполнен read-only VPS preflight без остановки процессов и изменений;
+- подтверждены один writer в fork mode, Node.js 22, активные WAL/SHM, миграции
+  `1–3`, целостность базы, row counts, место и целевой каталог;
+- создан свежий online backup рабочей SQLite и текущего `.env.production`;
+- checksum, миграции, целостность и агрегированные row counts backup проверены;
+- подготовлен отдельный план переноса production SQLite из Git checkout;
+- по решению владельца перенос отложен: исправная рабочая база остаётся на
+  текущем пути, задача возвращается перед крупным production-изменением;
+- следующим активным этапом roadmap назначен `SEO-OPS-001`;
+- добавлены GO/NO-GO, агрегированная сверка таблиц, порядок backup/cutover,
+  функциональный smoke и два режима rollback;
+- roadmap и production-state связаны с новым планом.
+
+### Не изменялось
+
+Production, PM2, `.env.production`, SQLite, MAX, WhatsApp, Nginx, код приложения
+и зависимости не изменялись. Maintenance window не выполнялось.
+
+### Затронутые документы
+
+```text
+docs/production/PROD_DATA_OPS_PLAN_20260723.md
+docs/production/PRODUCTION_STATE_2026_07_23.md
+docs/site/SITE_DEVELOPMENT_ROADMAP_20260723.md
+docs/site/CHANGELOG.md
+```
+
 ## 2026-07-23 — сверка документации после Demo Release v1
 
 ### Что изменено
