@@ -39,11 +39,15 @@
 ## Подготовить деплой
 
 ```text
-Подготовь пошаговую инструкцию деплоя текущих изменений на демо-сервер Windows с PM2. Укажи проверки до и после деплоя.
+Сначала выполни read-only preflight текущего production по актуальному
+production-state и runbook. Подготовь план ручного выпуска для фактически
+подтверждённых Linux/Nginx/PM2-параметров. Ничего не меняй и не перезапускай.
 ```
 
 ## Обновить документацию
 
 ```text
-На основе последних изменений подготовь, какие docs-файлы надо обновить: SITE_STRUCTURE, ARCHITECTURE, CHANGELOG, CONTENT_STYLE_GUIDE, DEPLOY_DEMO_SERVER или AI_TEAM.
+На основе последних изменений подготовь, какие docs-файлы надо обновить:
+актуальный roadmap, PRODUCTION_STATE, SITE_STRUCTURE, ARCHITECTURE, CHANGELOG,
+CONTENT_STYLE_GUIDE, текущий runbook или AI_TEAM.
 ```

@@ -1,5 +1,9 @@
 # Рабочий процесс агента «РОСПАРК — Архитектор сайта»
 
+> Актуальный контекст находится в
+> `docs/agents/CURRENT_PROJECT_CONTEXT_20260723.md`. Раздел с Windows-командами
+> ниже является историческим примером, а не инструкцией для current production.
+
 ## 1. Как начинать новую задачу
 
 Для любой задачи агент сначала определяет тип работы:
@@ -54,17 +58,17 @@ git check-ignore -v project_full_dump.txt
 git status --short
 ```
 
-## 6. Команды для демо-сервера Windows
+## 6. Production-выпуск
 
-```powershell
-cd C:\site-pocpark
-git status
-git pull --ff-only origin main
-npm install
-npm run build
-pm2 restart site-pocpark
-pm2 list
-```
+Старые команды прежнего Windows demo-сервера удалены из рабочего процесса.
+Для current production использовать только read-only preflight и ручной
+процесс из:
+
+- `docs/production/PRODUCTION_STATE_2026_07_23.md`;
+- `docs/deployment/AFTER_DEPLOY_GUEST_DEMO_MAX.md`.
+
+Изменяющие команды формируются после проверки фактических путей, процесса,
+порта, env, ветки и SHA и выполняются только с отдельным разрешением.
 
 ## 7. Контрольный список перед commit
 

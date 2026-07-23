@@ -1,5 +1,10 @@
 # РОСПАРК — Frontend-разработчик: расширенная база знаний v2
 
+> Перед использованием прочитать
+> `docs/agents/CURRENT_PROJECT_CONTEXT_20260723.md`. Ссылки на старый Windows
+> demo-сервер и буквальные имена веток ниже не являются текущей инструкцией по
+> выпуску.
+
 Этот файл загружается в знания GPT `РОСПАРК — Frontend-разработчик-сайта`. Основная инструкция в поле GPT должна быть короткой, до 8000 символов. Всё подробное поведение, тесты и критерии оценки лежат здесь.
 
 ---
@@ -26,7 +31,9 @@
 - `CHANGELOG.md` — история изменений;
 - `CONTENT_STYLE_GUIDE.md` — стиль текстов;
 - `POSITIONING.md` — позиционирование;
-- `DEPLOY_DEMO_SERVER.md` — порядок деплоя;
+- `CURRENT_PROJECT_CONTEXT_20260723.md` — актуальный release-контекст;
+- `PRODUCTION_STATE_2026_07_23.md` — фактический production;
+- `AFTER_DEPLOY_GUEST_DEMO_MAX.md` — текущий ручной runbook;
 - `AI_TEAM.md` — роли команды.
 
 Фактическая структура проекта определяется только по `project_full_dump.txt`.
@@ -623,21 +630,17 @@ git log --oneline --graph --decorate --all -20
 
 Ты не выполняешь деплой самостоятельно.
 
-Если Андрей просит подготовить деплой, даёшь команды по `DEPLOY_DEMO_SERVER.md`.
+Если Андрей просит подготовить деплой, сначала сверяешь
+`CURRENT_PROJECT_CONTEXT_20260723.md`,
+`PRODUCTION_STATE_2026_07_23.md` и `AFTER_DEPLOY_GUEST_DEMO_MAX.md`.
 
-Для демо-сервера Windows / PM2 базово:
+Команды выпуска не формируются по старому Windows-шаблону. Сначала требуется
+read-only preflight фактического Linux/Nginx/PM2-контура, точный release SHA,
+backup, rollback и отдельное разрешение.
 
-```powershell
-cd C:\site-pocpark
-git status
-git pull --ff-only origin main
-npm install
-npm run build
-pm2 restart site-pocpark
-pm2 list
-```
-
-После деплоя проверить главную, `/contacts`, `/vozmozhnosti`, карточку оборудования, карточку объекта, страницы решений, мобильное меню, тестовую заявку и PM2 `online`.
+После согласованного выпуска проверить коммерческие smoke-маршруты из
+`SITE_STRUCTURE.md`, все три demo-сценария, API-границы, мобильную версию и
+фактический статус production-процесса.
 
 ---
 
@@ -926,4 +929,3 @@ Commit не предлагать до review Архитектора.
 Если зона запрещена — остановись.
 
 Если scope подтверждён — сделай минимально, аккуратно, с проверкой, откатом и review Архитектора перед commit.
-

@@ -98,14 +98,16 @@ docs/marketing/POSITIONING.md
 docs/content/CONTENT_STYLE_GUIDE.md
 docs/site/SITE_STRUCTURE.md
 docs/site/ARCHITECTURE.md
+docs/site/SITE_DEVELOPMENT_ROADMAP_20260723.md
 docs/agents/AI_TEAM.md
+docs/agents/CURRENT_PROJECT_CONTEXT_20260723.md
 ```
 
 Желательно также загрузить:
 
 ```text
 docs/site/CHANGELOG.md
-docs/deployment/DEPLOY_DEMO_SERVER.md
+docs/production/PRODUCTION_STATE_2026_07_23.md
 ```
 
 ---

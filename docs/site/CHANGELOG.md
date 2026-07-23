@@ -7,6 +7,58 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-07-23 — сверка документации после Demo Release v1
+
+### Что изменено
+
+- создан актуальный roadmap развития сайта после production-выпуска demo;
+- создан отдельный поэтапный план AI-виджета;
+- структура и архитектура сайта сверены с текущими коммерческими, demo и API
+  контурами;
+- старые roadmap, improvement plan и SEO/GEO backlog помечены как исторические;
+- создан новый контентный SEO/GEO backlog;
+- production-state отделён от исходных предположений первого deploy-runbook;
+- старые Windows demo-server инструкции и планы помечены как исторические;
+- добавлен единый актуальный контекст для AI-ролей;
+- зафиксированы следующие приоритеты: перенос SQLite, SEO/GEO baseline,
+  аналитика, lead operations, коммерческая упаковка demo и AI-виджет;
+- по решению владельца `SECURITY-RELEASE-2` перенесён на последний этап с
+  сохранением условий его досрочного возврата.
+
+### Не изменялось
+
+Продуктовый код, production, зависимости, Caddy, Nginx, PM2, env, SQLite и
+реальные каналы отправки не изменялись.
+
+### Затронутые документы
+
+```text
+docs/site/SITE_DEVELOPMENT_ROADMAP_20260723.md
+docs/site/AI_WIDGET_ROADMAP_20260723.md
+docs/site/CONTENT_SEO_GEO_BACKLOG_20260723.md
+docs/site/SITE_STRUCTURE.md
+docs/site/ARCHITECTURE.md
+docs/agents/CURRENT_PROJECT_CONTEXT_20260723.md
+docs/agents/AI_TEAM_ORCHESTRATION.md
+docs/agents/AI_TEAM.md
+docs/agents/subagents/README.md
+docs/agents/ROSPARK_SITE_ARCHITECT_GPT_INSTRUCTIONS.md
+docs/agents/ROSPARK_SITE_ARCHITECT_WORKFLOW.md
+docs/agents/ROSPARK_SITE_ARCHITECT_KNOWLEDGE_UPLOAD.md
+docs/agents/ROSPARK_SITE_ARCHITECT_GPT_CARD.md
+docs/agents/ROSPARK_SITE_ARCHITECT_START_PROMPTS.md
+docs/agents/frontend-coder/ROSPARK_FRONTEND_CODER_KNOWLEDGE.md
+docs/agents/ai-marketer/ROSPARK_AI_MARKETER_GPT.md
+docs/site/SITE_DEVELOPMENT_ROADMAP_20260707.md
+docs/site/IMPROVEMENT_PLAN_20260706.md
+docs/site/ARTICLES_SEO_GEO_BACKLOG_20260706.md
+docs/site/rospark_next_day_prod_plan.md
+docs/production/PRODUCTION_STATE_2026_07_23.md
+docs/deployment/AFTER_DEPLOY_GUEST_DEMO_MAX.md
+docs/deployment/DEPLOY_DEMO_SERVER.md
+docs/site/CHANGELOG.md
+```
+
 ## 2026-06-08 — P0: cookie-баннер
 
 Рабочая ветка:
@@ -1089,4 +1141,3 @@ Commit:
 Риски / примечания:
 - ...
 ```
-
