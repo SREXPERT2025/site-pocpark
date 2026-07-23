@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import {
   readAnalyticsConsent,
   saveAnalyticsConsent,
+  ANALYTICS_CONSENT_OPEN_EVENT,
   type AnalyticsConsentValue,
 } from '@/app/lib/analytics-consent';
 
@@ -17,11 +18,23 @@ export default function CookieBanner() {
     if (savedConsent !== 'accepted' && savedConsent !== 'declined') {
       setIsVisible(true);
     }
+
+    const openSettings = () => setIsVisible(true);
+    window.addEventListener(ANALYTICS_CONSENT_OPEN_EVENT, openSettings);
+
+    return () => {
+      window.removeEventListener(ANALYTICS_CONSENT_OPEN_EVENT, openSettings);
+    };
   }, []);
 
   const saveConsent = (value: AnalyticsConsentValue) => {
+    const previousConsent = readAnalyticsConsent();
     saveAnalyticsConsent(value);
     setIsVisible(false);
+
+    if (previousConsent === 'accepted' && value === 'declined') {
+      window.location.reload();
+    }
   };
 
   if (!isVisible) {

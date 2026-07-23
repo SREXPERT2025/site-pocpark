@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { getMainNav, getSolutionsFooterLinks } from '@/app/lib/navigation';
+import { ANALYTICS_CONSENT_OPEN_EVENT } from '@/app/lib/analytics-consent';
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -90,6 +91,19 @@ export default function Footer() {
               >
                 Согласие на обработку персональных данных
               </Link>
+            </li>
+            <li>
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(
+                    new Event(ANALYTICS_CONSENT_OPEN_EVENT),
+                  );
+                }}
+                className="text-left text-sm text-neutral-600 hover:text-neutral-900"
+              >
+                Настройки cookie
+              </button>
             </li>
           </ul>
         </div>

@@ -6,6 +6,7 @@ import Header from '@/app/components/layout/Header';
 import Footer from '@/app/components/layout/Footer';
 import PageTransition from '@/app/components/animations/PageTransition';
 import OrganizationJsonLd from '@/app/components/content/OrganizationJsonLd';
+import YandexMetrika from '@/app/components/analytics/YandexMetrika';
 import CookieBanner from '@/app/components/legal/CookieBanner';
 import { getMetadataBase } from '@/app/config/site-url';
 
@@ -59,6 +60,7 @@ export default function RootLayout({
 
 
         <Footer />
+        <YandexMetrika />
         <CookieBanner />
       </body>
     </html>

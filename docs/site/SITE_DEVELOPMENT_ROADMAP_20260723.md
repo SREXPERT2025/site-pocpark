@@ -223,8 +223,8 @@ Verification TXT не удалять.
 
 ### ANALYTICS-001 — подключить потребителя событий
 
-Код уже создаёт privacy-safe события форм и гостевого demo, но в репозитории
-нет подтверждённого счётчика Метрики, GTM или другого потребителя `dataLayer`.
+Код создаёт privacy-safe события форм и гостевого demo. Яндекс Метрика выбрана
+как прямой потребитель, production-счётчик `110980303` подтверждён.
 
 Локальный статус `ANALYTICS-001-A`:
 
@@ -237,12 +237,26 @@ Verification TXT не удалять.
 - подробный контракт и этапы зафиксированы в
   `docs/site/ANALYTICS_PLAN_20260723.md`.
 
+Локальный статус `ANALYTICS-001-B`:
+
+- выбран прямой loader Яндекс Метрики без GTM/GA4;
+- счётчик `110980303`, владелец Yandex ID `radicom`;
+- ID вынесен в `NEXT_PUBLIC_YANDEX_METRIKA_ID`;
+- loader запускается только после `accepted`;
+- Webvisor, clickmap, e-commerce и передача title выключены;
+- e-commerce и встроенный Yandex Tag Manager выключены в настройках счётчика;
+- события форм и demo передаются через `reachGoal`;
+- добавлена постоянная кнопка повторного открытия cookie-настроек;
+- typecheck, lint, production build, privacy smoke и локальный consent browser
+  smoke пройдены;
+- production environment, VPS и публичный сайт не изменялись.
+
 Нужно:
 
-- выбрать владельца счётчика;
-- согласовать cookie/consent-модель;
-- подключить счётчик;
-- добавить события для `/demo`, гостевых заявок, оплаты, owner cabinet и
+- добавить ID в production environment перед отдельной сборкой;
+- проверить production CSP/headers и внешний consent smoke;
+- назначить резервного администратора и правила доступа;
+- создать цели Метрики для `/demo`, гостевых заявок, оплаты, owner cabinet и
   feedback lead;
 - не передавать имя, телефон, госномер и другие персональные данные;
 - собирать воронку

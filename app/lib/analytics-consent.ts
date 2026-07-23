@@ -1,5 +1,6 @@
 export const ANALYTICS_CONSENT_STORAGE_KEY = 'rospark_cookie_consent';
 export const ANALYTICS_CONSENT_CHANGE_EVENT = 'rospark:analytics_consent_change';
+export const ANALYTICS_CONSENT_OPEN_EVENT = 'rospark:analytics_consent_open';
 
 export type AnalyticsConsentValue = 'accepted' | 'declined';
 
