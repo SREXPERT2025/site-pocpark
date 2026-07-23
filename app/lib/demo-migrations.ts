@@ -168,6 +168,34 @@ function createTenantAndParkingFoundation(db: Database.Database) {
   `);
 }
 
+function createFeedbackLeads(db: Database.Database) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS demo_feedback_leads (
+      id TEXT PRIMARY KEY,
+      phone TEXT NOT NULL CHECK (
+        length(phone) = 11 AND phone GLOB '7[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+      ),
+      created_at TEXT NOT NULL,
+      source TEXT NOT NULL CHECK (source = 'demo_guest_requests'),
+      session_ref TEXT NOT NULL,
+      request_id TEXT NOT NULL,
+      channel TEXT NOT NULL CHECK (channel IN ('max', 'whatsapp', 'copy')),
+      consent INTEGER NOT NULL CHECK (consent = 1),
+      consent_version TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'closed')),
+      page_source TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      UNIQUE (session_ref, request_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_demo_feedback_leads_expiry
+      ON demo_feedback_leads(expires_at);
+    CREATE INDEX IF NOT EXISTS idx_demo_feedback_leads_created
+      ON demo_feedback_leads(created_at);
+    CREATE INDEX IF NOT EXISTS idx_demo_feedback_leads_status
+      ON demo_feedback_leads(status);
+  `);
+}
+
 const migrations: DemoMigration[] = [
   {
     version: 1,
@@ -178,6 +206,11 @@ const migrations: DemoMigration[] = [
     version: 2,
     name: 'tenant_parking_discount_foundation',
     up: createTenantAndParkingFoundation,
+  },
+  {
+    version: 3,
+    name: 'demo_feedback_leads',
+    up: createFeedbackLeads,
   },
 ];
 

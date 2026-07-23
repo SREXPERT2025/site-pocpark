@@ -175,6 +175,7 @@ function upsertSeeds(db: Database.Database) {
 
 function prepareStore() {
   const db = getDemoDatabase();
+  db.prepare('DELETE FROM demo_feedback_leads WHERE expires_at <= ?').run(Date.now());
   db.prepare('DELETE FROM demo_guest_requests WHERE is_seed = 0 AND expires_at <= ?').run(Date.now());
   upsertSeeds(db);
   return db;

@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
@@ -27,6 +28,11 @@ import {
 import QRCode from 'qrcode';
 import DemoScenarioNav from '@/app/components/demo/DemoScenarioNav';
 import { dispatchDemoEvent } from '@/app/lib/analytics-events';
+import {
+  DEMO_FEEDBACK_CONSENT_NOTE,
+  DEMO_FEEDBACK_CONSENT_TEXT,
+  type DemoFeedbackChannel,
+} from '@/app/lib/demo-feedback-consent';
 
 type PortalView = 'new' | 'requests' | 'detail';
 type RequestType = 'single' | 'multiple';
@@ -200,6 +206,7 @@ export default function GuestRequestPortal() {
   const [note, setNote] = useState('');
   const [formError, setFormError] = useState('');
   const [notice, setNotice] = useState('');
+  const [feedbackConsent, setFeedbackConsent] = useState(false);
 
   useEffect(() => {
     const interval = window.setInterval(() => setClockMs(Date.now()), 60_000);
@@ -257,6 +264,7 @@ export default function GuestRequestPortal() {
     setSelectedId(null);
     setRequests([]);
     setNotice('');
+    setFeedbackConsent(false);
     window.history.replaceState({}, '', PAGE_PATH);
     dispatchDemoEvent('demo_logout', { demo_name: 'guest_request_portal' });
   }
@@ -318,6 +326,7 @@ export default function GuestRequestPortal() {
       setRequests((current) => [payload.request as GuestRequest, ...current]);
       setSelectedId(payload.request.id);
       setView('detail');
+      setFeedbackConsent(false);
       resetForm();
       dispatchDemoEvent('demo_request_create', {
         demo_name: 'guest_request_portal',
@@ -332,6 +341,7 @@ export default function GuestRequestPortal() {
   function openRequest(id: string) {
     setSelectedId(id);
     setView('detail');
+    setFeedbackConsent(false);
     dispatchDemoEvent('demo_request_view', { demo_name: 'guest_request_portal' });
   }
 
@@ -359,16 +369,61 @@ export default function GuestRequestPortal() {
     return `${window.location.origin}${path}`;
   }
 
-  async function copyPublicLink(request: GuestRequest) {
-    await navigator.clipboard.writeText(getPublicUrl(request));
-    setNotice('Публичная ссылка скопирована. Заявка откроется на другом устройстве в течение 24 часов.');
-    dispatchDemoEvent('demo_share', { demo_name: 'guest_request_portal', channel: 'copy' });
+  async function saveFeedbackLead(request: GuestRequest, channel: DemoFeedbackChannel) {
+    if (!feedbackConsent || request.isSeed) return 'not-requested' as const;
+    try {
+      const response = await fetch('/api/demo/feedback-leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestId: request.id,
+          channel,
+          consent: true,
+        }),
+      });
+      if (!response.ok) return 'failed' as const;
+      return 'saved' as const;
+    } catch {
+      return 'failed' as const;
+    }
   }
 
-  function openWhatsApp(request: GuestRequest) {
+  function shareNotice(baseNotice: string, feedbackResult: 'saved' | 'not-requested' | 'failed') {
+    if (feedbackResult === 'saved') {
+      return 'Тестовая заявка отправлена. При необходимости специалист РОСПАРК может связаться с вами и уточнить, всё ли сработало корректно.';
+    }
+    if (feedbackResult === 'failed') {
+      return `${baseNotice} Контакт для обратной связи сохранить не удалось — при желании повторите действие позже.`;
+    }
+    return baseNotice;
+  }
+
+  async function copyPublicLink(request: GuestRequest) {
+    try {
+      await navigator.clipboard.writeText(getPublicUrl(request));
+      const feedbackResult = await saveFeedbackLead(request, 'copy');
+      setNotice(shareNotice(
+        'Публичная ссылка скопирована. Заявка откроется на другом устройстве в течение 24 часов.',
+        feedbackResult,
+      ));
+      dispatchDemoEvent('demo_share', { demo_name: 'guest_request_portal', channel: 'copy' });
+    } catch {
+      setNotice('Не удалось скопировать ссылку. Разрешите доступ к буферу обмена и повторите попытку.');
+    }
+  }
+
+  async function openWhatsApp(request: GuestRequest) {
     const message = `Демо-заявка РОСПАРК № ${request.id}. Действует: ${formatDateTime(request.validFrom)} — ${formatDateTime(request.validUntil)}. ${getPublicUrl(request)}`;
-    window.open(`https://wa.me/${request.phone}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
-    setNotice('Открыт экран подготовки сообщения WhatsApp. Отправку подтверждает пользователь.');
+    window.open(
+      `https://wa.me/${request.phone}?text=${encodeURIComponent(message)}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+    const feedbackResult = await saveFeedbackLead(request, 'whatsapp');
+    setNotice(shareNotice(
+      'Открыт экран подготовки сообщения WhatsApp. Отправку подтверждает пользователь.',
+      feedbackResult,
+    ));
     dispatchDemoEvent('demo_share', { demo_name: 'guest_request_portal', channel: 'whatsapp' });
   }
 
@@ -380,7 +435,11 @@ export default function GuestRequestPortal() {
         body: JSON.stringify({ requestId: request.id }),
       });
       if (response.ok) {
-        setNotice('Заявка отправлена в MAX через защищённую серверную интеграцию GREEN-API.');
+        const feedbackResult = await saveFeedbackLead(request, 'max');
+        setNotice(shareNotice(
+          'Заявка отправлена в MAX через сервис уведомлений РОСПАРК.',
+          feedbackResult,
+        ));
         dispatchDemoEvent('demo_share', { demo_name: 'guest_request_portal', channel: 'max' });
       } else if (response.status === 503) {
         await shareToMax(request);
@@ -400,11 +459,24 @@ export default function GuestRequestPortal() {
       url: getPublicUrl(request),
     };
     if (navigator.share) {
-      await navigator.share(shareData).catch(() => undefined);
-      setNotice('Открыто системное меню отправки. Выберите MAX, если он установлен на устройстве.');
+      try {
+        await navigator.share(shareData);
+      } catch {
+        setNotice('Отправка через системное меню отменена.');
+        return;
+      }
+      const feedbackResult = await saveFeedbackLead(request, 'max');
+      setNotice(shareNotice(
+        'Заявка передана в системное меню отправки. Выберите MAX, если он установлен на устройстве.',
+        feedbackResult,
+      ));
     } else {
       await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
-      setNotice('Текст и ссылка скопированы. Прямая отправка в MAX будет подключена отдельной интеграцией.');
+      const feedbackResult = await saveFeedbackLead(request, 'max');
+      setNotice(shareNotice(
+        'Текст и ссылка скопированы. Их можно вставить в сообщение MAX.',
+        feedbackResult,
+      ));
     }
     dispatchDemoEvent('demo_share', { demo_name: 'guest_request_portal', channel: 'max' });
   }
@@ -438,7 +510,7 @@ export default function GuestRequestPortal() {
             <div className="relative hidden min-h-full overflow-hidden bg-slate-950 lg:block">
               <Image
                 src="/images/demo/bc-severnaya-bashnya.webp"
-                alt="Въезд и главный вход бизнес-центра Северная башня"
+                alt="Въезд и главный вход бизнес-центра РОСПАРК"
                 fill
                 sizes="(min-width: 1024px) 55vw, 100vw"
                 className="object-cover opacity-70"
@@ -447,7 +519,7 @@ export default function GuestRequestPortal() {
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 p-10 text-white">
                 <div className="inline-flex rounded-2xl bg-white/10 p-3 backdrop-blur"><Building2 aria-hidden="true" size={28} /></div>
-                <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-blue-200">БЦ «Северная башня»</p>
+                <p className="mt-5 text-sm font-semibold uppercase tracking-[0.18em] text-blue-200">Бизнес-центр «РОСПАРК»</p>
                 <h3 className="mt-3 max-w-xl text-3xl font-bold leading-tight">Гостевой доступ без звонков на пост охраны</h3>
                 <p className="mt-4 max-w-lg leading-7 text-slate-200">Арендатор создаёт заявку, гость получает данные для въезда, а служба безопасности видит единый журнал.</p>
               </div>
@@ -456,7 +528,7 @@ export default function GuestRequestPortal() {
             <div className="flex items-center justify-center p-5 sm:p-10 lg:p-12">
               <form onSubmit={handleLogin} className="w-full max-w-md" noValidate>
                 <div className="inline-flex rounded-2xl bg-blue-50 p-3 text-blue-700"><KeyRound aria-hidden="true" size={26} /></div>
-                <p className="mt-6 text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">БЦ «Северная башня»</p>
+                <p className="mt-6 text-sm font-semibold uppercase tracking-[0.16em] text-blue-700">Бизнес-центр «РОСПАРК»</p>
                 <h3 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">Вход для арендатора</h3>
                 <p className="mt-3 leading-7 text-slate-600">После входа откроется форма создания гостевой заявки.</p>
 
@@ -490,7 +562,7 @@ export default function GuestRequestPortal() {
                 <div className="flex items-center gap-3">
                   <span className="rounded-xl bg-blue-600 p-2.5"><Building2 aria-hidden="true" size={22} /></span>
                   <div>
-                    <p className="font-bold">БЦ «Северная башня»</p>
+                    <p className="font-bold">Бизнес-центр «РОСПАРК»</p>
                     <p className="text-xs text-slate-400">Кабинет арендатора · TEST</p>
                   </div>
                 </div>
@@ -619,13 +691,42 @@ export default function GuestRequestPortal() {
                       <div className="flex flex-col items-center justify-center border-t border-slate-200 bg-slate-50 p-6 lg:border-l lg:border-t-0"><RequestQr value={getPublicUrl(selectedRequest)} /><p className="mt-3 text-center font-mono text-xs text-slate-500">QR содержит публичную demo-ссылку и код заявки</p></div>
                     </div>
                     <div className="border-t border-slate-200 p-5 sm:p-8">
+                      {!selectedRequest.isSeed ? (
+                        <div className="mb-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 sm:p-5">
+                          <label className="flex cursor-pointer items-start gap-3 text-sm font-semibold leading-6 text-slate-900">
+                            <input
+                              type="checkbox"
+                              checked={feedbackConsent}
+                              onChange={(event) => setFeedbackConsent(event.target.checked)}
+                              aria-describedby="demo-feedback-consent-note"
+                              className="mt-1 h-5 w-5 shrink-0 rounded border-slate-400 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            />
+                            <span>{DEMO_FEEDBACK_CONSENT_TEXT}</span>
+                          </label>
+                          <p id="demo-feedback-consent-note" className="mt-2 pl-8 text-xs leading-5 text-slate-600">
+                            {DEMO_FEEDBACK_CONSENT_NOTE}. Согласие необязательно и не влияет на работу заявки.{' '}
+                            <Link
+                              href="/privacy"
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-semibold text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-900"
+                            >
+                              Политика обработки персональных данных
+                            </Link>
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="mb-5 rounded-xl bg-slate-100 px-4 py-3 text-xs leading-5 text-slate-600">
+                          Для тестовой отправки на свой телефон и добровольной обратной связи создайте собственную demo-заявку.
+                        </p>
+                      )}
                       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <button type="button" onClick={() => copyPublicLink(selectedRequest)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50"><Copy aria-hidden="true" size={17} />Копировать ссылку</button>
                         <button type="button" onClick={() => openWhatsApp(selectedRequest)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-sm font-semibold text-white hover:bg-emerald-700"><MessageCircle aria-hidden="true" size={17} />WhatsApp</button>
                         <button type="button" onClick={() => sendToMax(selectedRequest)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"><MessageCircle aria-hidden="true" size={17} />Отправить в MAX</button>
                         {!selectedRequest.isSeed && getDisplayStatus(selectedRequest) === 'waiting' ? <button type="button" onClick={() => cancelRequest(selectedRequest.id)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50"><Trash2 aria-hidden="true" size={17} />Отменить</button> : <div className="inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-100 px-3 py-2 text-sm font-medium text-slate-500">{selectedRequest.isSeed ? 'Постоянный demo-пример' : 'Изменение закрыто'}</div>}
                       </div>
-                      <p className="mt-4 text-xs leading-5 text-slate-500">MAX отправляет через серверную интеграцию GREEN-API, если она включена; иначе используется системное меню «Поделиться». WhatsApp открывает экран подготовки сообщения и требует подтверждения пользователя.</p>
+                      <p className="mt-4 text-xs leading-5 text-slate-500">MAX использует сервис уведомлений РОСПАРК, если отправка включена; иначе открывается системное меню «Поделиться». WhatsApp открывает экран подготовки сообщения и требует подтверждения пользователя.</p>
                     </div>
                   </div>
                 </div>

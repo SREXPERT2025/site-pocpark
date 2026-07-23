@@ -5,6 +5,7 @@ import type { DemoVehicleType } from './demo-domain';
 export const DEMO_TEST_TENANT_ID = 'tenant-test';
 export const DEMO_USER_TTL_MS = 24 * 60 * 60 * 1000;
 export const DEMO_USER_REQUEST_LIMIT = 20;
+export const DEMO_FEEDBACK_LEAD_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export const GUEST_REQUEST_HOURLY_RATE = 100;
 
 export const WEB_DEMO_TARIFFS = {
