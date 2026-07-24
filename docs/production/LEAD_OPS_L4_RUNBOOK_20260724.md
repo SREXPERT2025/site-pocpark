@@ -2,8 +2,8 @@
 
 Дата подготовки: 2026-07-24
 
-Статус: подготовлен локально; read-only VPS preflight после L3 ещё не выполнен;
-выпуск не разрешён
+Статус: подготовлен локально; read-only VPS preflight после L3 выполнен
+2026-07-24; выпуск не разрешён
 
 Этот документ не разрешает автоматически менять VPS, release-ветку, PM2,
 `.env.production`, SQLite, systemd или отправлять сообщение в MAX. Каждый
@@ -165,6 +165,39 @@ df -h /var/www /var/lib /root
 
 В отчёт можно прислать этот вывод целиком: значения токенов/паролей команда не
 печатает.
+
+### Результат preflight от 2026-07-24
+
+Проверка выполнена на production VPS без изменений:
+
+- working tree чистый;
+- branch: `release/demo-production-ready-20260723`;
+- SHA: `c2a0e955b8747e3005da28e3fe9981f01fa45488`;
+- `node v22.23.1`, `npm 10.9.8`;
+- `NODE_BIN=/usr/bin/node`, `NPM_BIN=/usr/bin/npm`;
+- `sqlite3=/usr/bin/sqlite3`, `FLOCK_BIN=/usr/bin/flock`;
+- PM2 process `rospark-site` — `online`, user/group `root:root`;
+- PM2 cwd — `/var/www/rospark-site`, команда — `/usr/bin/npm start`;
+- фактический сервер — Next.js `14.2.35`;
+- `LEAD_MAX_BOT_TOKEN` и `LEAD_MAX_CHAT_ID` присутствуют по одному, значения
+  не выводились;
+- остальные новые `LEAD_*` keys отсутствуют, дубли не обнаружены;
+- `/var/lib/rospark-leads` ещё не создан;
+- `rospark-lead-*` units и timers ещё не установлены;
+- на корневом разделе свободно `32G`, использование `17%`.
+
+Наблюдения перед изменяющим этапом:
+
+- `.env.production` принадлежит `root:root`, но имеет mode `644`; при первом
+  конфигурировании lead-переменных обязательна атомарная перезапись в mode
+  `600`, уже предусмотренная `scripts/configure_lead_ops_env.mjs`;
+- PM2 показывает `15` restart и uptime около двух часов. Процесс стабилен в
+  момент проверки, но перед maintenance нужно сохранить свежие логи и не
+  трактовать один статус `online` как доказательство долгосрочной стабильности.
+
+Preflight gate пройден для подготовки maintenance packet. Он не разрешает
+fast-forward release, restart, создание каталога, изменение env, установку
+systemd или TEST-отправку.
 
 ## 6. Проверки release candidate локально
 

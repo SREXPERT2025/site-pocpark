@@ -176,8 +176,6 @@ Production не изменён: SQLite не создан, feature gates выкл
 
 - подготовить отдельные production-пароли Андрея и Сергея без передачи в чат;
 - подготовить server-only session secret, backup и rollback;
-- выполнить свежий read-only VPS preflight из
-  `docs/production/LEAD_OPS_L4_RUNBOOK_20260724.md`;
 - выполнить L4 в отдельное согласованное окно на одной TEST-заявке;
 - исключить ручное чтение production SQLite как постоянный процесс.
 
@@ -189,6 +187,9 @@ Production не изменён: SQLite не создан, feature gates выкл
   и без вывода секретов;
 - подготовлены systemd templates worker/cleanup с общим `flock`;
 - подготовлены staged release, acceptance и rollback;
+- read-only VPS preflight выполнен 2026-07-24: production SHA/branch и
+  Node.js 22 подтверждены, PM2 online, MAX lead keys присутствуют, места
+  достаточно;
 - VPS, release-ветка, PM2, env, SQLite, systemd и MAX не изменялись.
 
 ### P0. DOCS-OPS-001 — поддерживать один источник правды
@@ -513,8 +514,8 @@ production-зависимостей уровня high, включая прямы
 3. `ANALYTICS-001-C` — семь целей созданы, production `reachGoal` и параметры
    подтверждены, первый dashboard подготовлен, host guard опубликован; далее
    не-QA данные и полная demo-воронка.
-4. `LEAD-OPS-002` — L1–L3 и ops-пакет L4 подготовлены локально; далее свежий
-   read-only VPS preflight, отдельное окно, секреты и согласованный L4.
+4. `LEAD-OPS-002` — L1–L3 и ops-пакет L4 подготовлены локально, read-only VPS
+   preflight пройден; далее отдельное окно, backup, секреты и согласованный L4.
 5. `DEMO-GROWTH-001` — контекстные входы и сценарий коммерческого показа
    опубликованы; далее измерение переходов и завершения сценариев.
 6. `CONTENT-DEMO-001` — первые три demo-кластера.

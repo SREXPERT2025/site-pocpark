@@ -119,8 +119,20 @@ L3 production-preview подтвердил:
 - staged release, acceptance и rollback записаны в
   `docs/production/LEAD_OPS_L4_RUNBOOK_20260724.md`.
 
-VPS, release-ветка, PM2, `.env.production`, SQLite, systemd и MAX не
-изменялись. Следующий шаг — свежий read-only VPS preflight.
+Read-only VPS preflight выполнен 2026-07-24:
+
+- production остаётся на
+  `c2a0e955b8747e3005da28e3fe9981f01fa45488`,
+  branch `release/demo-production-ready-20260723`;
+- PM2 `rospark-site` online, Node.js `22.23.1`;
+- `sqlite3`, `flock`, MAX lead token/chat и `32G` свободного места доступны;
+- новый registry и systemd units ещё не созданы;
+- `.env.production` пока mode `644`; L4 configurator должен атомарно привести
+  его к `600`.
+
+VPS, release-ветка, PM2, `.env.production`, SQLite, systemd и MAX при preflight
+не изменялись. Следующий шаг — отдельное подтверждение maintenance window,
+backup и staged L4.
 
 ## 2026-07-24 — первый growth dashboard и изоляция QA-аналитики
 
