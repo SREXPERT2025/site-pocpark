@@ -2,14 +2,18 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { getMainNav, getSolutionsFooterLinks } from '@/app/lib/navigation';
 import { ANALYTICS_CONSENT_OPEN_EVENT } from '@/app/lib/analytics-consent';
 
 export default function Footer() {
+  const pathname = usePathname();
   const year = new Date().getFullYear();
 
   const main = getMainNav();
   const solutions = getSolutionsFooterLinks();
+
+  if (pathname.startsWith('/admin')) return null;
 
   return (
     <footer className="border-t border-neutral-200 bg-white">

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   readAnalyticsConsent,
@@ -10,6 +11,7 @@ import {
 } from '@/app/lib/analytics-consent';
 
 export default function CookieBanner() {
+  const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export default function CookieBanner() {
     }
   };
 
-  if (!isVisible) {
+  if (pathname.startsWith('/admin') || !isVisible) {
     return null;
   }
 

@@ -21,13 +21,15 @@ const counterId = parseYandexMetrikaId(
 
 export default function YandexMetrika() {
   const pathname = usePathname();
+  const isPrivatePath = pathname.startsWith('/admin');
   const previousPathname = useRef<string | null>(null);
   const [isEnabled, setIsEnabled] = useState(false);
 
   useEffect(() => {
     const syncConsent = () => {
       setIsEnabled(
-        isYandexMetrikaProductionHost(window.location.hostname) &&
+        !isPrivatePath &&
+          isYandexMetrikaProductionHost(window.location.hostname) &&
           hasAnalyticsConsent(),
       );
     };
@@ -38,16 +40,16 @@ export default function YandexMetrika() {
     return () => {
       window.removeEventListener(ANALYTICS_CONSENT_CHANGE_EVENT, syncConsent);
     };
-  }, []);
+  }, [isPrivatePath]);
 
   useEffect(() => {
-    if (!isEnabled || !counterId) return;
+    if (isPrivatePath || !isEnabled || !counterId) return;
 
     initializeYandexMetrika(window, document, counterId);
-  }, [isEnabled]);
+  }, [isEnabled, isPrivatePath]);
 
   useEffect(() => {
-    if (!isEnabled || !counterId) {
+    if (isPrivatePath || !isEnabled || !counterId) {
       previousPathname.current = null;
       return;
     }
@@ -65,10 +67,10 @@ export default function YandexMetrika() {
       counterId,
       `${window.location.origin}${pathname}`,
     );
-  }, [isEnabled, pathname]);
+  }, [isEnabled, isPrivatePath, pathname]);
 
   useEffect(() => {
-    if (!isEnabled || !counterId) return;
+    if (isPrivatePath || !isEnabled || !counterId) return;
 
     const flushQueuedAnalyticsEvents = () => {
       flushYandexMetrikaGoalsFromDataLayer(window, counterId);
@@ -87,7 +89,7 @@ export default function YandexMetrika() {
       );
       window.removeEventListener('rospark:demo_event', forwardAnalyticsEvent);
     };
-  }, [isEnabled]);
+  }, [isEnabled, isPrivatePath]);
 
   return null;
 }

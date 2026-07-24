@@ -316,6 +316,36 @@ function createLeadNotificationOutbox(db: Database.Database) {
   `);
 }
 
+function createLeadAdminAudit(db: Database.Database) {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lead_admin_audit_events (
+      id TEXT PRIMARY KEY,
+      actor_user_id TEXT NOT NULL,
+      actor_role TEXT NOT NULL
+        CHECK (actor_role IN ('director', 'sales_head')),
+      action TEXT NOT NULL CHECK (
+        action IN (
+          'login_success',
+          'logout',
+          'list_view',
+          'export',
+          'status_change',
+          'delete'
+        )
+      ),
+      lead_id TEXT,
+      metadata_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL,
+      created_at_ms INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_lead_admin_audit_created
+      ON lead_admin_audit_events(created_at_ms);
+    CREATE INDEX IF NOT EXISTS idx_lead_admin_audit_lead
+      ON lead_admin_audit_events(lead_id, created_at_ms);
+  `);
+}
+
 const migrations: LeadRegistryMigration[] = [
   {
     version: 1,
@@ -326,6 +356,11 @@ const migrations: LeadRegistryMigration[] = [
     version: 2,
     name: 'lead_notification_outbox',
     up: createLeadNotificationOutbox,
+  },
+  {
+    version: 3,
+    name: 'lead_admin_audit',
+    up: createLeadAdminAudit,
   },
 ];
 

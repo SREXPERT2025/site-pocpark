@@ -12,6 +12,8 @@
     "typecheck": "tsc --noEmit --incremental false",
     "lint": "next lint --max-warnings=0",
     "test:lead-registry": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_lead_registry_foundation.mjs",
+    "test:lead-admin": "node scripts/test_lead_admin.mjs",
+    "lead-admin:hash-password": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/hash_lead_admin_password.mjs",
     "lead-outbox:process": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/process_lead_outbox.mjs"
   },
   "dependencies": {

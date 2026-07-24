@@ -7,7 +7,7 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
-## 2026-07-24 — аудит и локальный L1 foundation `LEAD-OPS-002`
+## 2026-07-24 — локальные L1–L3 `LEAD-OPS-002`
 
 ### Подтверждено
 
@@ -22,7 +22,7 @@
 - backup от 2026-07-23 содержал 7 технических/QA feedback leads; это не семь
   подтверждённых бизнес-лидов.
 
-### Решение подготовлено и частично принято
+### Решение принято
 
 Создан decision packet:
 `docs/site/LEAD_OPS_002_DECISION_20260724.md`.
@@ -62,11 +62,20 @@
 - feature-gated подключение основного и demo feedback API;
 - MAX/Email worker с lease, retry/backoff и dead state;
 - безопасные error codes без payload и provider details;
-- целевой smoke без внешних сообщений.
+- защищённый `/admin/leads` с персональным входом;
+- роли: Андрей `director`, Сергей `sales_head`;
+- поиск, фильтры, сводка статусов/outbox и workflow
+  `new → assigned → contacted → closed`;
+- CSV export для обеих ролей с защитой от formula injection;
+- ручное удаление только для директора с подтверждением ID и причины;
+- append-only audit login/logout/list/export/status/delete без PII;
+- HMAC-сессия, scrypt password hashes, same-origin и login rate-limit;
+- `noindex`, `no-store`, запрет iframe и исключение Метрики из admin;
+- целевые автоматические и browser/API smoke без внешних сообщений.
 
 Оба feature gate выключены, поэтому production-поведение не изменено и реальные
-сообщения не отправлялись. Защищённый кабинет, CSV export, аудит доступа и
-кнопка директорского удаления остаются L3; production runbook — отдельный этап.
+сообщения не отправлялись. Production SQLite, admin-учётные записи и worker не
+создавались; production runbook и L4 остаются отдельным этапом.
 
 Изолированный localhost smoke с включённым registry и выключленным worker
 подтвердил: первая заявка — `200 created:true`, точный повтор —
@@ -74,6 +83,26 @@
 SQLite остались ровно один lead, одна submission и один pending MAX outbox.
 `PRAGMA quick_check` вернул `ok`, foreign key errors отсутствуют. Временная
 тестовая база после проверки удалена.
+
+L3 production-preview подтвердил:
+
+- login без Origin — `403`, login Андрея и Сергея — `200`;
+- list и CSV — `200`;
+- назначение, первый контакт и закрытие — `200`;
+- удаление Сергеем — `403`, удаление Андреем — `200`;
+- audit сохранил delete event после cascade удаления лида;
+- desktop и mobile 390 px — без горизонтального переполнения;
+- browser console — без ошибок;
+- Метрика, публичные header/footer и cookie banner в admin отсутствуют;
+- production build под Node.js 22 сформировал 103 статические страницы и
+  динамические admin routes.
+
+В ходе smoke исправлены две ошибки до коммита:
+
+- same-origin теперь учитывает фактический `Host` и `X-Forwarded-Proto` за
+  reverse proxy;
+- GET list/export явно помечены `force-dynamic`, чтобы feature gate не
+  фиксировался в `404` во время build.
 
 ## 2026-07-24 — первый growth dashboard и изоляция QA-аналитики
 

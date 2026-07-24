@@ -149,7 +149,7 @@ Read-only аудит 2026-07-24 подтвердил два несвязанны
 Decision packet:
 `docs/site/LEAD_OPS_002_DECISION_20260724.md`.
 
-L1 и L2 реализованы локально в feature-ветке:
+L1, L2 и L3 реализованы локально в feature-ветке:
 
 - отдельная schema migration `lead_registry_foundation`;
 - `lead_records`, `lead_submissions`, `lead_status_events`;
@@ -162,18 +162,22 @@ L1 и L2 реализованы локально в feature-ветке:
 - lease, retry/backoff, dead state и безопасные error codes;
 - оба API подключены к registry за выключенным feature gate;
 - one-shot worker отдельно закрыт вторым выключенным gate;
-- целевой автоматический smoke.
+- защищённый `/admin/leads` с персональными ролями Андрея и Сергея;
+- фильтры, сводка, status workflow и контролируемый CSV export;
+- append-only audit доступа, export, статусов и удаления без PII;
+- ручное удаление только для директора с двойным подтверждением;
+- admin `noindex`/`no-store`, запрет iframe и исключение Метрики;
+- автоматические и локальные browser/API smoke.
 
 Production не изменён: SQLite не создан, feature gates выключены, worker не
 запускался и реальные сообщения не отправлялись.
 
 Нужно:
 
-- сделать защищённый `/admin/leads` без выдачи VPS/SSH;
-- реализовать фильтры, статусы и контролируемый CSV export;
-- реализовать audit log доступа/экспорта/удаления;
-- ограничить ручное удаление ролью директора;
+- подготовить отдельные production-пароли Андрея и Сергея без передачи в чат;
+- подготовить server-only session secret, backup и rollback;
 - подготовить systemd timer и production release/runbook для worker/cleanup;
+- выполнить L4 в отдельное согласованное окно на одной TEST-заявке;
 - исключить ручное чтение production SQLite как постоянный процесс.
 
 ### P0. DOCS-OPS-001 — поддерживать один источник правды
@@ -498,8 +502,8 @@ production-зависимостей уровня high, включая прямы
 3. `ANALYTICS-001-C` — семь целей созданы, production `reachGoal` и параметры
    подтверждены, первый dashboard подготовлен, host guard опубликован; далее
    не-QA данные и полная demo-воронка.
-4. `LEAD-OPS-002` — read-only аудит и decision packet завершены; далее решение
-   CRM/реестр, owner/backup, рабочие часы, SLA и retention.
+4. `LEAD-OPS-002` — L1–L3 реализованы локально за выключенными gates; далее
+   отдельный production runbook, секреты, worker/cleanup и согласованный L4.
 5. `DEMO-GROWTH-001` — контекстные входы и сценарий коммерческого показа
    опубликованы; далее измерение переходов и завершения сценариев.
 6. `CONTENT-DEMO-001` — первые три demo-кластера.

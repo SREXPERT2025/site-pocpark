@@ -174,17 +174,101 @@ VPS/SSH: Сергей доступа не получает
 Email, Telegram и MAX являются каналами уведомления, а не источником истины. Если CRM ещё нет, нужен хотя бы контролируемый реестр со статусом, ответственным и временем первого контакта.
 
 Decision packet и границы L1/L2/L3 записаны в
-`docs/site/LEAD_OPS_002_DECISION_20260724.md`. L2 реализован в feature-ветке
+`docs/site/LEAD_OPS_002_DECISION_20260724.md`. L1–L3 реализованы в feature-ветке
 за выключенными feature gates. Наличие кода и переменных в `.env.example` не
 разрешает создавать production-файл, запускать worker или отправлять реальные
 сообщения без отдельного release/runbook.
 
-## 6. Диагностика
+## 6. Защищённый реестр `/admin/leads`
+
+L3 реализован в feature-ветке, но по умолчанию выключен:
+
+```text
+LEAD_ADMIN_ENABLED=false
+```
+
+Интерфейс использует отдельные персональные учётные записи:
+
+| Пользователь | Роль | Просмотр | Обработка | CSV | Удаление |
+|---|---|---:|---:|---:|---:|
+| Андрей | `director` | да | да | да | да |
+| Сергей, РОП | `sales_head` | да | да | да | нет |
+
+Сергей не получает VPS/SSH. Ручное удаление требует роль директора, точное
+подтверждение публичного ID вида `RSP-XXXXXXXX` и фиксированную причину.
+
+### Обязательные переменные
+
+```text
+LEAD_ADMIN_ENABLED=false
+LEAD_ADMIN_SESSION_SECRET=
+LEAD_ADMIN_SESSION_TTL_HOURS=8
+LEAD_ADMIN_DIRECTOR_USERNAME=andrey
+LEAD_ADMIN_DIRECTOR_PASSWORD_HASH=
+LEAD_ADMIN_SALES_USERNAME=sergey
+LEAD_ADMIN_SALES_PASSWORD_HASH=
+```
+
+`LEAD_ADMIN_SESSION_SECRET` должен содержать минимум 32 байта. Срок сессии
+ограничен диапазоном от одного часа до 24 часов. Пароли не хранятся в открытом
+виде: используются отдельные scrypt-хеши.
+
+Хеш создаётся локально или на сервере без передачи пароля в Git, issue или
+чат. Пример для Bash на доверенной машине:
+
+```bash
+read -r -s -p 'Пароль admin: ' LEAD_ADMIN_PASSWORD_TO_HASH
+echo
+export LEAD_ADMIN_PASSWORD_TO_HASH
+npm run lead-admin:hash-password
+unset LEAD_ADMIN_PASSWORD_TO_HASH
+```
+
+Полученную строку `scrypt-v1$...` записывают только в server environment.
+Андрею и Сергею нужны разные пароли и разные хеши.
+
+### Защитные границы
+
+- login ограничен пятью попытками за 15 минут на IP в памяти процесса;
+- изменяющие запросы требуют совпадения `Origin` с фактическим host/protocol;
+- cookie сессии — `HttpOnly`, `SameSite=Strict`, в production — `Secure`;
+- `/admin/*` и `/api/admin/*` получают `no-store`, `noindex`, запрет iframe и
+  `nosniff`;
+- публичная Метрика, header, footer и cookie banner в `/admin` не загружаются;
+- audit фиксирует вход, выход, просмотр, export, смену статуса и удаление без
+  имени, телефона, сообщения и контекста лида;
+- CSV защищён от formula injection;
+- export ограничен 5000 строками и требует уточнить фильтр при превышении.
+
+L3 не включается отдельно от registry: для production нужны оба flag, отдельный
+SQLite path, уникальные секреты, backup и согласованный release/runbook.
+
+### Локальные проверки
+
+```bash
+npm run test:lead-registry
+npm run test:lead-admin
+npm run typecheck
+npm run lint
+npm run build
+```
+
+Проект запускается под Node.js 22. Ошибка ABI `better-sqlite3` под Node.js 26
+не исправляется изменением application code: нужно использовать `.nvmrc` и
+одинаковую major-версию для install, build и runtime.
+
+## 7. Диагностика
 
 - `400 Укажите имя` — поле `name` пустое.
 - `400 Проверьте телефон` — номер не прошёл проверку российского формата.
 - `400 Нужно согласие` — отсутствует строгое boolean-значение `consent: true`.
 - `429` — превышено 12 запросов с одного IP за минуту.
+- `401 Требуется вход` — admin-сессия отсутствует или истекла.
+- `403 Запрос отклонён` — изменяющий admin-запрос пришёл с чужого Origin.
+- `403 Недостаточно прав` — роль не разрешает операцию, например удаление для
+  Сергея.
+- `503 Admin-интерфейс не настроен` — flag включён без полного набора секретов
+  и хешей.
 - `500 Не удалось отправить заявку` — ни один канал не доставил сообщение или конфигурация отсутствует.
 - `[lead] delivery failures` — часть каналов упала, но другой канал мог доставить заявку.
 - `[lead] submit failed` — запрос завершился общей ошибкой.

@@ -1,9 +1,9 @@
 # РОСПАРК — техническая архитектура сайта
 
 Статус: рабочая документация v2
-Дата актуализации: 2026-07-23
+Дата актуализации: 2026-07-24
 Проект: `rospark-frontend`
-Production release: `881ff3cf846ae270042ccf5f55e281d98b124145`
+Production release: `c2a0e955b8747e3005da28e3fe9981f01fa45488`
 
 ## Назначение
 
@@ -85,7 +85,8 @@ Draft-файлы сохраняются, но не публикуются.
 реестра и требуемые решения зафиксированы в
 `docs/site/LEAD_OPS_002_DECISION_20260724.md`.
 
-В feature-ветке подготовлены L1 registry и L2 transactional outbox:
+В feature-ветке подготовлены L1 registry, L2 transactional outbox и L3
+операционный интерфейс:
 
 - `app/lib/lead-registry-core.ts` — migration, idempotency, duplicate policy,
   status history, retention, outbox lease и retry/backoff;
@@ -97,10 +98,27 @@ Draft-файлы сохраняются, но не публикуются.
   итоговым счётчиком без PII;
 - `scripts/test_lead_registry_foundation.mjs` — изолированный smoke без
   внешних сообщений.
+- `app/admin/leads` — закрытый интерфейс просмотра и обработки;
+- `app/api/admin/leads` — list, status, CSV, delete и session API;
+- `app/lib/lead-admin-*` — роли, HMAC-сессии, scrypt, same-origin, audit и
+  безопасный CSV;
+- `scripts/test_lead_admin.mjs` — auth/roles/audit/workflow/export/delete
+  smoke.
 
-Оба API подключены только за `LEAD_REGISTRY_ENABLED=false`; реальная обработка
-outbox отдельно закрыта `LEAD_OUTBOX_PROCESSING_ENABLED=false`. Код не
-опубликован в production, база не создана, worker не запущен.
+Оба публичных API подключены только за `LEAD_REGISTRY_ENABLED=false`; admin
+дополнительно закрыт `LEAD_ADMIN_ENABLED=false`; реальная обработка outbox
+отдельно закрыта `LEAD_OUTBOX_PROCESSING_ENABLED=false`. Код не опубликован в
+production, база и production-учётные записи не созданы, worker не запущен.
+
+Admin boundary:
+
+- `director` может просматривать, обрабатывать, экспортировать и удалять;
+- `sales_head` может просматривать, обрабатывать и экспортировать без удаления;
+- Сергей не получает VPS/SSH;
+- password hashes и session secret существуют только в server environment;
+- `/admin/*` и `/api/admin/*` получают noindex/no-store/security headers;
+- в admin не загружаются Метрика, публичные header/footer и cookie banner;
+- audit не содержит имя, телефон, сообщение или context лида.
 
 ### 4. Demo-контур
 
@@ -259,6 +277,8 @@ Windows/demoserver-документов или предполагать.
 ```bash
 npm run typecheck
 npm run lint
+npm run test:lead-registry
+npm run test:lead-admin
 npm run build
 git diff --check
 ```
@@ -276,6 +296,9 @@ git diff --check
 
 - не выполнять реальную отправку без подтверждения;
 - проверить payload и consent локально;
+- проверить роли, origin, audit, CSV и отказ удаления для `sales_head`;
+- убедиться, что admin route dynamic и не был заморожен build-time feature gate;
+- проверить desktop и mobile без Метрики и PII в browser console;
 - отдельно проверить каждый production delivery channel в согласованное окно.
 
 ## Release protocol
