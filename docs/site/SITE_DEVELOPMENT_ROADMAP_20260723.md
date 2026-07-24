@@ -268,16 +268,17 @@ Production-статус `ANALYTICS-001-B`:
   feedback-лида и успешная отправка формы;
 - production browser smoke подтвердил `reachGoal`
   `rospark_demo_scenario_view` с параметром `demo_name` без PII;
-- локально устранён риск потери события при прямом открытии demo-страницы;
-- локальная production-сборка отправляет ровно одну цель при hard load и одну
-  при SPA-переходе;
+- release `80d64da4b2cdd3b6af7f837709722db66702930d` устранил риск потери события
+  при прямом открытии demo-страницы;
+- внешний production smoke подтвердил ровно одну цель при hard load и одну при
+  SPA-переходе, browser console без ошибок и предупреждений;
 - подробности записаны в `docs/site/ANALYTICS_GOALS_20260724.md`;
-- reliability patch ещё не опубликован и требует отдельного release.
+- backup release:
+  `/root/rospark-backups/analytics-goals-20260724T051826Z`.
 
 Нужно дальше:
 
 - назначить резервного администратора и правила доступа;
-- опубликовать direct-load reliability patch;
 - подтвердить накопление всех семи целей и параметры `result` в отчётах;
 - собирать воронку
   `источник → контент → demo/quiz → consent → lead → обработка`;
@@ -460,9 +461,9 @@ production-зависимостей уровня high, включая прямы
 2. `SEO-OPS-001-B` — первый контроль выполнен 2026-07-24: Google sitemap
    обработан успешно, отчёт индексирования ещё формируется, Яндекс сохраняет
    sitemap в очереди.
-3. `ANALYTICS-001-C` — семь целей созданы, production `reachGoal` подтверждён,
-   direct-load reliability patch проверен локально; далее отдельный release,
-   проверка накопленных целей и полная demo-воронка.
+3. `ANALYTICS-001-C` — семь целей созданы, production `reachGoal` и
+   direct-load reliability подтверждены; далее проверка накопленных целей и
+   полная demo-воронка.
 4. `LEAD-OPS-002` — CRM/реестр, outbox, владелец и SLA.
 5. `DEMO-GROWTH-001` — контекстные входы и сценарий коммерческого показа
    опубликованы; далее измерение переходов и завершения сценариев.

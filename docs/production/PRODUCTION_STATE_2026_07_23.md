@@ -16,7 +16,7 @@ PM2, SQLite или зависимости.
 
 - Статус: Production Release v1 и согласованный analytics/demo-growth update
   успешно выпущены.
-- Release SHA: `9ae9579c63dc8c3c7af96a1e46d87ee0081b56da`.
+- Release SHA: `80d64da4b2cdd3b6af7f837709722db66702930d`.
 - Production branch: `release/demo-production-ready-20260723`.
 
 ## Production-окружение
@@ -42,6 +42,11 @@ PM2, SQLite или зависимости.
 - После `Принять` загружается `tag.js?id=110980303` и отправляется pageview.
 - После изменения выбора на `Отклонить необязательные` страница
   перезагружается без ресурсов Метрики.
+- В production-счётчике создано семь целей `ANALYTICS-001-C`.
+- Прямое открытие `/demo/gostevaya-zayavka` отправляет одну цель
+  `rospark_demo_scenario_view`.
+- SPA-переход `/demo → /demo/gostevaya-zayavka` отправляет одну цель без
+  дубля; параметры содержат `demo_name`, PII отсутствует.
 - WhatsApp работает.
 - MAX работает, реальная demo-заявка успешно доставлена.
 
@@ -54,7 +59,8 @@ PM2, SQLite или зависимости.
 
 Analytics release также не означает, что уже:
 
-- созданы все цели и сквозная воронка в интерфейсе Метрики;
+- накоплены и подтверждены данные всех семи целей в отчёте Метрики;
+- собрана сквозная demo-воронка и ежемесячный dashboard;
 - назначен резервный администратор счётчика;
 - замкнута связь `lead → assigned → contacted → closed`;
 - накоплен достаточный объём данных для SEO/GEO-выводов.
@@ -72,6 +78,24 @@ Analytics release также не означает, что уже:
 - внешний browser consent smoke — успешно;
 - browser console — без ошибок и предупреждений;
 - SQLite после restart: `quick_check=ok`.
+
+## Проверка analytics reliability release от 2026-07-24
+
+- backup env и release state:
+  `/root/rospark-backups/analytics-goals-20260724T051826Z`;
+- fast-forward:
+  `9ae9579c63dc8c3c7af96a1e46d87ee0081b56da` →
+  `80d64da4b2cdd3b6af7f837709722db66702930d`;
+- Node.js: `22.23.1`;
+- `npm ci`, typecheck, lint, privacy smoke и production build — успешно;
+- production build: 100 маршрутов;
+- PM2 `rospark-site`: `online`;
+- `/`, `/demo`, `/demo/gostevaya-zayavka` — `200`;
+- `/api/demo/requests` без сессии — `401`;
+- внешний browser smoke hard load / SPA — по одной цели без дублей;
+- browser console — без ошибок и предупреждений;
+- `npm ci` показал 13 известных audit findings (`1 moderate`, `12 high`);
+  автоматическое обновление зависимостей не выполнялось.
 
 Накопительный PM2 error log содержит записи `Failed to find Server Action "x"`
 без временных меток. Они не воспроизвелись в текущем HTTP/browser smoke, поэтому
@@ -123,8 +147,8 @@ Analytics release также не означает, что уже:
 5. После каждого изменения production обновлять этот файл точным SHA, датой,
    фактическими путями и результатами smoke.
 
-6. Для аналитики выполнить `ANALYTICS-001-C`: создать цели, проверить события в
-   интерфейсе Метрики и собрать dashboard без PII.
+6. Для аналитики продолжить `ANALYTICS-001-C`: подтвердить накопление семи
+   целей в интерфейсе Метрики и собрать dashboard без PII.
 
 ## Связанные актуальные документы
 

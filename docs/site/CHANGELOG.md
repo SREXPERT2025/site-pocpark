@@ -7,7 +7,14 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
-## 2026-07-24 — цели Метрики и локальная надёжность событий
+## 2026-07-24 — цели Метрики и production reliability release
+
+### Release
+
+```text
+80d64da4b2cdd3b6af7f837709722db66702930d
+release/demo-production-ready-20260723
+```
 
 ### Что настроено в Метрике
 
@@ -19,7 +26,7 @@
   `rospark_demo_scenario_view` с `demo_name` без PII;
 - полный реестр записан в `docs/site/ANALYTICS_GOALS_20260724.md`.
 
-### Что исправлено локально
+### Что опубликовано
 
 - privacy-safe событие записывается в `dataLayer` до browser event;
 - очередь `rospark_*` воспроизводится после подключения слушателя Метрики;
@@ -35,12 +42,19 @@
 - production build на Node.js 22 — пройден, сгенерированы 100 маршрутов;
 - `node scripts/test_analytics_privacy.mjs` — пройден;
 - browser network smoke hard load / SPA — `1 / 1`, без дублей.
+- PM2 `rospark-site` после restart — `online`;
+- `/`, `/demo` и `/demo/gostevaya-zayavka` — `200`;
+- `/api/demo/requests` без сессии — `401`;
+- browser console — без ошибок и предупреждений.
 
-### Граница выпуска
+### Backup и границы
 
-Цели уже сохранены во внешнем production-счётчике. Код исправления
-direct-load reliability пока находится только в рабочей ветке и не
-опубликован на VPS.
+- backup env и состояния release:
+  `/root/rospark-backups/analytics-goals-20260724T051826Z`;
+- SQLite, Nginx, DNS, MAX, WhatsApp, Node.js и зависимости не изменялись;
+- `npm ci` повторно показал 13 известных audit findings
+  (`1 moderate`, `12 high`); автоматическое исправление не запускалось,
+  `SECURITY-RELEASE-2` остаётся последним этапом roadmap.
 
 ## 2026-07-24 — production release аналитики и demo-growth
 
