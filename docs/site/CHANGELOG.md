@@ -41,6 +41,10 @@
 - повтор — тот же телефон в течение 24 часов от последней заявки при
   незакрытом лиде;
 - результаты закрытия — обработан, нет связи, нецелевой, дубль, тест.
+- Андрей имеет полный административный доступ, экспорт и исключительное ручное
+  удаление;
+- Сергей, РОП, может просматривать, обрабатывать и экспортировать лиды, но не
+  удалять их и не получает VPS/SSH.
 
 ### Реализовано локально
 
@@ -52,11 +56,24 @@
 - строгие переходы `new → assigned → contacted → closed`;
 - outcomes и retention 60/30 дней;
 - cascade cleanup;
+- migration `lead_notification_outbox`;
+- атомарная регистрация submission/lead/outbox;
+- стабильный browser `submissionId` для безопасного повтора формы;
+- feature-gated подключение основного и demo feedback API;
+- MAX/Email worker с lease, retry/backoff и dead state;
+- безопасные error codes без payload и provider details;
 - целевой smoke без внешних сообщений.
 
-Foundation не подключён к публичным API и не опубликован. Outbox, MAX adapter,
-cleanup job, роли экспорта/удаления и production runbook относятся к следующим
-этапам.
+Оба feature gate выключены, поэтому production-поведение не изменено и реальные
+сообщения не отправлялись. Защищённый кабинет, CSV export, аудит доступа и
+кнопка директорского удаления остаются L3; production runbook — отдельный этап.
+
+Изолированный localhost smoke с включённым registry и выключленным worker
+подтвердил: первая заявка — `200 created:true`, точный повтор —
+`200 created:false`, другой payload с тем же `submissionId` — `409`; в
+SQLite остались ровно один lead, одна submission и один pending MAX outbox.
+`PRAGMA quick_check` вернул `ok`, foreign key errors отсутствуют. Временная
+тестовая база после проверки удалена.
 
 ## 2026-07-24 — первый growth dashboard и изоляция QA-аналитики
 

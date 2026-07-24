@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
 import { sendLead, type LeadPayload } from '@/lib/leads';
+import { LeadRegistryError } from '@/app/lib/lead-registry-core';
+import {
+  leadRegistryEnabled,
+  registerSiteLead,
+} from '@/app/lib/lead-registry-service';
 
 export const runtime = 'nodejs';
 
@@ -99,6 +104,9 @@ export async function POST(req: Request) {
     const intent = readString(body.intent);
     const product = readString(body.product);
     const packageName = readString(body.packageName) ?? readString(body.package);
+    const submissionId =
+      readString(body.submissionId) ??
+      readString(req.headers.get('idempotency-key'));
     const sourceUrl = readString(body.sourceUrl);
     const utm = (body.utm && typeof body.utm === 'object') ? body.utm : undefined;
 
@@ -148,10 +156,27 @@ export async function POST(req: Request) {
       timestamp: new Date().toISOString(),
     };
 
+    if (leadRegistryEnabled()) {
+      const registered = registerSiteLead(payload, submissionId);
+      return NextResponse.json({
+        success: true,
+        registered: true,
+        requestId: registered.submissionId,
+        created: !registered.idempotent,
+      });
+    }
+
     await sendLead(payload);
 
     return NextResponse.json({ success: true });
   } catch (err) {
+    if (err instanceof LeadRegistryError) {
+      const status = err.code === 'IDEMPOTENCY_CONFLICT' ? 409 : 400;
+      return NextResponse.json(
+        { success: false, message: err.message, code: err.code },
+        { status },
+      );
+    }
     console.error('[lead] submit failed', err);
     return NextResponse.json(
       {

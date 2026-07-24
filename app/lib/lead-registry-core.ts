@@ -19,6 +19,25 @@ export const LEAD_CLOSE_OUTCOMES = [
   'duplicate',
   'test',
 ] as const;
+export const LEAD_NOTIFICATION_CHANNELS = ['max', 'email'] as const;
+export const LEAD_OUTBOX_STATUSES = [
+  'pending',
+  'processing',
+  'sent',
+  'failed',
+  'dead',
+] as const;
+export const LEAD_OUTBOX_MAX_ATTEMPTS = 8;
+export const LEAD_OUTBOX_LEASE_MS = 5 * 60 * 1000;
+export const LEAD_OUTBOX_BACKOFF_MS = [
+  60 * 1000,
+  5 * 60 * 1000,
+  15 * 60 * 1000,
+  60 * 60 * 1000,
+  3 * 60 * 60 * 1000,
+  6 * 60 * 60 * 1000,
+  12 * 60 * 60 * 1000,
+] as const;
 export const LEAD_CONTEXT_KEYS = [
   'company',
   'object_type',
@@ -49,6 +68,8 @@ export const LEAD_CONTEXT_KEYS = [
 export type LeadKind = (typeof LEAD_KINDS)[number];
 export type LeadStatus = (typeof LEAD_STATUSES)[number];
 export type LeadCloseOutcome = (typeof LEAD_CLOSE_OUTCOMES)[number];
+export type LeadNotificationChannel = (typeof LEAD_NOTIFICATION_CHANNELS)[number];
+export type LeadOutboxStatus = (typeof LEAD_OUTBOX_STATUSES)[number];
 
 export type LeadRegistrationInput = {
   submissionId: string;
@@ -67,6 +88,7 @@ export type LeadRegistrationInput = {
 export type RegisterLeadOptions = {
   nowMs?: number;
   idFactory?: () => string;
+  outboxChannels?: LeadNotificationChannel[];
 };
 
 export type LeadStatusTransitionInput = {
@@ -107,6 +129,44 @@ type LeadSubmissionRow = {
   submission_id: string;
   lead_id: string;
   payload_fingerprint: string;
+  is_duplicate: number;
+  submission_expires_at: number;
+};
+
+type LeadOutboxRow = {
+  id: string;
+  submission_id: string;
+  lead_id: string;
+  channel: LeadNotificationChannel;
+  status: LeadOutboxStatus;
+  attempt_count: number;
+  available_at_ms: number;
+  lock_token: string | null;
+};
+
+export type ClaimedLeadNotification = {
+  id: string;
+  submissionId: string;
+  leadId: string;
+  channel: LeadNotificationChannel;
+  attemptCount: number;
+  lockToken: string;
+  duplicate: boolean;
+  kind: LeadKind;
+  name: string | null;
+  phone: string;
+  source: string;
+  sourcePage: string | null;
+  sourceSection: string | null;
+  context: Record<string, string | string[]>;
+  receivedAt: string;
+};
+
+export type ProcessLeadOutboxResult = {
+  claimed: number;
+  sent: number;
+  failed: number;
+  dead: number;
 };
 
 export class LeadRegistryError extends Error {
@@ -195,11 +255,77 @@ function createLeadRegistryFoundation(db: Database.Database) {
   `);
 }
 
+function hasColumn(db: Database.Database, tableName: string, columnName: string) {
+  const columns = db.pragma(`table_info(${tableName})`) as Array<{ name: string }>;
+  return columns.some((column) => column.name === columnName);
+}
+
+function createLeadNotificationOutbox(db: Database.Database) {
+  if (!hasColumn(db, 'lead_submissions', 'is_duplicate')) {
+    db.exec(`
+      ALTER TABLE lead_submissions
+      ADD COLUMN is_duplicate INTEGER NOT NULL DEFAULT 0
+        CHECK (is_duplicate IN (0, 1));
+    `);
+  }
+  if (!hasColumn(db, 'lead_submissions', 'expires_at')) {
+    db.exec(`
+      ALTER TABLE lead_submissions
+      ADD COLUMN expires_at INTEGER
+        CHECK (expires_at IS NULL OR expires_at > 0);
+    `);
+    db.prepare(`
+      UPDATE lead_submissions
+      SET expires_at = received_at_ms + CASE kind
+        WHEN 'demo_feedback' THEN ?
+        ELSE ?
+      END
+      WHERE expires_at IS NULL
+    `).run(DEMO_FEEDBACK_RETENTION_MS, SITE_LEAD_RETENTION_MS);
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS lead_notification_outbox (
+      id TEXT PRIMARY KEY,
+      submission_id TEXT NOT NULL,
+      lead_id TEXT NOT NULL,
+      channel TEXT NOT NULL CHECK (channel IN ('max', 'email')),
+      status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'processing', 'sent', 'failed', 'dead')),
+      attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+      available_at_ms INTEGER NOT NULL,
+      locked_at_ms INTEGER,
+      lock_token TEXT,
+      last_error_code TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      sent_at TEXT,
+      UNIQUE (submission_id, channel),
+      FOREIGN KEY (submission_id)
+        REFERENCES lead_submissions(submission_id) ON DELETE CASCADE,
+      FOREIGN KEY (lead_id)
+        REFERENCES lead_records(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_lead_outbox_ready
+      ON lead_notification_outbox(status, available_at_ms);
+    CREATE INDEX IF NOT EXISTS idx_lead_outbox_lead
+      ON lead_notification_outbox(lead_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_lead_submissions_expiry
+      ON lead_submissions(expires_at);
+  `);
+}
+
 const migrations: LeadRegistryMigration[] = [
   {
     version: 1,
     name: 'lead_registry_foundation',
     up: createLeadRegistryFoundation,
+  },
+  {
+    version: 2,
+    name: 'lead_notification_outbox',
+    up: createLeadNotificationOutbox,
   },
 ];
 
@@ -344,6 +470,53 @@ export function listAppliedLeadRegistryMigrations(db: Database.Database) {
   `).all() as Array<{ version: number; name: string; applied_at: string }>;
 }
 
+function normalizeOutboxChannels(channels: LeadNotificationChannel[] | undefined) {
+  const unique = [...new Set(channels ?? [])];
+  for (const channel of unique) {
+    if (!LEAD_NOTIFICATION_CHANNELS.includes(channel)) {
+      throw new LeadRegistryError(
+        'INVALID_NOTIFICATION_CHANNEL',
+        'Некорректный канал уведомления.',
+      );
+    }
+  }
+  return unique;
+}
+
+function enqueueLeadNotifications(
+  db: Database.Database,
+  input: {
+    submissionId: string;
+    leadId: string;
+    channels: LeadNotificationChannel[];
+    now: string;
+    nowMs: number;
+    idFactory: () => string;
+  },
+) {
+  let queued = 0;
+  const statement = db.prepare(`
+    INSERT INTO lead_notification_outbox (
+      id, submission_id, lead_id, channel, status, attempt_count,
+      available_at_ms, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, 'pending', 0, ?, ?, ?)
+    ON CONFLICT(submission_id, channel) DO NOTHING
+  `);
+
+  for (const channel of input.channels) {
+    queued += statement.run(
+      input.idFactory(),
+      input.submissionId,
+      input.leadId,
+      channel,
+      input.nowMs,
+      input.now,
+      input.now,
+    ).changes;
+  }
+  return queued;
+}
+
 export function registerLead(
   db: Database.Database,
   input: LeadRegistrationInput,
@@ -374,6 +547,7 @@ export function registerLead(
     : null;
   const consentAt = consentAtFromInput ?? now;
   const context = normalizeContext(input.context);
+  const outboxChannels = normalizeOutboxChannels(options.outboxChannels);
   const payloadFingerprint = fingerprint({
     submissionId,
     kind: input.kind,
@@ -390,9 +564,16 @@ export function registerLead(
 
   return db.transaction(() => {
     const existingSubmission = db.prepare(`
-      SELECT submission_id, lead_id, payload_fingerprint
+      SELECT
+        lead_submissions.submission_id,
+        lead_submissions.lead_id,
+        lead_submissions.payload_fingerprint,
+        lead_submissions.is_duplicate,
+        lead_submissions.expires_at AS submission_expires_at
       FROM lead_submissions
-      WHERE submission_id = ?
+      JOIN lead_records
+        ON lead_records.id = lead_submissions.lead_id
+      WHERE lead_submissions.submission_id = ?
     `).get(submissionId) as LeadSubmissionRow | undefined;
 
     if (existingSubmission) {
@@ -402,12 +583,22 @@ export function registerLead(
           'Один submissionId нельзя использовать для разных данных.',
         );
       }
+      const outboxQueued = enqueueLeadNotifications(db, {
+        submissionId,
+        leadId: existingSubmission.lead_id,
+        channels: outboxChannels,
+        now,
+        nowMs,
+        idFactory,
+      });
       return {
         leadId: existingSubmission.lead_id,
         submissionId,
         created: false,
-        duplicate: false,
+        duplicate: existingSubmission.is_duplicate === 1,
         idempotent: true,
+        outboxQueued,
+        submissionExpiresAt: existingSubmission.submission_expires_at,
       };
     }
 
@@ -456,8 +647,9 @@ export function registerLead(
       INSERT INTO lead_submissions (
         id, submission_id, lead_id, kind, name, source, source_page,
         source_section, consent, consent_version, consent_at, context_json,
-        payload_fingerprint, received_at, received_at_ms
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)
+        payload_fingerprint, received_at, received_at_ms, is_duplicate,
+        expires_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       submissionRowId,
       submissionId,
@@ -473,7 +665,18 @@ export function registerLead(
       payloadFingerprint,
       now,
       nowMs,
+      duplicate ? 1 : 0,
+      expiresAt,
     );
+
+    const outboxQueued = enqueueLeadNotifications(db, {
+      submissionId,
+      leadId,
+      channels: outboxChannels,
+      now,
+      nowMs,
+      idFactory,
+    });
 
     return {
       leadId,
@@ -481,6 +684,8 @@ export function registerLead(
       created: !duplicate,
       duplicate: Boolean(duplicate),
       idempotent: false,
+      outboxQueued,
+      submissionExpiresAt: expiresAt,
     };
   })();
 }
@@ -579,8 +784,357 @@ export function transitionLeadStatus(
 }
 
 export function cleanupExpiredLeads(db: Database.Database, nowMs = Date.now()) {
-  return db.prepare(`
-    DELETE FROM lead_records
-    WHERE expires_at <= ?
-  `).run(nowMs).changes;
+  return db.transaction(() => {
+    db.prepare(`
+      DELETE FROM lead_submissions
+      WHERE expires_at <= ?
+    `).run(nowMs);
+    return db.prepare(`
+      DELETE FROM lead_records
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM lead_submissions
+        WHERE lead_submissions.lead_id = lead_records.id
+      )
+    `).run().changes;
+  })();
+}
+
+function parseStoredContext(value: string) {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('INVALID_CONTEXT_JSON');
+    }
+    return parsed as Record<string, string | string[]>;
+  } catch {
+    throw new LeadRegistryError(
+      'INVALID_STORED_CONTEXT',
+      'Контекст заявки в реестре повреждён.',
+    );
+  }
+}
+
+function outboxBackoffMs(attemptCount: number) {
+  const index = Math.min(
+    Math.max(attemptCount - 1, 0),
+    LEAD_OUTBOX_BACKOFF_MS.length - 1,
+  );
+  return LEAD_OUTBOX_BACKOFF_MS[index];
+}
+
+function safeOutboxErrorCode(value: string) {
+  const normalized = value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9_.:-]/g, '_')
+    .slice(0, 120);
+  return normalized || 'DELIVERY_ERROR';
+}
+
+function loadClaimedLeadNotification(
+  db: Database.Database,
+  row: LeadOutboxRow,
+): ClaimedLeadNotification {
+  const details = db.prepare(`
+    SELECT
+      lead_submissions.kind,
+      lead_submissions.name,
+      lead_submissions.source,
+      lead_submissions.source_page,
+      lead_submissions.source_section,
+      lead_submissions.context_json,
+      lead_submissions.received_at,
+      lead_submissions.is_duplicate,
+      lead_records.phone
+    FROM lead_notification_outbox
+    JOIN lead_submissions
+      ON lead_submissions.submission_id =
+        lead_notification_outbox.submission_id
+    JOIN lead_records
+      ON lead_records.id = lead_notification_outbox.lead_id
+    WHERE lead_notification_outbox.id = ?
+  `).get(row.id) as {
+    kind: LeadKind;
+    name: string | null;
+    source: string;
+    source_page: string | null;
+    source_section: string | null;
+    context_json: string;
+    received_at: string;
+    is_duplicate: number;
+    phone: string;
+  } | undefined;
+
+  if (!details || !row.lock_token) {
+    throw new LeadRegistryError(
+      'OUTBOX_RECORD_INVALID',
+      'Не удалось загрузить уведомление из outbox.',
+    );
+  }
+
+  return {
+    id: row.id,
+    submissionId: row.submission_id,
+    leadId: row.lead_id,
+    channel: row.channel,
+    attemptCount: row.attempt_count,
+    lockToken: row.lock_token,
+    duplicate: details.is_duplicate === 1,
+    kind: details.kind,
+    name: details.name,
+    phone: details.phone,
+    source: details.source,
+    sourcePage: details.source_page,
+    sourceSection: details.source_section,
+    context: parseStoredContext(details.context_json),
+    receivedAt: details.received_at,
+  };
+}
+
+export function claimLeadNotifications(
+  db: Database.Database,
+  options: {
+    nowMs?: number;
+    limit?: number;
+    leaseMs?: number;
+    maxAttempts?: number;
+    lockTokenFactory?: () => string;
+  } = {},
+) {
+  const nowMs = options.nowMs ?? Date.now();
+  const now = iso(nowMs);
+  const limit = Math.min(Math.max(Math.trunc(options.limit ?? 20), 1), 100);
+  const leaseMs = Math.max(options.leaseMs ?? LEAD_OUTBOX_LEASE_MS, 1_000);
+  const maxAttempts = Math.max(options.maxAttempts ?? LEAD_OUTBOX_MAX_ATTEMPTS, 1);
+  const lockTokenFactory = options.lockTokenFactory ?? defaultId;
+
+  return db.transaction(() => {
+    db.prepare(`
+      UPDATE lead_notification_outbox
+      SET
+        status = 'dead',
+        locked_at_ms = NULL,
+        lock_token = NULL,
+        last_error_code = COALESCE(last_error_code, 'MAX_ATTEMPTS_REACHED'),
+        updated_at = ?
+      WHERE status IN ('pending', 'processing', 'failed')
+        AND attempt_count >= ?
+        AND (
+          status IN ('pending', 'failed')
+          OR (
+            status = 'processing'
+            AND locked_at_ms <= ?
+          )
+        )
+    `).run(now, maxAttempts, nowMs - leaseMs);
+
+    const candidates = db.prepare(`
+      SELECT id
+      FROM lead_notification_outbox
+      WHERE attempt_count < ?
+        AND (
+          (
+            status IN ('pending', 'failed')
+            AND available_at_ms <= ?
+          )
+          OR (
+            status = 'processing'
+            AND locked_at_ms <= ?
+          )
+        )
+      ORDER BY available_at_ms ASC, created_at ASC
+      LIMIT ?
+    `).all(
+      maxAttempts,
+      nowMs,
+      nowMs - leaseMs,
+      limit,
+    ) as Array<{ id: string }>;
+
+    const claimed: ClaimedLeadNotification[] = [];
+    for (const candidate of candidates) {
+      const lockToken = lockTokenFactory();
+      const updated = db.prepare(`
+        UPDATE lead_notification_outbox
+        SET
+          status = 'processing',
+          attempt_count = attempt_count + 1,
+          locked_at_ms = ?,
+          lock_token = ?,
+          updated_at = ?
+        WHERE id = ?
+          AND attempt_count < ?
+          AND (
+            (
+              status IN ('pending', 'failed')
+              AND available_at_ms <= ?
+            )
+            OR (
+              status = 'processing'
+              AND locked_at_ms <= ?
+            )
+          )
+      `).run(
+        nowMs,
+        lockToken,
+        now,
+        candidate.id,
+        maxAttempts,
+        nowMs,
+        nowMs - leaseMs,
+      );
+      if (updated.changes !== 1) continue;
+
+      const row = db.prepare(`
+        SELECT
+          id, submission_id, lead_id, channel, status, attempt_count,
+          available_at_ms, lock_token
+        FROM lead_notification_outbox
+        WHERE id = ?
+      `).get(candidate.id) as LeadOutboxRow;
+      claimed.push(loadClaimedLeadNotification(db, row));
+    }
+    return claimed;
+  })();
+}
+
+export function markLeadNotificationSent(
+  db: Database.Database,
+  input: {
+    id: string;
+    lockToken: string;
+    nowMs?: number;
+  },
+) {
+  const nowMs = input.nowMs ?? Date.now();
+  const now = iso(nowMs);
+  const result = db.prepare(`
+    UPDATE lead_notification_outbox
+    SET
+      status = 'sent',
+      locked_at_ms = NULL,
+      lock_token = NULL,
+      last_error_code = NULL,
+      updated_at = ?,
+      sent_at = ?
+    WHERE id = ?
+      AND status = 'processing'
+      AND lock_token = ?
+  `).run(now, now, input.id, input.lockToken);
+  if (result.changes !== 1) {
+    throw new LeadRegistryError(
+      'OUTBOX_LEASE_LOST',
+      'Lease уведомления больше не принадлежит текущему worker.',
+    );
+  }
+}
+
+export function markLeadNotificationFailed(
+  db: Database.Database,
+  input: {
+    id: string;
+    lockToken: string;
+    errorCode: string;
+    nowMs?: number;
+    maxAttempts?: number;
+  },
+) {
+  const nowMs = input.nowMs ?? Date.now();
+  const now = iso(nowMs);
+  const maxAttempts = Math.max(input.maxAttempts ?? LEAD_OUTBOX_MAX_ATTEMPTS, 1);
+  const current = db.prepare(`
+    SELECT attempt_count
+    FROM lead_notification_outbox
+    WHERE id = ?
+      AND status = 'processing'
+      AND lock_token = ?
+  `).get(input.id, input.lockToken) as { attempt_count: number } | undefined;
+  if (!current) {
+    throw new LeadRegistryError(
+      'OUTBOX_LEASE_LOST',
+      'Lease уведомления больше не принадлежит текущему worker.',
+    );
+  }
+
+  const dead = current.attempt_count >= maxAttempts;
+  const availableAtMs = dead
+    ? nowMs
+    : nowMs + outboxBackoffMs(current.attempt_count);
+  db.prepare(`
+    UPDATE lead_notification_outbox
+    SET
+      status = ?,
+      available_at_ms = ?,
+      locked_at_ms = NULL,
+      lock_token = NULL,
+      last_error_code = ?,
+      updated_at = ?
+    WHERE id = ?
+      AND status = 'processing'
+      AND lock_token = ?
+  `).run(
+    dead ? 'dead' : 'failed',
+    availableAtMs,
+    safeOutboxErrorCode(input.errorCode),
+    now,
+    input.id,
+    input.lockToken,
+  );
+  return dead ? 'dead' as const : 'failed' as const;
+}
+
+function deliveryErrorCode(error: unknown) {
+  if (
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    typeof error.code === 'string'
+  ) {
+    return safeOutboxErrorCode(error.code);
+  }
+  return 'DELIVERY_ERROR';
+}
+
+export async function processLeadOutboxBatch(
+  db: Database.Database,
+  deliver: (job: ClaimedLeadNotification) => Promise<void>,
+  options: {
+    nowMs?: number;
+    limit?: number;
+    leaseMs?: number;
+    maxAttempts?: number;
+    lockTokenFactory?: () => string;
+  } = {},
+): Promise<ProcessLeadOutboxResult> {
+  const nowMs = options.nowMs ?? Date.now();
+  const jobs = claimLeadNotifications(db, { ...options, nowMs });
+  const result: ProcessLeadOutboxResult = {
+    claimed: jobs.length,
+    sent: 0,
+    failed: 0,
+    dead: 0,
+  };
+
+  for (const job of jobs) {
+    try {
+      await deliver(job);
+      markLeadNotificationSent(db, {
+        id: job.id,
+        lockToken: job.lockToken,
+        nowMs,
+      });
+      result.sent += 1;
+    } catch (error) {
+      const status = markLeadNotificationFailed(db, {
+        id: job.id,
+        lockToken: job.lockToken,
+        errorCode: deliveryErrorCode(error),
+        nowMs,
+        maxAttempts: options.maxAttempts,
+      });
+      result[status] += 1;
+    }
+  }
+  return result;
 }

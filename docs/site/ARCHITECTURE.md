@@ -85,16 +85,22 @@ Draft-файлы сохраняются, но не публикуются.
 реестра и требуемые решения зафиксированы в
 `docs/site/LEAD_OPS_002_DECISION_20260724.md`.
 
-В feature-ветке подготовлен L1 foundation отдельного registry:
+В feature-ветке подготовлены L1 registry и L2 transactional outbox:
 
 - `app/lib/lead-registry-core.ts` — migration, idempotency, duplicate policy,
-  status history и retention;
+  status history, retention, outbox lease и retry/backoff;
 - `app/lib/lead-registry-database.ts` — отдельный SQLite path, WAL,
   foreign keys и ограниченные file permissions;
+- `app/lib/lead-registry-service.ts` — allowlisted mapping основного lead API
+  и demo feedback в единый registry;
+- `scripts/process_lead_outbox.mjs` — one-shot worker MAX/Email с безопасным
+  итоговым счётчиком без PII;
 - `scripts/test_lead_registry_foundation.mjs` — изолированный smoke без
   внешних сообщений.
 
-Foundation ещё не подключён к публичным API и не опубликован в production.
+Оба API подключены только за `LEAD_REGISTRY_ENABLED=false`; реальная обработка
+outbox отдельно закрыта `LEAD_OUTBOX_PROCESSING_ENABLED=false`. Код не
+опубликован в production, база не создана, worker не запущен.
 
 ### 4. Demo-контур
 

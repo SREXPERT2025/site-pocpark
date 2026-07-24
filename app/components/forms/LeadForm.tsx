@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { dispatchLeadFormEvent, type LeadFormEventParams } from "@/app/lib/analytics-events";
 import { getLeadAttribution } from "@/app/lib/lead-attribution";
+import { createLeadSubmissionId } from "@/app/lib/lead-submission-id";
 
 export type LeadFormPayload = {
   name: string;
@@ -115,6 +116,7 @@ export default function LeadForm(props: LeadFormProps) {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorText, setErrorText] = useState<string | null>(null);
   const hasStartedRef = useRef(false);
+  const pendingSubmissionRef = useRef<{ id: string; fingerprint: string } | null>(null);
   const formId = useId();
 
   const fieldIds = {
@@ -232,16 +234,28 @@ export default function LeadForm(props: LeadFormProps) {
     try {
       dispatchLeadFormEvent("form_submit", getEventParams());
 
+      const requestPayload = {
+        ...payload,
+        message: payload.comment,
+        phone: normalizePhone(payload.phone),
+        source: sourceSection,
+        sourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
+        utm: getLeadAttribution(),
+      };
+      const fingerprint = JSON.stringify(requestPayload);
+      if (pendingSubmissionRef.current?.fingerprint !== fingerprint) {
+        pendingSubmissionRef.current = {
+          id: createLeadSubmissionId("site"),
+          fingerprint,
+        };
+      }
+
       const res = await fetch("/api/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...payload,
-          message: payload.comment,
-          phone: normalizePhone(payload.phone),
-          source: sourceSection,
-          sourceUrl: typeof window !== "undefined" ? window.location.href : undefined,
-          utm: getLeadAttribution(),
+          ...requestPayload,
+          submissionId: pendingSubmissionRef.current.id,
         }),
       });
 
@@ -251,6 +265,7 @@ export default function LeadForm(props: LeadFormProps) {
       }
 
       setStatus("success");
+      pendingSubmissionRef.current = null;
       dispatchLeadFormEvent("form_success", getEventParams());
       setName("");
       setPhone("");

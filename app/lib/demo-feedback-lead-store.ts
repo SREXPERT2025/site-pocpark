@@ -27,6 +27,23 @@ function normalizeStoredPhone(phone: string) {
   return digits;
 }
 
+export function findDemoFeedbackLeadCandidate(
+  sessionId: string,
+  requestId: string,
+) {
+  const db = getDemoDatabase();
+  const guestRequest = db.prepare(`
+    SELECT id, phone
+    FROM demo_guest_requests
+    WHERE id = ? AND session_id = ? AND is_seed = 0
+  `).get(requestId, sessionId) as GuestRequestContactRow | undefined;
+  if (!guestRequest) return null;
+  return {
+    requestId: guestRequest.id,
+    phone: normalizeStoredPhone(guestRequest.phone),
+  };
+}
+
 export function createDemoFeedbackLead(
   sessionId: string,
   requestId: string,

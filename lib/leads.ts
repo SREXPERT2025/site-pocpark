@@ -37,7 +37,22 @@ export type LeadPayload = {
   userAgent?: string;
   ip?: string;
   timestamp?: string;
+  registryLeadId?: string;
+  registryDuplicate?: boolean;
+  registryKind?: 'site_form' | 'demo_feedback';
 };
+
+export type LeadDeliveryChannel = 'email' | 'max';
+
+export class LeadDeliveryError extends Error {
+  public readonly code: string;
+
+  constructor(code: string) {
+    super(code);
+    this.name = 'LeadDeliveryError';
+    this.code = code;
+  }
+}
 
 function envBool(value: string | undefined, defaultValue = false): boolean {
   if (value === undefined) return defaultValue;
@@ -66,8 +81,16 @@ function escapeHtml(s: string) {
 
 function formatLeadText(payload: LeadPayload) {
   const lines: string[] = [];
-  lines.push('РОСПАРК — новая заявка');
+  lines.push(payload.registryDuplicate
+    ? 'РОСПАРК — повторная заявка'
+    : 'РОСПАРК — новая заявка');
   lines.push('');
+  if (payload.registryLeadId) {
+    lines.push(`Лид: RSP-${payload.registryLeadId.slice(0, 8).toUpperCase()}`);
+  }
+  if (payload.registryKind === 'demo_feedback') {
+    lines.push('Контур: обратная связь по demo');
+  }
   lines.push(`Имя: ${payload.name}`);
   lines.push(`Телефон: ${payload.phone}`);
   if (payload.company) lines.push(`Компания: ${payload.company}`);
@@ -143,6 +166,43 @@ async function sendToMax(text: string): Promise<boolean> {
   return true;
 }
 
+export async function sendLeadToChannel(
+  payload: LeadPayload,
+  channel: LeadDeliveryChannel,
+) {
+  const subject = payload.registryDuplicate
+    ? 'РОСПАРК: повторная заявка'
+    : 'РОСПАРК: новая заявка';
+  const text = formatLeadText(payload);
+
+  if (channel === 'email') {
+    const emailTo = splitList(process.env.LEAD_EMAIL_TO);
+    if (emailTo.length === 0) {
+      throw new LeadDeliveryError('EMAIL_NOT_CONFIGURED');
+    }
+    try {
+      const from = process.env.LEAD_EMAIL_FROM || emailTo[0];
+      const transport = getMailTransport();
+      await transport.sendMail({ from, to: emailTo, subject, text });
+      return;
+    } catch {
+      throw new LeadDeliveryError('EMAIL_SEND_FAILED');
+    }
+  }
+
+  if (
+    !process.env.LEAD_MAX_BOT_TOKEN ||
+    !process.env.LEAD_MAX_CHAT_ID
+  ) {
+    throw new LeadDeliveryError('MAX_NOT_CONFIGURED');
+  }
+  try {
+    await sendToMax(text);
+  } catch {
+    throw new LeadDeliveryError('MAX_SEND_FAILED');
+  }
+}
+
 export async function sendLead(payload: LeadPayload) {
   const emailTo = splitList(process.env.LEAD_EMAIL_TO);
   const tgToken = process.env.LEAD_TELEGRAM_BOT_TOKEN;
@@ -155,21 +215,13 @@ export async function sendLead(payload: LeadPayload) {
     throw new Error('Не настроены каналы доставки заявок.');
   }
 
-  const subject = `РОСПАРК: новая заявка`;
   const text = formatLeadText(payload);
   const deliveryResults: Array<{ channel: string; ok: boolean; error?: unknown }> = [];
 
   // EMAIL
   if (hasEmail) {
     try {
-      const from = process.env.LEAD_EMAIL_FROM || emailTo[0];
-      const transport = getMailTransport();
-      await transport.sendMail({
-        from,
-        to: emailTo,
-        subject,
-        text
-      });
+      await sendLeadToChannel(payload, 'email');
       deliveryResults.push({ channel: 'email', ok: true });
     } catch (error) {
       deliveryResults.push({ channel: 'email', ok: false, error });
@@ -208,7 +260,7 @@ export async function sendLead(payload: LeadPayload) {
   // MAX
   if (hasMax) {
     try {
-      await sendToMax(text);
+      await sendLeadToChannel(payload, 'max');
       deliveryResults.push({ channel: 'max', ok: true });
     } catch (error) {
       deliveryResults.push({ channel: 'max', ok: false, error });

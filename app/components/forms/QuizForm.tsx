@@ -5,6 +5,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import Button from '@/app/components/ui/Button';
 import { dispatchLeadFormEvent, type LeadFormEventParams } from '@/app/lib/analytics-events';
 import { getLeadAttribution } from '@/app/lib/lead-attribution';
+import { createLeadSubmissionId } from '@/app/lib/lead-submission-id';
 
 type FormData = {
   name: string;
@@ -95,6 +96,7 @@ export default function QuizForm({
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasStartedRef = useRef(false);
+  const pendingSubmissionRef = useRef<{ id: string; fingerprint: string } | null>(null);
   const formId = useId();
   const resolvedSourceUrl =
     sourceUrl || (typeof window !== 'undefined' ? window.location.href : undefined);
@@ -203,29 +205,41 @@ export default function QuizForm({
 
       const message = messageParts.join('\n');
 
+      const requestPayload = {
+        name: formData.name,
+        phone: formData.phone,
+        phoneNormalized: normalizePhone(formData.phone),
+        objectType: formData.objectType,
+        city: detailsOpen ? formData.city : undefined,
+        accessPoints: detailsOpen ? formData.accessPoints : undefined,
+        projectStage: detailsOpen ? formData.projectStage : undefined,
+        requestGoal: detailsOpen ? formData.requestGoal : undefined,
+        currentSystem: detailsOpen ? formData.currentSystem : undefined,
+        message,
+        consent,
+        source,
+        intent: intent || source,
+        product,
+        packageName,
+        sourceUrl: resolvedSourceUrl,
+        sourceSection: source ? `quiz:${source}` : 'quiz',
+        sourcePage: '/quiz',
+        utm: getLeadAttribution(),
+      };
+      const fingerprint = JSON.stringify(requestPayload);
+      if (pendingSubmissionRef.current?.fingerprint !== fingerprint) {
+        pendingSubmissionRef.current = {
+          id: createLeadSubmissionId('quiz'),
+          fingerprint,
+        };
+      }
+
       const res = await fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: formData.name,
-          phone: formData.phone,
-          phoneNormalized: normalizePhone(formData.phone),
-          objectType: formData.objectType,
-          city: detailsOpen ? formData.city : undefined,
-          accessPoints: detailsOpen ? formData.accessPoints : undefined,
-          projectStage: detailsOpen ? formData.projectStage : undefined,
-          requestGoal: detailsOpen ? formData.requestGoal : undefined,
-          currentSystem: detailsOpen ? formData.currentSystem : undefined,
-          message,
-          consent,
-          source,
-          intent: intent || source,
-          product,
-          packageName,
-          sourceUrl: resolvedSourceUrl,
-          sourceSection: source ? `quiz:${source}` : 'quiz',
-          sourcePage: '/quiz',
-          utm: getLeadAttribution(),
+          ...requestPayload,
+          submissionId: pendingSubmissionRef.current.id,
         }),
       });
 
@@ -236,6 +250,7 @@ export default function QuizForm({
       }
 
       setIsSuccess(true);
+      pendingSubmissionRef.current = null;
       dispatchLeadFormEvent('form_success', getEventParams());
       setFormData({
         name: '',

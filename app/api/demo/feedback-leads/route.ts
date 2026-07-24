@@ -5,6 +5,10 @@ import {
 } from '@/app/lib/demo-feedback-consent';
 import { createDemoFeedbackLead } from '@/app/lib/demo-feedback-lead-store';
 import { readDemoSession } from '@/app/lib/demo-session';
+import {
+  leadRegistryEnabled,
+  registerDemoFeedbackLead,
+} from '@/app/lib/lead-registry-service';
 
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 10;
@@ -68,11 +72,17 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const result = createDemoFeedbackLead(
-      sessionId,
-      requestId,
-      channel as DemoFeedbackChannel,
-    );
+    const result = leadRegistryEnabled()
+      ? registerDemoFeedbackLead(
+        sessionId,
+        requestId,
+        channel as DemoFeedbackChannel,
+      )
+      : createDemoFeedbackLead(
+        sessionId,
+        requestId,
+        channel as DemoFeedbackChannel,
+      );
     if (!result) {
       return responseError(
         'Demo-заявка не найдена или недоступна в текущей сессии.',
@@ -80,9 +90,13 @@ export async function POST(request: NextRequest) {
         404,
       );
     }
+    const created = 'idempotent' in result ? !result.idempotent : result.created;
+    const expiresAt = 'idempotent' in result
+      ? new Date(result.submissionExpiresAt).toISOString()
+      : result.expiresAt;
     return NextResponse.json(
-      { ok: true, created: result.created, expiresAt: result.expiresAt },
-      { status: result.created ? 201 : 200 },
+      { ok: true, created, expiresAt },
+      { status: created ? 201 : 200 },
     );
   } catch {
     return responseError(
