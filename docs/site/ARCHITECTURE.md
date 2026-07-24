@@ -85,6 +85,17 @@ Draft-файлы сохраняются, но не публикуются.
 реестра и требуемые решения зафиксированы в
 `docs/site/LEAD_OPS_002_DECISION_20260724.md`.
 
+В feature-ветке подготовлен L1 foundation отдельного registry:
+
+- `app/lib/lead-registry-core.ts` — migration, idempotency, duplicate policy,
+  status history и retention;
+- `app/lib/lead-registry-database.ts` — отдельный SQLite path, WAL,
+  foreign keys и ограниченные file permissions;
+- `scripts/test_lead_registry_foundation.mjs` — изолированный smoke без
+  внешних сообщений.
+
+Foundation ещё не подключён к публичным API и не опубликован в production.
+
 ### 4. Demo-контур
 
 Demo Release v1 — серверное приложение внутри того же Next.js checkout.
