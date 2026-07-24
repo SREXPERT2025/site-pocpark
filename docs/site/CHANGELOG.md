@@ -7,6 +7,47 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-07-24 — production release аналитики и demo-growth
+
+### Release
+
+```text
+9ae9579c63dc8c3c7af96a1e46d87ee0081b56da
+release/demo-production-ready-20260723
+```
+
+### Что опубликовано
+
+- прямой consent-gated loader Яндекс Метрики `110980303`;
+- privacy-safe pageview и demo/form events через `reachGoal` без PII;
+- постоянная кнопка повторного открытия cookie-настроек;
+- metadata и self-canonical юридических страниц;
+- контекстные входы в три demo-сценария со страницы бизнес-центров и
+  релевантных возможностей.
+
+### Production-проверка
+
+- backup:
+  `/root/rospark-backups/analytics-release-20260724T043201Z`;
+- checksum и `PRAGMA quick_check` online backup — успешно;
+- `npm ci`, typecheck, lint и production build — успешно;
+- сгенерированы 100 маршрутов;
+- PM2 `rospark-site` после restart — `online`;
+- локальный и публичный HTTP smoke — успешно;
+- `/api/demo/requests` без сессии — `401`;
+- SQLite после restart — `quick_check=ok`, migrations `1–3`;
+- до согласия ресурсы `mc.yandex.ru` отсутствуют;
+- после согласия загружен `tag.js?id=110980303` и отправлен pageview;
+- после отказа и reload ресурсы Метрики отсутствуют;
+- новый demo-callout подтверждён на публичной странице бизнес-центров;
+- browser console — без ошибок и предупреждений.
+
+### Не изменялось
+
+SQLite осталась по текущему пути внутри checkout. MAX, WhatsApp, Nginx, DNS,
+Node.js, Next.js и зависимости не изменялись. `PROD-DATA-OPS` остаётся
+отложенным, `SECURITY-RELEASE-2` — последним этапом roadmap.
+
 ## 2026-07-23 — локальная коммерческая упаковка demo
 
 ### Что изменено

@@ -1,7 +1,8 @@
 # РОСПАРК — актуальный план развития сайта
 
-Дата актуализации: 2026-07-23
-База аудита: `881ff3cf846ae270042ccf5f55e281d98b124145`
+Дата актуализации: 2026-07-24
+База аудита и текущий production release:
+`9ae9579c63dc8c3c7af96a1e46d87ee0081b56da`
 Production-ветка: `release/demo-production-ready-20260723`
 Статус: текущий источник правды по развитию сайта после выпуска Demo Release v1.
 
@@ -21,18 +22,24 @@ Production, публикация контента, изменение инфра
 
 ### 1.1. Production
 
-На 2026-07-23 подтверждено:
+На 2026-07-24 подтверждено:
 
 - основной сайт и Demo Release v1 опубликованы;
 - production работает под Node.js 22 и Next.js 14.2.35;
 - reverse proxy — Nginx;
-- release SHA — `881ff3cf846ae270042ccf5f55e281d98b124145`;
+- release SHA — `9ae9579c63dc8c3c7af96a1e46d87ee0081b56da`;
 - `/`, `/demo`, `/demo/gostevaya-zayavka`, `/demo/web-skidki` и
   `/demo/vladelec-parkovki` отвечают `200`;
 - `robots.txt` открыт для обхода и содержит ссылку на sitemap;
 - sitemap содержит 75 URL;
 - `/demo` индексируем и включён в sitemap;
 - внутренние demo-кабинеты и публичные token-страницы закрыты `noindex`;
+- metadata и self-canonical юридических страниц опубликованы;
+- на релевантных коммерческих страницах опубликованы входы в три
+  demo-сценария;
+- Яндекс Метрика `110980303` опубликована через consent-gated loader;
+- внешний browser smoke подтвердил отсутствие Метрики до согласия, pageview
+  после согласия и отключение после отзыва;
 - фактическое состояние production зафиксировано в
   `docs/production/PRODUCTION_STATE_2026_07_23.md`.
 
@@ -167,10 +174,9 @@ Node.js 26 воспроизвёл `500` в demo API при обращении к
 - внутренние demo-сценарии и `/quiz` корректно исключены из sitemap и закрыты
   `noindex`;
 - HTTPS non-`www` доступен с `200`, хотя canonical указывает на `www`;
-- в публичном production `/privacy` и
-  `/soglasie-na-obrabotku-personalnyh-dannyh` не имеют собственных
-  metadata/canonical; локальное исправление подготовлено в
-  `fix/site-20260723-legal-metadata`.
+- `/privacy` и `/soglasie-na-obrabotku-personalnyh-dannyh` получили
+  собственные metadata и self-canonical в production release
+  `9ae9579c63dc8c3c7af96a1e46d87ee0081b56da`.
 
 Осталось получить фактические данные Google Search Console и Яндекс Вебмастера:
 
@@ -217,8 +223,7 @@ Verification TXT не удалять.
 
 - `SEO-WEBMASTER-ENROLL-001` — подключение и DNS-верификация кабинетов;
 - `SEO-SITEMAP-SUBMIT-001` — отправка проверенного sitemap в оба кабинета;
-- `SEO-META-LEGAL-001` — локально реализованные и проверенные metadata и
-  self-canonical юридических страниц; нужны review, отдельный commit и release;
+- `SEO-META-LEGAL-001` — выполнен и опубликован 2026-07-24;
 - `SEO-CANONICAL-001` — согласованный Nginx redirect non-`www` → `www`.
 
 ### ANALYTICS-001 — подключить потребителя событий
@@ -237,7 +242,7 @@ Verification TXT не удалять.
 - подробный контракт и этапы зафиксированы в
   `docs/site/ANALYTICS_PLAN_20260723.md`.
 
-Локальный статус `ANALYTICS-001-B`:
+Production-статус `ANALYTICS-001-B`:
 
 - выбран прямой loader Яндекс Метрики без GTM/GA4;
 - счётчик `110980303`, владелец Yandex ID `radicom`;
@@ -249,12 +254,14 @@ Verification TXT не удалять.
 - добавлена постоянная кнопка повторного открытия cookie-настроек;
 - typecheck, lint, production build, privacy smoke и локальный consent browser
   smoke пройдены;
-- production environment, VPS и публичный сайт не изменялись.
+- `NEXT_PUBLIC_YANDEX_METRIKA_ID=110980303` добавлен в production environment
+  до сборки;
+- release `9ae9579c63dc8c3c7af96a1e46d87ee0081b56da` опубликован 2026-07-24;
+- внешний consent smoke подтвердил корректную загрузку и отключение Метрики;
+- browser console — без ошибок и предупреждений.
 
 Нужно:
 
-- добавить ID в production environment перед отдельной сборкой;
-- проверить production CSP/headers и внешний consent smoke;
 - назначить резервного администратора и правила доступа;
 - создать цели Метрики для `/demo`, гостевых заявок, оплаты, owner cabinet и
   feedback lead;
@@ -292,7 +299,7 @@ Verification TXT не удалять.
 - измерять завершение каждого сценария;
 - не превращать demo в реальную команду оборудованию.
 
-Локальный статус 2026-07-23:
+Production-статус 2026-07-24:
 
 - подготовлен единый контекстный demo-callout с переходом в `/demo` и три
   сценария;
@@ -301,7 +308,11 @@ Verification TXT не удалять.
 - подготовлен внутренний сценарий коммерческого показа
   `docs/site/DEMO_SALES_WALKTHROUGH_20260723.md`;
 - typecheck, lint, production build и desktop/mobile browser smoke пройдены;
-- индексация внутренних кабинетов, demo API и production не изменялись.
+- изменения опубликованы в release
+  `9ae9579c63dc8c3c7af96a1e46d87ee0081b56da`;
+- публичная страница бизнес-центров показывает единый callout и три
+  scenario-ссылки;
+- индексация внутренних кабинетов и demo API не изменялась.
 
 ### CONTENT-DEMO-001
 
@@ -436,12 +447,12 @@ production-зависимостей уровня high, включая прямы
 2. `SEO-OPS-001-B` — повторить срез после обработки sitemap; подключение
    кабинетов, отправка sitemap и публичная техническая часть выполнены
    2026-07-23.
-3. `ANALYTICS-001` — локальная provider-neutral основа подготовлена в
-   `ANALYTICS-001-A`; далее выбрать сервис/владельца, подключить test property
-   и собрать полную demo-воронку.
+3. `ANALYTICS-001-C` — loader Метрики опубликован; далее создать цели,
+   проверить поступление privacy-safe событий в интерфейсе и собрать полную
+   demo-воронку.
 4. `LEAD-OPS-002` — CRM/реестр, outbox, владелец и SLA.
-5. `DEMO-GROWTH-001` — локально подготовлены контекстные входы и сценарий
-   коммерческого показа; далее review, отдельный release и измерение переходов.
+5. `DEMO-GROWTH-001` — контекстные входы и сценарий коммерческого показа
+   опубликованы; далее измерение переходов и завершения сценариев.
 6. `CONTENT-DEMO-001` — первые три demo-кластера.
 7. `AI-WIDGET-PILOT` — закрытый стенд и подготовка к пилоту.
 8. `GEO-CONTENT-001` — schema, кейсы, entity и article provenance.
@@ -455,7 +466,7 @@ production-зависимостей уровня high, включая прямы
 Нужно определить:
 
 1. владельца Search Console, Яндекс Вебмастера и аналитики;
-2. основной инструмент аналитики;
+2. резервного администратора Метрики и правила доступа;
 3. источник истины для лидов;
 4. владельца очереди и резервного ответственного;
 5. SLA первого контакта;
