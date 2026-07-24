@@ -1,0 +1,12 @@
+[Unit]
+Description=Run ROSPARK expired lead cleanup daily
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 Europe/Moscow
+AccuracySec=1min
+RandomizedDelaySec=10min
+Persistent=true
+Unit=rospark-lead-cleanup.service
+
+[Install]
+WantedBy=timers.target

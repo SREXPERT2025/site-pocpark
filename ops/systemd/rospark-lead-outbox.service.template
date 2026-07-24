@@ -1,0 +1,37 @@
+[Unit]
+Description=ROSPARK lead notification outbox
+Wants=network-online.target
+After=network-online.target
+ConditionPathIsDirectory=@@APP_DIR@@
+ConditionPathIsDirectory=@@LEAD_DATA_DIR@@
+
+[Service]
+Type=oneshot
+User=@@APP_USER@@
+Group=@@APP_GROUP@@
+WorkingDirectory=@@APP_DIR@@
+Environment=NODE_ENV=production
+UMask=0077
+ExecStart=@@FLOCK_BIN@@ -w 30 /run/lock/rospark-lead-registry.lock @@NODE_BIN@@ --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types @@APP_DIR@@/scripts/process_lead_outbox.mjs
+TimeoutStartSec=90
+Nice=10
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectClock=true
+ProtectControlGroups=true
+ProtectHome=read-only
+ProtectHostname=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadOnlyPaths=@@APP_DIR@@
+ReadWritePaths=@@LEAD_DATA_DIR@@ /run/lock
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=

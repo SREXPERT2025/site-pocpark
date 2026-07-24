@@ -1,0 +1,13 @@
+[Unit]
+Description=Run ROSPARK lead notification outbox every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=60s
+AccuracySec=10s
+RandomizedDelaySec=5s
+Persistent=true
+Unit=rospark-lead-outbox.service
+
+[Install]
+WantedBy=timers.target

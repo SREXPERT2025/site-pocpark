@@ -59,6 +59,9 @@ retry/backoff.
 Оба switch остаются `false`, пока не выполнен согласованный release/runbook.
 Worker запускается командой `npm run lead-outbox:process`; без двух включённых
 switch и абсолютного DB path он завершится до любой внешней отправки.
+CLI самостоятельно загружает `.env.production` при production-запуске.
+Независимая retention cleanup запускается командой
+`npm run lead-registry:cleanup` и не требует включать внешнюю отправку.
 
 ### Email
 
@@ -248,6 +251,7 @@ SQLite path, уникальные секреты, backup и согласован
 ```bash
 npm run test:lead-registry
 npm run test:lead-admin
+npm run test:lead-cli
 npm run typecheck
 npm run lint
 npm run build
@@ -256,6 +260,11 @@ npm run build
 Проект запускается под Node.js 22. Ошибка ABI `better-sqlite3` под Node.js 26
 не исправляется изменением application code: нужно использовать `.nvmrc` и
 одинаковую major-версию для install, build и runtime.
+
+Полный staged release, read-only preflight, systemd templates, acceptance и
+rollback описаны в
+`docs/production/LEAD_OPS_L4_RUNBOOK_20260724.md`. Документ и templates не
+являются разрешением на deploy.
 
 ## 7. Диагностика
 

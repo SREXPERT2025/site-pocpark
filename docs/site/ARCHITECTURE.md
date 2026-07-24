@@ -96,6 +96,12 @@ Draft-файлы сохраняются, но не публикуются.
   и demo feedback в единый registry;
 - `scripts/process_lead_outbox.mjs` — one-shot worker MAX/Email с безопасным
   итоговым счётчиком без PII;
+- `scripts/cleanup_lead_registry.mjs` — отдельная retention cleanup без
+  зависимости от доступности MAX;
+- `scripts/lead_registry_cli_runtime.mjs` — production env loader и единый
+  безопасный SQLite runtime для CLI;
+- `scripts/configure_lead_ops_env.mjs` — allowlisted atomic env update с
+  backup без вывода секретов;
 - `scripts/test_lead_registry_foundation.mjs` — изолированный smoke без
   внешних сообщений.
 - `app/admin/leads` — закрытый интерфейс просмотра и обработки;
@@ -104,6 +110,10 @@ Draft-файлы сохраняются, но не публикуются.
   безопасный CSV;
 - `scripts/test_lead_admin.mjs` — auth/roles/audit/workflow/export/delete
   smoke.
+- `ops/systemd/rospark-lead-*` — hardening templates для worker/cleanup с
+  общим `flock`;
+- `docs/production/LEAD_OPS_L4_RUNBOOK_20260724.md` — staged release,
+  acceptance и rollback.
 
 Оба публичных API подключены только за `LEAD_REGISTRY_ENABLED=false`; admin
 дополнительно закрыт `LEAD_ADMIN_ENABLED=false`; реальная обработка outbox
@@ -279,6 +289,7 @@ npm run typecheck
 npm run lint
 npm run test:lead-registry
 npm run test:lead-admin
+npm run test:lead-cli
 npm run build
 git diff --check
 ```

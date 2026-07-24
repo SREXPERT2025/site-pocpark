@@ -75,7 +75,7 @@
 
 Оба feature gate выключены, поэтому production-поведение не изменено и реальные
 сообщения не отправлялись. Production SQLite, admin-учётные записи и worker не
-создавались; production runbook и L4 остаются отдельным этапом.
+создавались; L4 остаётся отдельным согласуемым этапом.
 
 Изолированный localhost smoke с включённым registry и выключленным worker
 подтвердил: первая заявка — `200 created:true`, точный повтор —
@@ -103,6 +103,24 @@ L3 production-preview подтвердил:
   reverse proxy;
 - GET list/export явно помечены `force-dynamic`, чтобы feature gate не
   фиксировался в `404` во время build.
+
+### Подготовлен ops-пакет L4
+
+- worker и cleanup явно загружают `.env.production`;
+- retention cleanup вынесена в отдельную one-shot команду и не зависит от
+  доступности MAX;
+- env configurator меняет только allowlisted lead-ключи, создаёт backup,
+  устраняет дубли, пишет атомарно и не выводит секреты;
+- systemd templates запускают worker раз в минуту и cleanup ежедневно;
+- общий `flock` исключает гонку cleanup с сетевой outbox-попыткой;
+- автоматический CLI smoke проверяет production env loading, mode `700/600`,
+  migrations `1–3`, `quick_check`, пустой no-send worker и безопасное
+  обновление env;
+- staged release, acceptance и rollback записаны в
+  `docs/production/LEAD_OPS_L4_RUNBOOK_20260724.md`.
+
+VPS, release-ветка, PM2, `.env.production`, SQLite, systemd и MAX не
+изменялись. Следующий шаг — свежий read-only VPS preflight.
 
 ## 2026-07-24 — первый growth dashboard и изоляция QA-аналитики
 

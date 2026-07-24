@@ -175,10 +175,15 @@ Analytics release также не означает, что уже:
 6. Для аналитики продолжить `ANALYTICS-001-C`: подтвердить накопление семи
    целей в интерфейсе Метрики и собрать dashboard без PII.
 
+7. Для `LEAD-OPS-002` локально подготовлен L4 runbook, но production feature
+   gates остаются выключены. Следующий разрешённый шаг — только свежий
+   read-only VPS preflight.
+
 ## Связанные актуальные документы
 
 - `docs/site/SITE_DEVELOPMENT_ROADMAP_20260723.md`;
 - `docs/production/PROD_DATA_OPS_PLAN_20260723.md`;
+- `docs/production/LEAD_OPS_L4_RUNBOOK_20260724.md`;
 - `docs/site/AI_WIDGET_ROADMAP_20260723.md`;
 - `docs/deployment/AFTER_DEPLOY_GUEST_DEMO_MAX.md`;
 - `docs/site/ARCHITECTURE.md`;

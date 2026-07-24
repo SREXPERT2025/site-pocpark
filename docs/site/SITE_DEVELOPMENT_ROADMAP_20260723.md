@@ -176,9 +176,20 @@ Production не изменён: SQLite не создан, feature gates выкл
 
 - подготовить отдельные production-пароли Андрея и Сергея без передачи в чат;
 - подготовить server-only session secret, backup и rollback;
-- подготовить systemd timer и production release/runbook для worker/cleanup;
+- выполнить свежий read-only VPS preflight из
+  `docs/production/LEAD_OPS_L4_RUNBOOK_20260724.md`;
 - выполнить L4 в отдельное согласованное окно на одной TEST-заявке;
 - исключить ручное чтение production SQLite как постоянный процесс.
+
+Локальная ops-подготовка L4 завершена:
+
+- CLI теперь загружает `.env.production` явно;
+- retention cleanup отделена от внешней отправки;
+- env configurator обновляет только allowlisted lead-ключи атомарно, с backup
+  и без вывода секретов;
+- подготовлены systemd templates worker/cleanup с общим `flock`;
+- подготовлены staged release, acceptance и rollback;
+- VPS, release-ветка, PM2, env, SQLite, systemd и MAX не изменялись.
 
 ### P0. DOCS-OPS-001 — поддерживать один источник правды
 
@@ -502,8 +513,8 @@ production-зависимостей уровня high, включая прямы
 3. `ANALYTICS-001-C` — семь целей созданы, production `reachGoal` и параметры
    подтверждены, первый dashboard подготовлен, host guard опубликован; далее
    не-QA данные и полная demo-воронка.
-4. `LEAD-OPS-002` — L1–L3 реализованы локально за выключенными gates; далее
-   отдельный production runbook, секреты, worker/cleanup и согласованный L4.
+4. `LEAD-OPS-002` — L1–L3 и ops-пакет L4 подготовлены локально; далее свежий
+   read-only VPS preflight, отдельное окно, секреты и согласованный L4.
 5. `DEMO-GROWTH-001` — контекстные входы и сценарий коммерческого показа
    опубликованы; далее измерение переходов и завершения сценариев.
 6. `CONTENT-DEMO-001` — первые три demo-кластера.

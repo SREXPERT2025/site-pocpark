@@ -1,13 +1,15 @@
-import { chmodSync, existsSync, mkdirSync } from 'node:fs';
-import path from 'node:path';
-import Database from 'better-sqlite3';
 import {
   cleanupExpiredLeads,
   processLeadOutboxBatch,
-  runLeadRegistryMigrations,
 } from '../app/lib/lead-registry-core.ts';
 import { sendLeadToChannel } from '../lib/leads.ts';
+import {
+  loadLeadRegistryEnvironment,
+  openLeadRegistryDatabase,
+  requireLeadRegistryDatabasePath,
+} from './lead_registry_cli_runtime.mjs';
 
+loadLeadRegistryEnvironment();
 if (process.env.LEAD_REGISTRY_ENABLED !== 'true') {
   throw new Error('LEAD_REGISTRY_ENABLED must be true.');
 }
@@ -15,10 +17,7 @@ if (process.env.LEAD_OUTBOX_PROCESSING_ENABLED !== 'true') {
   throw new Error('LEAD_OUTBOX_PROCESSING_ENABLED must be true.');
 }
 
-const databasePath = process.env.LEAD_REGISTRY_DB_PATH?.trim();
-if (!databasePath || !path.isAbsolute(databasePath)) {
-  throw new Error('LEAD_REGISTRY_DB_PATH must be an absolute path.');
-}
+const databasePath = requireLeadRegistryDatabasePath();
 
 function optionalString(context, key) {
   const value = context[key];
@@ -74,19 +73,7 @@ function notificationPayload(job) {
   };
 }
 
-const directory = path.dirname(databasePath);
-mkdirSync(directory, { recursive: true, mode: 0o700 });
-chmodSync(directory, 0o700);
-const db = new Database(databasePath);
-chmodSync(databasePath, 0o600);
-db.pragma('journal_mode = WAL');
-for (const sidecarPath of [`${databasePath}-wal`, `${databasePath}-shm`]) {
-  if (existsSync(sidecarPath)) chmodSync(sidecarPath, 0o600);
-}
-db.pragma('foreign_keys = ON');
-db.pragma('busy_timeout = 5000');
-db.pragma('synchronous = NORMAL');
-runLeadRegistryMigrations(db);
+const db = openLeadRegistryDatabase(databasePath);
 
 try {
   const result = await processLeadOutboxBatch(
