@@ -10,6 +10,7 @@ import {
 import {
   flushYandexMetrikaGoalsFromDataLayer,
   initializeYandexMetrika,
+  isYandexMetrikaProductionHost,
   parseYandexMetrikaId,
   sendYandexMetrikaHit,
 } from '@/app/lib/yandex-metrika';
@@ -25,7 +26,10 @@ export default function YandexMetrika() {
 
   useEffect(() => {
     const syncConsent = () => {
-      setIsEnabled(hasAnalyticsConsent());
+      setIsEnabled(
+        isYandexMetrikaProductionHost(window.location.hostname) &&
+          hasAnalyticsConsent(),
+      );
     };
 
     syncConsent();

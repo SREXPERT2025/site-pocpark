@@ -154,6 +154,20 @@ assert.equal(
 
 assert.equal(metrika.parseYandexMetrikaId('110980303'), 110980303);
 assert.equal(metrika.parseYandexMetrikaId('not-a-counter'), null);
+assert.equal(
+  metrika.isYandexMetrikaProductionHost('www.xn--80aukedde.xn--p1ai'),
+  true,
+);
+assert.equal(
+  metrika.isYandexMetrikaProductionHost('WWW.XN--80AUKEDDE.XN--P1AI.'),
+  true,
+);
+assert.equal(metrika.isYandexMetrikaProductionHost('127.0.0.1'), false);
+assert.equal(metrika.isYandexMetrikaProductionHost('localhost'), false);
+assert.equal(
+  metrika.isYandexMetrikaProductionHost('xn--80aukedde.xn--p1ai'),
+  false,
+);
 assert.deepEqual(
   metrika.yandexMetrikaGoalFromDataLayerEntry({
     event: 'rospark_demo_scenario_view',

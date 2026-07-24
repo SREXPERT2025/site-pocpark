@@ -1,4 +1,6 @@
 export const YANDEX_METRIKA_SCRIPT_ID = 'rospark-yandex-metrika';
+export const YANDEX_METRIKA_PRODUCTION_HOST =
+  'www.xn--80aukedde.xn--p1ai';
 
 type YandexMetrikaCommand = {
   (...args: unknown[]): void;
@@ -23,6 +25,15 @@ export function parseYandexMetrikaId(value: string | undefined) {
 
   const counterId = Number(value);
   return Number.isSafeInteger(counterId) && counterId > 0 ? counterId : null;
+}
+
+export function isYandexMetrikaProductionHost(value: string | undefined) {
+  if (!value) return false;
+
+  return (
+    value.trim().toLowerCase().replace(/\.$/, '') ===
+    YANDEX_METRIKA_PRODUCTION_HOST
+  );
 }
 
 export function yandexMetrikaGoalFromDataLayerEntry(
