@@ -32,6 +32,7 @@ function loadTypeScriptModule(relativePath, dependencies = {}) {
 
 let storedConsent = null;
 const browserEvents = [];
+const dataLayerLengthsAtDispatch = [];
 
 globalThis.CustomEvent = class TestCustomEvent {
   constructor(type, init = {}) {
@@ -51,6 +52,9 @@ globalThis.window = {
   },
   dispatchEvent(event) {
     browserEvents.push(event);
+    dataLayerLengthsAtDispatch.push(
+      Array.isArray(this.dataLayer) ? this.dataLayer.length : 0,
+    );
     return true;
   },
 };
@@ -118,6 +122,24 @@ assert.equal('search_query' in window.dataLayer[1], false);
 assert.equal(browserEvents.length, 2, 'accepted events must reach the local browser contract');
 assert.equal(browserEvents[0].type, 'rospark:lead_form_event');
 assert.equal(browserEvents[1].type, 'rospark:demo_event');
+assert.deepEqual(
+  dataLayerLengthsAtDispatch.slice(-2),
+  [1, 2],
+  'dataLayer must contain each event before its browser event is dispatched',
+);
+
+const beforeDuplicateEventCount = window.dataLayer.length;
+analytics.dispatchDemoEvent('demo_scenario_view', {
+  demo_name: 'guest_request_portal',
+});
+analytics.dispatchDemoEvent('demo_scenario_view', {
+  demo_name: 'guest_request_portal',
+});
+assert.equal(
+  window.dataLayer.length,
+  beforeDuplicateEventCount + 1,
+  'identical events emitted during the same render transition must be deduplicated',
+);
 
 const acceptedEventCount = window.dataLayer.length;
 consent.saveAnalyticsConsent('declined');
@@ -132,6 +154,58 @@ assert.equal(
 
 assert.equal(metrika.parseYandexMetrikaId('110980303'), 110980303);
 assert.equal(metrika.parseYandexMetrikaId('not-a-counter'), null);
+assert.deepEqual(
+  metrika.yandexMetrikaGoalFromDataLayerEntry({
+    event: 'rospark_demo_scenario_view',
+    demo_name: 'guest_request_portal',
+  }),
+  {
+    name: 'rospark_demo_scenario_view',
+    params: {
+      demo_name: 'guest_request_portal',
+    },
+  },
+);
+assert.equal(
+  metrika.yandexMetrikaGoalFromDataLayerEntry({
+    event: 'third_party_event',
+    phone: '+7 999 000-00-00',
+  }),
+  null,
+  'only the controlled rospark namespace may be replayed',
+);
+
+const replayWindow = {
+  dataLayer: [
+    {
+      event: 'third_party_event',
+      phone: '+7 999 000-00-00',
+    },
+    {
+      event: 'rospark_demo_scenario_view',
+      demo_name: 'guest_request_portal',
+    },
+  ],
+};
+
+assert.equal(
+  metrika.flushYandexMetrikaGoalsFromDataLayer(replayWindow, 110980303),
+  1,
+  'one queued ROSPARK goal must be forwarded',
+);
+assert.equal(
+  metrika.flushYandexMetrikaGoalsFromDataLayer(replayWindow, 110980303),
+  0,
+  'the same queued dataLayer entry must not be forwarded twice',
+);
+assert.deepEqual(replayWindow.ym.a, [
+  [
+    110980303,
+    'reachGoal',
+    'rospark_demo_scenario_view',
+    { demo_name: 'guest_request_portal' },
+  ],
+]);
 
 const appendedScripts = [];
 const fakeDocument = {

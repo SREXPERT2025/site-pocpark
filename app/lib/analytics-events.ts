@@ -17,7 +17,13 @@ export type LeadFormEventParams = {
 
 type DataLayerWindow = Window & {
   dataLayer?: Array<Record<string, unknown>>;
+  __rosparkLastAnalyticsEvent?: {
+    key: string;
+    timestamp: number;
+  };
 };
+
+const ANALYTICS_EVENT_DEDUPLICATION_WINDOW_MS = 250;
 
 export type DemoEventName =
   | 'demo_scenario_view'
@@ -107,13 +113,23 @@ function dispatchPrivacySafeEvent(
     ...params,
   };
 
-  window.dispatchEvent(
-    new CustomEvent(customEventName, {
-      detail,
-    })
-  );
-
   const browserWindow = window as DataLayerWindow;
+  const eventKey = JSON.stringify([customEventName, eventName, params]);
+  const timestamp = Date.now();
+  const lastEvent = browserWindow.__rosparkLastAnalyticsEvent;
+
+  if (
+    lastEvent?.key === eventKey &&
+    timestamp - lastEvent.timestamp < ANALYTICS_EVENT_DEDUPLICATION_WINDOW_MS
+  ) {
+    return;
+  }
+
+  browserWindow.__rosparkLastAnalyticsEvent = {
+    key: eventKey,
+    timestamp,
+  };
+
   const dataLayer = Array.isArray(browserWindow.dataLayer)
     ? browserWindow.dataLayer
     : [];
@@ -122,6 +138,12 @@ function dispatchPrivacySafeEvent(
     event: `rospark_${eventName}`,
     ...params,
   });
+
+  window.dispatchEvent(
+    new CustomEvent(customEventName, {
+      detail,
+    })
+  );
 }
 
 export function dispatchLeadFormEvent(

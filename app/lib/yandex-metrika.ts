@@ -9,6 +9,13 @@ type YandexMetrikaCommand = {
 type YandexMetrikaWindow = Window & {
   ym?: YandexMetrikaCommand;
   __rosparkMetrikaInitialized?: Record<string, true>;
+  __rosparkMetrikaForwardedDataLayerEvents?: WeakSet<object>;
+  dataLayer?: unknown[];
+};
+
+export type YandexMetrikaGoal = {
+  name: string;
+  params: Record<string, unknown>;
 };
 
 export function parseYandexMetrikaId(value: string | undefined) {
@@ -16,6 +23,52 @@ export function parseYandexMetrikaId(value: string | undefined) {
 
   const counterId = Number(value);
   return Number.isSafeInteger(counterId) && counterId > 0 ? counterId : null;
+}
+
+export function yandexMetrikaGoalFromDataLayerEntry(
+  value: unknown,
+): YandexMetrikaGoal | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+
+  const { event, ...params } = value as Record<string, unknown>;
+  if (typeof event !== 'string' || !/^rospark_[a-z0-9_-]{1,80}$/i.test(event)) {
+    return null;
+  }
+
+  return {
+    name: event,
+    params,
+  };
+}
+
+export function flushYandexMetrikaGoalsFromDataLayer(
+  browserWindow: YandexMetrikaWindow,
+  counterId: number,
+) {
+  const dataLayer = Array.isArray(browserWindow.dataLayer)
+    ? browserWindow.dataLayer
+    : [];
+  const forwardedEvents =
+    browserWindow.__rosparkMetrikaForwardedDataLayerEvents ??
+    new WeakSet<object>();
+  let forwardedCount = 0;
+
+  browserWindow.__rosparkMetrikaForwardedDataLayerEvents = forwardedEvents;
+
+  for (const value of dataLayer) {
+    if (!value || typeof value !== 'object') continue;
+    if (forwardedEvents.has(value)) continue;
+
+    forwardedEvents.add(value);
+
+    const goal = yandexMetrikaGoalFromDataLayerEntry(value);
+    if (!goal) continue;
+
+    sendYandexMetrikaGoal(browserWindow, counterId, goal.name, goal.params);
+    forwardedCount += 1;
+  }
+
+  return forwardedCount;
 }
 
 function ensureYandexMetrikaQueue(browserWindow: YandexMetrikaWindow) {
