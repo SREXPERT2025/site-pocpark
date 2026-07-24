@@ -19,7 +19,7 @@
 - event parameters — 23 отправки, включая
   `demo_name = guest_request_portal`.
 
-### Исправлено локально
+### Исправлено и опубликовано
 
 - выявлено, что 10 QA-событий с `127.0.0.1:3210` попали в production-счётчик;
 - loader Метрики ограничен production-host
@@ -28,12 +28,30 @@
   загружает `tag.js` и не отправляет данные во внешний счётчик;
 - browser smoke подтвердил 0 запросов к `mc.yandex.ru` на localhost.
 
+### Release
+
+```text
+c2a0e955b8747e3005da28e3fe9981f01fa45488
+release/demo-production-ready-20260723
+```
+
+- backup env и состояния release:
+  `/root/rospark-backups/analytics-host-guard-20260724T070217Z`;
+- fast-forward выполнен с
+  `80d64da4b2cdd3b6af7f837709722db66702930d`;
+- SQLite, Nginx, DNS, MAX, WhatsApp и зависимости не изменялись.
+
 ### Проверка
 
 - privacy smoke — пройден;
 - typecheck и lint — пройдены;
 - production build на Node.js 22 — пройден, 100 маршрутов;
-- browser console — без ошибок и предупреждений.
+- PM2 `rospark-site` после restart — `online`;
+- `/`, `/demo`, `/demo/gostevaya-zayavka` — `200`;
+- `/api/demo/requests` без сессии — `401`;
+- внешний smoke подтвердил публичную demo-страницу и
+  `tag.js?id=110980303`;
+- browser console — без ошибок.
 
 ### Dashboard
 

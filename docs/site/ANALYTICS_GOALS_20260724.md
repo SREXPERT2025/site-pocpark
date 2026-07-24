@@ -5,7 +5,8 @@
 Счётчик: `110980303`  
 Владелец: Yandex ID `radicom`  
 Статус: цели созданы; hard load и SPA-отправка подтверждены на production;
-накопление данных и dashboard ещё не проверены
+первый технический dashboard собран; production-host guard опубликован;
+накопление не-QA данных продолжается
 
 ## 1. Созданные цели
 
@@ -79,9 +80,10 @@ demo-страницы: дочерний компонент мог создать
 Production deployment:
 
 ```text
-SHA: 80d64da4b2cdd3b6af7f837709722db66702930d
+SHA: c2a0e955b8747e3005da28e3fe9981f01fa45488
 branch: release/demo-production-ready-20260723
-backup: /root/rospark-backups/analytics-goals-20260724T051826Z
+reliability backup: /root/rospark-backups/analytics-goals-20260724T051826Z
+host guard backup: /root/rospark-backups/analytics-host-guard-20260724T070217Z
 ```
 
 ## 4. Первый срез отчётов
@@ -98,9 +100,10 @@ backup: /root/rospark-backups/analytics-goals-20260724T051826Z
 `http://127.0.0.1:3210/demo/gostevaya-zayavka`. Это QA-трафик, поэтому текущие
 конверсия и количество достижений не являются бизнес-показателями.
 
-Для исключения дальнейшего загрязнения подготовлен host guard: внешний
-счётчик запускается только на `www.xn--80aukedde.xn--p1ai`. Локальный browser
-smoke после изменения подтвердил 0 запросов к `mc.yandex.ru`.
+Для исключения дальнейшего загрязнения опубликован host guard: внешний счётчик
+запускается только на `www.xn--80aukedde.xn--p1ai`. Локальный browser smoke
+подтвердил 0 запросов к `mc.yandex.ru`, а внешний production smoke после
+выпуска подтвердил загрузку `tag.js?id=110980303` без ошибок консоли.
 
 Полный SEO/GEO/conversion baseline записан в
 `docs/site/GROWTH_DASHBOARD_20260724.md`.
@@ -109,13 +112,12 @@ smoke после изменения подтвердил 0 запросов к `
 
 После обработки данных Метрикой:
 
-1. опубликовать production-host guard;
-2. проверить event parameters `result` после первых действий оплаты и
+1. проверить event parameters `result` после первых действий оплаты и
    feedback;
-3. разделить успешные и ошибочные результаты оплаты и feedback;
-4. собрать demo-воронку:
+2. разделить успешные и ошибочные результаты оплаты и feedback;
+3. собрать demo-воронку:
    `каталог → сценарий → ключевое действие → feedback/форма`;
-5. после `LEAD-OPS-002` связать агрегированные client success и server-side
+4. после `LEAD-OPS-002` связать агрегированные client success и server-side
    статусы без PII;
-6. добавить месячный SEO/GEO/conversion dashboard и ответственного за
+5. добавить месячный SEO/GEO/conversion dashboard и ответственного за
    контроль.

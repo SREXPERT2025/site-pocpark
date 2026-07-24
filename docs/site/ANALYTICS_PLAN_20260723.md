@@ -273,7 +273,8 @@ production loader не заменяет проверку поступления 
 
 ### `ANALYTICS-001-C` — сквозная воронка
 
-- опубликовать host guard, исключающий localhost из production-счётчика;
+- host guard, исключающий localhost из production-счётчика, опубликован в
+  release `c2a0e955b8747e3005da28e3fe9981f01fa45488`;
 - дождаться не-QA данных остальных шести целей;
 - фиксировать безопасный landing context;
 - добавить переходы в `/demo` и `/quiz`;

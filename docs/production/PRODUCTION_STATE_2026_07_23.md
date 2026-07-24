@@ -16,7 +16,7 @@ PM2, SQLite или зависимости.
 
 - Статус: Production Release v1 и согласованный analytics/demo-growth update
   успешно выпущены.
-- Release SHA: `80d64da4b2cdd3b6af7f837709722db66702930d`.
+- Release SHA: `c2a0e955b8747e3005da28e3fe9981f01fa45488`.
 - Production branch: `release/demo-production-ready-20260723`.
 
 ## Production-окружение
@@ -26,6 +26,9 @@ PM2, SQLite или зависимости.
 - PM2: production-процесс запущен и работает.
 - Nginx: используется в production-контуре.
 - Яндекс Метрика: прямой consent-gated loader, счётчик `110980303`.
+- Внешний loader Метрики разрешён только на production-host
+  `www.xn--80aukedde.xn--p1ai`; localhost и тестовые host не отправляют
+  данные во внешний счётчик.
 - Production environment содержит
   `NEXT_PUBLIC_YANDEX_METRIKA_ID=110980303`; значение включено в production
   build.
@@ -47,6 +50,8 @@ PM2, SQLite или зависимости.
   `rospark_demo_scenario_view`.
 - SPA-переход `/demo → /demo/gostevaya-zayavka` отправляет одну цель без
   дубля; параметры содержат `demo_name`, PII отсутствует.
+- Локальный QA больше не загружает ресурсы `mc.yandex.ru` даже при сохранённом
+  analytics consent.
 - WhatsApp работает.
 - MAX работает, реальная demo-заявка успешно доставлена.
 
@@ -94,6 +99,26 @@ Analytics release также не означает, что уже:
 - `/api/demo/requests` без сессии — `401`;
 - внешний browser smoke hard load / SPA — по одной цели без дублей;
 - browser console — без ошибок и предупреждений;
+- `npm ci` показал 13 известных audit findings (`1 moderate`, `12 high`);
+  автоматическое обновление зависимостей не выполнялось.
+
+## Проверка analytics host guard release от 2026-07-24
+
+- backup env и release state:
+  `/root/rospark-backups/analytics-host-guard-20260724T070217Z`;
+- fast-forward:
+  `80d64da4b2cdd3b6af7f837709722db66702930d` →
+  `c2a0e955b8747e3005da28e3fe9981f01fa45488`;
+- Node.js: `22.23.1`;
+- `npm ci`, typecheck, lint, privacy smoke и production build — успешно;
+- production build: 100 маршрутов;
+- PM2 `rospark-site`: `online`;
+- `/`, `/demo`, `/demo/gostevaya-zayavka` — `200`;
+- `/api/demo/requests` без сессии — `401`;
+- внешний browser smoke подтвердил загрузку публичной demo-страницы и
+  `tag.js?id=110980303` на production-host;
+- browser console — без ошибок;
+- SQLite, Nginx, DNS, MAX, WhatsApp и зависимости не изменялись;
 - `npm ci` показал 13 известных audit findings (`1 moderate`, `12 high`);
   автоматическое обновление зависимостей не выполнялось.
 
