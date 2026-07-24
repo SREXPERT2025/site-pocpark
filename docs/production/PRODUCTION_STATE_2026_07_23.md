@@ -14,9 +14,9 @@ PM2, SQLite или зависимости.
 
 ## Release
 
-- Статус: Production Release v1 и согласованный analytics/demo-growth update
+- Статус: Production Release v1, analytics/demo-growth и `LEAD-OPS-002 / L4`
   успешно выпущены.
-- Release SHA: `c2a0e955b8747e3005da28e3fe9981f01fa45488`.
+- Release SHA: `61a4694bee55426e72bdfbb42008730c3cb2b444`.
 - Production branch: `release/demo-production-ready-20260723`.
 
 ## Production-окружение
@@ -54,12 +54,14 @@ PM2, SQLite или зависимости.
   analytics consent.
 - WhatsApp работает.
 - MAX работает, реальная demo-заявка успешно доставлена.
+- Единый lead registry работает вне Git checkout.
+- `/admin/leads` доступен только по персональным ролям Андрея и Сергея.
+- MAX transactional outbox и ежедневная retention cleanup работают через
+  systemd timers.
 
-Это подтверждает техническую доставку demo-заявки, но не означает, что:
+Это не означает, что:
 
 - создан публичный MAX-канал для продвижения;
-- замкнут CRM-процесс обработки `demo_feedback_leads`;
-- назначены владелец, SLA и статусы обработки demo-лида;
 - разрешены новые реальные отправки без отдельного подтверждения.
 
 Analytics release также не означает, что уже:
@@ -67,8 +69,32 @@ Analytics release также не означает, что уже:
 - накоплены и подтверждены данные всех семи целей в отчёте Метрики;
 - собрана сквозная demo-воронка и ежемесячный dashboard;
 - назначен резервный администратор счётчика;
-- замкнута связь `lead → assigned → contacted → closed`;
 - накоплен достаточный объём данных для SEO/GEO-выводов.
+
+## Проверка `LEAD-OPS-002 / L4` от 2026-07-24
+
+- backup:
+  `/root/rospark-backups/lead-ops-l4-20260724T122213Z`;
+- fast-forward:
+  `c2a0e955b8747e3005da28e3fe9981f01fa45488` →
+  `61a4694bee55426e72bdfbb42008730c3cb2b444`;
+- staging `npm ci`, lead registry/admin/CLI tests, typecheck, lint и production
+  build — успешно; 103 статические страницы;
+- `.env.production` — mode `600`;
+- registry:
+  `/var/lib/rospark-leads/lead-registry.sqlite`, mode `600`, каталог mode
+  `700`;
+- migrations `1–3`, `quick_check=ok`, foreign key errors отсутствуют;
+- вход Андрея (`director`) и Сергея (`sales_head`) подтверждён;
+- внешний desktop/mobile admin smoke — без Метрики, публичного layout,
+  overflow и console errors;
+- одна `TEST LEAD-OPS-002` доставлена в MAX ровно один раз:
+  `sent`, `attempts=1`, `error=none`;
+- workflow закрыт:
+  `new → assigned(sergey) → contacted → closed(test)`;
+- audit: два успешных входа и три status change;
+- outbox и cleanup timers — `active`, service result — `success`;
+- PM2 `rospark-site` — `online`.
 
 ## Проверка выпуска от 2026-07-24
 
@@ -175,10 +201,9 @@ Analytics release также не означает, что уже:
 6. Для аналитики продолжить `ANALYTICS-001-C`: подтвердить накопление семи
    целей в интерфейсе Метрики и собрать dashboard без PII.
 
-7. Для `LEAD-OPS-002` локально подготовлен L4 runbook, а read-only VPS
-   preflight выполнен 2026-07-24. Production feature gates остаются выключены.
-   Следующий изменяющий шаг требует отдельного maintenance window, backup и
-   подтверждения staged L4.
+7. Для `LEAD-OPS-002` контролировать `failed/dead`, SLA первого контакта,
+   ежедневную retention cleanup и наличие свежего backup. TEST-лид не удалять
+   до окончания документальной приёмки.
 
 ## Связанные актуальные документы
 

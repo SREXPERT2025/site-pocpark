@@ -342,12 +342,11 @@ audit, CSV и удаление. Изолированный production-preview д
 - фиксация результата без публикации PII.
 
 Production runbook, read-only preflight, systemd templates и rollback
-подготовлены локально в
-`docs/production/LEAD_OPS_L4_RUNBOOK_20260724.md`. Фактический VPS preflight
-после L3 выполнен 2026-07-24: production остаётся на документированном SHA,
-PM2 online, Node.js 22, MAX lead keys присутствуют, место есть; новый registry
-и systemd units ещё не создавались. Документ не разрешает deploy или реальное
-сообщение.
+подготовлены и выполнены по
+`docs/production/LEAD_OPS_L4_RUNBOOK_20260724.md`. L4 принят 2026-07-24:
+registry и персональные роли опубликованы, одна TEST-заявка доставлена в MAX
+один раз, status workflow закрыт outcome `test`, worker и cleanup timers
+активны.
 
 ## 8. Критерий закрытия `LEAD-OPS-002`
 
@@ -362,5 +361,5 @@ PM2 online, Node.js 22, MAX lead keys присутствуют, место ес�
 - аналитика получает только агрегированные события без PII;
 - реальный production smoke выполнен только после отдельного подтверждения.
 
-L1–L3 закрыты локально, ops-пакет L4 подготовлен. Полный `LEAD-OPS-002`
-остаётся открытым до отдельно согласованного maintenance window и L4.
+`LEAD-OPS-002` закрыт 2026-07-24: L1–L3 опубликованы, L4 acceptance пройден,
+production source of truth и операционный процесс работают.

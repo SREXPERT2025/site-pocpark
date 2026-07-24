@@ -2,12 +2,43 @@
 
 Дата подготовки: 2026-07-24
 
-Статус: подготовлен локально; read-only VPS preflight после L3 выполнен
-2026-07-24; выпуск не разрешён
+Статус: L4 выполнен и принят в production 2026-07-24; рабочий release
+`61a4694bee55426e72bdfbb42008730c3cb2b444`
 
 Этот документ не разрешает автоматически менять VPS, release-ветку, PM2,
 `.env.production`, SQLite, systemd или отправлять сообщение в MAX. Каждый
 изменяющий этап начинается только после отдельного подтверждения директора.
+
+## 0. Фактический результат L4
+
+- maintenance и одна TEST-отправка отдельно подтверждены директором;
+- backup:
+  `/root/rospark-backups/lead-ops-l4-20260724T122213Z`;
+- production fast-forward:
+  `c2a0e955b8747e3005da28e3fe9981f01fa45488` →
+  `61a4694bee55426e72bdfbb42008730c3cb2b444`;
+- staging `npm ci`, три lead-теста, typecheck, lint и production build —
+  успешно; build содержит 103 статические страницы и динамические admin routes;
+- registry:
+  `/var/lib/rospark-leads/lead-registry.sqlite`, каталог mode `700`, файл
+  mode `600`;
+- `.env.production` приведён к mode `600`;
+- `LEAD_REGISTRY_ENABLED`, `LEAD_ADMIN_ENABLED` и
+  `LEAD_OUTBOX_PROCESSING_ENABLED` включены;
+- персональный вход Андрея и Сергея подтверждён; Сергей не имеет удаления;
+- внешний desktop/mobile smoke: noindex, без Метрики, публичных
+  header/footer, overflow и console errors;
+- создан один `TEST LEAD-OPS-002`, MAX получил ровно одно сообщение;
+- outbox: `sent`, `attempts=1`, `error=none`;
+- workflow: `new → assigned(sergey) → contacted → closed(test)`;
+- `PRAGMA quick_check` — `ok`, foreign key errors отсутствуют;
+- systemd outbox timer активен примерно раз в минуту, cleanup timer —
+  ежедневно около `03:30 Europe/Moscow`;
+- автоматические пустые worker runs завершились с `claimed=0`, `dead=0`;
+- PM2 `rospark-site` — `online`.
+
+TEST-лид `RSP-A89A0364` сохранён как acceptance evidence и не является
+обращением клиента. Rollback build и исходный backup не удалены.
 
 ## 1. Цель L4
 

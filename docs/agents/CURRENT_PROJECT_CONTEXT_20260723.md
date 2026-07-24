@@ -21,12 +21,14 @@
 ## Фактический контекст
 
 - production release SHA:
-  `881ff3cf846ae270042ccf5f55e281d98b124145`;
+  `61a4694bee55426e72bdfbb42008730c3cb2b444`;
 - production-ветка: `release/demo-production-ready-20260723`;
 - production: Linux, Nginx, PM2, Node.js 22, Next.js 14.2.35;
 - Demo Release v1 опубликован;
 - текущая production SQLite находится внутри checkout;
 - MAX уже проверен реальной demo-доставкой;
+- единый lead registry, персональные роли, MAX outbox и retention timers
+  опубликованы и приняты через одну закрытую TEST-заявку;
 - Security Release 2 ещё не выполнен и по решению владельца перенесён на
   последний этап roadmap;
 - перенос SQLite ещё не выполнен;

@@ -3,7 +3,7 @@
 Статус: рабочая документация v2
 Дата актуализации: 2026-07-24
 Проект: `rospark-frontend`
-Production release: `c2a0e955b8747e3005da28e3fe9981f01fa45488`
+Production release: `61a4694bee55426e72bdfbb42008730c3cb2b444`
 
 ## Назначение
 
@@ -69,24 +69,18 @@ Draft-файлы сохраняются, но не публикуются.
 
 Основной endpoint — `/api/lead`.
 
-Контракт:
+Production-контракт:
 
 - строгое `consent: true`;
 - имя и корректный российский телефон;
 - honeypot;
 - source/intent/product/package/source URL;
 - UTM/yclid/gclid;
-- частичный успех: заявка успешна, если доставлена минимум в один настроенный
-  канал;
-- Email, Telegram и внутренний MAX — каналы уведомления, а не источник истины.
+- idempotent регистрация в отдельном production registry;
+- Email/MAX — каналы transactional outbox, а не источник истины;
+- legacy direct delivery используется только при выключенном registry gate.
 
-Операционный источник истины и SLA должны быть определены отдельно.
-Фактический разрыв между основным lead endpoint и demo feedback, варианты
-реестра и требуемые решения зафиксированы в
-`docs/site/LEAD_OPS_002_DECISION_20260724.md`.
-
-В feature-ветке подготовлены L1 registry, L2 transactional outbox и L3
-операционный интерфейс:
+Production source of truth и L1–L4:
 
 - `app/lib/lead-registry-core.ts` — migration, idempotency, duplicate policy,
   status history, retention, outbox lease и retry/backoff;
@@ -115,10 +109,19 @@ Draft-файлы сохраняются, но не публикуются.
 - `docs/production/LEAD_OPS_L4_RUNBOOK_20260724.md` — staged release,
   acceptance и rollback.
 
-Оба публичных API подключены только за `LEAD_REGISTRY_ENABLED=false`; admin
-дополнительно закрыт `LEAD_ADMIN_ENABLED=false`; реальная обработка outbox
-отдельно закрыта `LEAD_OUTBOX_PROCESSING_ENABLED=false`. Код не опубликован в
-production, база и production-учётные записи не созданы, worker не запущен.
+Оба публичных API работают через `LEAD_REGISTRY_ENABLED=true`; admin включён
+через `LEAD_ADMIN_ENABLED=true`; outbox обрабатывается при
+`LEAD_OUTBOX_PROCESSING_ENABLED=true`.
+
+Production registry:
+
+```text
+/var/lib/rospark-leads/lead-registry.sqlite
+```
+
+Outbox запускается systemd timer примерно раз в минуту, retention cleanup —
+ежедневно. Оба процесса используют общий `flock`; SQLite и audit не читаются
+вручную как штатный операционный процесс.
 
 Admin boundary:
 

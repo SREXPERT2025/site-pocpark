@@ -2,7 +2,7 @@
 
 Дата актуализации: 2026-07-24
 База аудита и текущий production release:
-`9ae9579c63dc8c3c7af96a1e46d87ee0081b56da`
+`61a4694bee55426e72bdfbb42008730c3cb2b444`
 Production-ветка: `release/demo-production-ready-20260723`
 Статус: текущий источник правды по развитию сайта после выпуска Demo Release v1.
 
@@ -27,7 +27,7 @@ Production, публикация контента, изменение инфра
 - основной сайт и Demo Release v1 опубликованы;
 - production работает под Node.js 22 и Next.js 14.2.35;
 - reverse proxy — Nginx;
-- release SHA — `9ae9579c63dc8c3c7af96a1e46d87ee0081b56da`;
+- release SHA — `61a4694bee55426e72bdfbb42008730c3cb2b444`;
 - `/`, `/demo`, `/demo/gostevaya-zayavka`, `/demo/web-skidki` и
   `/demo/vladelec-parkovki` отвечают `200`;
 - `robots.txt` открыт для обхода и содержит ссылку на sitemap;
@@ -133,8 +133,7 @@ Node.js 26 воспроизвёл `500` в demo API при обращении к
 
 ### P0. LEAD-OPS-002 — замкнуть обработку demo-лида
 
-Сейчас consented feedback lead сохраняется в `demo_feedback_leads`, но
-операционная обработка не замкнута.
+Статус: выполнен и принят в production 2026-07-24.
 
 Read-only аудит 2026-07-24 подтвердил два несвязанных контура:
 
@@ -149,7 +148,7 @@ Read-only аудит 2026-07-24 подтвердил два несвязанны
 Decision packet:
 `docs/site/LEAD_OPS_002_DECISION_20260724.md`.
 
-L1, L2 и L3 реализованы локально в feature-ветке:
+По результатам аудита реализованы и опубликованы:
 
 - отдельная schema migration `lead_registry_foundation`;
 - `lead_records`, `lead_submissions`, `lead_status_events`;
@@ -169,28 +168,26 @@ L1, L2 и L3 реализованы локально в feature-ветке:
 - admin `noindex`/`no-store`, запрет iframe и исключение Метрики;
 - автоматические и локальные browser/API smoke.
 
-Production не изменён: SQLite не создан, feature gates выключены, worker не
-запускался и реальные сообщения не отправлялись.
-
-Нужно:
-
-- подготовить отдельные production-пароли Андрея и Сергея без передачи в чат;
-- подготовить server-only session secret, backup и rollback;
-- выполнить L4 в отдельное согласованное окно на одной TEST-заявке;
-- исключить ручное чтение production SQLite как постоянный процесс.
-
-Локальная ops-подготовка L4 завершена:
+Production L4:
 
 - CLI теперь загружает `.env.production` явно;
 - retention cleanup отделена от внешней отправки;
 - env configurator обновляет только allowlisted lead-ключи атомарно, с backup
   и без вывода секретов;
 - подготовлены systemd templates worker/cleanup с общим `flock`;
-- подготовлены staged release, acceptance и rollback;
-- read-only VPS preflight выполнен 2026-07-24: production SHA/branch и
-  Node.js 22 подтверждены, PM2 online, MAX lead keys присутствуют, места
-  достаточно;
-- VPS, release-ветка, PM2, env, SQLite, systemd и MAX не изменялись.
+- выполнены backup, staged release, acceptance и сохранён rollback;
+- registry работает вне Git checkout в
+  `/var/lib/rospark-leads/lead-registry.sqlite`;
+- Андрей и Сергей вошли под персональными ролями;
+- одна маркированная TEST-заявка один раз доставлена в MAX;
+- подтверждён workflow `new → assigned → contacted → closed(test)`;
+- outbox и cleanup systemd timers активны;
+- production SHA:
+  `61a4694bee55426e72bdfbb42008730c3cb2b444`.
+
+Дальше задача переходит из разработки в эксплуатационный контроль: следить за
+`failed/dead`, SLA первого контакта и сроками retention без ручного чтения
+SQLite.
 
 ### P0. DOCS-OPS-001 — поддерживать один источник правды
 
@@ -514,8 +511,8 @@ production-зависимостей уровня high, включая прямы
 3. `ANALYTICS-001-C` — семь целей созданы, production `reachGoal` и параметры
    подтверждены, первый dashboard подготовлен, host guard опубликован; далее
    не-QA данные и полная demo-воронка.
-4. `LEAD-OPS-002` — L1–L3 и ops-пакет L4 подготовлены локально, read-only VPS
-   preflight пройден; далее отдельное окно, backup, секреты и согласованный L4.
+4. `LEAD-OPS-002` — выполнен 2026-07-24; далее эксплуатационный мониторинг
+   очереди, SLA и retention.
 5. `DEMO-GROWTH-001` — контекстные входы и сценарий коммерческого показа
    опубликованы; далее измерение переходов и завершения сценариев.
 6. `CONTENT-DEMO-001` — первые три demo-кластера.

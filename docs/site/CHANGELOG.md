@@ -7,6 +7,29 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-07-24 — production `LEAD-OPS-002 / L4`
+
+- выполнен проверенный backup env, release state и demo SQLite:
+  `/root/rospark-backups/lead-ops-l4-20260724T122213Z`;
+- production fast-forward:
+  `c2a0e955b8747e3005da28e3fe9981f01fa45488` →
+  `61a4694bee55426e72bdfbb42008730c3cb2b444`;
+- staging `npm ci`, три lead-теста, typecheck, lint и build прошли;
+- создан отдельный registry
+  `/var/lib/rospark-leads/lead-registry.sqlite`;
+- `.env.production`, registry и каталог приведены к mode `600/600/700`;
+- включены registry, защищённый admin и outbox processing;
+- подтверждены персональные роли Андрея и Сергея;
+- внешний desktop/mobile smoke подтвердил noindex, отсутствие Метрики,
+  публичного layout, overflow и console errors;
+- одна маркированная TEST-заявка доставлена в MAX ровно один раз;
+- outbox завершён `sent`, `attempts=1`, `error=none`;
+- workflow завершён
+  `new → assigned(sergey) → contacted → closed(test)`;
+- systemd outbox/cleanup timers установлены, активны и завершаются успешно;
+- PM2 остаётся online, SQLite integrity и foreign keys проверены;
+- TEST-лид и rollback build сохранены как acceptance evidence.
+
 ## 2026-07-24 — локальные L1–L3 `LEAD-OPS-002`
 
 ### Подтверждено
