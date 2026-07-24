@@ -35,9 +35,11 @@ const {
 const {
   buildLeadAdminCsv,
   deleteLeadForAdmin,
+  getLeadAdminAnalytics,
   getLeadAdminSummary,
   listLeadAdminLeads,
   recordLeadAdminAudit,
+  moscowWorkingMinutesBetween,
   transitionLeadForAdmin,
 } = require(path.join(repoRoot, 'app/lib/lead-admin-core.ts'));
 const {
@@ -189,6 +191,49 @@ const summary = getLeadAdminSummary(db);
 assert.equal(summary.statuses.closed, 1);
 assert.equal(summary.statuses.new, 2);
 assert.equal(summary.outbox.pending, 3);
+assert.equal(
+  moscowWorkingMinutesBetween(
+    Date.parse('2026-07-24T14:30:00.000Z'),
+    Date.parse('2026-07-27T07:15:00.000Z'),
+  ),
+  45,
+);
+const analytics = getLeadAdminAnalytics(db, {}, {
+  nowMs: baseTime + 30 * 60_000,
+});
+assert.deepEqual(analytics.funnel, {
+  received: 3,
+  assigned: 1,
+  contacted: 1,
+  closed: 1,
+});
+assert.deepEqual(analytics.submissions, {
+  received: 3,
+  duplicates: 0,
+});
+assert.deepEqual(analytics.firstContactSla, {
+  targetWorkingMinutes: 60,
+  eligible: 3,
+  met: 1,
+  breached: 0,
+  pending: 2,
+  averageWorkingMinutes: 2,
+});
+assert.equal(analytics.sources.length, 2);
+assert.equal(analytics.sources[0].source, 'contacts-form');
+assert.equal(analytics.sources[0].submissions, 2);
+assert.ok(!JSON.stringify(analytics).includes('Алексей'));
+assert.ok(!JSON.stringify(analytics).includes('79990000031'));
+assert.ok(!JSON.stringify(analytics).includes('Нужна консультация'));
+assert.equal(
+  getLeadAdminAnalytics(db, {
+    fromMs: baseTime + 1_500,
+    toMs: baseTime + 3_000,
+  }, {
+    nowMs: baseTime + 30 * 60_000,
+  }).funnel.received,
+  1,
+);
 assert.equal(
   db.prepare(`
     SELECT COUNT(*) AS count

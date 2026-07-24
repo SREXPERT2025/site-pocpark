@@ -42,6 +42,32 @@ type LeadResponse = {
     statuses: Partial<Record<LeadStatus, number>>;
     outbox: Partial<Record<'pending' | 'processing' | 'failed' | 'dead', number>>;
   };
+  analytics: {
+    funnel: {
+      received: number;
+      assigned: number;
+      contacted: number;
+      closed: number;
+    };
+    submissions: {
+      received: number;
+      duplicates: number;
+    };
+    firstContactSla: {
+      targetWorkingMinutes: 60;
+      eligible: number;
+      met: number;
+      breached: number;
+      pending: number;
+      averageWorkingMinutes: number | null;
+    };
+    sources: Array<{
+      source: string;
+      sourcePage: string | null;
+      submissions: number;
+      duplicates: number;
+    }>;
+  };
 };
 
 type Filters = {
@@ -84,6 +110,11 @@ function dateTime(value: string | null) {
 function phone(value: string) {
   if (!/^7\d{10}$/.test(value)) return value;
   return `+7 (${value.slice(1, 4)}) ${value.slice(4, 7)}-${value.slice(7, 9)}-${value.slice(9)}`;
+}
+
+function percentage(value: number, total: number) {
+  if (total === 0) return '—';
+  return `${Math.round((value / total) * 100)}%`;
 }
 
 function queryString(filters: Filters) {
@@ -277,6 +308,104 @@ export default function LeadAdminDashboard({
             <div className="text-sm text-slate-500">Ошибки доставки</div>
             <div className="mt-1 text-3xl font-bold">
               {(data?.summary.outbox.failed ?? 0) + (data?.summary.outbox.dead ?? 0)}
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5" aria-label="Аналитика обработки">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold">Обработка за выбранный период</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Рабочее время: пн–пт, 10:00–18:00 по Москве. Персональные данные в показатели не входят.
+              </p>
+            </div>
+            <div className="rounded-full bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-800">
+              SLA первого контакта · 1 рабочий час
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            {([
+              ['Получено лидов', data?.analytics.funnel.received ?? 0],
+              ['Назначено', data?.analytics.funnel.assigned ?? 0],
+              ['Первый контакт', data?.analytics.funnel.contacted ?? 0],
+              ['Закрыто', data?.analytics.funnel.closed ?? 0],
+              ['Повторных заявок', data?.analytics.submissions.duplicates ?? 0],
+              [
+                'Среднее до контакта',
+                data?.analytics.firstContactSla.averageWorkingMinutes === null
+                  || data?.analytics.firstContactSla.averageWorkingMinutes === undefined
+                  ? '—'
+                  : `${data.analytics.firstContactSla.averageWorkingMinutes} мин`,
+              ],
+            ] as const).map(([label, value]) => (
+              <div key={label} className="rounded-xl bg-slate-50 p-3">
+                <div className="text-xs text-slate-500">{label}</div>
+                <div className="mt-1 text-2xl font-bold">{value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(260px,0.8fr)_minmax(360px,1.2fr)]">
+            <div className="rounded-xl border border-slate-200 p-4">
+              <div className="text-sm font-semibold">Соблюдение SLA</div>
+              <div className="mt-3 flex items-end gap-3">
+                <div className="text-4xl font-bold text-blue-700">
+                  {percentage(
+                    data?.analytics.firstContactSla.met ?? 0,
+                    (data?.analytics.firstContactSla.met ?? 0)
+                      + (data?.analytics.firstContactSla.breached ?? 0),
+                  )}
+                </div>
+                <div className="pb-1 text-sm text-slate-500">
+                  {data?.analytics.firstContactSla.met ?? 0} из {
+                    (data?.analytics.firstContactSla.met ?? 0)
+                      + (data?.analytics.firstContactSla.breached ?? 0)
+                  } проверенных
+                </div>
+              </div>
+              <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <dt className="text-slate-500">Просрочено</dt>
+                  <dd className="font-semibold">{data?.analytics.firstContactSla.breached ?? 0}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500">Ещё в сроке</dt>
+                  <dd className="font-semibold">{data?.analytics.firstContactSla.pending ?? 0}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="overflow-hidden rounded-xl border border-slate-200">
+              <div className="border-b border-slate-200 px-4 py-3 text-sm font-semibold">
+                Источники заявок
+              </div>
+              {data?.analytics.sources.length ? (
+                <div className="divide-y divide-slate-100">
+                  {data.analytics.sources.map((source) => (
+                    <div
+                      key={`${source.source}:${source.sourcePage ?? ''}`}
+                      className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-3 text-sm"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{source.source}</div>
+                        <div className="truncate text-xs text-slate-500">{source.sourcePage || 'Страница не указана'}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold">{source.submissions}</div>
+                        <div className="text-xs text-slate-500">заявок</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold">{source.duplicates}</div>
+                        <div className="text-xs text-slate-500">повторов</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="px-4 py-6 text-sm text-slate-500">За период заявок нет.</p>
+              )}
             </div>
           </div>
         </section>

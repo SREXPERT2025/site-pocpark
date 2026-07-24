@@ -60,6 +60,38 @@ export type LeadAdminListItem = {
   latestIsDuplicate: boolean;
 };
 
+export type LeadAdminAnalytics = {
+  period: {
+    fromMs: number | null;
+    toMs: number | null;
+    timezone: 'Europe/Moscow';
+  };
+  funnel: {
+    received: number;
+    assigned: number;
+    contacted: number;
+    closed: number;
+  };
+  submissions: {
+    received: number;
+    duplicates: number;
+  };
+  firstContactSla: {
+    targetWorkingMinutes: 60;
+    eligible: number;
+    met: number;
+    breached: number;
+    pending: number;
+    averageWorkingMinutes: number | null;
+  };
+  sources: Array<{
+    source: string;
+    sourcePage: string | null;
+    submissions: number;
+    duplicates: number;
+  }>;
+};
+
 function id() {
   return randomBytes(16).toString('hex');
 }
@@ -320,6 +352,191 @@ export function getLeadAdminSummary(db: Database.Database) {
   return {
     statuses: Object.fromEntries(statuses.map((item) => [item.status, item.count])),
     outbox: Object.fromEntries(outbox.map((item) => [item.status, item.count])),
+  };
+}
+
+const MOSCOW_OFFSET_MS = 3 * 60 * 60 * 1000;
+const WORKDAY_START_HOUR = 10;
+const WORKDAY_END_HOUR = 18;
+
+export function moscowWorkingMinutesBetween(startMs: number, endMs: number) {
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+    return 0;
+  }
+
+  const startDay = Math.floor((startMs + MOSCOW_OFFSET_MS) / 86_400_000);
+  const endDay = Math.floor((endMs + MOSCOW_OFFSET_MS) / 86_400_000);
+  let workingMs = 0;
+
+  for (let day = startDay; day <= endDay; day += 1) {
+    const localMidnightAsUtc = day * 86_400_000;
+    const weekday = new Date(localMidnightAsUtc).getUTCDay();
+    if (weekday === 0 || weekday === 6) continue;
+
+    const workStart = localMidnightAsUtc
+      + WORKDAY_START_HOUR * 60 * 60 * 1000
+      - MOSCOW_OFFSET_MS;
+    const workEnd = localMidnightAsUtc
+      + WORKDAY_END_HOUR * 60 * 60 * 1000
+      - MOSCOW_OFFSET_MS;
+    workingMs += Math.max(
+      0,
+      Math.min(endMs, workEnd) - Math.max(startMs, workStart),
+    );
+  }
+
+  return Math.round(workingMs / 60_000);
+}
+
+export function getLeadAdminAnalytics(
+  db: Database.Database,
+  filters: Pick<LeadAdminListFilters, 'fromMs' | 'toMs'> = {},
+  options: { nowMs?: number } = {},
+): LeadAdminAnalytics {
+  if (
+    (filters.fromMs !== undefined && !Number.isFinite(filters.fromMs)) ||
+    (filters.toMs !== undefined && !Number.isFinite(filters.toMs)) ||
+    (
+      filters.fromMs !== undefined &&
+      filters.toMs !== undefined &&
+      filters.fromMs >= filters.toMs
+    )
+  ) {
+    throw new Error('INVALID_ANALYTICS_PERIOD');
+  }
+
+  const leadConditions: string[] = [];
+  const leadParameters: number[] = [];
+  const submissionConditions: string[] = [];
+  const submissionParameters: number[] = [];
+  if (filters.fromMs !== undefined) {
+    leadConditions.push('created_at_ms >= ?');
+    leadParameters.push(filters.fromMs);
+    submissionConditions.push('received_at_ms >= ?');
+    submissionParameters.push(filters.fromMs);
+  }
+  if (filters.toMs !== undefined) {
+    leadConditions.push('created_at_ms < ?');
+    leadParameters.push(filters.toMs);
+    submissionConditions.push('received_at_ms < ?');
+    submissionParameters.push(filters.toMs);
+  }
+  const leadWhere = leadConditions.length > 0
+    ? `WHERE ${leadConditions.join(' AND ')}`
+    : '';
+  const submissionWhere = submissionConditions.length > 0
+    ? `WHERE ${submissionConditions.join(' AND ')}`
+    : '';
+
+  const leads = db.prepare(`
+    SELECT
+      created_at_ms,
+      assigned_at,
+      first_contact_at,
+      closed_at
+    FROM lead_records
+    ${leadWhere}
+  `).all(...leadParameters) as Array<{
+    created_at_ms: number;
+    assigned_at: string | null;
+    first_contact_at: string | null;
+    closed_at: string | null;
+  }>;
+  const submissions = db.prepare(`
+    SELECT
+      COUNT(*) AS received,
+      COALESCE(SUM(is_duplicate), 0) AS duplicates
+    FROM lead_submissions
+    ${submissionWhere}
+  `).get(...submissionParameters) as {
+    received: number;
+    duplicates: number;
+  };
+  const sources = db.prepare(`
+    SELECT
+      source,
+      source_page,
+      COUNT(*) AS submissions,
+      COALESCE(SUM(is_duplicate), 0) AS duplicates
+    FROM lead_submissions
+    ${submissionWhere}
+    GROUP BY source, source_page
+    ORDER BY submissions DESC, source ASC, source_page ASC
+    LIMIT 12
+  `).all(...submissionParameters) as Array<{
+    source: string;
+    source_page: string | null;
+    submissions: number;
+    duplicates: number;
+  }>;
+
+  const nowMs = options.nowMs ?? Date.now();
+  const contactMinutes: number[] = [];
+  let assigned = 0;
+  let contacted = 0;
+  let closed = 0;
+  let met = 0;
+  let breached = 0;
+  let pending = 0;
+
+  for (const lead of leads) {
+    if (lead.assigned_at) assigned += 1;
+    if (lead.first_contact_at) contacted += 1;
+    if (lead.closed_at) closed += 1;
+
+    const contactAtMs = lead.first_contact_at
+      ? Date.parse(lead.first_contact_at)
+      : null;
+    const elapsed = moscowWorkingMinutesBetween(
+      lead.created_at_ms,
+      contactAtMs ?? nowMs,
+    );
+    if (contactAtMs !== null) {
+      contactMinutes.push(elapsed);
+      if (elapsed <= 60) met += 1;
+      else breached += 1;
+    } else if (elapsed > 60) {
+      breached += 1;
+    } else {
+      pending += 1;
+    }
+  }
+
+  return {
+    period: {
+      fromMs: filters.fromMs ?? null,
+      toMs: filters.toMs ?? null,
+      timezone: 'Europe/Moscow',
+    },
+    funnel: {
+      received: leads.length,
+      assigned,
+      contacted,
+      closed,
+    },
+    submissions: {
+      received: submissions.received,
+      duplicates: submissions.duplicates,
+    },
+    firstContactSla: {
+      targetWorkingMinutes: 60,
+      eligible: leads.length,
+      met,
+      breached,
+      pending,
+      averageWorkingMinutes: contactMinutes.length > 0
+        ? Math.round(
+          contactMinutes.reduce((total, value) => total + value, 0)
+          / contactMinutes.length,
+        )
+        : null,
+    },
+    sources: sources.map((item) => ({
+      source: item.source,
+      sourcePage: item.source_page,
+      submissions: item.submissions,
+      duplicates: item.duplicates,
+    })),
   };
 }
 

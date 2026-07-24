@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { leadAdminJson, requireLeadAdmin } from '@/app/lib/lead-admin-api';
 import {
+  getLeadAdminAnalytics,
   getLeadAdminSummary,
   listLeadAdminLeads,
   recordLeadAdminAudit,
@@ -36,6 +37,10 @@ export async function GET(request: NextRequest) {
     return leadAdminJson({
       ...result,
       summary: getLeadAdminSummary(db),
+      analytics: getLeadAdminAnalytics(db, {
+        fromMs: filters.fromMs,
+        toMs: filters.toMs,
+      }),
       viewer: {
         displayName: auth.session.displayName,
         role: auth.session.role,
