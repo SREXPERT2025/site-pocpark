@@ -4,14 +4,14 @@
 Задача: `ANALYTICS-001-C`  
 Счётчик: `110980303`  
 Владелец: Yandex ID `radicom`  
-Статус: цели созданы; hard load и SPA-отправка подтверждены на production;
-первый технический dashboard собран; production-host guard опубликован;
-локально подготовлено восьмое privacy-safe событие входа в demo/quiz;
-накопление не-QA данных продолжается
+Статус: восемь ручных целей созданы; hard load и SPA-отправка подтверждены на
+production; первый технический dashboard собран; production-host guard и
+privacy-safe событие входа в demo/quiz опубликованы; накопление не-QA данных
+продолжается
 
 ## 1. Созданные цели
 
-В production-счётчике используется 7 из 200 доступных целей.
+В production-счётчике используется 8 из 200 доступных ручных целей.
 
 | Название в Метрике | Тип и условие | Что измеряет |
 |---|---|---|
@@ -22,15 +22,23 @@
 | Demo — открыта детализация владельца | JavaScript event содержит `rospark_demo_owner_detail_view` | открытие обезличенной детализации арендатора |
 | Demo — результат feedback-лида | JavaScript event содержит `rospark_demo_feedback_lead` | завершение сохранения feedback lead с результатом `saved` или `failed` |
 | Форма — успешная отправка | JavaScript event содержит `rospark_form_success` | подтверждённый клиентом успешный ответ lead API |
+| Воронка — вход в demo/quiz | JavaScript event содержит `rospark_funnel_entry` | переход с публичного контента в `/demo` или `/quiz` |
 
 Имена целей оплаты и feedback намеренно нейтральные. Текущие события содержат
 поле `result`, поэтому без дополнительного условия цель включает и успешный,
 и неуспешный результат. Для отчёта успехи нужно отделять по event parameters
 либо позднее ввести отдельные success-only события.
 
-Локально подготовлен, но ещё не опубликован и не создан как восьмая цель
-Метрики, event `rospark_funnel_entry`. Он измеряет переход с публичного
-контента в `/demo` или `/quiz` и содержит только:
+Восьмая ручная цель Метрики создана 2026-07-25:
+
+```text
+Название: Воронка — вход в demo/quiz
+ID: 588884963
+Event: rospark_funnel_entry
+```
+
+Событие измеряет переход с публичного контента в `/demo` или `/quiz` и
+содержит только:
 
 ```text
 destination = demo | quiz
@@ -39,8 +47,8 @@ landing_group = home | solutions | features | equipment | cases |
 ```
 
 Полный URL источника, query/UTM, текст CTA и динамические slug в событие не
-попадают. До отдельного production release и создания цели считать этот event
-production-метрикой нельзя.
+попадают. Release `89c045d79535169527347c40c438971fb560995d` опубликован на
+production.
 
 ## 2. Privacy-контракт
 
@@ -101,6 +109,27 @@ reliability backup: /root/rospark-backups/analytics-goals-20260724T051826Z
 host guard backup: /root/rospark-backups/analytics-host-guard-20260724T070217Z
 ```
 
+Funnel entry deployment от 2026-07-25:
+
+```text
+SHA: 89c045d79535169527347c40c438971fb560995d
+build ID: bYt3AjLTGWWnwnpg84KWl
+backup: /root/rospark-backups/analytics-funnel-20260725T125007Z
+rollback build: /var/www/rospark-release-builds/next-26740a5-20260725T125007Z
+goal ID: 588884963
+```
+
+Production browser smoke выполнил по одному переходу:
+
+```text
+/resheniya/biznes-centry → /demo
+/resheniya/biznes-centry → /quiz?source=request
+```
+
+Формы не отправлялись, PII не создавались. Сразу после проверки отчёт новой
+цели показывал 0 визитов; достижение двух событий нужно подтвердить после
+обработки данных Метрикой.
+
 ## 4. Первый срез отчётов
 
 Метрика обработала первые данные за 18–24 июля:
@@ -136,5 +165,5 @@ host guard backup: /root/rospark-backups/analytics-host-guard-20260724T070217Z
    статусы без PII;
 5. добавить месячный SEO/GEO/conversion dashboard и ответственного за
    контроль.
-6. отдельным release опубликовать `rospark_funnel_entry`, создать восьмую цель
-   и проверить по одному контролируемому переходу в demo и quiz без PII.
+6. подтвердить в отчёте два контрольных достижения `rospark_funnel_entry` и
+   разрешённые параметры `destination` / `landing_group`.

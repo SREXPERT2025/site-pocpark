@@ -7,6 +7,28 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-07-25 — production-входы в demo/quiz `ANALYTICS-001-C`
+
+- production fast-forward:
+  `26740a5a0fe485b6ff3427283f3461d4dddd22ba` →
+  `89c045d79535169527347c40c438971fb560995d`;
+- backup:
+  `/root/rospark-backups/analytics-funnel-20260725T125007Z`;
+- production build ID: `bYt3AjLTGWWnwnpg84KWl`;
+- PM2 online, outbox и cleanup timers active, обе SQLite прошли
+  `quick_check`;
+- outbox `ready=0`, новых сообщений в MAX не отправлялось;
+- создана восьмая ручная цель Метрики
+  `Воронка — вход в demo/quiz`, ID `588884963`, event
+  `rospark_funnel_entry`;
+- на production выполнено по одному контролируемому переходу с
+  `/resheniya/biznes-centry` в `/demo` и `/quiz?source=request`;
+- формы не отправлялись, PII не создавались;
+- отчёт новой цели сразу после smoke ещё показывал 0 визитов; подтверждение
+  двух достижений после обработки Метрикой остаётся открытым пунктом;
+- rollback build сохранён:
+  `/var/www/rospark-release-builds/next-26740a5-20260725T125007Z`.
+
 ## 2026-07-25 — production server-side сводка `ANALYTICS-001-C`
 
 - production fast-forward:

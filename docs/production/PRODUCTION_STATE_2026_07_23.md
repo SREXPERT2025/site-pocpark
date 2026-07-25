@@ -14,9 +14,10 @@ PM2, SQLite или зависимости.
 
 ## Release
 
-- Статус: Production Release v1, analytics/demo-growth, `LEAD-OPS-002 / L4`
-  и закрытая server-side сводка обработки успешно выпущены.
-- Release SHA: `26740a5a0fe485b6ff3427283f3461d4dddd22ba`.
+- Статус: Production Release v1, analytics/demo-growth, `LEAD-OPS-002 / L4`,
+  закрытая server-side сводка обработки и privacy-safe входы в demo/quiz
+  успешно выпущены.
+- Release SHA: `89c045d79535169527347c40c438971fb560995d`.
 - Production branch: `release/demo-production-ready-20260723`.
 
 ## Production-окружение
@@ -45,7 +46,11 @@ PM2, SQLite или зависимости.
 - После `Принять` загружается `tag.js?id=110980303` и отправляется pageview.
 - После изменения выбора на `Отклонить необязательные` страница
   перезагружается без ресурсов Метрики.
-- В production-счётчике создано семь целей `ANALYTICS-001-C`.
+- В production-счётчике создано восемь ручных целей `ANALYTICS-001-C`.
+- Цель `Воронка — вход в demo/quiz` имеет ID `588884963` и условие
+  `rospark_funnel_entry`.
+- Контрольные переходы с `/resheniya/biznes-centry` в `/demo` и
+  `/quiz?source=request` успешно выполнены на production без отправки форм.
 - Прямое открытие `/demo/gostevaya-zayavka` отправляет одну цель
   `rospark_demo_scenario_view`.
 - SPA-переход `/demo → /demo/gostevaya-zayavka` отправляет одну цель без
@@ -69,10 +74,39 @@ PM2, SQLite или зависимости.
 
 Analytics release также не означает, что уже:
 
-- накоплены и подтверждены данные всех семи целей в отчёте Метрики;
+- накоплены и подтверждены данные всех восьми ручных целей в отчёте Метрики;
 - собрана сквозная demo-воронка и ежемесячный dashboard;
 - назначен резервный администратор счётчика;
 - накоплен достаточный объём данных для SEO/GEO-выводов.
+
+## Проверка funnel entry release от 2026-07-25
+
+- backup:
+  `/root/rospark-backups/analytics-funnel-20260725T125007Z`;
+- fast-forward:
+  `26740a5a0fe485b6ff3427283f3461d4dddd22ba` →
+  `89c045d79535169527347c40c438971fb560995d`;
+- staging и production SHA:
+  `89c045d79535169527347c40c438971fb560995d`;
+- staging privacy smoke, typecheck, lint и Node.js 22 build — успешно;
+- production build ID: `bYt3AjLTGWWnwnpg84KWl`;
+- `/`, `/resheniya/biznes-centry`, `/demo`, `/quiz` и
+  `/admin/leads/login` — `200`;
+- `/admin/leads` без сессии — `307`, admin и demo API без сессии — `401`;
+- demo SQLite и lead registry: `quick_check=ok`;
+- PM2 `rospark-site` — `online`, outbox и cleanup timers — `active`;
+- outbox: `ready=0`, ранее отправлено `sent=1`;
+- новых сообщений в MAX не отправлялось;
+- rollback build:
+  `/var/www/rospark-release-builds/next-26740a5-20260725T125007Z`;
+- в Метрике создана восьмая ручная цель
+  `Воронка — вход в demo/quiz`, ID `588884963`, условие
+  `rospark_funnel_entry`;
+- production browser smoke выполнил ровно по одному контролируемому переходу
+  с `/resheniya/biznes-centry` в `/demo` и `/quiz?source=request`;
+- формы не заполнялись и не отправлялись, персональные данные не создавались;
+- сразу после smoke отчёт новой цели ещё показывал 0 визитов; поступление двух
+  достижений нужно подтвердить после обработки данных Метрикой.
 
 ## Проверка server-side analytics release от 2026-07-25
 
@@ -229,8 +263,9 @@ Analytics release также не означает, что уже:
 5. После каждого изменения production обновлять этот файл точным SHA, датой,
    фактическими путями и результатами smoke.
 
-6. Для аналитики продолжить `ANALYTICS-001-C`: подтвердить накопление семи
-   целей в интерфейсе Метрики и собрать dashboard без PII.
+6. Для аналитики продолжить `ANALYTICS-001-C`: подтвердить накопление восьми
+   ручных целей в интерфейсе Метрики, включая два контрольных
+   `rospark_funnel_entry`, и обновить dashboard без PII.
 
 7. Для `LEAD-OPS-002` контролировать `failed/dead`, SLA первого контакта,
    ежедневную retention cleanup и наличие свежего backup. TEST-лид не удалять

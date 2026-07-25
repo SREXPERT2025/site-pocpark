@@ -305,9 +305,9 @@ Production-статус `ANALYTICS-001-B`:
 
 Статус `ANALYTICS-001-C`:
 
-- в счётчике создано семь целей: `/demo`, открытие сценария, создание гостевой
-  заявки, завершение попытки оплаты, детализация владельца, результат
-  feedback-лида и успешная отправка формы;
+- в счётчике создано восемь ручных целей: `/demo`, открытие сценария,
+  создание гостевой заявки, завершение попытки оплаты, детализация владельца,
+  результат feedback-лида, успешная отправка формы и вход в demo/quiz;
 - production browser smoke подтвердил `reachGoal`
   `rospark_demo_scenario_view` с параметром `demo_name` без PII;
 - release `80d64da4b2cdd3b6af7f837709722db66702930d` устранил риск потери события
@@ -327,14 +327,20 @@ Production-статус `ANALYTICS-001-B`:
   `26740a5a0fe485b6ff3427283f3461d4dddd22ba` выполнен 2026-07-25;
 - production browser smoke подтвердил вход Андрея, правильные TEST-агрегаты,
   отсутствие PII, Метрики, публичного layout, overflow и console errors;
-- локально подготовлено событие `rospark_funnel_entry` для переходов с
-  публичного контента в `/demo` и `/quiz`;
+- событие `rospark_funnel_entry` для переходов с публичного контента в
+  `/demo` и `/quiz` опубликовано в production release
+  `89c045d79535169527347c40c438971fb560995d`;
 - safe landing context ограничен фиксированной категорией страницы и не
   содержит полный URL, query/UTM, текст CTA или динамический slug;
-- privacy smoke, typecheck, lint, Node.js 22 build и локальные переходы в demo
-  и quiz пройдены; production и счётчик этим блоком не изменялись;
+- privacy smoke, typecheck, lint, Node.js 22 build и production-переходы в
+  demo и quiz пройдены;
+- создана восьмая ручная цель `Воронка — вход в demo/quiz`, ID `588884963`;
+- два контрольных события выполнены без отправки форм и PII, но их появление
+  в отчёте ожидает обработки Метрикой;
 - backup:
   `/root/rospark-backups/analytics-server-summary-20260725T115320Z`;
+- funnel release backup:
+  `/root/rospark-backups/analytics-funnel-20260725T125007Z`;
 - подробности записаны в `docs/site/ANALYTICS_GOALS_20260724.md`;
 - backup release:
   `/root/rospark-backups/analytics-host-guard-20260724T070217Z`.
@@ -343,8 +349,8 @@ Production-статус `ANALYTICS-001-B`:
 
 - назначить резервного администратора и правила доступа;
 - дождаться не-QA данных остальных шести целей и параметров `result`;
-- отдельным release опубликовать `rospark_funnel_entry`, создать восьмую цель
-  Метрики и проверить по одному контролируемому переходу в demo и quiz;
+- после обработки данных подтвердить в Метрике два контрольных
+  `rospark_funnel_entry` и разрешённые параметры;
 - собирать воронку
   `источник → контент → demo/quiz → consent → lead → обработка`;
 - вести ежемесячный SEO/GEO/conversion dashboard; первый baseline создан в
@@ -527,11 +533,11 @@ production-зависимостей уровня high, включая прямы
 2. `SEO-OPS-001-B` — первый контроль выполнен 2026-07-24: Google sitemap
    обработан успешно, отчёт индексирования ещё формируется, Яндекс сохраняет
    sitemap в очереди.
-3. `ANALYTICS-001-C` — семь целей созданы, production `reachGoal` и параметры
+3. `ANALYTICS-001-C` — восемь ручных целей созданы, production `reachGoal` и параметры
    подтверждены, первый dashboard и server-side сводка без PII опубликованы,
-   host guard работает; безопасные переходы в demo/quiz подготовлены локально,
-   далее отдельный release, восьмая цель, не-QA данные и полная атрибуционная
-   demo-воронка.
+   host guard работает; безопасные переходы в demo/quiz опубликованы и
+   production smoke выполнен, далее подтверждение двух событий после обработки,
+   не-QA данные и полная атрибуционная demo-воронка.
 4. `LEAD-OPS-002` — выполнен 2026-07-24; далее эксплуатационный мониторинг
    очереди, SLA и retention.
 5. `DEMO-GROWTH-001` — контекстные входы и сценарий коммерческого показа
