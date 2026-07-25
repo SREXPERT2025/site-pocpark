@@ -7,6 +7,28 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-07-25 — production server-side сводка `ANALYTICS-001-C`
+
+- production fast-forward:
+  `61a4694bee55426e72bdfbb42008730c3cb2b444` →
+  `26740a5a0fe485b6ff3427283f3461d4dddd22ba`;
+- backup env, demo SQLite и lead registry:
+  `/root/rospark-backups/analytics-server-summary-20260725T115320Z`;
+- staging lead registry/admin/CLI tests, analytics privacy test, typecheck,
+  lint и Node.js 22 production build прошли;
+- production build ID: `hpgikJ4D38MvlFmCENRHP`;
+- PM2 остаётся online, outbox и cleanup timers активны;
+- обе SQLite прошли `quick_check`, foreign key errors отсутствуют;
+- outbox не создавал новых отправок: `sent=1`, `ready=0`;
+- внешний вход Андрея подтверждён;
+- production-сводка показывает один закрытый TEST-лид, первый контакт за
+  5 минут, `100%` соблюдения срока, один источник и ноль повторов;
+- в агрегированном блоке отсутствуют имя, телефон и lead ID;
+- admin не загружает Метрику и публичный layout; desktop/mobile overflow и
+  browser console errors отсутствуют;
+- rollback build сохранён:
+  `/var/www/rospark-release-builds/next-61a4694`.
+
 ## 2026-07-24 — локальная server-side сводка `ANALYTICS-001-C`
 
 - в закрытый реестр лидов добавлена агрегированная воронка
@@ -20,7 +42,7 @@
   ID;
 - серверные статусы не отправляются в Яндекс Метрику;
 - `test:lead-admin`, lint, Node.js 22 build и локальный browser smoke пройдены;
-- production и VPS не изменялись; публикация требует отдельного release.
+- этот локальный этап позднее опубликован отдельным release от 2026-07-25.
 
 ## 2026-07-24 — production `LEAD-OPS-002 / L4`
 

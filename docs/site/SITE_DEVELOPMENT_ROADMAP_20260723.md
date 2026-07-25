@@ -318,12 +318,17 @@ Production-статус `ANALYTICS-001-B`:
   Метрики production-host и исключил дальнейшую отправку localhost QA;
 - внешний smoke после host guard release подтвердил публичную demo-страницу,
   `tag.js?id=110980303` и отсутствие ошибок консоли;
-- после закрытия `LEAD-OPS-002` локально добавлена закрытая агрегированная
+- после закрытия `LEAD-OPS-002` добавлена закрытая агрегированная
   сводка `received → assigned → contacted → closed`, повторов, источников и
   первого контакта за один рабочий час;
 - агрегаты не содержат PII и не отправляются в Яндекс Метрику;
 - lead-admin tests, lint, Node.js 22 build и локальный browser smoke пройдены;
-- production release агрегированной сводки ещё не выполнялся;
+- production release
+  `26740a5a0fe485b6ff3427283f3461d4dddd22ba` выполнен 2026-07-25;
+- production browser smoke подтвердил вход Андрея, правильные TEST-агрегаты,
+  отсутствие PII, Метрики, публичного layout, overflow и console errors;
+- backup:
+  `/root/rospark-backups/analytics-server-summary-20260725T115320Z`;
 - подробности записаны в `docs/site/ANALYTICS_GOALS_20260724.md`;
 - backup release:
   `/root/rospark-backups/analytics-host-guard-20260724T070217Z`.

@@ -1,6 +1,6 @@
 # РОСПАРК: состояние Production Release v1
 
-Дата последней сверки: 24 июля 2026 года.
+Дата последней сверки: 25 июля 2026 года.
 
 ## Статус документа
 
@@ -14,9 +14,9 @@ PM2, SQLite или зависимости.
 
 ## Release
 
-- Статус: Production Release v1, analytics/demo-growth и `LEAD-OPS-002 / L4`
-  успешно выпущены.
-- Release SHA: `61a4694bee55426e72bdfbb42008730c3cb2b444`.
+- Статус: Production Release v1, analytics/demo-growth, `LEAD-OPS-002 / L4`
+  и закрытая server-side сводка обработки успешно выпущены.
+- Release SHA: `26740a5a0fe485b6ff3427283f3461d4dddd22ba`.
 - Production branch: `release/demo-production-ready-20260723`.
 
 ## Production-окружение
@@ -58,6 +58,9 @@ PM2, SQLite или зависимости.
 - `/admin/leads` доступен только по персональным ролям Андрея и Сергея.
 - MAX transactional outbox и ежедневная retention cleanup работают через
   systemd timers.
+- В закрытом `/admin/leads` опубликованы агрегаты
+  `received → assigned → contacted → closed`, повторов, источников и срока
+  первого контакта без PII.
 
 Это не означает, что:
 
@@ -70,6 +73,34 @@ Analytics release также не означает, что уже:
 - собрана сквозная demo-воронка и ежемесячный dashboard;
 - назначен резервный администратор счётчика;
 - накоплен достаточный объём данных для SEO/GEO-выводов.
+
+## Проверка server-side analytics release от 2026-07-25
+
+- backup:
+  `/root/rospark-backups/analytics-server-summary-20260725T115320Z`;
+- fast-forward:
+  `61a4694bee55426e72bdfbb42008730c3cb2b444` →
+  `26740a5a0fe485b6ff3427283f3461d4dddd22ba`;
+- staging SHA и production SHA:
+  `26740a5a0fe485b6ff3427283f3461d4dddd22ba`;
+- staging lead registry/admin/CLI tests, analytics privacy test, typecheck,
+  lint и build — успешно;
+- production build ID: `hpgikJ4D38MvlFmCENRHP`;
+- `/`, `/demo`, `/contacts`, `/admin/leads/login` — `200`;
+- `/admin/leads` без сессии — `307`, admin API без сессии — `401`;
+- demo SQLite и lead registry: `quick_check=ok`, foreign key errors
+  отсутствуют;
+- registry: один закрытый TEST-лид, одна submission, `sent=1`, `ready=0`;
+- PM2 `rospark-site` — `online`, timers — `active`;
+- новых TEST-отправок в MAX не выполнялось;
+- вход Андрея подтверждён;
+- сводка показывает один лид, назначение, контакт и закрытие, первый контакт
+  за 5 минут, `100%` срока, ноль просрочек и повторов;
+- агрегированный блок не содержит имени, телефона и lead ID;
+- admin: `noindex`, без Метрики, публичного header/footer, overflow и ошибок
+  browser console;
+- rollback build:
+  `/var/www/rospark-release-builds/next-61a4694`.
 
 ## Проверка `LEAD-OPS-002 / L4` от 2026-07-24
 
