@@ -6,6 +6,7 @@
 Владелец: Yandex ID `radicom`  
 Статус: цели созданы; hard load и SPA-отправка подтверждены на production;
 первый технический dashboard собран; production-host guard опубликован;
+локально подготовлено восьмое privacy-safe событие входа в demo/quiz;
 накопление не-QA данных продолжается
 
 ## 1. Созданные цели
@@ -26,6 +27,20 @@
 поле `result`, поэтому без дополнительного условия цель включает и успешный,
 и неуспешный результат. Для отчёта успехи нужно отделять по event parameters
 либо позднее ввести отдельные success-only события.
+
+Локально подготовлен, но ещё не опубликован и не создан как восьмая цель
+Метрики, event `rospark_funnel_entry`. Он измеряет переход с публичного
+контента в `/demo` или `/quiz` и содержит только:
+
+```text
+destination = demo | quiz
+landing_group = home | solutions | features | equipment | cases |
+                articles | company | contacts | other
+```
+
+Полный URL источника, query/UTM, текст CTA и динамические slug в событие не
+попадают. До отдельного production release и создания цели считать этот event
+production-метрикой нельзя.
 
 ## 2. Privacy-контракт
 
@@ -121,3 +136,5 @@ host guard backup: /root/rospark-backups/analytics-host-guard-20260724T070217Z
    статусы без PII;
 5. добавить месячный SEO/GEO/conversion dashboard и ответственного за
    контроль.
+6. отдельным release опубликовать `rospark_funnel_entry`, создать восьмую цель
+   и проверить по одному контролируемому переходу в demo и quiz без PII.

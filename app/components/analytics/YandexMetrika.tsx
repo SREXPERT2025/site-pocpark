@@ -80,6 +80,7 @@ export default function YandexMetrika() {
 
     window.addEventListener('rospark:lead_form_event', forwardAnalyticsEvent);
     window.addEventListener('rospark:demo_event', forwardAnalyticsEvent);
+    window.addEventListener('rospark:funnel_event', forwardAnalyticsEvent);
     flushQueuedAnalyticsEvents();
 
     return () => {
@@ -88,6 +89,7 @@ export default function YandexMetrika() {
         forwardAnalyticsEvent,
       );
       window.removeEventListener('rospark:demo_event', forwardAnalyticsEvent);
+      window.removeEventListener('rospark:funnel_event', forwardAnalyticsEvent);
     };
   }, [isEnabled, isPrivatePath]);
 

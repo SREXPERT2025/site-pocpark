@@ -15,6 +15,24 @@ export type LeadFormEventParams = {
   error_type?: 'validation' | 'network' | 'server' | 'unknown';
 };
 
+export type FunnelDestination = 'demo' | 'quiz';
+
+export type FunnelLandingGroup =
+  | 'home'
+  | 'solutions'
+  | 'features'
+  | 'equipment'
+  | 'cases'
+  | 'articles'
+  | 'company'
+  | 'contacts'
+  | 'other';
+
+export type FunnelEntryParams = {
+  destination: FunnelDestination;
+  landing_group: FunnelLandingGroup;
+};
+
 type DataLayerWindow = Window & {
   dataLayer?: Array<Record<string, unknown>>;
   __rosparkLastAnalyticsEvent?: {
@@ -101,9 +119,65 @@ function demoPayload(params: DemoEventParams) {
   });
 }
 
+function funnelEntryPayload(params: FunnelEntryParams) {
+  return {
+    destination: params.destination,
+    landing_group: params.landing_group,
+  };
+}
+
+export function classifyFunnelDestination(
+  href: string,
+  currentOrigin: string,
+): FunnelDestination | null {
+  try {
+    const url = new URL(href, currentOrigin);
+
+    if (url.origin !== currentOrigin) return null;
+    if (url.pathname === '/quiz' || url.pathname.startsWith('/quiz/')) {
+      return 'quiz';
+    }
+    if (url.pathname === '/demo' || url.pathname.startsWith('/demo/')) {
+      return 'demo';
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+export function classifyFunnelLandingGroup(
+  pathname: string,
+): FunnelLandingGroup {
+  if (pathname === '/') return 'home';
+  if (pathname === '/resheniya' || pathname.startsWith('/resheniya/')) {
+    return 'solutions';
+  }
+  if (pathname === '/vozmozhnosti' || pathname.startsWith('/vozmozhnosti/')) {
+    return 'features';
+  }
+  if (pathname === '/oborudovanie' || pathname.startsWith('/oborudovanie/')) {
+    return 'equipment';
+  }
+  if (pathname === '/keysy' || pathname.startsWith('/keysy/')) return 'cases';
+  if (pathname === '/stati' || pathname.startsWith('/stati/')) return 'articles';
+  if (pathname === '/o-kompanii' || pathname.startsWith('/o-kompanii/')) {
+    return 'company';
+  }
+  if (pathname === '/contacts' || pathname.startsWith('/contacts/')) {
+    return 'contacts';
+  }
+
+  return 'other';
+}
+
 function dispatchPrivacySafeEvent(
-  customEventName: 'rospark:lead_form_event' | 'rospark:demo_event',
-  eventName: LeadFormEventName | DemoEventName,
+  customEventName:
+    | 'rospark:lead_form_event'
+    | 'rospark:demo_event'
+    | 'rospark:funnel_event',
+  eventName: LeadFormEventName | DemoEventName | 'funnel_entry',
   params: Record<string, unknown>
 ) {
   if (typeof window === 'undefined' || !hasAnalyticsConsent()) return;
@@ -162,5 +236,13 @@ export function dispatchDemoEvent(eventName: DemoEventName, params: DemoEventPar
     'rospark:demo_event',
     eventName,
     demoPayload(params)
+  );
+}
+
+export function dispatchFunnelEntry(params: FunnelEntryParams) {
+  dispatchPrivacySafeEvent(
+    'rospark:funnel_event',
+    'funnel_entry',
+    funnelEntryPayload(params),
   );
 }

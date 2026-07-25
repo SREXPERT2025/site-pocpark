@@ -119,12 +119,67 @@ assert.deepEqual(window.dataLayer[1], {
 assert.equal('vehicle_number' in window.dataLayer[1], false);
 assert.equal('search_query' in window.dataLayer[1], false);
 
-assert.equal(browserEvents.length, 2, 'accepted events must reach the local browser contract');
+assert.equal(
+  analytics.classifyFunnelDestination(
+    '/quiz?source=kp&phone=%2B79990000000',
+    'https://www.xn--80aukedde.xn--p1ai',
+  ),
+  'quiz',
+);
+assert.equal(
+  analytics.classifyFunnelDestination(
+    'https://www.xn--80aukedde.xn--p1ai/demo/gostevaya-zayavka?yclid=private',
+    'https://www.xn--80aukedde.xn--p1ai',
+  ),
+  'demo',
+);
+assert.equal(
+  analytics.classifyFunnelDestination(
+    'https://example.com/demo',
+    'https://www.xn--80aukedde.xn--p1ai',
+  ),
+  null,
+  'external destinations must not be tracked',
+);
+assert.equal(analytics.classifyFunnelLandingGroup('/'), 'home');
+assert.equal(
+  analytics.classifyFunnelLandingGroup('/resheniya/biznes-centry'),
+  'solutions',
+);
+assert.equal(
+  analytics.classifyFunnelLandingGroup('/oborudovanie/private-looking-slug'),
+  'equipment',
+);
+assert.equal(
+  analytics.classifyFunnelLandingGroup('/unexpected/+79990000000'),
+  'other',
+);
+
+analytics.dispatchFunnelEntry({
+  destination: 'quiz',
+  landing_group: 'solutions',
+  source_page: '/resheniya/biznes-centry?phone=+79990000000',
+  link_text: 'Отправить номер телефона',
+});
+
+assert.deepEqual(window.dataLayer[2], {
+  event: 'rospark_funnel_entry',
+  destination: 'quiz',
+  landing_group: 'solutions',
+});
+assert.equal(
+  JSON.stringify(window.dataLayer[2]).includes('79990000000'),
+  false,
+  'funnel events must not include URL or link data',
+);
+
+assert.equal(browserEvents.length, 3, 'accepted events must reach the local browser contract');
 assert.equal(browserEvents[0].type, 'rospark:lead_form_event');
 assert.equal(browserEvents[1].type, 'rospark:demo_event');
+assert.equal(browserEvents[2].type, 'rospark:funnel_event');
 assert.deepEqual(
-  dataLayerLengthsAtDispatch.slice(-2),
-  [1, 2],
+  dataLayerLengthsAtDispatch.slice(-3),
+  [1, 2, 3],
   'dataLayer must contain each event before its browser event is dispatched',
 );
 

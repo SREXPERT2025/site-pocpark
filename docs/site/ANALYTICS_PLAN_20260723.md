@@ -1,10 +1,11 @@
 # РОСПАРК — план аналитики и demo-воронки
 
-Дата последней сверки: 2026-07-24
+Дата последней сверки: 2026-07-25
 Задача: `ANALYTICS-001`
 Статус: `ANALYTICS-001-A` и `ANALYTICS-001-B` реализованы, опубликованы и
-проверены; в `ANALYTICS-001-C` созданы семь целей и локально подготовлена
-закрытая агрегированная аналитика обработки лидов; этап продолжается
+проверены; в `ANALYTICS-001-C` созданы семь целей, опубликована закрытая
+агрегированная аналитика обработки лидов и локально подготовлено обезличенное
+событие входа в demo/quiz; этап продолжается
 
 ## 1. Цель
 
@@ -77,6 +78,8 @@ result
 section
 period
 consent
+destination
+landing_group
 ```
 
 `source_page` нормализуется до pathname. Query string, UTM, `gclid`, `yclid`
@@ -160,6 +163,19 @@ message
 | `rospark_demo_owner_section_view` | открыта секция кабинета |
 | `rospark_demo_owner_period_change` | выбран текущий или предыдущий месяц |
 | `rospark_demo_owner_detail_view` | открыта обезличенная детализация арендатора |
+
+#### Вход в коммерческую воронку
+
+| Event | Смысл |
+|---|---|
+| `rospark_funnel_entry` | переход с публичного контента в `/demo` или `/quiz` |
+
+Параметр `destination` допускает только `demo` или `quiz`. Контекст страницы
+ограничен фиксированной категорией `landing_group`: `home`, `solutions`,
+`features`, `equipment`, `cases`, `articles`, `company`, `contacts` или
+`other`. Полный URL источника, query string, UTM, текст ссылки и динамический
+slug в это событие не включаются. Переходы внутри `/demo` и `/quiz` не
+считаются новым входом.
 
 ## 4. Production-интеграция `ANALYTICS-001-B`
 
@@ -257,6 +273,20 @@ Release `80d64da4b2cdd3b6af7f837709722db66702930d` и внешний browser smo
 отправляются в Яндекс Метрику: текущий безопасный источник истины для них —
 защищённый реестр на VPS.
 
+Локально 2026-07-25 подготовлена следующая часть client-side воронки:
+
+- единый глобальный tracker учитывает существующие ссылки в `/demo` и `/quiz`,
+  поэтому десятки CTA не получили собственные несогласованные обработчики;
+- событие `rospark_funnel_entry` создаётся только после analytics consent;
+- в payload входят только `destination` и фиксированная `landing_group`;
+- внешние URL, полный pathname источника, query, UTM, текст CTA и неизвестные
+  поля отбрасываются;
+- переходы между внутренними demo-страницами не считаются повторным входом;
+- tracker не подключается в `/admin`;
+- `YandexMetrika` готов воспроизводить событие через существующий
+  `dataLayer → reachGoal` контракт, но production release и отдельная цель в
+  счётчике ещё не выполнялись.
+
 Проверка:
 
 - `npm run test:lead-admin` — пройден, включая SLA через выходные, период и
@@ -265,6 +295,10 @@ Release `80d64da4b2cdd3b6af7f837709722db66702930d` и внешний browser smo
 - `npm run build` под Node.js 22 — пройден;
 - локальный browser smoke подтвердил вход, сводку, две строки источников и
   корректные агрегаты;
+- privacy smoke для `rospark_funnel_entry`, typecheck, lint и build под
+  Node.js `22.23.1` — успешно;
+- локальный browser smoke подтвердил переходы в `/demo` и
+  `/quiz?source=request`, отсутствие внешнего loader Метрики и ошибок console;
 - staging и production SHA:
   `26740a5a0fe485b6ff3427283f3461d4dddd22ba`;
 - production browser smoke подтвердил вход Андрея, один закрытый TEST-лид,
@@ -284,7 +318,8 @@ Release `80d64da4b2cdd3b6af7f837709722db66702930d` и внешний browser smo
 
 - уникальных пользователей и сессии;
 - источник первого и последнего касания;
-- pageview и переходы с контентных страниц;
+- production-накопление переходов с контентных страниц;
+- production-накопление `rospark_funnel_entry` по категориям landing page;
 - завершение пути между разными demo-страницами;
 - атрибуционную связь client event с фактически сохранённым lead;
 - объединённую client/server-конверсию в одном отчёте;
@@ -314,8 +349,10 @@ production loader не заменяет проверку поступления 
 - host guard, исключающий localhost из production-счётчика, опубликован в
   release `c2a0e955b8747e3005da28e3fe9981f01fa45488`;
 - дождаться не-QA данных остальных шести целей;
-- фиксировать безопасный landing context;
-- добавить переходы в `/demo` и `/quiz`;
+- выпустить локально подготовленный безопасный landing context и переходы в
+  `/demo` и `/quiz` отдельным production release;
+- после выпуска создать и проверить отдельную цель
+  `rospark_funnel_entry` в Метрике;
 - связать client success с server-side lead receipt без PII в аналитике;
 - агрегированные статусы обработки опубликованы отдельным production release
   `26740a5a0fe485b6ff3427283f3461d4dddd22ba`;
