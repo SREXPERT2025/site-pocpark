@@ -9,6 +9,7 @@ import OrganizationJsonLd from '@/app/components/content/OrganizationJsonLd';
 import FunnelEntryTracker from '@/app/components/analytics/FunnelEntryTracker';
 import YandexMetrika from '@/app/components/analytics/YandexMetrika';
 import CookieBanner from '@/app/components/legal/CookieBanner';
+import AiWidgetPilot from '@/app/components/ai-widget/AiWidgetPilot';
 import { getMetadataBase } from '@/app/config/site-url';
 
 
@@ -64,6 +65,7 @@ export default function RootLayout({
         <FunnelEntryTracker />
         <YandexMetrika />
         <CookieBanner />
+        <AiWidgetPilot />
       </body>
     </html>
   );

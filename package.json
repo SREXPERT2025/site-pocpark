@@ -14,6 +14,7 @@
     "test:lead-registry": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_lead_registry_foundation.mjs",
     "test:lead-admin": "node scripts/test_lead_admin.mjs",
     "test:lead-cli": "node scripts/test_lead_cli_runtime.mjs",
+    "test:ai-widget-pilot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_widget_pilot.mjs",
     "lead-admin:hash-password": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/hash_lead_admin_password.mjs",
     "lead-outbox:process": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/process_lead_outbox.mjs",
     "lead-registry:cleanup": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/cleanup_lead_registry.mjs"
