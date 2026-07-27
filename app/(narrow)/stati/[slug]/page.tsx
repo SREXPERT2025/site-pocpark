@@ -103,6 +103,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
             width={1600}
             height={900}
             sizes="(min-width: 1024px) 1024px, 100vw"
+            unoptimized={process.env.CONTENT_PREVIEW_UNOPTIMIZED === 'true'}
             className="h-auto w-full object-cover"
             priority
           />
