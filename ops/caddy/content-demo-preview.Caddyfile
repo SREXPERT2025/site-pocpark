@@ -1,0 +1,54 @@
+{
+	admin 127.0.0.1:2023
+	auto_https disable_redirects
+}
+
+https://srtestrealme.ru:3001 {
+	bind 0.0.0.0
+
+	tls {
+		issuer acme
+	}
+
+	encode zstd gzip
+
+	header {
+		X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+		Cache-Control "private, no-store"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "no-referrer"
+		-Server
+	}
+
+	@robots path /robots.txt
+	handle @robots {
+		header Content-Type "text/plain; charset=utf-8"
+		respond "User-agent: *\nDisallow: /\n" 200
+	}
+
+	@sitemap path /sitemap.xml
+	respond @sitemap "" 410
+
+	@unsafe {
+		method POST PUT PATCH DELETE
+		not path /api/demo/session /api/demo/ai-widget/chat
+	}
+	respond @unsafe "" 405
+
+	@api {
+		path /api/*
+		not path /api/demo/*
+	}
+	respond @api "" 404
+
+	@websocket {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	respond @websocket "" 403
+
+	@image_optimizer path /_next/image
+	respond @image_optimizer "" 403
+
+	reverse_proxy 127.0.0.1:3100
+}

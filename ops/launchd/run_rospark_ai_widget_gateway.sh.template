@@ -1,0 +1,17 @@
+#!/bin/bash
+set -euo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/bin:/bin"
+export PYTHONUNBUFFERED="1"
+
+APP_DIR="@@APP_DIR@@"
+cd "$APP_DIR"
+
+exec "/opt/homebrew/bin/python3" \
+  "$APP_DIR/scripts/run_ai_widget_pilot_gateway.py" \
+  --env-file "$APP_DIR/.env.production.local" \
+  --host 127.0.0.1 \
+  --port 8787 \
+  --endpoint http://127.0.0.1:11434 \
+  --model qwen3.6:27b \
+  --keep-alive 2h

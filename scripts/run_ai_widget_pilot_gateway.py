@@ -15,6 +15,7 @@ import os
 import re
 import sys
 import time
+import urllib.request
 from dataclasses import dataclass
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -29,6 +30,7 @@ MAX_HISTORY_ITEMS = 12
 MAX_USER_MESSAGE = 1_200
 MAX_ASSISTANT_MESSAGE = 2_000
 DEFAULT_PORT = 8787
+DEFAULT_KEEP_ALIVE = "2h"
 SAFE_FALLBACK = (
     "По подтверждённым материалам нельзя надёжно дать запрошенное утверждение "
     "без проверки условий конкретного объекта. Можно зафиксировать исходные "
@@ -99,6 +101,36 @@ def require_secret(value: str | None) -> str:
     return value
 
 
+def read_env_value(path: Path | None, key: str) -> str | None:
+    if path is None:
+        return None
+    resolved = path.expanduser().resolve()
+    if not resolved.is_file() or resolved.is_symlink():
+        raise ValueError("env file must be a regular non-symlink file")
+    for raw_line in resolved.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        match = re.match(r"(?:export\s+)?([A-Z][A-Z0-9_]*)\s*=\s*(.*)$", line)
+        if not match or match.group(1) != key:
+            continue
+        value = match.group(2).strip()
+        if (
+            len(value) >= 2
+            and value[0] == value[-1]
+            and value[0] in {"'", '"'}
+        ):
+            value = value[1:-1]
+        return value
+    return None
+
+
+def require_keep_alive(value: str) -> str:
+    if not re.fullmatch(r"[1-9]\d*[mh]", value):
+        raise ValueError("keep_alive must use a positive minute or hour value")
+    return value
+
+
 def authorized(header: str | None, secret: str) -> bool:
     if not header or not header.startswith("Bearer "):
         return False
@@ -114,6 +146,7 @@ class PilotEngine:
         model: str,
         timeout: float,
         max_tokens: int,
+        keep_alive: str = DEFAULT_KEEP_ALIVE,
     ) -> None:
         if model != adapter.ALLOWED_MODEL:
             raise ValueError(f"Only {adapter.ALLOWED_MODEL} is allowed")
@@ -121,6 +154,7 @@ class PilotEngine:
         self.model = model
         self.timeout = timeout
         self.max_tokens = max_tokens
+        self.keep_alive = require_keep_alive(keep_alive)
 
         v2_script, _ = adapter.verify_legacy_engine(ai_root)
         module = adapter.load_legacy_module(ai_root, v2_script)
@@ -137,6 +171,55 @@ class PilotEngine:
         self.system_prompt = module.responder_prompt(
             adapter.DEFAULT_FAQ.read_text(encoding="utf-8")
         )
+
+    def warmup(self) -> None:
+        body = json.dumps(
+            {
+                "model": self.model,
+                "prompt": "",
+                "stream": False,
+                "keep_alive": self.keep_alive,
+            }
+        ).encode("utf-8")
+        request = urllib.request.Request(
+            self.endpoint.rstrip("/") + "/api/generate",
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            json.loads(response.read().decode("utf-8"))
+
+    def _ollama_answer(self, messages: list[dict[str, str]]) -> str:
+        body = json.dumps(
+            {
+                "model": self.model,
+                "messages": messages,
+                "stream": True,
+                "think": False,
+                "options": {
+                    "temperature": 0,
+                    "num_predict": self.max_tokens,
+                    "num_ctx": 32_000,
+                },
+                "keep_alive": self.keep_alive,
+            },
+            ensure_ascii=False,
+        ).encode("utf-8")
+        request = urllib.request.Request(
+            self.endpoint.rstrip("/") + "/api/chat",
+            data=body,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        chunks: list[str] = []
+        with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            for raw_line in response:
+                if not raw_line.strip():
+                    continue
+                item = json.loads(raw_line.decode("utf-8"))
+                chunks.append(str((item.get("message") or {}).get("content") or ""))
+        return "".join(chunks).strip()
 
     def _state_for(self, messages: list[dict[str, str]]) -> Any:
         state = self.module.DialogueState()
@@ -186,13 +269,7 @@ class PilotEngine:
             }
         )
         try:
-            answer, _, _, _ = self.module.ollama_stream(
-                self.endpoint,
-                self.model,
-                model_messages,
-                self.timeout,
-                self.max_tokens,
-            )
+            answer = self._ollama_answer(model_messages)
         except Exception as error:
             raise ModelUnavailable from error
 
@@ -344,6 +421,9 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--model", default=adapter.ALLOWED_MODEL)
     result.add_argument("--timeout", type=float, default=90)
     result.add_argument("--max-tokens", type=int, default=180)
+    result.add_argument("--keep-alive", default=DEFAULT_KEEP_ALIVE)
+    result.add_argument("--skip-warmup", action="store_true")
+    result.add_argument("--env-file", type=Path)
     return result
 
 
@@ -353,14 +433,20 @@ def main() -> int:
         print("Gateway may bind only to 127.0.0.1.", file=sys.stderr)
         return 2
     try:
-        secret = require_secret(os.environ.get("AI_WIDGET_GATEWAY_SECRET"))
+        secret = require_secret(
+            os.environ.get("AI_WIDGET_GATEWAY_SECRET")
+            or read_env_value(args.env_file, "AI_WIDGET_GATEWAY_SECRET")
+        )
         engine = PilotEngine(
             ai_root=args.ai_root.expanduser().resolve(),
             endpoint=args.endpoint,
             model=args.model,
             timeout=args.timeout,
             max_tokens=args.max_tokens,
+            keep_alive=args.keep_alive,
         )
+        if not args.skip_warmup:
+            engine.warmup()
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"Gateway stopped: {error}", file=sys.stderr)
         return 2

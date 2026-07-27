@@ -22,6 +22,8 @@
 - добавлен loopback gateway-прототип с bearer secret, checksum-pinned cascade
   v3, deterministic FAQ/security/boundary маршрутами и Fact Gate до выдачи
   модельного ответа; внешних инструментов и отправок у процесса нет;
+- gateway получил startup prewarm, `keep_alive=2h`, безопасное чтение secret
+  из env-файла и launchd/Caddy/runbook-пакет для Mac Studio preview;
 - полный `cascade v3` прогон завершён 230/230 без ошибок маршрута, Fact Gate,
   API, ложных handoff и внешних отправок;
 - ручной QA нашёл один запрещённый ценовой ориентир `I015`;

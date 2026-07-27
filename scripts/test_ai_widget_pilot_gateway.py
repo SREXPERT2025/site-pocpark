@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import run_ai_widget_pilot_gateway as gateway
 
@@ -15,6 +17,9 @@ class GatewayContractTests(unittest.TestCase):
         self.assertFalse(gateway.authorized(None, secret))
         with self.assertRaises(ValueError):
             gateway.require_secret("short")
+        self.assertEqual(gateway.require_keep_alive("2h"), "2h")
+        with self.assertRaises(ValueError):
+            gateway.require_keep_alive("forever")
 
     def test_payload_contract(self) -> None:
         parsed = gateway.validate_request(
@@ -37,6 +42,20 @@ class GatewayContractTests(unittest.TestCase):
                     "sourcePage": "/demo",
                     "messages": [{"role": "assistant", "content": "Ответ"}],
                 }
+            )
+
+    def test_env_value_is_read_without_shell_evaluation(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / ".env.production.local"
+            path.write_text(
+                "IGNORED=value\n"
+                "AI_WIDGET_GATEWAY_SECRET='safe-secret-value'\n"
+                "DANGEROUS=$(echo should-not-run)\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                gateway.read_env_value(path, "AI_WIDGET_GATEWAY_SECRET"),
+                "safe-secret-value",
             )
 
 
