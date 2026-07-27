@@ -7,7 +7,19 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
-## 2026-07-27 — `AI-WIDGET-0/1`: документация и выключенный UI/API-каркас
+## 2026-07-27 — `AI-WIDGET-0/1`: закрытый AI-preview на Mac Studio
+
+- версия `146847aa11324565d2e0fd94c787578efa0ba25c` опубликована только на
+  `https://srtestrealme.ru:3001`;
+- плавающий виджет, loopback gateway и локальная модель включены отдельным
+  feature flag; `/admin`, VPS и production не изменялись;
+- внешний status API и два контрольных диалога ответили `200`, прочие
+  POST-маршруты preview сохранили блокировку `405`;
+- визуально проверены плавающая кнопка и правая панель; внешних отправок,
+  MAX, CRM и production lead registry — `0`;
+- предыдущая сборка и конфигурационный backup сохранены для rollback;
+- подробная приёмка:
+  `ai-widget/AI_WIDGET_1_PREVIEW_ACCEPTANCE_20260727.md`;
 
 - подготовлен технический дизайн `AI-WIDGET-1`: плавающий виджет на страницах
   preview, restricted loopback gateway, feature flag/kill switch, 24-часовая
@@ -56,9 +68,9 @@
   диалога представляться не требуется;
 - цены отдельных элементов в виджете не публикуются;
 - подтверждены retention и закрытый пилот на Mac Studio;
-- runtime, модель, widget UI, production lead registry, MAX и VPS не
-  изменялись;
-- следующий gate — закрытый UI/API-стенд `AI-WIDGET-1` на Mac Studio.
+- production runtime, production lead registry, MAX и VPS не изменялись;
+- следующий gate — проверка директором один–три дня и сбор замечаний перед
+  накопленным релизным пакетом.
 
 ## 2026-07-25 — production-входы в demo/quiz `ANALYTICS-001-C`
 
