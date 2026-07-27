@@ -21,7 +21,7 @@ from urllib.parse import urlparse
 
 SITE_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_AI_ROOT = Path("/Volumes/POCPARK_AI_DATA/POCPARK_AI")
-DEFAULT_FAQ = SITE_ROOT / "docs/site/ai-widget/WIDGET_FAQ_V1_CANDIDATE.md"
+DEFAULT_FAQ = SITE_ROOT / "docs/site/ai-widget/WIDGET_FAQ_V1_APPROVED.md"
 DEFAULT_PROFILE = SITE_ROOT / "docs/site/ai-widget/WIDGET_AGENT_PROFILE_V1.md"
 DEFAULT_KNOWLEDGE = (
     SITE_ROOT / "docs/site/ai-widget/WIDGET_OWNER_DECISIONS_20260727.md",
@@ -36,6 +36,16 @@ FULL_230_QUESTIONS_SHA256 = "180dbc0de8c429e3a708da2b6a39ec5369b80df3e14a09f7121
 ALLOWED_MODEL = "qwen3.6:27b"
 EXPECTED_FAQ_COUNT = 26
 EXPECTED_BOUNDARY_COUNT = 6
+PRICE_REQUEST_RE = re.compile(
+    r"\bцен(?:а|ы|е|у|ой|ами|ах)\b|\bстоимост\w*|\bбюджет\w*|"
+    r"\bсколько\s+сто(?:ит|ят)\b|\bсмет\w*|\bдороже\b|\bдешевле\b|"
+    r"\bдорого\b|\bдешево\b|\bуложиться\b",
+    re.I,
+)
+MONEY_AMOUNT_RE = re.compile(
+    r"\b(?:\d[\d\s]*|миллион\w*|тысяч\w*)\s*(?:рубл\w*|₽)",
+    re.I,
+)
 
 
 def sha256(path: Path) -> str:
@@ -145,7 +155,14 @@ def parse_current_template_file(path: Path) -> tuple[dict[str, dict[str, Any]], 
 
 def v3_boundary_patterns() -> tuple[tuple[str, re.Pattern[str]], ...]:
     return (
-        ("BND-005", re.compile(r"цен|сто(?:ит|им|ят)|бюджет|рубл|смет|закупочн|себестоим|марж|наценк", re.I)),
+        (
+            "BND-005",
+            re.compile(
+                PRICE_REQUEST_RE.pattern
+                + r"|\b(?:закупочн|себестоим|марж|наценк)\w*",
+                re.I,
+            ),
+        ),
         ("BND-001", re.compile(r"came|hikvision|совместим|существующ\w+\s+(?:оборуд|камер|шлагбаум|контроллер)", re.I)),
         ("BND-002", re.compile(r"гаранти|24\s*[xх/]\s*7|круглосуточ|восстанов|точност|99\s*процент", re.I)),
         ("BND-003", re.compile(r"интернет|электрич|питан|сервер.*(?:пропад|связ)", re.I)),
@@ -186,6 +203,39 @@ def crm_payload_with_required_name(state: Any) -> tuple[dict[str, Any], list[str
     if not payload["consent"]:
         missing.append("явное согласие")
     return payload, missing
+
+
+def contains_unsupported_price_amount(question: str, answer: str) -> bool:
+    return bool(PRICE_REQUEST_RE.search(question) and MONEY_AMOUNT_RE.search(answer))
+
+
+def guarded_fact_gate(base_fact_gate: Any) -> Any:
+    def check(
+        question: str,
+        answer: str,
+        route: str,
+        template_id: str | None,
+        expected_template: str | None,
+        tool_success: bool,
+    ) -> list[str]:
+        flags = list(
+            base_fact_gate(
+                question,
+                answer,
+                route,
+                template_id,
+                expected_template,
+                tool_success,
+            )
+        )
+        if (
+            contains_unsupported_price_amount(question, answer)
+            and "unsupported_price_amount" not in flags
+        ):
+            flags.append("unsupported_price_amount")
+        return flags
+
+    return check
 
 
 def load_legacy_module(ai_root: Path, v2_script: Path) -> ModuleType:
@@ -355,6 +405,7 @@ def run(args: argparse.Namespace) -> int:
     module.parse_template_file = parse_current_template_file
     module.BOUNDARY_PATTERNS = v3_boundary_patterns()
     module.crm_payload = crm_payload_with_required_name
+    module.fact_gate = guarded_fact_gate(module.fact_gate)
 
     legacy_args = build_legacy_args(args, output_dir, endpoint)
     result = int(module.run(legacy_args))

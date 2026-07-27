@@ -78,6 +78,13 @@ class CascadeV3AdapterTest(unittest.TestCase):
         self.assertEqual(match("Что будет без электричества?"), "BND-003")
         self.assertEqual(match("Работаете в Мурманске?"), "BND-004")
         self.assertEqual(match("Почему система не работает?"), "BND-006")
+        self.assertIsNone(match("Открытие торгового центра через три недели."))
+        self.assertEqual(match("У нас стоят шлагбаумы Came."), "BND-001")
+        self.assertIsNone(match("Машины стоят в очереди."))
+        self.assertEqual(
+            match("Какая реальная точность, а не 99 процентов?"),
+            "BND-002",
+        )
 
     def test_v3_validation_uses_current_result_keys(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -109,6 +116,26 @@ class CascadeV3AdapterTest(unittest.TestCase):
             self.assertEqual(validation["status"], "passed")
             self.assertTrue(validation["checks"]["missing_name_blocks_lead"])
             self.assertTrue((output / "cascade_v3_summary.md").is_file())
+
+    def test_price_amount_from_question_is_not_accepted_as_offer(self) -> None:
+        self.assertTrue(
+            adapter.contains_unsupported_price_amount(
+                "Можно уложиться в миллион рублей?",
+                "Миллион рублей может быть ориентиром.",
+            )
+        )
+        self.assertFalse(
+            adapter.contains_unsupported_price_amount(
+                "Какая нужна схема оплаты?",
+                "Первые 40 минут бесплатно, затем 100 рублей.",
+            )
+        )
+        self.assertFalse(
+            adapter.contains_unsupported_price_amount(
+                "Можно уложиться в миллион рублей?",
+                "Виджет не публикует цены и не называет ориентиры.",
+            )
+        )
 
 
 if __name__ == "__main__":
