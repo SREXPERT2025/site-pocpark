@@ -43,6 +43,8 @@ const scenarios = [
     ],
     cta: 'Открыть демо заявок',
     href: '/demo/gostevaya-zayavka',
+    articleCta: 'Как устроен гостевой доступ',
+    articleHref: '/stati/gostevoy-dostup-na-parkovku',
     icon: ClipboardList,
     accent: 'border-blue-200 bg-blue-50 text-blue-700',
   },
@@ -58,6 +60,8 @@ const scenarios = [
     ],
     cta: 'Открыть демо оплаты',
     href: '/demo/web-skidki',
+    articleCta: 'Как арендатор оплачивает парковку гостя',
+    articleHref: '/stati/oplata-parkovki-gostey',
     icon: BadgePercent,
     accent: 'border-emerald-200 bg-emerald-50 text-emerald-700',
   },
@@ -73,6 +77,8 @@ const scenarios = [
     ],
     cta: 'Открыть кабинет владельца',
     href: '/demo/vladelec-parkovki',
+    articleCta: 'Что входит в отчётность владельца',
+    articleHref: '/stati/otchetnost-vladelca-parkovki',
     icon: LineChart,
     accent: 'border-violet-200 bg-violet-50 text-violet-700',
   },
@@ -150,6 +156,13 @@ export default function DemoSoftwarePage() {
                 >
                   {scenario.cta}
                   <ArrowRight aria-hidden="true" size={18} />
+                </Link>
+                <Link
+                  href={scenario.articleHref}
+                  className="mt-3 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2 text-center text-sm font-semibold text-blue-700 transition hover:bg-blue-50 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                >
+                  {scenario.articleCta}
+                  <ArrowRight aria-hidden="true" size={16} />
                 </Link>
               </article>
             );
