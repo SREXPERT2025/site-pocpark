@@ -7,6 +7,20 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-07-28 — `DOCS-RECONCILE` после AI/analytics release
+
+- roadmap приведён к production release сайта `47529cc` и отдельному Mac
+  Studio gateway release `80ffd25`;
+- закрытый AI-пилот больше не указан как текущий статус: публичный виджет,
+  журнал диалогов, lead handoff и MAX работают в production;
+- latency/quality hardening, собственный идентификатор и каталог ссылок
+  зафиксированы как выпущенные на gateway без нового релиза сайта;
+- сохранение MAX provider receipt отмечено выполненным;
+- добавлен `LANDING-GROWTH-001` для пилота `/proshche` на Mac Studio;
+- `SECURITY-RELEASE-2` сохранён последним этапом;
+- код сайта, VPS, env, базы, Nginx, PM2, timers и внешние отправки этим блоком
+  не изменялись.
+
 ## 2026-07-28 — накопительный production release `47529cc`
 
 - production переключён с `c65b1b3` на
