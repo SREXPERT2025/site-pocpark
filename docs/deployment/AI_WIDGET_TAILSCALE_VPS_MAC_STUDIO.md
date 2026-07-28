@@ -59,6 +59,13 @@ Mac Studio (tag:rospark-ai-gateway)
 
 До публикации HTTPS production gateway должен уже отвечать локально:
 
+Production env создаётся без вывода секрета:
+
+```bash
+AI_WIDGET_GATEWAY_ENV_FILE="$PWD/.env.ai-widget-production.local" \
+  npm run ai-widget-gateway-production:configure
+```
+
 ```bash
 curl --fail --silent --show-error \
   http://127.0.0.1:8788/health \
