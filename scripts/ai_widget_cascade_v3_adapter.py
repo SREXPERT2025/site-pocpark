@@ -28,10 +28,7 @@ DEFAULT_PRODUCTION_PROFILE = (
     SITE_ROOT / "docs/site/ai-widget/WIDGET_PRODUCTION_PROFILE_V1.md"
 )
 DEFAULT_KNOWLEDGE = (
-    SITE_ROOT / "docs/site/ai-widget/WIDGET_OWNER_DECISIONS_20260727.md",
     SITE_ROOT / "docs/site/ai-widget/WIDGET_CLAIM_LEDGER_V1.md",
-    SITE_ROOT / "docs/site/ai-widget/WIDGET_DATA_AND_LEAD_POLICY_V1.md",
-    SITE_ROOT / "docs/site/ai-widget/WIDGET_KB_V1_SOURCES.md",
 )
 DEFAULT_PRODUCTION_KNOWLEDGE = (
     SITE_ROOT / "docs/site/ai-widget/WIDGET_CLAIM_LEDGER_V1.md",

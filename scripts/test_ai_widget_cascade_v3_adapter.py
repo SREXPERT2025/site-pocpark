@@ -12,6 +12,16 @@ import ai_widget_cascade_v3_adapter as adapter
 
 
 class CascadeV3AdapterTest(unittest.TestCase):
+    def test_preview_and_production_send_only_claim_ledger_to_model(self) -> None:
+        expected = (
+            adapter.SITE_ROOT
+            / "docs/site/ai-widget/WIDGET_CLAIM_LEDGER_V1.md",
+        )
+        _, preview_knowledge = adapter.runtime_sources("preview")
+        _, production_knowledge = adapter.runtime_sources("production")
+        self.assertEqual(preview_knowledge, expected)
+        self.assertEqual(production_knowledge, expected)
+
     def test_current_faq_parses(self) -> None:
         faq, boundaries = adapter.parse_current_template_file(adapter.DEFAULT_FAQ)
         self.assertEqual(len(faq), 26)
