@@ -486,10 +486,16 @@ Read-only аудит 2026-07-25 зафиксирован в
   реализованы;
 - дальнейшие изменения FAQ, промпта и маршрутизации выполняются на Mac Studio
   без повторного релиза VPS;
-- точный закрытый HTTPS-канал VPS → Mac Studio остаётся инфраструктурным
-  prerequisite перед cutover;
-- production ещё не опубликован, реальная контрольная отправка в MAX не
-  выполнялась.
+- закрытый HTTPS-канал VPS → Mac Studio работает через Tailscale;
+- production опубликован на SHA
+  `c65b1b3cee0eb946b2f28b7c59aeaf003681477c`;
+- desktop/mobile и отсутствие виджета в `/admin` проверены;
+- заявка `RSP-42254644` попала в lead registry, назначена Сергею и доставлена
+  в MAX ровно один раз;
+- транспортный timeout первого ответа закрыт значением Nginx `120s`, но
+  ускорение uncached ответа остаётся ближайшей задачей;
+- evidence:
+  `docs/site/ai-widget/AI_WIDGET_PRODUCTION_ACCEPTANCE_20260728.md`.
 
 ## 6. P2 — SEO/GEO и контентная система
 

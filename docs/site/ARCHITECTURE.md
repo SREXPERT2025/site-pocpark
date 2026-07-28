@@ -155,8 +155,9 @@ Demo не управляет реальным шлагбаумом, не вып�
 
 ### 5. AI-виджет
 
-AI-виджет подготовлен как отдельный fail-closed production-контур, но ещё не
-переключён на публичном VPS.
+AI-виджет работает как отдельный fail-closed production-контур на публичном
+VPS. Production release принят 28.07.2026 на SHA
+`c65b1b3cee0eb946b2f28b7c59aeaf003681477c`.
 
 Архитектура и план:
 
@@ -174,6 +175,10 @@ OpenClaw `main`, терминалу, файлам, браузеру, Codex, lead
 Preview и production gateway запускаются раздельно на loopback-портах `8787`
 и `8788`. Production включается только при рабочем журнале, lead registry,
 live handoff, точном HTTPS gateway и разрешённом origin.
+
+Фактический production gateway доступен VPS через закрытый Tailscale HTTPS.
+Первая заявка из виджета прошла через lead registry и MAX outbox. Акт выпуска:
+`docs/site/ai-widget/AI_WIDGET_PRODUCTION_ACCEPTANCE_20260728.md`.
 
 ## Основные директории
 

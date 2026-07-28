@@ -7,7 +7,7 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
-## 2026-07-28 — `AI-WIDGET-4`: production release candidate
+## 2026-07-28 — `AI-WIDGET-4`: production release
 
 - подготовлен публичный production-режим AI-консультанта без тестовых
   предупреждений и маркировки закрытого стенда;
@@ -28,8 +28,16 @@
 - создан readiness check и полный runbook backup/cutover/acceptance/rollback;
 - юридические страницы дополнены описанием AI-консультанта и отдельного
   consent flow;
-- публичный VPS не переключался, первая контрольная отправка в MAX не
-  выполнялась.
+- production переключён на
+  `c65b1b3cee0eb946b2f28b7c59aeaf003681477c`;
+- desktop/mobile UI, отсутствие виджета в `/admin`, gateway, обе SQLite и
+  cleanup timers прошли production acceptance;
+- первая заявка `RSP-42254644` назначена Сергею и доставлена в чат
+  `РОСПАРК ОТДЕЛ ПРОДАЖ` ровно один раз;
+- первый uncached модельный ответ занял `72610 ms`; Nginx timeout увеличен до
+  `120s`, а ускорение первого ответа оставлено следующей задачей;
+- полный акт:
+  `ai-widget/AI_WIDGET_PRODUCTION_ACCEPTANCE_20260728.md`.
 
 ## 2026-07-27 — `AI-WIDGET-0/1`: закрытый AI-preview на Mac Studio
 

@@ -389,7 +389,7 @@ production lead registry и VPS не затронуты. Приёмка зафи
 - есть rollback/kill switch;
 - директор отдельно подтвердил публикацию.
 
-Статус подготовки на 2026-07-28:
+Статус выпуска на 2026-07-28:
 
 - директор подтвердил переход от закрытого preview к подготовке полноценной
   production-версии для VPS;
@@ -406,15 +406,25 @@ production lead registry и VPS не затронуты. Приёмка зафи
 - Mac Studio получил отдельный production-профиль и отдельный loopback-процесс,
   поэтому дальнейшая настройка ответов не требует релиза сайта;
 - создан production-runbook с backup, readiness, acceptance и rollback;
-- сам VPS cutover и первая контрольная отправка в MAX ещё не выполнялись.
+- Tailscale HTTPS между VPS и production gateway Mac Studio подтверждён;
+- VPS переключён на
+  `c65b1b3cee0eb946b2f28b7c59aeaf003681477c`;
+- desktop/mobile и отсутствие виджета в `/admin` проверены на production;
+- заявка `RSP-42254644` зарегистрирована, назначена Сергею и доставлена в
+  `РОСПАРК ОТДЕЛ ПРОДАЖ` ровно один раз;
+- первый uncached модельный ответ остаётся медленным (`72610 ms`); Nginx
+  принимает ответы до `120s`, а оптимизация задержки остаётся открытой.
 
 Локальная evidence-приёмка:
 `docs/site/ai-widget/AI_WIDGET_PRODUCTION_CANDIDATE_ACCEPTANCE_20260728.md`.
 
+Production evidence:
+`docs/site/ai-widget/AI_WIDGET_PRODUCTION_ACCEPTANCE_20260728.md`.
+
 ## 12. Ближайший следующий шаг
 
-Завершить QA накопленного production-пакета, получить точный закрытый HTTPS URL
-между VPS и отдельным production gateway Mac Studio, затем предъявить target
-SHA и release evidence владельцу. После отдельного подтверждения выполнить
-backup и VPS cutover. Первую контрольную production-заявку и одну отправку в
-MAX проводить отдельным gate после технической acceptance.
+Собрать первые реальные диалоги, ускорить uncached ответы, расширять быстрые
+FAQ-маршруты на Mac Studio и добавить сохраняемое подтверждение внешней
+доставки MAX. Затем выполнить `CRM-INTEGRATION-001` discovery. Изменения
+промпта, FAQ и маршрутизации Mac Studio не требуют повторного VPS-релиза, пока
+контракт API не меняется.

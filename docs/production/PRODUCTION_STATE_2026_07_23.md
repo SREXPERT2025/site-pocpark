@@ -1,6 +1,6 @@
 # РОСПАРК: состояние Production Release v1
 
-Дата последней сверки: 25 июля 2026 года.
+Дата последней сверки: 28 июля 2026 года.
 
 ## Статус документа
 
@@ -15,9 +15,9 @@ PM2, SQLite или зависимости.
 ## Release
 
 - Статус: Production Release v1, analytics/demo-growth, `LEAD-OPS-002 / L4`,
-  закрытая server-side сводка обработки и privacy-safe входы в demo/quiz
+  server-side сводка, privacy-safe demo/quiz и публичный AI-консультант
   успешно выпущены.
-- Release SHA: `89c045d79535169527347c40c438971fb560995d`.
+- Release SHA: `c65b1b3cee0eb946b2f28b7c59aeaf003681477c`.
 - Production branch: `release/demo-production-ready-20260723`.
 
 ## Production-окружение
@@ -66,6 +66,34 @@ PM2, SQLite или зависимости.
 - В закрытом `/admin/leads` опубликованы агрегаты
   `received → assigned → contacted → closed`, повторов, источников и срока
   первого контакта без PII.
+- Публичный AI-консультант работает через отдельный production gateway Mac
+  Studio по Tailscale HTTPS.
+- Диалоги журналируются в отдельной SQLite, а cleanup timer активен.
+- Виджет отсутствует в `/admin`.
+- Заявка `RSP-42254644` назначена Сергею и доставлена в MAX ровно один раз.
+
+## Проверка AI-виджета от 2026-07-28
+
+- backup:
+  `/root/rospark-backups/ai-widget-production-20260728T072301Z`;
+- fast-forward:
+  `89c045d79535169527347c40c438971fb560995d` →
+  `c65b1b3cee0eb946b2f28b7c59aeaf003681477c`;
+- production build ID: `2P8tMH9DRii8ReaY5y4vH`;
+- authenticated gateway health — `ok`, runtime `production`;
+- AI widget SQLite и lead registry: `quick_check=ok`, mode `600`;
+- lead outbox, lead cleanup и AI widget cleanup timers — `active`;
+- production readiness — `ready`, внешних отправок самой проверкой `0`;
+- desktop/mobile UI и отсутствие виджета в `/admin` подтверждены browser QA;
+- контрольная заявка `RSP-42254644`: `sent`, `attempts=1`, `error=none`;
+- read-only MAX API нашёл сообщение в
+  `РОСПАРК ОТДЕЛ ПРОДАЖ`, message ID
+  `mid.ffffbf66ac16559e019fa7b1191173fc`;
+- первый uncached ответ занял `72610 ms` и превысил старый proxy timeout;
+  Nginx настроен на `proxy_read_timeout 120s`, последующий cached ответ —
+  `HTTP 200` за `0.057835s`;
+- подробный акт:
+  `docs/site/ai-widget/AI_WIDGET_PRODUCTION_ACCEPTANCE_20260728.md`.
 
 Это не означает, что:
 
