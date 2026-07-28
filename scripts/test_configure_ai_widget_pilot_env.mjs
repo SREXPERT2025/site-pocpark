@@ -39,6 +39,12 @@ assert.match(
   configured,
   /^AI_WIDGET_GATEWAY_SECRET='[A-Za-z0-9_-]{43}'$/m,
 );
+assert.match(configured, /^AI_WIDGET_HANDOFF_MODE=test$/m);
+assert.match(configured, /^AI_WIDGET_LOGGING_ENABLED=true$/m);
+assert.match(
+  configured,
+  /^AI_WIDGET_LOG_DB_PATH='.*ai-widget-test\.sqlite'$/m,
+);
 assert.equal(result.generatedSecret, true);
 assert.equal(statSync(envFile).mode & 0o777, 0o600);
 assert.equal(statSync(result.backupPath).mode & 0o777, 0o600);

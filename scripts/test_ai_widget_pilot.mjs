@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  aiWidgetHandoffMode,
   aiWidgetOriginAllowed,
   aiWidgetPilotEnabled,
   requireLoopbackGatewayUrl,
@@ -9,6 +10,9 @@ import {
 assert.equal(aiWidgetPilotEnabled({ AI_WIDGET_PILOT_ENABLED: 'true' }), true);
 assert.equal(aiWidgetPilotEnabled({ AI_WIDGET_PILOT_ENABLED: 'false' }), false);
 assert.equal(aiWidgetPilotEnabled({}), false);
+assert.equal(aiWidgetHandoffMode({ AI_WIDGET_HANDOFF_MODE: 'test' }), 'test');
+assert.equal(aiWidgetHandoffMode({ AI_WIDGET_HANDOFF_MODE: 'live' }), 'off');
+assert.equal(aiWidgetHandoffMode({}), 'off');
 
 assert.equal(
   requireLoopbackGatewayUrl('http://127.0.0.1:4317/'),
@@ -24,6 +28,8 @@ assert.throws(
 );
 
 const valid = validateAiWidgetChatPayload({
+  sessionId: 'session-20260728-test-0001',
+  turnId: 'turn-20260728-test-0000001',
   sourcePage: '/demo',
   messages: [{ role: 'user', content: 'Какие объекты вы автоматизируете?' }],
 });
@@ -32,11 +38,42 @@ assert.equal(valid.ok, true);
 for (const invalid of [
   null,
   {},
-  { sourcePage: 'https://example.com', messages: [{ role: 'user', content: 'x' }] },
-  { sourcePage: '/demo', messages: [] },
-  { sourcePage: '/demo', messages: [{ role: 'system', content: 'x' }] },
-  { sourcePage: '/demo', messages: [{ role: 'assistant', content: 'x' }] },
-  { sourcePage: '/demo', messages: [{ role: 'user', content: 'x'.repeat(1_201) }] },
+  {
+    sessionId: 'short',
+    turnId: 'turn-20260728-test-0000001',
+    sourcePage: '/demo',
+    messages: [{ role: 'user', content: 'x' }],
+  },
+  {
+    sessionId: 'session-20260728-test-0001',
+    turnId: 'turn-20260728-test-0000001',
+    sourcePage: 'https://example.com',
+    messages: [{ role: 'user', content: 'x' }],
+  },
+  {
+    sessionId: 'session-20260728-test-0001',
+    turnId: 'turn-20260728-test-0000001',
+    sourcePage: '/demo',
+    messages: [],
+  },
+  {
+    sessionId: 'session-20260728-test-0001',
+    turnId: 'turn-20260728-test-0000001',
+    sourcePage: '/demo',
+    messages: [{ role: 'system', content: 'x' }],
+  },
+  {
+    sessionId: 'session-20260728-test-0001',
+    turnId: 'turn-20260728-test-0000001',
+    sourcePage: '/demo',
+    messages: [{ role: 'assistant', content: 'x' }],
+  },
+  {
+    sessionId: 'session-20260728-test-0001',
+    turnId: 'turn-20260728-test-0000001',
+    sourcePage: '/demo',
+    messages: [{ role: 'user', content: 'x'.repeat(1_201) }],
+  },
 ]) {
   assert.equal(validateAiWidgetChatPayload(invalid).ok, false);
 }

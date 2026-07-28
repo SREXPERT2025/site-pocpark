@@ -260,6 +260,12 @@ export default function LeadAdminDashboard({
             <span className="rounded-full bg-white/10 px-3 py-2">
               {displayName} · {role === 'director' ? 'директор' : 'РОП'}
             </span>
+            <a
+              href="/admin/ai-widget"
+              className="rounded-lg border border-white/20 px-4 py-2 font-medium hover:bg-white/10"
+            >
+              Диалоги AI
+            </a>
             <button
               type="button"
               onClick={logout}
@@ -597,19 +603,23 @@ export default function LeadAdminDashboard({
                             })}
                             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
                           >
-                            Назначить Сергею
+                            {lead.assignedTo === 'sergey'
+                              ? 'Принять в работу'
+                              : 'Назначить Сергею'}
                           </button>
-                          <button
-                            type="button"
-                            disabled={isBusy}
-                            onClick={() => void mutateLead(lead, {
-                              action: 'assign',
-                              assignedTo: 'andrey',
-                            })}
-                            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100 disabled:opacity-50"
-                          >
-                            Назначить Андрею
-                          </button>
+                          {role === 'director' ? (
+                            <button
+                              type="button"
+                              disabled={isBusy}
+                              onClick={() => void mutateLead(lead, {
+                                action: 'assign',
+                                assignedTo: 'andrey',
+                              })}
+                              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold hover:bg-slate-100 disabled:opacity-50"
+                            >
+                              Взять Андрею
+                            </button>
+                          ) : null}
                         </div>
                       ) : null}
                       {lead.status === 'assigned' ? (

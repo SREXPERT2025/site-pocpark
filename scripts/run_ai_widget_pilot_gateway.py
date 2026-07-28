@@ -38,11 +38,32 @@ SAFE_FALLBACK = (
     "заранее. Для содержательного следующего шага нужны параметры объекта, "
     "существующего оборудования и требуемого сценария работы."
 )
-LEAD_DISABLED = (
-    "В этом коротком тесте передача обращения отключена: данные не сохраняются, "
-    "а менеджер и внешние каналы не уведомляются. Можно продолжить справочный "
-    "диалог без имени и контакта. Проверка формы тестовой карточки будет "
-    "выполняться отдельно и только на синтетических данных."
+LEAD_TEST_OFFER = (
+    "Могу подготовить тестовую заявку для проверки полного сценария. "
+    "Понадобятся имя, тестовый контакт, объект и краткое описание задачи. "
+    "На этом стенде заявка сохранится только в тестовом журнале: менеджер и MAX "
+    "не будут уведомлены."
+)
+APPROVED_LINK_RULES = (
+    (
+        re.compile(r"\bгостев\w*\b|\bзаявк\w*\b.*\bгост", re.I),
+        ("Гостевая заявка", "/demo/gostevaya-zayavka"),
+    ),
+    (
+        re.compile(r"\bскидк\w*\b|\bобнул\w*\b|\bвеб[-\s]?скид", re.I),
+        ("Web-скидки", "/demo/web-skidki"),
+    ),
+    (
+        re.compile(r"\bотч[её]т\w*\b|\bвладел\w*\b.*\bпарк", re.I),
+        ("Отчёт владельца", "/demo/vladelec-parkovki"),
+    ),
+    (
+        re.compile(
+            r"\bдемо\b|\bдемонстрац\w*\b|\bпосмотр\w*\b.*\bработ",
+            re.I,
+        ),
+        ("Все demo-сценарии", "/demo"),
+    ),
 )
 
 
@@ -55,6 +76,17 @@ class GatewayResult:
 
 class ModelUnavailable(RuntimeError):
     pass
+
+
+def append_approved_links(question: str, answer: str) -> str:
+    links: list[tuple[str, str]] = []
+    for pattern, link in APPROVED_LINK_RULES:
+        if pattern.search(question) and link not in links:
+            links.append(link)
+    if not links:
+        return answer
+    suffix = "\n".join(f"{label}: {path}" for label, path in links)
+    return f"{answer.rstrip()}\n\n{suffix}"
 
 
 def clean_text(value: Any, maximum: int) -> str | None:
@@ -241,17 +273,25 @@ class PilotEngine:
             return GatewayResult(answer, route, template_id)
 
         if route == "crm":
-            return GatewayResult(LEAD_DISABLED, route, None)
+            return GatewayResult(LEAD_TEST_OFFER, route, None)
 
         if route == "faq":
             answer = self.faq[template_id or ""]["answer"]
-            return GatewayResult(answer, route, template_id)
+            return GatewayResult(
+                append_approved_links(question, answer),
+                route,
+                template_id,
+            )
 
         boundary_id, boundary_answer = self.module.boundary_for(
             question, self.boundaries
         )
         if boundary_answer:
-            return GatewayResult(boundary_answer, "boundary", boundary_id)
+            return GatewayResult(
+                append_approved_links(question, boundary_answer),
+                "boundary",
+                boundary_id,
+            )
 
         state = self._state_for(messages)
         history = messages[:-1][-10:]
@@ -292,7 +332,11 @@ class PilotEngine:
         else:
             answer = self.module.ensure_minimum_words(answer, 50)
             route = "qwen36"
-        return GatewayResult(answer, route, template_id)
+        return GatewayResult(
+            append_approved_links(question, answer),
+            route,
+            template_id,
+        )
 
 
 class GatewayServer(ThreadingHTTPServer):
@@ -394,6 +438,12 @@ class GatewayHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/plain; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("X-AI-Widget-Route", result.route)
+            if result.template_id:
+                self.send_header(
+                    "X-AI-Widget-Template-Id",
+                    result.template_id,
+                )
             self.end_headers()
             self.wfile.write(body)
         finally:

@@ -89,6 +89,7 @@ export type RegisterLeadOptions = {
   nowMs?: number;
   idFactory?: () => string;
   outboxChannels?: LeadNotificationChannel[];
+  defaultAssignee?: string;
 };
 
 export type LeadStatusTransitionInput = {
@@ -583,6 +584,20 @@ export function registerLead(
   const consentAt = consentAtFromInput ?? now;
   const context = normalizeContext(input.context);
   const outboxChannels = normalizeOutboxChannels(options.outboxChannels);
+  const defaultAssignee = text(
+    options.defaultAssignee,
+    'defaultAssignee',
+    64,
+  );
+  if (
+    defaultAssignee
+    && !/^[a-z0-9][a-z0-9._-]{2,63}$/i.test(defaultAssignee)
+  ) {
+    throw new LeadRegistryError(
+      'INVALID_ASSIGNEE',
+      'Некорректный ответственный.',
+    );
+  }
   const payloadFingerprint = fingerprint({
     submissionId,
     kind: input.kind,
@@ -656,10 +671,21 @@ export function registerLead(
     if (!duplicate) {
       db.prepare(`
         INSERT INTO lead_records (
-          id, phone, phone_hash, name, status,
+          id, phone, phone_hash, name, status, assigned_to,
           created_at, created_at_ms, updated_at, updated_at_ms, expires_at
-        ) VALUES (?, ?, ?, ?, 'new', ?, ?, ?, ?, ?)
-      `).run(leadId, phone, hash, name, now, nowMs, now, nowMs, expiresAt);
+        ) VALUES (?, ?, ?, ?, 'new', ?, ?, ?, ?, ?, ?)
+      `).run(
+        leadId,
+        phone,
+        hash,
+        name,
+        defaultAssignee,
+        now,
+        nowMs,
+        now,
+        nowMs,
+        expiresAt,
+      );
 
       db.prepare(`
         INSERT INTO lead_status_events (

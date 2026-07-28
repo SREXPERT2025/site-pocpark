@@ -10,6 +10,8 @@ export type AiWidgetChatMessage = {
 };
 
 export type AiWidgetChatPayload = {
+  sessionId: string;
+  turnId: string;
   sourcePage: string;
   messages: AiWidgetChatMessage[];
 };
@@ -22,6 +24,14 @@ export function aiWidgetPilotEnabled(
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
   return env.AI_WIDGET_PILOT_ENABLED === 'true';
+}
+
+export type AiWidgetHandoffMode = 'off' | 'test';
+
+export function aiWidgetHandoffMode(
+  env: NodeJS.ProcessEnv = process.env,
+): AiWidgetHandoffMode {
+  return env.AI_WIDGET_HANDOFF_MODE === 'test' ? 'test' : 'off';
 }
 
 export function requireLoopbackGatewayUrl(value: string | undefined): string {
@@ -54,6 +64,16 @@ export function validateAiWidgetChatPayload(
     return { ok: false, code: 'INVALID_BODY' };
   }
   const body = value as Record<string, unknown>;
+  const sessionId = cleanText(body.sessionId, 128);
+  const turnId = cleanText(body.turnId, 128);
+  if (
+    !sessionId
+    || !turnId
+    || !/^[a-z0-9][a-z0-9._:-]{15,127}$/i.test(sessionId)
+    || !/^[a-z0-9][a-z0-9._:-]{15,127}$/i.test(turnId)
+  ) {
+    return { ok: false, code: 'INVALID_SESSION' };
+  }
   const sourcePage = cleanText(body.sourcePage, 240);
   if (!sourcePage || !sourcePage.startsWith('/') || sourcePage.startsWith('//')) {
     return { ok: false, code: 'INVALID_SOURCE_PAGE' };
@@ -84,7 +104,15 @@ export function validateAiWidgetChatPayload(
   if (messages.at(-1)?.role !== 'user') {
     return { ok: false, code: 'LAST_MESSAGE_MUST_BE_USER' };
   }
-  return { ok: true, payload: { sourcePage, messages } };
+  return {
+    ok: true,
+    payload: {
+      sessionId,
+      turnId,
+      sourcePage,
+      messages,
+    },
+  };
 }
 
 export function allowedAiWidgetOrigins(

@@ -22,6 +22,14 @@ export function leadRegistryEnabled() {
   return process.env.LEAD_REGISTRY_ENABLED === 'true';
 }
 
+export function configuredLeadDefaultAssignee() {
+  const value = process.env.LEAD_DEFAULT_ASSIGNEE?.trim() || 'sergey';
+  if (!/^[a-z0-9][a-z0-9._-]{2,63}$/i.test(value)) {
+    throw new Error('LEAD_DEFAULT_ASSIGNEE задан некорректно.');
+  }
+  return value;
+}
+
 export function configuredLeadOutboxChannels() {
   const configured = process.env.LEAD_OUTBOX_CHANNELS?.trim() || 'max';
   const channels = [...new Set(
@@ -87,6 +95,7 @@ export function registerSiteLead(
     context: siteLeadContext(payload),
   }, {
     outboxChannels: configuredLeadOutboxChannels(),
+    defaultAssignee: configuredLeadDefaultAssignee(),
   });
 }
 
@@ -119,5 +128,6 @@ export function registerDemoFeedbackLead(
     },
   }, {
     outboxChannels: configuredLeadOutboxChannels(),
+    defaultAssignee: configuredLeadDefaultAssignee(),
   });
 }

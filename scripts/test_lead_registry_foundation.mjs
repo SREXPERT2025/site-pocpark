@@ -89,10 +89,19 @@ expectRegistryError('INVALID_CONTEXT', () => registerLead(db, {
   idFactory,
 }));
 
-const first = registerLead(db, firstInput, { nowMs: baseTime, idFactory });
+const first = registerLead(db, firstInput, {
+  nowMs: baseTime,
+  idFactory,
+  defaultAssignee: 'sergey',
+});
 assert.equal(first.created, true);
 assert.equal(first.duplicate, false);
 assert.equal(first.idempotent, false);
+assert.equal(
+  db.prepare('SELECT assigned_to FROM lead_records WHERE id = ?')
+    .get(first.leadId).assigned_to,
+  'sergey',
+);
 
 const firstRetry = registerLead(db, firstInput, {
   nowMs: baseTime + HOUR_MS,

@@ -107,7 +107,16 @@ class DeterministicEngineTests(unittest.TestCase):
             }
         )
         self.assertEqual(result.route, "crm")
-        self.assertIn("передача обращения отключена", result.answer)
+        self.assertIn("тестовую заявку", result.answer)
+        self.assertIn("не будут уведомлены", result.answer)
+
+    def test_demo_answer_contains_approved_internal_link(self) -> None:
+        answer = gateway.append_approved_links(
+            "Где посмотреть, как работает демо?",
+            "Демо доступно на сайте.",
+        )
+        self.assertIn("/demo", answer)
+        self.assertNotIn("http://", answer)
 
 
 if __name__ == "__main__":
