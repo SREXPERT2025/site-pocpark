@@ -15,9 +15,10 @@ PM2, SQLite или зависимости.
 ## Release
 
 - Статус: Production Release v1, analytics/demo-growth, `LEAD-OPS-002 / L4`,
-  server-side сводка, privacy-safe demo/quiz и публичный AI-консультант
-  успешно выпущены.
-- Release SHA: `c65b1b3cee0eb946b2f28b7c59aeaf003681477c`.
+  server-side сводка, privacy-safe demo/quiz, публичный AI-консультант,
+  GA4, подтверждения доставки MAX и обновлённые обложки статей успешно
+  выпущены.
+- Release SHA: `47529cc83489534c4ba25cfe7a069e590d924851`.
 - Production branch: `release/demo-production-ready-20260723`.
 
 ## Production-окружение
@@ -27,12 +28,15 @@ PM2, SQLite или зависимости.
 - PM2: production-процесс запущен и работает.
 - Nginx: используется в production-контуре.
 - Яндекс Метрика: прямой consent-gated loader, счётчик `110980303`.
+- Google Analytics 4: прямой consent-gated loader без GTM, Measurement ID
+  `G-3Z9KNN3MMK`.
 - Внешний loader Метрики разрешён только на production-host
   `www.xn--80aukedde.xn--p1ai`; localhost и тестовые host не отправляют
   данные во внешний счётчик.
 - Production environment содержит
-  `NEXT_PUBLIC_YANDEX_METRIKA_ID=110980303`; значение включено в production
-  build.
+  `NEXT_PUBLIC_YANDEX_METRIKA_ID=110980303` и
+  `NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=G-3Z9KNN3MMK`; оба значения включены в
+  production build.
 
 ## Подтверждённая работа
 
@@ -71,6 +75,47 @@ PM2, SQLite или зависимости.
 - Диалоги журналируются в отдельной SQLite, а cleanup timer активен.
 - Виджет отсутствует в `/admin`.
 - Заявка `RSP-42254644` назначена Сергею и доставлена в MAX ровно один раз.
+- Lead registry обновлён до migrations `1–4`; новые MAX-отправки сохраняют
+  provider message ID, destination ID и время принятия провайдером.
+- В `/admin` не загружаются ни Метрика, ни GA4.
+- Три статьи используют обновлённые production-обложки WebP `1920 × 1080`.
+
+## Проверка накопительного release от 2026-07-28
+
+- backup:
+  `/root/rospark-backups/release-47529cc-20260728T102326Z`;
+- fast-forward:
+  `c65b1b3cee0eb946b2f28b7c59aeaf003681477c` →
+  `47529cc83489534c4ba25cfe7a069e590d924851`;
+- production build ID: `BP6pCB_Trq6mXe3Xh75wF`;
+- staging `npm ci`, typecheck, lint, analytics privacy, lead registry/admin/CLI,
+  AI-widget suites и production build `107/107` — успешно;
+- первый cutover автоматически вернул предыдущую сборку, потому что
+  readiness обнаружил отсутствующую migration `4`; данные не менялись,
+  PM2 и три timers были восстановлены;
+- перед повтором создан отдельный online backup lead registry, migration `4`
+  применена штатно при остановленных приложении и фоновых обработчиках;
+- PM2 `rospark-site` — `online`; lead outbox, lead cleanup и AI widget cleanup
+  timers — `active`;
+- demo SQLite, lead registry и AI widget SQLite: `quick_check=ok`;
+- outbox до и после выпуска: `sent=2`, прочих статусов `0`; новых сообщений
+  MAX выпуск не отправлял;
+- `/`, `/demo`, три обновлённые статьи, `/privacy`,
+  `/admin/leads/login` и `/sitemap.xml` — `HTTP 200`;
+- AI widget status: `enabled=true`, runtime `production`, handoff `live`,
+  logging `true`;
+- GA4 `G-3Z9KNN3MMK` и Метрика `110980303` присутствуют в production build и
+  загружаются на публичном host после сохранённого analytics consent;
+- `/admin/leads/login` не содержит публичного AI-виджета и внешних
+  аналитических scripts;
+- desktop browser QA подтвердил три новые обложки; mobile `390 × 844`
+  подтвердил отсутствие горизонтального overflow, загрузку обложки и
+  корректное раскрытие AI-панели;
+- Google Analytics подтвердил созданный web stream `15338809658`; сразу после
+  выпуска UI ещё показывает «данные не получены», поэтому первое событие и
+  Realtime остаются на контроль после периода обработки Google до 48 часов;
+- hot rollback:
+  `/var/www/rospark-release-builds/next-hot-c65b1b3-retry-20260728T103833Z`.
 
 ## Проверка AI-виджета от 2026-07-28
 
