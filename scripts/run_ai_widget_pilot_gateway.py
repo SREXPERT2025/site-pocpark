@@ -698,13 +698,29 @@ class PilotEngine:
         body = json.dumps(
             {
                 "model": self.model,
-                "prompt": "",
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": self.system_prompt,
+                    },
+                    {
+                        "role": "user",
+                        "content": "Ответь одним словом: готов.",
+                    },
+                ],
                 "stream": False,
+                "think": False,
+                "options": {
+                    "temperature": 0,
+                    "num_predict": 4,
+                    "num_ctx": 32_000,
+                },
                 "keep_alive": self.keep_alive,
-            }
+            },
+            ensure_ascii=False,
         ).encode("utf-8")
         request = urllib.request.Request(
-            self.endpoint.rstrip("/") + "/api/generate",
+            self.endpoint.rstrip("/") + "/api/chat",
             data=body,
             headers={"Content-Type": "application/json"},
             method="POST",

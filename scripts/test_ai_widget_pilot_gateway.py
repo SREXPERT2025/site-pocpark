@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
@@ -200,6 +201,43 @@ class DeterministicEngineTests(unittest.TestCase):
         self.assertNotIn("закрытый пилот", lowered)
         self.assertNotIn("публичный запуск остаётся отдельным этапом", lowered)
         self.assertIn("публичный ai-консультант", lowered)
+
+    def test_warmup_prepares_full_system_context_without_user_data(self) -> None:
+        class Response:
+            def __enter__(self) -> "Response":
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def read(self) -> bytes:
+                return (
+                    '{"done":true,"message":{"content":"готов"}}'
+                    .encode("utf-8")
+                )
+
+        captured: dict[str, object] = {}
+
+        def fake_urlopen(request: object, timeout: float) -> Response:
+            captured["request"] = request
+            captured["timeout"] = timeout
+            return Response()
+
+        with patch.object(gateway.urllib.request, "urlopen", fake_urlopen):
+            self.engine.warmup()
+
+        request = captured["request"]
+        payload = json.loads(request.data.decode("utf-8"))
+        self.assertTrue(request.full_url.endswith("/api/chat"))
+        self.assertEqual(payload["messages"][0]["content"], self.engine.system_prompt)
+        self.assertEqual(
+            payload["messages"][1]["content"],
+            "Ответь одним словом: готов.",
+        )
+        self.assertNotIn("sourcePage", payload)
+        self.assertFalse(payload["stream"])
+        self.assertFalse(payload["think"])
+        self.assertEqual(payload["options"]["num_predict"], 4)
 
     def test_exact_faq_without_model_call(self) -> None:
         template_id, item = next(iter(self.engine.faq.items()))
