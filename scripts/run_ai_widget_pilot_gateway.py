@@ -64,6 +64,16 @@ APPROVED_LINK_RULES = (
         ),
         ("Все demo-сценарии", "/demo"),
     ),
+    (
+        re.compile(
+            r"\b(?:сотрудник|персонал|резидент|постоянн\w+\s+пользовател)\w*",
+            re.I,
+        ),
+        (
+            "Доступ для постоянных пользователей",
+            "/vozmozhnosti/postoyannie-klienti",
+        ),
+    ),
 )
 
 
@@ -194,6 +204,7 @@ class PilotEngine:
         module.KNOWLEDGE_FILES = adapter.DEFAULT_KNOWLEDGE
         module.parse_template_file = adapter.parse_current_template_file
         module.BOUNDARY_PATTERNS = adapter.v3_boundary_patterns()
+        module.boundary_for = adapter.guarded_boundary_for(module.boundary_for)
         module.crm_payload = adapter.crm_payload_with_required_name
         module.fact_gate = adapter.guarded_fact_gate(module.fact_gate)
         self.module = module
@@ -267,6 +278,14 @@ class PilotEngine:
         messages = payload["messages"]
         question = messages[-1]["content"]
         route, template_id, _ = self.module.route_case(question, self.faq)
+
+        if adapter.is_employee_timed_access_request(question):
+            answer = self.faq["FAQ-008"]["answer"]
+            return GatewayResult(
+                append_approved_links(question, answer),
+                "faq",
+                "FAQ-008",
+            )
 
         if route == "security":
             answer = self.module.SECURITY_ANSWERS[template_id or "SEC-001"]

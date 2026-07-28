@@ -73,6 +73,12 @@ class CascadeV3AdapterTest(unittest.TestCase):
             return None
 
         self.assertEqual(match("Сколько стоит терминал?"), "BND-005")
+        self.assertIsNone(
+            match(
+                "Нужен бюджетный вариант для сотрудников без оплаты "
+                "с ограничением по времени."
+            )
+        )
         self.assertEqual(match("Можно оставить шлагбаум Came?"), "BND-001")
         self.assertEqual(match("Какая гарантия точности?"), "BND-002")
         self.assertEqual(match("Что будет без электричества?"), "BND-003")
@@ -84,6 +90,42 @@ class CascadeV3AdapterTest(unittest.TestCase):
         self.assertEqual(
             match("Какая реальная точность, а не 99 процентов?"),
             "BND-002",
+        )
+
+    def test_employee_timed_access_is_a_solution_request(self) -> None:
+        question = (
+            "Мне нужен бюджетный вариант для постоянных сотрудников и без оплат, "
+            "но чтобы доступ был ограничен по времени. "
+            "Хочу, чтобы на ночь не оставляли машины."
+        )
+        self.assertTrue(adapter.is_employee_timed_access_request(question))
+        self.assertTrue(adapter.is_composite_solution_request(question))
+        self.assertFalse(adapter.PRICE_REQUEST_RE.search(question))
+        self.assertTrue(adapter.PRICE_REQUEST_RE.search("Какой бюджет нужен?"))
+        self.assertTrue(
+            adapter.PRICE_REQUEST_RE.search("Можно уложиться в бюджет?")
+        )
+
+    def test_composite_explicit_price_bypasses_price_only_boundary(self) -> None:
+        boundaries = {"BND-005": "Цена зависит от проекта."}
+
+        def base(
+            _question: str,
+            _boundaries: dict[str, str],
+        ) -> tuple[str | None, str | None]:
+            return "BND-005", _boundaries["BND-005"]
+
+        guarded = adapter.guarded_boundary_for(base)
+        self.assertEqual(
+            guarded(
+                "Сколько стоит доступ для сотрудников по расписанию?",
+                boundaries,
+            ),
+            (None, None),
+        )
+        self.assertEqual(
+            guarded("Сколько стоит автоматизация?", boundaries),
+            ("BND-005", boundaries["BND-005"]),
         )
 
     def test_v3_validation_uses_current_result_keys(self) -> None:

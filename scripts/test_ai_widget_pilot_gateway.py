@@ -97,6 +97,31 @@ class DeterministicEngineTests(unittest.TestCase):
         self.assertEqual(result.route, "boundary")
         self.assertNotRegex(result.answer, r"\d[\d\s]*(?:руб|₽)")
 
+    def test_budget_word_does_not_hide_employee_access_scenario(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/demo",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Мне нужен бюджетный вариант для постоянных "
+                            "сотрудников и без оплат, но чтобы доступ был "
+                            "ограничен по времени. Хочу чтобы на ночь не "
+                            "оставляли машины. Что можете предложить?"
+                        ),
+                    }
+                ],
+            }
+        )
+        self.assertEqual(result.route, "faq")
+        self.assertEqual(result.template_id, "FAQ-008")
+        self.assertIn("распознаванию номера или RFID", result.answer)
+        self.assertIn("Платёжный сценарий можно не включать", result.answer)
+        self.assertIn("запрет ночного въезда", result.answer)
+        self.assertIn("/vozmozhnosti/postoyannie-klienti", result.answer)
+        self.assertNotIn("закупочную цену", result.answer)
+
     def test_lead_intent_never_sends(self) -> None:
         result = self.engine.answer(
             {

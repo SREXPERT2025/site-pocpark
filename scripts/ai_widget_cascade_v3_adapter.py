@@ -37,10 +37,32 @@ ALLOWED_MODEL = "qwen3.6:27b"
 EXPECTED_FAQ_COUNT = 26
 EXPECTED_BOUNDARY_COUNT = 6
 PRICE_REQUEST_RE = re.compile(
-    r"\bцен(?:а|ы|е|у|ой|ами|ах)\b|\bстоимост\w*|\bбюджет\w*|"
-    r"\bсколько\s+сто(?:ит|ят)\b|\bсмет\w*|\bдороже\b|\bдешевле\b|"
-    r"\bдорого\b|\bдешево\b|\bуложиться\b",
+    r"\bцен(?:а|ы|е|у|ой|ами|ах)\b|\bстоимост\w*|"
+    r"\bсколько\s+сто(?:ит|ят)\b|\bсмет\w*|"
+    r"\b(?:какой|какая|каково|определить|рассчитать|оценить)"
+    r"\s+бюджет(?:а|у|ом|е)?\b|"
+    r"\bбюджет(?:а|у|ом|е)?\s+(?:нужен|нужна|потребуется|до|от|около|"
+    r"в\s+пределах)\b|"
+    r"\b(?:уложиться|вписаться)\s+в\s+(?:бюджет(?:а|у|ом|е)?|"
+    r"(?:\d[\d\s]*|миллион\w*|тысяч\w*)\s*(?:рубл\w*|₽))|"
+    r"\b(?:дешевле|дороже)\s+(?:ли|чем|на\s+сколько)\b",
     re.I,
+)
+EMPLOYEE_ACCESS_RE = re.compile(
+    r"\b(?:сотрудник|персонал|работник|резидент|постоянн\w+\s+пользовател)\w*",
+    re.I,
+)
+TIMED_ACCESS_RE = re.compile(
+    r"\b(?:расписан|график|временн\w+\s+окн|рабоч\w+\s+час|"
+    r"огранич\w+\s+по\s+времен|ноч|на\s+ночь|после\s+работ)\w*",
+    re.I,
+)
+SOLUTION_REQUIREMENT_GROUPS = (
+    EMPLOYEE_ACCESS_RE,
+    TIMED_ACCESS_RE,
+    re.compile(r"\b(?:без\s+оплат|бесплатн|не\s+нужн\w+\s+оплат)\w*", re.I),
+    re.compile(r"\b(?:номер\w*\s+автомоб|распознаван|anpr|rfid|метк|карт)\w*", re.I),
+    re.compile(r"\b(?:въезд|выезд|доступ|лимит|зон|шлагбаум)\w*", re.I),
 )
 MONEY_AMOUNT_RE = re.compile(
     r"\b(?:\d[\d\s]*|миллион\w*|тысяч\w*)\s*(?:рубл\w*|₽)",
@@ -169,6 +191,34 @@ def v3_boundary_patterns() -> tuple[tuple[str, re.Pattern[str]], ...]:
         ("BND-004", re.compile(r"географ|регион|город|монтаж.*(?:москв|росси)|работаете\s+в", re.I)),
         ("BND-006", re.compile(r"не\s+работ|ошибк|неисправ|сломал|причин|диагноз", re.I)),
     )
+
+
+def is_employee_timed_access_request(question: str) -> bool:
+    return bool(
+        EMPLOYEE_ACCESS_RE.search(question)
+        and TIMED_ACCESS_RE.search(question)
+    )
+
+
+def is_composite_solution_request(question: str) -> bool:
+    matched_groups = sum(
+        bool(pattern.search(question))
+        for pattern in SOLUTION_REQUIREMENT_GROUPS
+    )
+    return matched_groups >= 2
+
+
+def guarded_boundary_for(base_boundary_for: Any) -> Any:
+    def check(
+        question: str,
+        boundaries: dict[str, str],
+    ) -> tuple[str | None, str | None]:
+        template_id, answer = base_boundary_for(question, boundaries)
+        if template_id == "BND-005" and is_composite_solution_request(question):
+            return None, None
+        return template_id, answer
+
+    return check
 
 
 def crm_payload_with_required_name(state: Any) -> tuple[dict[str, Any], list[str]]:
@@ -404,6 +454,7 @@ def run(args: argparse.Namespace) -> int:
     module.KNOWLEDGE_FILES = DEFAULT_KNOWLEDGE
     module.parse_template_file = parse_current_template_file
     module.BOUNDARY_PATTERNS = v3_boundary_patterns()
+    module.boundary_for = guarded_boundary_for(module.boundary_for)
     module.crm_payload = crm_payload_with_required_name
     module.fact_gate = guarded_fact_gate(module.fact_gate)
 
