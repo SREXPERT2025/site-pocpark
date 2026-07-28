@@ -542,9 +542,93 @@ class DeterministicEngineTests(unittest.TestCase):
                 ],
             }
         )
-        self.assertEqual(result.route, "solution")
-        self.assertEqual(result.template_id, "SOL-009")
+        self.assertEqual(result.route, "navigation")
+        self.assertEqual(result.template_id, "NAV-001")
         self.assertIn("/vozmozhnosti/razovie-klienti", result.answer)
+
+    def test_generic_link_follow_up_uses_previous_topic(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Расскажите, как работает онлайн-оплата "
+                            "парковки."
+                        ),
+                    },
+                    {
+                        "role": "assistant",
+                        "content": "Оплата связывается с парковочной сессией.",
+                    },
+                    {
+                        "role": "user",
+                        "content": "А где про это можно прочитать?",
+                    },
+                ],
+            }
+        )
+        self.assertEqual(result.route, "navigation")
+        self.assertEqual(result.template_id, "NAV-001")
+        self.assertIn("/vozmozhnosti/onlain-oplata", result.answer)
+
+    def test_direct_project_link_request_returns_cases(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "Покажи раздел с реализованными проектами.",
+                    },
+                ],
+            }
+        )
+        self.assertEqual(result.route, "navigation")
+        self.assertEqual(result.template_id, "NAV-001")
+        self.assertIn("/keysy", result.answer)
+
+    def test_ready_to_leave_request_returns_exact_form_link(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/demo",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "Готов оставить заявку — куда нажимать?",
+                    },
+                ],
+            }
+        )
+        self.assertEqual(result.route, "navigation")
+        self.assertEqual(result.template_id, "NAV-001")
+        self.assertIn("Оставить заявку", result.answer)
+        self.assertIn("/quiz", result.answer)
+
+    def test_unknown_link_request_asks_for_topic_without_model(self) -> None:
+        original = self.engine._ollama_answer
+        self.engine._ollama_answer = lambda _messages: self.fail(
+            "model must not invent a URL"
+        )
+        try:
+            result = self.engine.answer(
+                {
+                    "sourcePage": "/",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": "Дай ссылку.",
+                        },
+                    ],
+                }
+            )
+        finally:
+            self.engine._ollama_answer = original
+        self.assertEqual(result.route, "navigation")
+        self.assertEqual(result.template_id, "NAV-002")
+        self.assertIn("Уточните", result.answer)
+        self.assertNotIn("http", result.answer)
 
     def test_own_identifier_payment_excludes_online_channel(self) -> None:
         result = self.engine.answer(

@@ -12,10 +12,12 @@ import ai_widget_cascade_v3_adapter as adapter
 
 
 class CascadeV3AdapterTest(unittest.TestCase):
-    def test_preview_and_production_send_only_claim_ledger_to_model(self) -> None:
+    def test_preview_and_production_send_approved_knowledge_to_model(self) -> None:
         expected = (
             adapter.SITE_ROOT
             / "docs/site/ai-widget/WIDGET_CLAIM_LEDGER_V1.md",
+            adapter.SITE_ROOT
+            / "docs/site/ai-widget/WIDGET_SITE_LINK_CATALOG_V1.md",
         )
         _, preview_knowledge = adapter.runtime_sources("preview")
         _, production_knowledge = adapter.runtime_sources("production")

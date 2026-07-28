@@ -49,6 +49,7 @@
 | `SRC-ROLE-MANAGER` | `app/(narrow)/resheniya/dlya-rukovoditeley/page.tsx` | Вопросы собственника и руководителя |
 | `SRC-ROLE-ENGINEER` | `app/(narrow)/resheniya/dlya-inzhenerov/page.tsx` | Технические исходные данные |
 | `SRC-ROLE-SECURITY` | `app/(narrow)/resheniya/dlya-sluzhby-bezopasnosti/page.tsx` | Роли, события и исключения |
+| `SRC-SITE-LINKS` | `docs/site/ai-widget/WIDGET_SITE_LINK_CATALOG_V1.md`, `app/sitemap.ts` | Подтверждённые адреса разделов сайта и правила навигационных ответов |
 
 ## 3. Кейсы
 

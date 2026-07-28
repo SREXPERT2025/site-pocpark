@@ -188,7 +188,7 @@ CONVERSATION_RULES = (
         },
     ),
 )
-APPROVED_LINK_RULES = (
+SITE_LINK_CATALOG = (
     (
         re.compile(
             r"\b(?:разов\w+\s+клиент|собственн\w+\s+идентификатор)\w*",
@@ -227,6 +227,99 @@ APPROVED_LINK_RULES = (
             "Доступ для постоянных пользователей",
             "/vozmozhnosti/postoyannie-klienti",
         ),
+    ),
+    (
+        re.compile(r"\bарендатор\w*|\bарендн\w+\s+клиент", re.I),
+        ("Доступ для арендаторов", "/vozmozhnosti/arendnie-klienti"),
+    ),
+    (
+        re.compile(r"\bгостев\w+\s+(?:доступ|клиент|посетител)", re.I),
+        ("Доступ для гостей", "/vozmozhnosti/gostevie-klienti"),
+    ),
+    (
+        re.compile(r"\bонлайн[-\s]?оплат\w*|\bоплат\w*\s+онлайн", re.I),
+        ("Онлайн-оплата парковки", "/vozmozhnosti/onlain-oplata"),
+    ),
+    (
+        re.compile(
+            r"\b(?:распознаван\w+\s+номер|грнз|номер\w+\s+автомобил)",
+            re.I,
+        ),
+        (
+            "Распознавание номеров",
+            "/vozmozhnosti/raspoznavanie-nomerov",
+        ),
+    ),
+    (
+        re.compile(r"\bбизнес[-\s]?центр\w*|\bбц\b", re.I),
+        ("Решения для бизнес-центров", "/resheniya/biznes-centry"),
+    ),
+    (
+        re.compile(r"\bторгов\w+\s+центр|\bтрц\b|\bтц\b", re.I),
+        ("Решения для торговых центров", "/resheniya/torgovye-centry"),
+    ),
+    (
+        re.compile(r"\bсклад\w*|\bлогистическ\w+\s+(?:центр|комплекс)", re.I),
+        (
+            "Решения для складских комплексов",
+            "/resheniya/skladskie-kompleksy",
+        ),
+    ),
+    (
+        re.compile(r"\bзастройщик\w*|\bжил\w+\s+комплекс|\bжк\b", re.I),
+        ("Решения для застройщиков", "/resheniya/zastroyschiki"),
+    ),
+    (
+        re.compile(r"\bинтеграц\w*|\bapi\b|\bобмен\w*\s+данн", re.I),
+        ("Интеграции и API", "/resheniya/integracii-i-api"),
+    ),
+    (
+        re.compile(r"\bстоимост\w*|\bцен\w*|\bбюджет\w*|\bрасч[её]т\w*", re.I),
+        (
+            "От чего зависит стоимость",
+            "/resheniya/stoimost-avtomatizacii-parkovki",
+        ),
+    ),
+    (
+        re.compile(r"\bкак\s+(?:вы\s+)?работа\w*|\bэтап\w+\s+(?:работ|внедрен)", re.I),
+        ("Как мы работаем", "/resheniya/kak-my-rabotaem"),
+    ),
+    (
+        re.compile(r"\bкейс\w*|\bпроект\w*|\bобъект\w*.*\bреализован", re.I),
+        ("Реализованные проекты", "/keysy"),
+    ),
+    (
+        re.compile(r"\bстать\w*|\bматериал\w*|\bпочитать\b", re.I),
+        ("Статьи об автоматизации парковок", "/stati"),
+    ),
+    (
+        re.compile(r"\bоборудован\w*|\bшлагбаум\w*|\bтерминал\w*|\bстойк\w*", re.I),
+        ("Оборудование РОСПАРК", "/oborudovanie"),
+    ),
+    (
+        re.compile(r"\bконтакт\w*|\bтелефон\w*|\bадрес\w*|\bсвязат\w*", re.I),
+        ("Контакты РОСПАРК", "/contacts"),
+    ),
+    (
+        re.compile(r"\bо\s+компани\w*|\bкто\s+(?:вы|такие)\b", re.I),
+        ("О компании", "/o-kompanii"),
+    ),
+    (
+        re.compile(
+            r"\bостав\w*\s+заявк\w*|\bзаявк\w*\s+(?:на\s+)?"
+            r"(?:расч[её]т|проект|коммерческ\w+\s+предложен)|"
+            r"\bрассчит\w*\s+проект",
+            re.I,
+        ),
+        ("Оставить заявку", "/quiz"),
+    ),
+    (
+        re.compile(r"\bрешени\w*\b|\bавтоматизац\w+\s+парк", re.I),
+        ("Решения РОСПАРК", "/resheniya"),
+    ),
+    (
+        re.compile(r"\bвозможност\w*\b|\bчто\s+(?:умеет|может)\s+систем", re.I),
+        ("Возможности системы", "/vozmozhnosti"),
     ),
 )
 
@@ -523,7 +616,12 @@ IDENTIFIER_COMPARISON_RE = re.compile(
     re.I,
 )
 LINK_REQUEST_RE = re.compile(
-    r"\b(?:ссылк\w*|где\s+(?:это\s+)?(?:написан|прочит|посмотр))\b",
+    r"\b(?:ссылк\w*|"
+    r"где\b.{0,50}\b(?:написан\w*|прочит\w*|посмотр\w*|найти|"
+    r"находится|открыть)|"
+    r"куда\s+(?:мне\s+)?(?:наж\w*|перейт\w*)|"
+    r"покаж\w*\s+(?:страниц\w*|раздел\w*)|"
+    r"дай\s+(?:адрес|раздел))\b",
     re.I,
 )
 OWN_IDENTIFIER_ANSWER = (
@@ -574,15 +672,63 @@ class ModelUnavailable(RuntimeError):
     pass
 
 
-def append_approved_links(question: str, answer: str) -> str:
+def site_links_for(text: str, limit: int = 2) -> list[tuple[str, str]]:
     links: list[tuple[str, str]] = []
-    for pattern, link in APPROVED_LINK_RULES:
-        if pattern.search(question) and link not in links:
+    for pattern, link in SITE_LINK_CATALOG:
+        if pattern.search(text) and link not in links:
             links.append(link)
+        if len(links) >= limit:
+            break
+    return links
+
+
+def append_approved_links(question: str, answer: str) -> str:
+    links = site_links_for(question)
     if not links:
         return answer
     suffix = "\n".join(f"{label}: {path}" for label, path in links)
     return f"{answer.rstrip()}\n\n{suffix}"
+
+
+def contextual_link_answer_for(
+    messages: list[dict[str, str]],
+) -> GatewayResult | None:
+    question = messages[-1]["content"]
+    if not LINK_REQUEST_RE.search(question):
+        return None
+
+    current_links = site_links_for(question)
+    if current_links:
+        links = current_links
+    else:
+        links = []
+        previous_user_messages = (
+            message["content"]
+            for message in reversed(messages[:-1])
+            if message["role"] == "user"
+        )
+        for previous_question in previous_user_messages:
+            links = site_links_for(previous_question)
+            if links:
+                break
+
+    if not links:
+        return GatewayResult(
+            (
+                "Уточните, какой именно раздел нужен: решения, возможности, "
+                "оборудование, demo, статьи, проекты или форма заявки. Я дам "
+                "точную ссылку."
+            ),
+            "navigation",
+            "NAV-002",
+        )
+
+    suffix = "\n".join(f"{label}: {path}" for label, path in links)
+    return GatewayResult(
+        f"Вот нужный раздел:\n{suffix}",
+        "navigation",
+        "NAV-001",
+    )
 
 
 def fast_faq_for(question: str) -> str | None:
@@ -920,6 +1066,10 @@ class PilotEngine:
         if route == "security":
             answer = self.module.SECURITY_ANSWERS[template_id or "SEC-001"]
             return GatewayResult(answer, route, template_id)
+
+        contextual_link = contextual_link_answer_for(messages)
+        if contextual_link:
+            return contextual_link
 
         conversational = conversation_answer(question, self.runtime_mode)
         if conversational:
