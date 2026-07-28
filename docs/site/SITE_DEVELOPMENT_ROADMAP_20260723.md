@@ -308,13 +308,17 @@ Production-статус `ANALYTICS-001-B`:
 Локальное расширение GA4:
 
 - добавлен прямой `gtag.js` loader без GTM;
+- в Google Analytics создан ресурс и веб-поток для
+  `https://www.роспарк.рф`;
+- Measurement ID `G-3Z9KNN3MMK` зафиксирован в `.env.example`;
 - loader работает только после analytics consent, только на production-host и
   исключён из `/admin`;
 - рекламное хранилище, Google Signals и персонализация рекламы выключены;
 - pageview и существующие `rospark_*`-события не содержат query string и PII;
-- без `NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=G-...` интеграция остаётся выключенной;
-- для завершения нужны Measurement ID, DebugView/Realtime smoke и включение в
-  отдельный накопительный production-релиз.
+- автоматические history-based pageview отключены в улучшенной статистике GA4,
+  чтобы не дублировать ручные SPA pageview;
+- для завершения нужны production environment, DebugView/Realtime smoke и
+  включение в отдельный накопительный production-релиз.
 
 Статус `ANALYTICS-001-C`:
 

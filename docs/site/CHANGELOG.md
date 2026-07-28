@@ -11,6 +11,9 @@
 
 - подтверждено, что Яндекс Метрика `110980303` уже подключена и работает в
   production, а Google Analytics ранее не подключалась;
+- в Google Analytics создан ресурс `РОСПАРК — основной сайт` и веб-поток для
+  `https://www.роспарк.рф`;
+- Measurement ID `G-3Z9KNN3MMK` добавлен в `.env.example`;
 - добавлен прямой GA4 loader без Google Tag Manager;
 - Google-скрипт загружается только после согласия на необязательные cookie,
   только на production-host и не загружается в `/admin`;
@@ -19,9 +22,10 @@
 - pageview и существующие `rospark_*`-события используют текущий privacy-safe
   контракт без PII и query string;
 - Политика обработки персональных данных дополнена описанием GA4;
-- без `NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=G-...` интеграция остаётся выключенной;
-- пакет ещё не опубликован на VPS: для включения нужен Measurement ID и
-  отдельный consent/Realtime smoke в составе накопительного релиза.
+- автоматические history-based pageview в потоке GA4 отключены, чтобы не
+  дублировать ручные SPA pageview сайта;
+- пакет ещё не опубликован на VPS: перед выпуском нужно добавить Measurement ID
+  в production environment и выполнить отдельный consent/Realtime smoke.
 
 ## 2026-07-28 — обновление трёх обложек статей
 
