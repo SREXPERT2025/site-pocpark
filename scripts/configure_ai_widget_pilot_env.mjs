@@ -77,10 +77,14 @@ if (!path.isAbsolute(configuredLogPath) || /[\r\n\0']/.test(configuredLogPath)) 
 }
 
 const values = new Map([
+  ['AI_WIDGET_ENABLED', 'true'],
+  ['AI_WIDGET_RUNTIME_MODE', 'preview'],
+  ['AI_WIDGET_ALLOWED_ORIGINS', previewOrigin],
   ['AI_WIDGET_PILOT_ENABLED', 'true'],
   ['AI_WIDGET_PILOT_ORIGINS', previewOrigin],
   ['AI_WIDGET_GATEWAY_URL', 'http://127.0.0.1:8787'],
   ['AI_WIDGET_GATEWAY_SECRET', quote(secret)],
+  ['AI_WIDGET_GATEWAY_MODE', 'preview'],
   ['AI_WIDGET_HANDOFF_MODE', 'test'],
   ['AI_WIDGET_LOGGING_ENABLED', 'true'],
   ['AI_WIDGET_LOG_DB_PATH', quote(configuredLogPath)],

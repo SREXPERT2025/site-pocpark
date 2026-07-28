@@ -1,12 +1,8 @@
 import { handleAiWidgetChat } from '@/app/lib/ai-widget-api';
-import { aiWidgetRuntimeMode } from '@/app/lib/ai-widget-pilot';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  if (aiWidgetRuntimeMode() === 'production') {
-    return new Response(null, { status: 404 });
-  }
   return handleAiWidgetChat(request);
 }

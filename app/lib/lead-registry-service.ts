@@ -17,6 +17,8 @@ import {
 } from './demo-feedback-consent';
 
 export const SITE_LEAD_CONSENT_VERSION = 'site-lead-v1-2026-07-24';
+export const AI_WIDGET_LEAD_CONSENT_VERSION =
+  'ai-widget-lead-v1-2026-07-28';
 
 export function leadRegistryEnabled() {
   return process.env.LEAD_REGISTRY_ENABLED === 'true';
@@ -73,6 +75,7 @@ function siteLeadContext(payload: LeadPayload) {
     product: payload.product,
     package_name: payload.packageName,
     source_url_path: sourceUrlPath(payload.sourceUrl),
+    widget_session_id: payload.widgetSessionId,
     ...(payload.utm ?? {}),
   };
 }
@@ -125,6 +128,39 @@ export function registerDemoFeedbackLead(
       channel,
       request_id: candidate.requestId,
       demo_name: 'guest_request_portal',
+    },
+  }, {
+    outboxChannels: configuredLeadOutboxChannels(),
+    defaultAssignee: configuredLeadDefaultAssignee(),
+  });
+}
+
+export function registerAiWidgetLead(input: {
+  sessionId: string;
+  submissionId: string;
+  sourcePage: string;
+  name: string;
+  phone: string;
+  objectDescription: string;
+  taskDescription: string;
+  consentGranted: boolean;
+}) {
+  const submissionId = `ai-widget:${input.submissionId.trim()}`;
+  return registerLead(getLeadRegistryDatabase(), {
+    submissionId,
+    kind: 'site_form',
+    name: input.name,
+    phone: input.phone,
+    source: 'ai_widget',
+    sourcePage: input.sourcePage,
+    sourceSection: 'ai-widget',
+    consentGranted: input.consentGranted,
+    consentVersion: AI_WIDGET_LEAD_CONSENT_VERSION,
+    context: {
+      object_type: input.objectDescription,
+      message: input.taskDescription,
+      intent: 'ai_widget_consultation',
+      widget_session_id: input.sessionId,
     },
   }, {
     outboxChannels: configuredLeadOutboxChannels(),

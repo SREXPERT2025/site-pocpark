@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 type SessionSummary = {
   id: string;
+  mode: 'preview' | 'production';
   sourcePage: string;
   createdAt: string;
   updatedAt: string;
@@ -11,11 +12,13 @@ type SessionSummary = {
   answeredCount: number;
   errorCount: number;
   testLeadCount: number;
+  productionLeadCount: number;
   latestQuestion: string | null;
 };
 
 type SessionDetails = {
   id: string;
+  mode: 'preview' | 'production';
   sourcePage: string;
   createdAt: string;
   updatedAt: string;
@@ -38,6 +41,12 @@ type SessionDetails = {
     objectDescription: string;
     taskDescription: string;
     maxPreview: string;
+    createdAt: string;
+  }>;
+  productionLeads: Array<{
+    id: string;
+    publicId: string;
+    registryLeadId: string;
     createdAt: string;
   }>;
 };
@@ -105,7 +114,7 @@ export default function AiWidgetAdminDashboard({
   const deleteSession = async () => {
     if (!selected || role !== 'director') return;
     const confirmed = window.confirm(
-      'Безвозвратно удалить тестовый диалог и связанные тестовые карточки?',
+      'Безвозвратно удалить диалог и связанные с ним ссылки на заявки?',
     );
     if (!confirmed) return;
     const response = await fetch(
@@ -191,7 +200,9 @@ export default function AiWidgetAdminDashboard({
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold text-blue-700">
-                    TEST · {item.turnCount} сообщ.
+                    {item.mode === 'production' ? 'LIVE' : 'PREVIEW'}
+                    {' · '}
+                    {item.turnCount} сообщ.
                   </span>
                   <span className="text-xs text-slate-500">
                     {dateTime(item.updatedAt)}
@@ -206,6 +217,11 @@ export default function AiWidgetAdminDashboard({
                 {item.testLeadCount > 0 ? (
                   <p className="mt-2 text-xs font-bold text-emerald-700">
                     Тестовых карточек: {item.testLeadCount}
+                  </p>
+                ) : null}
+                {item.productionLeadCount > 0 ? (
+                  <p className="mt-2 text-xs font-bold text-emerald-700">
+                    Рабочих заявок: {item.productionLeadCount}
                   </p>
                 ) : null}
                 {item.errorCount > 0 ? (
@@ -233,7 +249,9 @@ export default function AiWidgetAdminDashboard({
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
-                    Закрытый тест
+                    {selected.mode === 'production'
+                      ? 'Рабочий диалог'
+                      : 'Закрытый preview'}
                   </p>
                   <h2 className="mt-1 break-all text-lg font-black">
                     {selected.id}
@@ -302,6 +320,26 @@ export default function AiWidgetAdminDashboard({
                       {lead.maxPreview}
                     </pre>
                   </details>
+                </article>
+              ))}
+              {selected.productionLeads.map((lead) => (
+                <article
+                  key={lead.id}
+                  className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
+                >
+                  <p className="font-black text-emerald-900">
+                    Рабочая заявка {lead.publicId}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-700">
+                    Зарегистрирована {dateTime(lead.createdAt)}. Имя и телефон
+                    находятся только в защищённом реестре лидов.
+                  </p>
+                  <a
+                    href={`/admin/leads?search=${encodeURIComponent(lead.publicId)}`}
+                    className="mt-3 inline-flex rounded-xl bg-blue-700 px-3 py-2 text-sm font-semibold text-white"
+                  >
+                    Открыть в реестре
+                  </a>
                 </article>
               ))}
             </>

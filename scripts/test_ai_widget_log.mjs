@@ -6,8 +6,10 @@ import {
   buildAiWidgetTurnsCsv,
   cleanupExpiredAiWidgetLogs,
   completeAiWidgetTurn,
+  consumeAiWidgetRateLimit,
   getAiWidgetSession,
   listAiWidgetSessions,
+  registerAiWidgetProductionLead,
   registerAiWidgetTestLead,
   runAiWidgetLogMigrations,
 } from '../app/lib/ai-widget-log-core.ts';
@@ -22,7 +24,10 @@ assert.deepEqual(
     FROM ai_widget_log_migrations
     ORDER BY version
   `).all(),
-  [{ version: 1, name: 'test_transcript_foundation' }],
+  [
+    { version: 1, name: 'test_transcript_foundation' },
+    { version: 2, name: 'production_runtime_and_lead_links' },
+  ],
 );
 
 const nowMs = Date.UTC(2026, 6, 28, 9, 0, 0);
@@ -102,23 +107,90 @@ assert.match(lead.maxPreview, /Не является реальным обращ
 const session = getAiWidgetSession(db, sessionId);
 assert.equal(session.turns.length, 1);
 assert.equal(session.testLeads.length, 1);
+assert.equal(session.productionLeads.length, 0);
+assert.equal(session.mode, 'preview');
+
+const productionSessionId = 'session-20260728-production-0001';
+const productionTurnId = 'turn-20260728-production-00001';
+beginAiWidgetTurn(db, {
+  turnId: productionTurnId,
+  sessionId: productionSessionId,
+  requestId: 'request-20260728-production-01',
+  sourcePage: '/resheniya/biznes-centry',
+  userContent: 'Нужен доступ для сотрудников.',
+  runtimeMode: 'production',
+  nowMs: nowMs + 3_000,
+});
+completeAiWidgetTurn(db, {
+  turnId: productionTurnId,
+  assistantContent: 'Можно использовать распознавание номеров и расписание.',
+  route: 'faq',
+  elapsedMs: 500,
+  nowMs: nowMs + 3_500,
+});
+const productionLead = registerAiWidgetProductionLead(db, {
+  sessionId: productionSessionId,
+  submissionId: 'submission-20260728-production-01',
+  sourcePage: '/resheniya/biznes-centry',
+  registryLeadId: 'a89a0364000040008000000000000002',
+  publicId: 'RSP-A89A0364',
+  nowMs: nowMs + 4_000,
+  idFactory: () => 'a89a0364-0000-4000-8000-000000000003',
+});
+assert.equal(productionLead.created, true);
+
+const productionSession = getAiWidgetSession(db, productionSessionId);
+assert.equal(productionSession.mode, 'production');
+assert.equal(productionSession.productionLeads.length, 1);
+assert.equal(productionSession.testLeads.length, 0);
 
 const list = listAiWidgetSessions(db);
-assert.equal(list.total, 1);
-assert.equal(list.items[0].turnCount, 1);
-assert.equal(list.items[0].testLeadCount, 1);
+assert.equal(list.total, 2);
+assert.equal(
+  list.items.find((item) => item.id === sessionId).testLeadCount,
+  1,
+);
+assert.equal(
+  list.items.find((item) => item.id === productionSessionId)
+    .productionLeadCount,
+  1,
+);
 
 const csv = buildAiWidgetTurnsCsv([session]);
 assert.match(csv, /Как работает гостевой доступ/);
 assert.match(csv, /Арендатор создаёт гостевую заявку/);
 
+const rateKey = 'a'.repeat(64);
+assert.equal(consumeAiWidgetRateLimit(db, {
+  scope: 'chat',
+  keyHash: rateKey,
+  windowMs: 60_000,
+  limit: 2,
+  nowMs,
+}).allowed, true);
+assert.equal(consumeAiWidgetRateLimit(db, {
+  scope: 'chat',
+  keyHash: rateKey,
+  windowMs: 60_000,
+  limit: 2,
+  nowMs: nowMs + 1_000,
+}).allowed, true);
+assert.equal(consumeAiWidgetRateLimit(db, {
+  scope: 'chat',
+  keyHash: rateKey,
+  windowMs: 60_000,
+  limit: 2,
+  nowMs: nowMs + 2_000,
+}).allowed, false);
+
 const cleanup = cleanupExpiredAiWidgetLogs(
   db,
   nowMs + AI_WIDGET_TEST_TRANSCRIPT_RETENTION_MS + 10_000,
 );
-assert.equal(cleanup.expiredTurns, 1);
+assert.equal(cleanup.expiredTurns, 2);
 assert.equal(cleanup.expiredTestLeads, 1);
-assert.equal(cleanup.expiredSessions, 1);
+assert.equal(cleanup.expiredProductionLeads, 1);
+assert.equal(cleanup.expiredSessions, 2);
 
 db.close();
 console.log('AI widget transcript log checks: OK');

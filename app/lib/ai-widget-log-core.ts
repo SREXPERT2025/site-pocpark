@@ -1,10 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import type Database from 'better-sqlite3';
 
-export const AI_WIDGET_TEST_TRANSCRIPT_RETENTION_MS =
+export const AI_WIDGET_TRANSCRIPT_RETENTION_MS =
   7 * 24 * 60 * 60 * 1000;
+export const AI_WIDGET_TEST_TRANSCRIPT_RETENTION_MS =
+  AI_WIDGET_TRANSCRIPT_RETENTION_MS;
 export const AI_WIDGET_OPERATIONAL_LOG_RETENTION_MS =
   14 * 24 * 60 * 60 * 1000;
+
+export const AI_WIDGET_SESSION_MODES = [
+  'preview',
+  'production',
+] as const;
+export type AiWidgetSessionMode =
+  (typeof AI_WIDGET_SESSION_MODES)[number];
 
 export const AI_WIDGET_TURN_STATUSES = [
   'pending',
@@ -48,20 +57,32 @@ export type AiWidgetTestLeadRow = {
   expiresAtMs: number;
 };
 
+export type AiWidgetProductionLeadRow = {
+  id: string;
+  sessionId: string;
+  submissionId: string;
+  registryLeadId: string;
+  publicId: string;
+  status: 'registered';
+  createdAt: string;
+  expiresAtMs: number;
+};
+
 export type AiWidgetSessionDetails = {
   id: string;
-  mode: 'test';
+  mode: AiWidgetSessionMode;
   sourcePage: string;
   createdAt: string;
   updatedAt: string;
   expiresAtMs: number;
   turns: AiWidgetTurnRow[];
   testLeads: AiWidgetTestLeadRow[];
+  productionLeads: AiWidgetProductionLeadRow[];
 };
 
 export type AiWidgetSessionSummary = {
   id: string;
-  mode: 'test';
+  mode: AiWidgetSessionMode;
   sourcePage: string;
   createdAt: string;
   updatedAt: string;
@@ -70,6 +91,7 @@ export type AiWidgetSessionSummary = {
   answeredCount: number;
   errorCount: number;
   testLeadCount: number;
+  productionLeadCount: number;
   latestQuestion: string | null;
 };
 
@@ -184,6 +206,28 @@ function rowToTestLead(row: {
   };
 }
 
+function rowToProductionLead(row: {
+  id: string;
+  session_id: string;
+  submission_id: string;
+  registry_lead_id: string;
+  public_id: string;
+  status: 'registered';
+  created_at: string;
+  expires_at_ms: number;
+}): AiWidgetProductionLeadRow {
+  return {
+    id: row.id,
+    sessionId: row.session_id,
+    submissionId: row.submission_id,
+    registryLeadId: row.registry_lead_id,
+    publicId: row.public_id,
+    status: row.status,
+    createdAt: row.created_at,
+    expiresAtMs: row.expires_at_ms,
+  };
+}
+
 export function runAiWidgetLogMigrations(db: Database.Database) {
   db.exec(`
     CREATE TABLE IF NOT EXISTS ai_widget_log_migrations (
@@ -277,6 +321,53 @@ export function runAiWidgetLogMigrations(db: Database.Database) {
       `).run(new Date().toISOString());
     })();
   }
+
+  if (!applied.has(2)) {
+    db.transaction(() => {
+      db.exec(`
+        ALTER TABLE ai_widget_sessions
+          ADD COLUMN runtime_mode TEXT NOT NULL DEFAULT 'preview'
+            CHECK (runtime_mode IN ('preview', 'production'));
+
+        CREATE TABLE ai_widget_production_leads (
+          id TEXT PRIMARY KEY,
+          session_id TEXT NOT NULL,
+          submission_id TEXT NOT NULL UNIQUE,
+          registry_lead_id TEXT NOT NULL,
+          public_id TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'registered'
+            CHECK (status = 'registered'),
+          created_at TEXT NOT NULL,
+          created_at_ms INTEGER NOT NULL,
+          expires_at_ms INTEGER NOT NULL,
+          FOREIGN KEY (session_id)
+            REFERENCES ai_widget_sessions(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE ai_widget_rate_limits (
+          scope TEXT NOT NULL,
+          key_hash TEXT NOT NULL,
+          window_started_ms INTEGER NOT NULL,
+          request_count INTEGER NOT NULL DEFAULT 0
+            CHECK (request_count >= 0),
+          expires_at_ms INTEGER NOT NULL,
+          PRIMARY KEY (scope, key_hash)
+        );
+
+        CREATE INDEX idx_ai_widget_production_leads_session
+          ON ai_widget_production_leads(session_id, created_at_ms);
+        CREATE INDEX idx_ai_widget_production_leads_expiry
+          ON ai_widget_production_leads(expires_at_ms);
+        CREATE INDEX idx_ai_widget_rate_limits_expiry
+          ON ai_widget_rate_limits(expires_at_ms);
+      `);
+      db.prepare(`
+        INSERT INTO ai_widget_log_migrations (
+          version, name, applied_at
+        ) VALUES (2, 'production_runtime_and_lead_links', ?)
+      `).run(new Date().toISOString());
+    })();
+  }
 }
 
 function touchSession(
@@ -284,20 +375,25 @@ function touchSession(
   input: {
     sessionId: string;
     sourcePage: string;
+    runtimeMode: AiWidgetSessionMode;
     nowMs: number;
     expiresAtMs: number;
   },
 ) {
   const sessionId = validIdentifier(input.sessionId, 'session_id');
   const sourcePage = validSourcePage(input.sourcePage);
+  if (!AI_WIDGET_SESSION_MODES.includes(input.runtimeMode)) {
+    throw new Error('INVALID_RUNTIME_MODE');
+  }
   const now = iso(input.nowMs);
   db.prepare(`
     INSERT INTO ai_widget_sessions (
       id, mode, source_page, created_at, created_at_ms,
-      updated_at, updated_at_ms, expires_at_ms
-    ) VALUES (?, 'test', ?, ?, ?, ?, ?, ?)
+      updated_at, updated_at_ms, expires_at_ms, runtime_mode
+    ) VALUES (?, 'test', ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       source_page = excluded.source_page,
+      runtime_mode = excluded.runtime_mode,
       updated_at = excluded.updated_at,
       updated_at_ms = excluded.updated_at_ms,
       expires_at_ms = MAX(
@@ -312,6 +408,7 @@ function touchSession(
     now,
     input.nowMs,
     input.expiresAtMs,
+    input.runtimeMode,
   );
 }
 
@@ -323,6 +420,7 @@ export function beginAiWidgetTurn(
     requestId: string;
     sourcePage: string;
     userContent: string;
+    runtimeMode?: AiWidgetSessionMode;
     nowMs?: number;
   },
 ) {
@@ -335,11 +433,13 @@ export function beginAiWidgetTurn(
   const sourcePage = validSourcePage(input.sourcePage);
   const userContent = requiredText(input.userContent, 'user_content', 1_200);
   const now = iso(nowMs);
+  const runtimeMode = input.runtimeMode ?? 'preview';
 
   return db.transaction(() => {
     touchSession(db, {
       sessionId,
       sourcePage,
+      runtimeMode,
       nowMs,
       expiresAtMs,
     });
@@ -567,6 +667,7 @@ export function registerAiWidgetTestLead(
     touchSession(db, {
       sessionId,
       sourcePage,
+      runtimeMode: 'preview',
       nowMs,
       expiresAtMs,
     });
@@ -638,6 +739,163 @@ export function registerAiWidgetTestLead(
   })();
 }
 
+export function registerAiWidgetProductionLead(
+  db: Database.Database,
+  input: {
+    sessionId: string;
+    submissionId: string;
+    sourcePage: string;
+    registryLeadId: string;
+    publicId: string;
+    nowMs?: number;
+    idFactory?: () => string;
+  },
+) {
+  const nowMs = input.nowMs ?? Date.now();
+  cleanupExpiredAiWidgetLogs(db, nowMs);
+  const expiresAtMs = nowMs + AI_WIDGET_TRANSCRIPT_RETENTION_MS;
+  const sessionId = validIdentifier(input.sessionId, 'session_id');
+  const submissionId = validIdentifier(input.submissionId, 'submission_id');
+  const sourcePage = validSourcePage(input.sourcePage);
+  const registryLeadId = requiredText(
+    input.registryLeadId,
+    'registry_lead_id',
+    128,
+  );
+  const publicId = requiredText(input.publicId, 'public_id', 32);
+  if (!/^RSP-[A-F0-9]{8}$/.test(publicId)) {
+    throw new Error('INVALID_PUBLIC_ID');
+  }
+  const createdAt = iso(nowMs);
+
+  return db.transaction(() => {
+    touchSession(db, {
+      sessionId,
+      sourcePage,
+      runtimeMode: 'production',
+      nowMs,
+      expiresAtMs,
+    });
+    const existing = db.prepare(`
+      SELECT *
+      FROM ai_widget_production_leads
+      WHERE submission_id = ?
+    `).get(submissionId) as
+      | Parameters<typeof rowToProductionLead>[0]
+      | undefined;
+    if (existing) {
+      if (
+        existing.session_id !== sessionId
+        || existing.registry_lead_id !== registryLeadId
+        || existing.public_id !== publicId
+      ) {
+        throw new Error('PRODUCTION_LEAD_IDEMPOTENCY_CONFLICT');
+      }
+      return {
+        ...rowToProductionLead(existing),
+        created: false,
+      };
+    }
+    const id = input.idFactory?.() ?? randomUUID();
+    db.prepare(`
+      INSERT INTO ai_widget_production_leads (
+        id, session_id, submission_id, registry_lead_id, public_id,
+        status, created_at, created_at_ms, expires_at_ms
+      ) VALUES (?, ?, ?, ?, ?, 'registered', ?, ?, ?)
+    `).run(
+      id,
+      sessionId,
+      submissionId,
+      registryLeadId,
+      publicId,
+      createdAt,
+      nowMs,
+      expiresAtMs,
+    );
+    return {
+      ...rowToProductionLead(
+        db.prepare(`
+          SELECT *
+          FROM ai_widget_production_leads
+          WHERE id = ?
+        `).get(id) as Parameters<typeof rowToProductionLead>[0],
+      ),
+      created: true,
+    };
+  })();
+}
+
+export function consumeAiWidgetRateLimit(
+  db: Database.Database,
+  input: {
+    scope: string;
+    keyHash: string;
+    windowMs: number;
+    limit: number;
+    nowMs?: number;
+  },
+) {
+  const nowMs = input.nowMs ?? Date.now();
+  const scope = requiredText(input.scope, 'scope', 80);
+  const keyHash = requiredText(input.keyHash, 'key_hash', 128);
+  if (!/^[a-f0-9]{64}$/i.test(keyHash)) {
+    throw new Error('INVALID_RATE_LIMIT_KEY');
+  }
+  const windowMs = Math.trunc(input.windowMs);
+  const limit = Math.trunc(input.limit);
+  if (windowMs < 1_000 || windowMs > 7 * 24 * 60 * 60 * 1000) {
+    throw new Error('INVALID_RATE_LIMIT_WINDOW');
+  }
+  if (limit < 1 || limit > 10_000) {
+    throw new Error('INVALID_RATE_LIMIT');
+  }
+
+  return db.transaction(() => {
+    db.prepare(`
+      DELETE FROM ai_widget_rate_limits
+      WHERE expires_at_ms <= ?
+    `).run(nowMs);
+    const existing = db.prepare(`
+      SELECT window_started_ms, request_count
+      FROM ai_widget_rate_limits
+      WHERE scope = ? AND key_hash = ?
+    `).get(scope, keyHash) as {
+      window_started_ms: number;
+      request_count: number;
+    } | undefined;
+    if (!existing || nowMs - existing.window_started_ms >= windowMs) {
+      db.prepare(`
+        INSERT INTO ai_widget_rate_limits (
+          scope, key_hash, window_started_ms, request_count, expires_at_ms
+        ) VALUES (?, ?, ?, 1, ?)
+        ON CONFLICT(scope, key_hash) DO UPDATE SET
+          window_started_ms = excluded.window_started_ms,
+          request_count = 1,
+          expires_at_ms = excluded.expires_at_ms
+      `).run(scope, keyHash, nowMs, nowMs + windowMs);
+      return { allowed: true, remaining: limit - 1 };
+    }
+    if (existing.request_count >= limit) {
+      return { allowed: false, remaining: 0 };
+    }
+    db.prepare(`
+      UPDATE ai_widget_rate_limits
+      SET
+        request_count = request_count + 1,
+        expires_at_ms = ?
+      WHERE scope = ? AND key_hash = ?
+    `).run(
+      existing.window_started_ms + windowMs,
+      scope,
+      keyHash,
+    );
+    return {
+      allowed: true,
+      remaining: Math.max(0, limit - existing.request_count - 1),
+    };
+  })();
+}
+
 export function listAiWidgetSessions(
   db: Database.Database,
   options: { limit?: number; offset?: number } = {},
@@ -660,6 +918,8 @@ export function listAiWidgetSessions(
         WHEN ai_widget_turns.status = 'error' THEN ai_widget_turns.id
       END) AS error_count,
       COUNT(DISTINCT ai_widget_test_leads.id) AS test_lead_count,
+      COUNT(DISTINCT ai_widget_production_leads.id)
+        AS production_lead_count,
       (
         SELECT latest_turn.user_content
         FROM ai_widget_turns AS latest_turn
@@ -672,12 +932,14 @@ export function listAiWidgetSessions(
       ON ai_widget_turns.session_id = ai_widget_sessions.id
     LEFT JOIN ai_widget_test_leads
       ON ai_widget_test_leads.session_id = ai_widget_sessions.id
+    LEFT JOIN ai_widget_production_leads
+      ON ai_widget_production_leads.session_id = ai_widget_sessions.id
     GROUP BY ai_widget_sessions.id
     ORDER BY ai_widget_sessions.updated_at_ms DESC
     LIMIT ? OFFSET ?
   `).all(limit, offset) as Array<{
     id: string;
-    mode: 'test';
+    runtime_mode: AiWidgetSessionMode;
     source_page: string;
     created_at: string;
     updated_at: string;
@@ -686,11 +948,12 @@ export function listAiWidgetSessions(
     answered_count: number | null;
     error_count: number | null;
     test_lead_count: number;
+    production_lead_count: number;
     latest_question: string | null;
   }>;
   const items: AiWidgetSessionSummary[] = rows.map((row) => ({
     id: row.id,
-    mode: row.mode,
+    mode: row.runtime_mode,
     sourcePage: row.source_page,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -699,6 +962,7 @@ export function listAiWidgetSessions(
     answeredCount: row.answered_count ?? 0,
     errorCount: row.error_count ?? 0,
     testLeadCount: row.test_lead_count,
+    productionLeadCount: row.production_lead_count,
     latestQuestion: row.latest_question,
   }));
   return {
@@ -719,7 +983,7 @@ export function getAiWidgetSession(
     WHERE id = ?
   `).get(sessionId) as {
     id: string;
-    mode: 'test';
+    runtime_mode: AiWidgetSessionMode;
     source_page: string;
     created_at: string;
     updated_at: string;
@@ -740,15 +1004,23 @@ export function getAiWidgetSession(
     ORDER BY created_at_ms, id
   `).all(sessionId) as Array<Parameters<typeof rowToTestLead>[0]>)
     .map(rowToTestLead);
+  const productionLeads = (db.prepare(`
+    SELECT *
+    FROM ai_widget_production_leads
+    WHERE session_id = ?
+    ORDER BY created_at_ms, id
+  `).all(sessionId) as Array<Parameters<typeof rowToProductionLead>[0]>)
+    .map(rowToProductionLead);
   return {
     id: session.id,
-    mode: session.mode,
+    mode: session.runtime_mode,
     sourcePage: session.source_page,
     createdAt: session.created_at,
     updatedAt: session.updated_at,
     expiresAtMs: session.expires_at_ms,
     turns,
     testLeads,
+    productionLeads,
   };
 }
 
@@ -775,6 +1047,14 @@ export function cleanupExpiredAiWidgetLogs(
       DELETE FROM ai_widget_test_leads
       WHERE expires_at_ms <= ?
     `).run(nowMs).changes;
+    const expiredProductionLeads = db.prepare(`
+      DELETE FROM ai_widget_production_leads
+      WHERE expires_at_ms <= ?
+    `).run(nowMs).changes;
+    db.prepare(`
+      DELETE FROM ai_widget_rate_limits
+      WHERE expires_at_ms <= ?
+    `).run(nowMs);
     const expiredSessions = db.prepare(`
       DELETE FROM ai_widget_sessions
       WHERE expires_at_ms <= ?
@@ -789,11 +1069,18 @@ export function cleanupExpiredAiWidgetLogs(
             FROM ai_widget_test_leads
             WHERE ai_widget_test_leads.session_id = ai_widget_sessions.id
           )
+          AND NOT EXISTS (
+            SELECT 1
+            FROM ai_widget_production_leads
+            WHERE ai_widget_production_leads.session_id =
+              ai_widget_sessions.id
+          )
         )
     `).run(nowMs).changes;
     return {
       expiredTurns,
       expiredTestLeads,
+      expiredProductionLeads,
       expiredSessions,
     };
   })();

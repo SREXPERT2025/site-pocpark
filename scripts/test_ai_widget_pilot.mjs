@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import {
   aiWidgetHandoffMode,
+  aiWidgetEnabled,
   aiWidgetOriginAllowed,
   aiWidgetPilotEnabled,
+  aiWidgetRuntimeMode,
+  requireAiWidgetGatewayUrl,
   requireLoopbackGatewayUrl,
   validateAiWidgetChatPayload,
 } from '../app/lib/ai-widget-pilot.ts';
@@ -10,8 +13,22 @@ import {
 assert.equal(aiWidgetPilotEnabled({ AI_WIDGET_PILOT_ENABLED: 'true' }), true);
 assert.equal(aiWidgetPilotEnabled({ AI_WIDGET_PILOT_ENABLED: 'false' }), false);
 assert.equal(aiWidgetPilotEnabled({}), false);
+assert.equal(aiWidgetEnabled({ AI_WIDGET_ENABLED: 'true' }), true);
+assert.equal(
+  aiWidgetRuntimeMode({ AI_WIDGET_RUNTIME_MODE: 'production' }),
+  'production',
+);
+assert.equal(aiWidgetRuntimeMode({}), 'preview');
 assert.equal(aiWidgetHandoffMode({ AI_WIDGET_HANDOFF_MODE: 'test' }), 'test');
 assert.equal(aiWidgetHandoffMode({ AI_WIDGET_HANDOFF_MODE: 'live' }), 'off');
+assert.equal(aiWidgetHandoffMode({
+  AI_WIDGET_RUNTIME_MODE: 'production',
+  AI_WIDGET_HANDOFF_MODE: 'live',
+}), 'live');
+assert.equal(aiWidgetHandoffMode({
+  AI_WIDGET_RUNTIME_MODE: 'production',
+  AI_WIDGET_HANDOFF_MODE: 'test',
+}), 'off');
 assert.equal(aiWidgetHandoffMode({}), 'off');
 
 assert.equal(
@@ -21,6 +38,27 @@ assert.equal(
 assert.throws(
   () => requireLoopbackGatewayUrl('https://example.com'),
   /NOT_LOOPBACK/,
+);
+assert.equal(
+  requireAiWidgetGatewayUrl(
+    'https://ai-gateway.rospark.internal/',
+    'production',
+  ),
+  'https://ai-gateway.rospark.internal',
+);
+assert.throws(
+  () => requireAiWidgetGatewayUrl(
+    'http://ai-gateway.rospark.internal',
+    'production',
+  ),
+  /PRODUCTION_HTTPS/,
+);
+assert.throws(
+  () => requireAiWidgetGatewayUrl(
+    'https://user:secret@example.com',
+    'production',
+  ),
+  /PRODUCTION_HTTPS/,
 );
 assert.throws(
   () => requireLoopbackGatewayUrl('http://192.168.1.20:4317'),
@@ -85,6 +123,28 @@ assert.equal(
     { AI_WIDGET_PILOT_ORIGINS: 'https://srtestrealme.ru:3001' },
   ),
   true,
+);
+assert.equal(
+  aiWidgetOriginAllowed(
+    'https://www.роспарк.рф',
+    'http://127.0.0.1:3000/api/ai-widget/chat',
+    {
+      AI_WIDGET_RUNTIME_MODE: 'production',
+      AI_WIDGET_ALLOWED_ORIGINS: 'https://www.роспарк.рф',
+    },
+  ),
+  true,
+);
+assert.equal(
+  aiWidgetOriginAllowed(
+    'https://unconfigured.example',
+    'https://unconfigured.example/api/ai-widget/chat',
+    {
+      AI_WIDGET_RUNTIME_MODE: 'production',
+      AI_WIDGET_ALLOWED_ORIGINS: 'https://www.роспарк.рф',
+    },
+  ),
+  false,
 );
 assert.equal(
   aiWidgetOriginAllowed(

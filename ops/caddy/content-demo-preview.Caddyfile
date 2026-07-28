@@ -31,13 +31,13 @@ https://srtestrealme.ru:3001 {
 
 	@unsafe {
 		method POST PUT PATCH DELETE
-		not path /api/demo/session /api/demo/ai-widget/chat /api/demo/ai-widget/lead
+		not path /api/demo/session /api/demo/ai-widget/chat /api/demo/ai-widget/lead /api/ai-widget/chat /api/ai-widget/lead
 	}
 	respond @unsafe "" 405
 
 	@api {
 		path /api/*
-		not path /api/demo/*
+		not path /api/demo/* /api/ai-widget/*
 	}
 	respond @api "" 404
 

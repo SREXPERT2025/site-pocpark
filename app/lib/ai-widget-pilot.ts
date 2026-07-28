@@ -20,18 +20,42 @@ export type AiWidgetValidationResult =
   | { ok: true; payload: AiWidgetChatPayload }
   | { ok: false; code: string };
 
+export type AiWidgetRuntimeMode = 'preview' | 'production';
+
+export function aiWidgetRuntimeMode(
+  env: NodeJS.ProcessEnv = process.env,
+): AiWidgetRuntimeMode {
+  return env.AI_WIDGET_RUNTIME_MODE === 'production'
+    ? 'production'
+    : 'preview';
+}
+
+export function aiWidgetEnabled(
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  return (
+    env.AI_WIDGET_ENABLED === 'true'
+    || env.AI_WIDGET_PILOT_ENABLED === 'true'
+  );
+}
+
 export function aiWidgetPilotEnabled(
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  return env.AI_WIDGET_PILOT_ENABLED === 'true';
+  return aiWidgetEnabled(env);
 }
 
-export type AiWidgetHandoffMode = 'off' | 'test';
+export type AiWidgetHandoffMode = 'off' | 'test' | 'live';
 
 export function aiWidgetHandoffMode(
   env: NodeJS.ProcessEnv = process.env,
 ): AiWidgetHandoffMode {
-  return env.AI_WIDGET_HANDOFF_MODE === 'test' ? 'test' : 'off';
+  const configured = env.AI_WIDGET_HANDOFF_MODE;
+  const runtimeMode = aiWidgetRuntimeMode(env);
+  if (runtimeMode === 'production') {
+    return configured === 'live' ? 'live' : 'off';
+  }
+  return configured === 'test' ? 'test' : 'off';
 }
 
 export function requireLoopbackGatewayUrl(value: string | undefined): string {
@@ -46,6 +70,28 @@ export function requireLoopbackGatewayUrl(value: string | undefined): string {
     || url.hash
   ) {
     throw new Error('AI_WIDGET_GATEWAY_URL_NOT_LOOPBACK');
+  }
+  return url.toString().replace(/\/$/, '');
+}
+
+export function requireAiWidgetGatewayUrl(
+  value: string | undefined,
+  runtimeMode: AiWidgetRuntimeMode,
+): string {
+  if (runtimeMode === 'preview') {
+    return requireLoopbackGatewayUrl(value);
+  }
+  if (!value) throw new Error('AI_WIDGET_GATEWAY_URL_MISSING');
+  const url = new URL(value);
+  if (
+    url.protocol !== 'https:'
+    || url.username
+    || url.password
+    || url.search
+    || url.hash
+    || url.pathname.includes('..')
+  ) {
+    throw new Error('AI_WIDGET_GATEWAY_URL_NOT_PRODUCTION_HTTPS');
   }
   return url.toString().replace(/\/$/, '');
 }
@@ -122,6 +168,7 @@ export function allowedAiWidgetOrigins(
   const values = new Set<string>();
   const configured = [
     env.NEXT_PUBLIC_SITE_URL,
+    ...(env.AI_WIDGET_ALLOWED_ORIGINS || '').split(','),
     ...(env.AI_WIDGET_PILOT_ORIGINS || '').split(','),
   ];
   for (const candidate of configured) {
@@ -133,7 +180,9 @@ export function allowedAiWidgetOrigins(
       // Invalid optional origin is ignored; no broad wildcard is introduced.
     }
   }
-  values.add(new URL(requestUrl).origin);
+  if (aiWidgetRuntimeMode(env) === 'preview') {
+    values.add(new URL(requestUrl).origin);
+  }
   return values;
 }
 

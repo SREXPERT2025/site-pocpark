@@ -35,7 +35,7 @@ Production/VPS: не затрагивается.
 браузер
 → Caddy :3001
 → Next.js 127.0.0.1:3100
-→ POST /api/demo/ai-widget/chat или /api/demo/ai-widget/lead
+→ POST /api/ai-widget/chat или /api/ai-widget/lead
 → gateway 127.0.0.1:8787
 → Ollama 127.0.0.1:11434
 → qwen3.6:27b
@@ -56,7 +56,10 @@ server-to-server secret из `.env.production.local`.
 5. Gateway проходит authenticated health и deterministic FAQ smoke.
 6. Caddyfile проходит `caddy validate`.
 7. В новой env-конфигурации:
-   - `AI_WIDGET_PILOT_ENABLED=true`;
+   - `AI_WIDGET_ENABLED=true`;
+   - `AI_WIDGET_RUNTIME_MODE=preview`;
+   - `AI_WIDGET_GATEWAY_MODE=preview`;
+   - legacy alias `AI_WIDGET_PILOT_ENABLED=true`;
    - `AI_WIDGET_HANDOFF_MODE=test`;
    - `AI_WIDGET_LOGGING_ENABLED=true`;
    - `AI_WIDGET_LOG_DB_PATH` указывает на отдельную preview SQLite;
@@ -78,7 +81,8 @@ server-to-server secret из `.env.production.local`.
 ## Acceptance после переключения
 
 - `/demo` отвечает `200`;
-- `/api/demo/ai-widget/status` возвращает `enabled: true`;
+- `/api/ai-widget/status` возвращает `enabled: true` и
+  `runtimeMode: preview`;
 - кнопка открывает панель на desktop/mobile;
 - `/admin` не содержит виджет;
 - точный FAQ отвечает без модели;
@@ -106,8 +110,9 @@ server-to-server secret из `.env.production.local`.
 
 ## Быстрый rollback
 
-1. Установить `AI_WIDGET_PILOT_ENABLED=false` и перезапустить Next.js — UI
-   исчезнет без новой сборки.
+1. Установить `AI_WIDGET_ENABLED=false` и
+   `AI_WIDGET_PILOT_ENABLED=false`, затем перезапустить Next.js — UI исчезнет
+   без новой сборки.
 2. Если требуется полный rollback, вернуть сохранённые app, env и Caddyfile,
    затем перезапустить прежние launchd jobs.
 3. Остановить gateway job.

@@ -27,6 +27,12 @@ const result = JSON.parse(run.stdout);
 const configured = readFileSync(envFile, 'utf8');
 assert.match(configured, /^EXISTING_KEY=preserved$/m);
 assert.match(configured, /^AI_WIDGET_PILOT_ENABLED=true$/m);
+assert.match(configured, /^AI_WIDGET_ENABLED=true$/m);
+assert.match(configured, /^AI_WIDGET_RUNTIME_MODE=preview$/m);
+assert.match(
+  configured,
+  /^AI_WIDGET_ALLOWED_ORIGINS=https:\/\/srtestrealme\.ru:3001$/m,
+);
 assert.match(
   configured,
   /^AI_WIDGET_PILOT_ORIGINS=https:\/\/srtestrealme\.ru:3001$/m,
@@ -39,6 +45,7 @@ assert.match(
   configured,
   /^AI_WIDGET_GATEWAY_SECRET='[A-Za-z0-9_-]{43}'$/m,
 );
+assert.match(configured, /^AI_WIDGET_GATEWAY_MODE=preview$/m);
 assert.match(configured, /^AI_WIDGET_HANDOFF_MODE=test$/m);
 assert.match(configured, /^AI_WIDGET_LOGGING_ENABLED=true$/m);
 assert.match(

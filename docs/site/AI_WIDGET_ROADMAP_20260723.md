@@ -389,11 +389,32 @@ production lead registry и VPS не затронуты. Приёмка зафи
 - есть rollback/kill switch;
 - директор отдельно подтвердил публикацию.
 
+Статус подготовки на 2026-07-28:
+
+- директор подтвердил переход от закрытого preview к подготовке полноценной
+  production-версии для VPS;
+- production-интерфейс не показывает слова «тест», «закрытый тест» и
+  предупреждение о вымышленных данных;
+- публичный API отделён от legacy preview routes;
+- рабочая заявка сохраняется в существующий lead registry, назначается Сергею
+  и ставится в существующий MAX outbox;
+- имя и телефон принимает отдельная форма VPS и не передаёт их AI-модели;
+- полный диалог хранится в отдельной SQLite на VPS до семи дней;
+- persistent rate limit, fallback, cleanup timer и kill switch реализованы;
+- Андрей и Сергей видят все production-диалоги; удаление доступно только
+  Андрею;
+- Mac Studio получил отдельный production-профиль и отдельный loopback-процесс,
+  поэтому дальнейшая настройка ответов не требует релиза сайта;
+- создан production-runbook с backup, readiness, acceptance и rollback;
+- сам VPS cutover и первая контрольная отправка в MAX ещё не выполнялись.
+
+Локальная evidence-приёмка:
+`docs/site/ai-widget/AI_WIDGET_PRODUCTION_CANDIDATE_ACCEPTANCE_20260728.md`.
+
 ## 12. Ближайший следующий шаг
 
-Завершить `AI-WIDGET-2T`, обновить Mac Studio preview и провести ручную
-проверку директором и коллегами: desktop/mobile, тексты, ссылки, скорость,
-сбор synthetic-карточки и журнал диалогов. Затем собрать замечания, выполнить
-regression и только после отдельного согласования подготовить накопленный пакет
-к выпуску на VPS. MAX, amoCRM и production lead registry до следующего gate не
-подключать.
+Завершить QA накопленного production-пакета, получить точный закрытый HTTPS URL
+между VPS и отдельным production gateway Mac Studio, затем предъявить target
+SHA и release evidence владельцу. После отдельного подтверждения выполнить
+backup и VPS cutover. Первую контрольную production-заявку и одну отправку в
+MAX проводить отдельным gate после технической acceptance.

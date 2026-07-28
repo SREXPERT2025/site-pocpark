@@ -63,6 +63,7 @@ export const LEAD_CONTEXT_KEYS = [
   'channel',
   'request_id',
   'demo_name',
+  'widget_session_id',
 ] as const;
 
 export type LeadKind = (typeof LEAD_KINDS)[number];

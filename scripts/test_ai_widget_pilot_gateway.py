@@ -20,6 +20,13 @@ class GatewayContractTests(unittest.TestCase):
         self.assertEqual(gateway.require_keep_alive("2h"), "2h")
         with self.assertRaises(ValueError):
             gateway.require_keep_alive("forever")
+        self.assertEqual(gateway.require_runtime_mode(None), "preview")
+        self.assertEqual(
+            gateway.require_runtime_mode("production"),
+            "production",
+        )
+        with self.assertRaises(ValueError):
+            gateway.require_runtime_mode("public")
 
     def test_payload_contract(self) -> None:
         parsed = gateway.validate_request(
@@ -68,6 +75,14 @@ class DeterministicEngineTests(unittest.TestCase):
             model=gateway.adapter.ALLOWED_MODEL,
             timeout=1,
             max_tokens=60,
+        )
+        cls.production_engine = gateway.PilotEngine(
+            ai_root=gateway.adapter.DEFAULT_AI_ROOT,
+            endpoint="http://127.0.0.1:11434",
+            model=gateway.adapter.ALLOWED_MODEL,
+            timeout=1,
+            max_tokens=60,
+            runtime_mode="production",
         )
 
     def test_exact_faq_without_model_call(self) -> None:
@@ -209,6 +224,38 @@ class DeterministicEngineTests(unittest.TestCase):
         self.assertEqual(result.route, "crm")
         self.assertIn("тестовую заявку", result.answer)
         self.assertIn("не будут уведомлены", result.answer)
+
+    def test_production_lead_intent_uses_real_form_copy(self) -> None:
+        result = self.production_engine.answer(
+            {
+                "sourcePage": "/",
+                "messages": [
+                    {"role": "user", "content": "Передайте заявку менеджеру"}
+                ],
+            }
+        )
+        self.assertEqual(result.route, "crm")
+        self.assertIn("Оставить заявку", result.answer)
+        self.assertIn("номер телефона", result.answer)
+        self.assertNotIn("тест", result.answer.lower())
+        self.assertNotIn("MAX", result.answer)
+
+    def test_production_identity_and_prompt_have_no_preview_status(self) -> None:
+        result = self.production_engine.answer(
+            {
+                "sourcePage": "/",
+                "messages": [
+                    {"role": "user", "content": "Как вас зовут?"},
+                ],
+            }
+        )
+        self.assertEqual(result.route, "conversation")
+        self.assertIn("AI-консультант РОСПАРК", result.answer)
+        self.assertNotIn("тест", result.answer.lower())
+        self.assertNotIn("демо", result.answer.lower())
+        lowered_prompt = self.production_engine.system_prompt.lower()
+        for phrase in gateway.adapter.PRODUCTION_FORBIDDEN_PROMPT_PHRASES:
+            self.assertNotIn(phrase, lowered_prompt)
 
     def test_demo_answer_contains_approved_internal_link(self) -> None:
         answer = gateway.append_approved_links(

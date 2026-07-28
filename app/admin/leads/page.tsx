@@ -9,7 +9,11 @@ import LeadAdminDashboard from './LeadAdminDashboard';
 
 export const dynamic = 'force-dynamic';
 
-export default function LeadAdminPage() {
+export default function LeadAdminPage({
+  searchParams,
+}: {
+  searchParams?: { search?: string | string[] };
+}) {
   if (!leadAdminEnabled()) notFound();
   let session: ReturnType<typeof verifyConfiguredLeadAdminSession>;
   try {
@@ -19,10 +23,15 @@ export default function LeadAdminPage() {
     redirect('/admin/leads/login');
   }
   if (!session) redirect('/admin/leads/login');
+  const requestedSearch = Array.isArray(searchParams?.search)
+    ? searchParams?.search[0]
+    : searchParams?.search;
+  const initialSearch = (requestedSearch || '').trim().slice(0, 160);
   return (
     <LeadAdminDashboard
       displayName={session.displayName}
       role={session.role}
+      initialSearch={initialSearch}
     />
   );
 }

@@ -40,6 +40,7 @@ export type LeadPayload = {
   registryLeadId?: string;
   registryDuplicate?: boolean;
   registryKind?: 'site_form' | 'demo_feedback';
+  widgetSessionId?: string;
 };
 
 export type LeadDeliveryChannel = 'email' | 'max';

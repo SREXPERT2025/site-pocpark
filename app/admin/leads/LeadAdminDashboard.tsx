@@ -130,19 +130,21 @@ function queryString(filters: Filters) {
 export default function LeadAdminDashboard({
   displayName,
   role,
+  initialSearch = '',
 }: {
   displayName: string;
   role: 'director' | 'sales_head';
+  initialSearch?: string;
 }) {
   const [filters, setFilters] = useState<Filters>({
-    search: '',
+    search: initialSearch,
     status: '',
     kind: '',
     from: '',
     to: '',
     page: 1,
   });
-  const [searchDraft, setSearchDraft] = useState('');
+  const [searchDraft, setSearchDraft] = useState(initialSearch);
   const [data, setData] = useState<LeadResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

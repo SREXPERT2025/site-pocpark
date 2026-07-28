@@ -1,8 +1,8 @@
 # AI-WIDGET-0 — пакет знаний и правил
 
-Дата подготовки: 2026-07-27
-Статус: утверждённый пакет закрытого пилота; `AI-WIDGET-1` включён только на
-Mac Studio preview, production/VPS не изменялись.
+Дата подготовки: 2026-07-27, production-дополнение 2026-07-28
+Статус: preview работает на Mac Studio; production release candidate
+подготовлен локально, VPS ещё не переключён.
 
 ## Назначение
 
@@ -16,9 +16,10 @@ Mac Studio preview, production/VPS не изменялись.
 
 Пакет знаний дополнен UI/API-каркасом и локальным gateway. По умолчанию они
 выключены feature flag. На 2026-07-27 владелец отдельно разрешил включить их
-на коротком Mac Studio preview. На 2026-07-28 разрешены отдельный семидневный
-журнал synthetic-диалогов и тестовая карточка без внешней отправки. MAX,
-production lead registry и VPS не подключены.
+на коротком Mac Studio preview. На 2026-07-28 директор подтвердил подготовку
+полноценного production-контура: публичный UI, реальный lead registry, журнал,
+MAX outbox и отдельный Mac Studio gateway. Фактический VPS cutover и первая
+контрольная отправка в MAX ещё не выполнялись.
 
 ## Состав
 
@@ -38,6 +39,8 @@ production lead registry и VPS не подключены.
    read-only preview.
 9. `AI_WIDGET_2T_PREVIEW_ACCEPTANCE_20260728.md` — чек-лист полного
    synthetic-контура с локальным журналом и тестовой карточкой.
+10. `WIDGET_PRODUCTION_PROFILE_V1.md` — отдельный профиль публичного
+    AI-консультанта без preview-инструкций.
 
 Изолированный повторный тест запускается через
 `scripts/ai_widget_cascade_v3_adapter.py`. Адаптер:
@@ -60,7 +63,7 @@ production lead registry и VPS не подключены.
 диагностика, границы знаний и любые автоматические ошибки. Телефоны и email в
 отчёте маскируются.
 
-## Локальный gateway закрытого пилота
+## Локальные gateway
 
 `scripts/run_ai_widget_pilot_gateway.py`:
 
@@ -79,6 +82,14 @@ production lead registry и VPS не подключены.
 - site-side журнал закрытого теста отдельно сохраняет полный synthetic-диалог
   максимум на семь дней.
 
+Один и тот же ограниченный gateway поддерживает два явно разделённых режима:
+
+- preview на `127.0.0.1:8787`;
+- production на `127.0.0.1:8788`.
+
+Production-процесс использует отдельные профиль, env, bearer secret и launchd
+job. До VPS он доступен только через закрытый HTTPS server-to-server канал.
+
 Контракт проверяется командой:
 
 ```text
@@ -91,6 +102,9 @@ Gateway установлен как отдельная фоновая служб
 
 Операционный runbook:
 `docs/deployment/AI_WIDGET_PREVIEW_MAC_STUDIO.md`.
+
+Production runbook:
+`docs/deployment/AI_WIDGET_PRODUCTION_VPS_MAC_STUDIO.md`.
 
 ## Статусы
 
@@ -114,10 +128,10 @@ Gateway установлен как отдельная фоновая служб
 
 ## Граница текущего блока
 
-До отдельного согласования следующего этапа запрещено:
-
-- переносить материалы в рабочий профиль OpenClaw;
-- считать preview публичным production API;
-- подключать production `/api/lead`;
-- включать реальные MAX-уведомления;
-- публиковать виджет на production.
+- рабочий OpenClaw `main` не изменяется;
+- preview не считается публичным production;
+- production использует отдельный `/api/ai-widget/lead`, а не свободный
+  доступ модели к `/api/lead`;
+- первая отправка в MAX выполняется только отдельным операционным gate;
+- публикация на VPS возможна после target SHA, backup, закрытого HTTPS gateway,
+  readiness и отдельного подтверждения cutover.

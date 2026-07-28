@@ -155,15 +155,25 @@ Demo не управляет реальным шлагбаумом, не вып�
 
 ### 5. AI-виджет
 
-AI-виджет пока не входит в production-архитектуру сайта.
+AI-виджет подготовлен как отдельный fail-closed production-контур, но ещё не
+переключён на публичном VPS.
 
-План:
+Архитектура и план:
 
 `docs/site/AI_WIDGET_ROADMAP_20260723.md`.
 
-Публичный AI должен работать только через отдельный restricted gateway и не
-получать доступ к OpenClaw `main`, терминалу, файлам, браузеру, Codex или
+`docs/site/AI_WIDGET_PRODUCTION_ARCHITECTURE_20260728.md`.
+
+Публичный сайт принимает запрос, журналирует диалог и регистрирует лид на VPS.
+Содержательный ответ формирует отдельный production gateway Mac Studio через
+закрытый HTTPS server-to-server канал. Браузер не знает адрес gateway и secret.
+Имя и телефон не передаются модели. Restricted gateway не получает доступ к
+OpenClaw `main`, терминалу, файлам, браузеру, Codex, lead registry или
 оборудованию.
+
+Preview и production gateway запускаются раздельно на loopback-портах `8787`
+и `8788`. Production включается только при рабочем журнале, lead registry,
+live handoff, точном HTTPS gateway и разрешённом origin.
 
 ## Основные директории
 

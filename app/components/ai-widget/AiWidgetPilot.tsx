@@ -37,26 +37,29 @@ type LeadStep =
   | 'submitting'
   | 'submitted';
 
-type TestLeadDraft = {
+type LeadDraft = {
   name: string;
   contact: string;
   objectDescription: string;
   taskDescription: string;
 };
 
-const emptyLeadDraft: TestLeadDraft = {
+const emptyLeadDraft: LeadDraft = {
   name: '',
   contact: '',
   objectDescription: '',
   taskDescription: '',
 };
 
-const greeting: UiMessage = {
-  id: 'greeting',
-  role: 'assistant',
-  content:
-    'Здравствуйте! Я тестовый AI-консультант РОСПАРК. Помогу разобраться в возможностях парковочной системы. Не вводите реальные персональные данные.',
-};
+function greetingFor(runtimeMode: 'preview' | 'production'): UiMessage {
+  return {
+    id: 'greeting',
+    role: 'assistant',
+    content: runtimeMode === 'production'
+      ? 'Здравствуйте! Я AI-консультант РОСПАРК. Помогу разобраться в возможностях парковочной системы и подобрать подходящий сценарий для вашего объекта.'
+      : 'Здравствуйте! Я тестовый AI-консультант РОСПАРК. Помогу разобраться в возможностях парковочной системы. Не вводите реальные персональные данные.',
+  };
+}
 
 const quickQuestions = [
   'Для каких объектов подходит система?',
@@ -112,21 +115,28 @@ function MessageText({ content }: { content: string }) {
 export default function AiWidgetPilot() {
   const pathname = usePathname();
   const [isEnabled, setIsEnabled] = useState(false);
-  const [handoffMode, setHandoffMode] = useState<'off' | 'test'>('off');
+  const [runtimeMode, setRuntimeMode] = useState<
+    'preview' | 'production'
+  >('preview');
+  const [handoffMode, setHandoffMode] = useState<
+    'off' | 'test' | 'live'
+  >('off');
   const [loggingEnabled, setLoggingEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [showInvite, setShowInvite] = useState(true);
-  const [messages, setMessages] = useState<UiMessage[]>([greeting]);
+  const [messages, setMessages] = useState<UiMessage[]>([
+    greetingFor('preview'),
+  ]);
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
   const [leadStep, setLeadStep] = useState<LeadStep>('idle');
-  const [leadDraft, setLeadDraft] = useState<TestLeadDraft>(emptyLeadDraft);
-  const [syntheticConsent, setSyntheticConsent] = useState(false);
+  const [leadDraft, setLeadDraft] = useState<LeadDraft>(emptyLeadDraft);
+  const [leadConsent, setLeadConsent] = useState(false);
   const [showLeadOffer, setShowLeadOffer] = useState(false);
-  const [testLeadResult, setTestLeadResult] = useState<{
+  const [leadResult, setLeadResult] = useState<{
     publicId: string;
-    maxPreview: string;
+    maxPreview?: string;
   } | null>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -140,7 +150,7 @@ export default function AiWidgetPilot() {
   useEffect(() => {
     if (isHidden) return;
     const controller = new AbortController();
-    void fetch('/api/demo/ai-widget/status', {
+    void fetch('/api/ai-widget/status', {
       cache: 'no-store',
       signal: controller.signal,
     })
@@ -148,21 +158,34 @@ export default function AiWidgetPilot() {
         response.ok
           ? response.json() as Promise<{
               enabled?: boolean;
-              handoffMode?: 'off' | 'test';
+              runtimeMode?: 'preview' | 'production';
+              handoffMode?: 'off' | 'test' | 'live';
               loggingEnabled?: boolean;
             }>
           : {
               enabled: false,
+              runtimeMode: 'preview' as const,
               handoffMode: 'off' as const,
               loggingEnabled: false,
             }
       ))
       .then((result) => {
         setIsEnabled(result.enabled === true);
+        const nextRuntimeMode = result.runtimeMode === 'production'
+          ? 'production'
+          : 'preview';
+        setRuntimeMode(nextRuntimeMode);
         setHandoffMode(
-          result.handoffMode === 'test' ? 'test' : 'off',
+          result.handoffMode === 'test' || result.handoffMode === 'live'
+            ? result.handoffMode
+            : 'off',
         );
         setLoggingEnabled(result.loggingEnabled === true);
+        setMessages((current) => (
+          current.length === 1 && current[0]?.id === 'greeting'
+            ? [greetingFor(nextRuntimeMode)]
+            : current
+        ));
       })
       .catch(() => {
         setIsEnabled(false);
@@ -215,9 +238,9 @@ export default function AiWidgetPilot() {
   const resetLeadFlow = () => {
     setLeadStep('idle');
     setLeadDraft(emptyLeadDraft);
-    setSyntheticConsent(false);
+    setLeadConsent(false);
     setShowLeadOffer(false);
-    setTestLeadResult(null);
+    setLeadResult(null);
     submissionIdRef.current = '';
   };
 
@@ -240,7 +263,7 @@ export default function AiWidgetPilot() {
       nextSessionId,
     );
     sessionIdRef.current = nextSessionId;
-    setMessages([greeting]);
+    setMessages([greetingFor(runtimeMode)]);
     setDraft('');
     setError('');
     setIsSending(false);
@@ -273,7 +296,7 @@ export default function AiWidgetPilot() {
 
   const startLeadFlow = () => {
     if (
-      handoffMode !== 'test'
+      handoffMode === 'off'
       || !loggingEnabled
       || leadStep !== 'idle'
     ) {
@@ -281,13 +304,15 @@ export default function AiWidgetPilot() {
     }
     setShowLeadOffer(false);
     setLeadDraft(emptyLeadDraft);
-    setSyntheticConsent(false);
-    setTestLeadResult(null);
+    setLeadConsent(false);
+    setLeadResult(null);
     submissionIdRef.current = crypto.randomUUID();
     setLeadStep('name');
     appendLeadExchange(
       null,
-      'Начинаем тестовую заявку. Используйте только вымышленные данные. Как к вам обращаться?',
+      runtimeMode === 'production'
+        ? 'Хорошо, оформим обращение. Как к вам обращаться?'
+        : 'Начинаем тестовую заявку. Используйте только вымышленные данные. Как к вам обращаться?',
     );
   };
 
@@ -296,7 +321,9 @@ export default function AiWidgetPilot() {
     if (!content) return;
     if (leadStep === 'name') {
       if (content.length < 2) {
-        setError('Укажите тестовое имя не короче двух символов.');
+        setError(runtimeMode === 'production'
+          ? 'Укажите имя не короче двух символов.'
+          : 'Укажите тестовое имя не короче двух символов.');
         return;
       }
       setLeadDraft((current) => ({ ...current, name: content }));
@@ -305,13 +332,17 @@ export default function AiWidgetPilot() {
       setError('');
       appendLeadExchange(
         content,
-        'Укажите тестовый телефон, email или другой тестовый контакт. Реальные данные на стенде не вводите.',
+        runtimeMode === 'production'
+          ? 'Укажите номер телефона для связи.'
+          : 'Укажите тестовый телефон. Реальные данные на стенде не вводите.',
       );
       return;
     }
     if (leadStep === 'contact') {
       if (content.length < 3) {
-        setError('Укажите тестовый контакт.');
+        setError(runtimeMode === 'production'
+          ? 'Укажите номер телефона.'
+          : 'Укажите тестовый контакт.');
         return;
       }
       setLeadDraft((current) => ({ ...current, contact: content }));
@@ -326,7 +357,9 @@ export default function AiWidgetPilot() {
     }
     if (leadStep === 'object') {
       if (content.length < 3) {
-        setError('Кратко опишите тестовый объект.');
+        setError(runtimeMode === 'production'
+          ? 'Кратко опишите объект.'
+          : 'Кратко опишите тестовый объект.');
         return;
       }
       setLeadDraft((current) => ({
@@ -356,15 +389,17 @@ export default function AiWidgetPilot() {
       setError('');
       appendLeadExchange(
         content,
-        'Тестовая карточка подготовлена. Проверьте данные и подтвердите, что они вымышленные.',
+        runtimeMode === 'production'
+          ? 'Заявка подготовлена. Проверьте данные и подтвердите согласие на их обработку.'
+          : 'Тестовая карточка подготовлена. Проверьте данные и подтвердите, что они вымышленные.',
       );
     }
   };
 
-  const submitTestLead = async () => {
+  const submitLead = async () => {
     if (
       leadStep !== 'review'
-      || !syntheticConsent
+      || !leadConsent
       || !submissionIdRef.current
     ) {
       return;
@@ -372,7 +407,7 @@ export default function AiWidgetPilot() {
     setLeadStep('submitting');
     setError('');
     try {
-      const response = await fetch('/api/demo/ai-widget/lead', {
+      const response = await fetch('/api/ai-widget/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -388,26 +423,28 @@ export default function AiWidgetPilot() {
         publicId?: string;
         maxPreview?: string;
       } | null;
-      if (!response.ok || !result?.publicId || !result.maxPreview) {
+      if (!response.ok || !result?.publicId) {
         throw new Error(
-          result?.message || 'Не удалось сохранить тестовую заявку.',
+          result?.message || 'Не удалось сохранить заявку.',
         );
       }
-      setTestLeadResult({
+      setLeadResult({
         publicId: result.publicId,
-        maxPreview: result.maxPreview,
+        maxPreview: result.maxPreview || undefined,
       });
       setLeadStep('submitted');
       appendLeadExchange(
         null,
-        `Тестовая заявка ${result.publicId} сохранена в журнале. На Mac Studio она не отправлялась в MAX и не попала в рабочий реестр.`,
+        runtimeMode === 'production'
+          ? `Заявка ${result.publicId} принята. Специалист РОСПАРК свяжется с вами по указанному номеру.`
+          : `Тестовая заявка ${result.publicId} сохранена в журнале. На Mac Studio она не отправлялась в MAX и не попала в рабочий реестр.`,
       );
     } catch (caught) {
       setLeadStep('review');
       setError(
         caught instanceof Error
           ? caught.message
-          : 'Не удалось сохранить тестовую заявку.',
+          : 'Не удалось сохранить заявку.',
       );
     }
   };
@@ -453,7 +490,7 @@ export default function AiWidgetPilot() {
     abortRef.current = controller;
 
     try {
-      const response = await fetch('/api/demo/ai-widget/chat', {
+      const response = await fetch('/api/ai-widget/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -489,13 +526,8 @@ export default function AiWidgetPilot() {
       }
       if (!answer.trim()) throw new Error('Получен пустой ответ.');
       if (
-        leadIntent === 'test'
-        && handoffMode === 'test'
-        && loggingEnabled
-      ) {
-        setShowLeadOffer(true);
-      } else if (
-        handoffMode === 'test'
+        (leadIntent === 'test' || leadIntent === 'live')
+        && handoffMode !== 'off'
         && loggingEnabled
       ) {
         setShowLeadOffer(true);
@@ -525,9 +557,13 @@ export default function AiWidgetPilot() {
   };
 
   const inputPlaceholder = leadStep === 'name'
-    ? 'Введите тестовое имя…'
+    ? runtimeMode === 'production'
+      ? 'Введите имя…'
+      : 'Введите тестовое имя…'
     : leadStep === 'contact'
-      ? 'Введите тестовый контакт…'
+      ? runtimeMode === 'production'
+        ? 'Введите телефон…'
+        : 'Введите тестовый контакт…'
       : leadStep === 'object'
         ? 'Опишите объект…'
         : leadStep === 'task'
@@ -555,7 +591,11 @@ export default function AiWidgetPilot() {
                 <X size={15} aria-hidden="true" />
               </button>
               <p className="font-semibold text-slate-950">Есть вопрос о парковке?</p>
-              <p className="mt-1">Спросите тестового AI-консультанта.</p>
+              <p className="mt-1">
+                {runtimeMode === 'production'
+                  ? 'Спросите AI-консультанта РОСПАРК.'
+                  : 'Спросите тестового AI-консультанта.'}
+              </p>
             </div>
           )}
           <button
@@ -587,7 +627,9 @@ export default function AiWidgetPilot() {
               </span>
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">
-                  Закрытый тест
+                  {runtimeMode === 'production'
+                    ? 'Онлайн-консультация'
+                    : 'Закрытый тест'}
                 </p>
                 <h2 id="rospark-ai-widget-title" className="mt-1 text-base font-bold">
                   AI-консультант РОСПАРК
@@ -667,7 +709,9 @@ export default function AiWidgetPilot() {
               {showLeadOffer && leadStep === 'idle' ? (
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3">
                   <p className="text-xs leading-5 text-blue-950">
-                    Хотите проверить, как AI-виджет собирает обращение для отдела продаж?
+                    {runtimeMode === 'production'
+                      ? 'Передать задачу специалисту РОСПАРК?'
+                      : 'Хотите проверить, как AI-виджет собирает обращение для отдела продаж?'}
                   </p>
                   <button
                     type="button"
@@ -675,14 +719,18 @@ export default function AiWidgetPilot() {
                     className="mt-2 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                   >
                     <ClipboardList size={15} aria-hidden="true" />
-                    Оформить тестовую заявку
+                    {runtimeMode === 'production'
+                      ? 'Оставить заявку'
+                      : 'Оформить тестовую заявку'}
                   </button>
                 </div>
               ) : null}
               {leadStep === 'review' || leadStep === 'submitting' ? (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-slate-800">
                   <p className="font-bold text-slate-950">
-                    ТЕСТ — проверьте карточку
+                    {runtimeMode === 'production'
+                      ? 'Проверьте заявку'
+                      : 'ТЕСТ — проверьте карточку'}
                   </p>
                   <dl className="mt-3 grid gap-2">
                     <div>
@@ -705,30 +753,46 @@ export default function AiWidgetPilot() {
                   <label className="mt-4 flex cursor-pointer items-start gap-2">
                     <input
                       type="checkbox"
-                      checked={syntheticConsent}
+                      checked={leadConsent}
                       onChange={(event) => (
-                        setSyntheticConsent(event.target.checked)
+                        setLeadConsent(event.target.checked)
                       )}
                       className="mt-1 h-4 w-4 rounded border-slate-300"
                       disabled={leadStep === 'submitting'}
                     />
                     <span>
-                      Подтверждаю, что указаны только вымышленные тестовые данные.
+                      {runtimeMode === 'production' ? (
+                        <>
+                          Даю{' '}
+                          <Link
+                            href="/soglasie-na-obrabotku-personalnyh-dannyh"
+                            target="_blank"
+                            className="font-semibold text-blue-800 underline"
+                          >
+                            согласие на обработку персональных данных
+                          </Link>
+                          {' '}для обработки обращения и связи со мной.
+                        </>
+                      ) : (
+                        'Подтверждаю, что указаны только вымышленные тестовые данные.'
+                      )}
                     </span>
                   </label>
                   <div className="mt-4 flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => void submitTestLead()}
+                      onClick={() => void submitLead()}
                       disabled={
-                        !syntheticConsent
+                        !leadConsent
                         || leadStep === 'submitting'
                       }
                       className="rounded-xl bg-blue-700 px-3 py-2 font-semibold text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {leadStep === 'submitting'
-                        ? 'Сохраняю…'
-                        : 'Создать тестовую заявку'}
+                        ? 'Отправляю…'
+                        : runtimeMode === 'production'
+                          ? 'Отправить заявку'
+                          : 'Создать тестовую заявку'}
                     </button>
                     <button
                       type="button"
@@ -741,20 +805,24 @@ export default function AiWidgetPilot() {
                   </div>
                 </div>
               ) : null}
-              {leadStep === 'submitted' && testLeadResult ? (
+              {leadStep === 'submitted' && leadResult ? (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs leading-5 text-slate-800">
                   <p className="flex items-center gap-2 font-bold text-emerald-900">
                     <CheckCircle2 size={17} aria-hidden="true" />
-                    {testLeadResult.publicId} сохранена
+                    {runtimeMode === 'production'
+                      ? `${leadResult.publicId} принята`
+                      : `${leadResult.publicId} сохранена`}
                   </p>
-                  <details className="mt-3">
-                    <summary className="cursor-pointer font-semibold text-blue-800">
-                      Показать будущий текст для MAX
-                    </summary>
-                    <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-white p-3 font-sans text-[11px] leading-5">
-                      {testLeadResult.maxPreview}
-                    </pre>
-                  </details>
+                  {leadResult.maxPreview ? (
+                    <details className="mt-3">
+                      <summary className="cursor-pointer font-semibold text-blue-800">
+                        Показать будущий текст для MAX
+                      </summary>
+                      <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-white p-3 font-sans text-[11px] leading-5">
+                        {leadResult.maxPreview}
+                      </pre>
+                    </details>
+                  ) : null}
                   <button
                     type="button"
                     onClick={resetLeadFlow}
@@ -815,7 +883,20 @@ export default function AiWidgetPilot() {
               )}
             </form>
             <p className="mt-2 text-center text-[10px] leading-4 text-slate-500">
-              Тестовый режим · диалог хранится до 7 дней · не вводите реальные персональные данные.
+              {runtimeMode === 'production' ? (
+                <>
+                  Сообщения обрабатываются для подготовки ответа.{' '}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="underline"
+                  >
+                    Политика обработки данных
+                  </Link>
+                </>
+              ) : (
+                'Тестовый режим · диалог хранится до 7 дней · не вводите реальные персональные данные.'
+              )}
             </p>
           </footer>
         </section>

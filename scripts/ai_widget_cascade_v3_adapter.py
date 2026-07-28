@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Изолированный адаптер cascade v3 для пакета AI-WIDGET-0.
+"""Изолированный адаптер cascade v3 для AI-виджета РОСПАРК.
 
-Адаптер использует зафиксированный test-only движок cascade v2 только для
-чтения. Он не изменяет POCPARK_AI, OpenClaw, CRM, MAX или production.
+Адаптер использует зафиксированный движок cascade v2 только для чтения,
+разделяет preview- и production-профили и не предоставляет модели инструменты
+доступа к POCPARK_AI, OpenClaw, CRM, MAX или парковочному оборудованию.
 """
 
 from __future__ import annotations
@@ -23,10 +24,17 @@ SITE_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_AI_ROOT = Path("/Volumes/POCPARK_AI_DATA/POCPARK_AI")
 DEFAULT_FAQ = SITE_ROOT / "docs/site/ai-widget/WIDGET_FAQ_V1_APPROVED.md"
 DEFAULT_PROFILE = SITE_ROOT / "docs/site/ai-widget/WIDGET_AGENT_PROFILE_V1.md"
+DEFAULT_PRODUCTION_PROFILE = (
+    SITE_ROOT / "docs/site/ai-widget/WIDGET_PRODUCTION_PROFILE_V1.md"
+)
 DEFAULT_KNOWLEDGE = (
     SITE_ROOT / "docs/site/ai-widget/WIDGET_OWNER_DECISIONS_20260727.md",
     SITE_ROOT / "docs/site/ai-widget/WIDGET_CLAIM_LEDGER_V1.md",
     SITE_ROOT / "docs/site/ai-widget/WIDGET_DATA_AND_LEAD_POLICY_V1.md",
+    SITE_ROOT / "docs/site/ai-widget/WIDGET_KB_V1_SOURCES.md",
+)
+DEFAULT_PRODUCTION_KNOWLEDGE = (
+    SITE_ROOT / "docs/site/ai-widget/WIDGET_CLAIM_LEDGER_V1.md",
     SITE_ROOT / "docs/site/ai-widget/WIDGET_KB_V1_SOURCES.md",
 )
 
@@ -75,6 +83,24 @@ PILOT_LENGTH_INSTRUCTION = (
     "Ответь по-русски, прямо и полезно. Длина должна соответствовать вопросу: "
     "для знакомства или простой справки достаточно одного-трёх предложений, "
     "для составной задачи можно дать более развёрнутый ответ."
+)
+PRODUCTION_FAQ_REPLACEMENTS = (
+    (
+        "Статус: утверждён для закрытого пилота, не для публичного запуска.",
+        "Статус: утверждённая база ответов публичного AI-консультанта.",
+    ),
+    (
+        "Публичный запуск остаётся отдельным этапом.",
+        "Изменение ответов или правил требует повторной проверки.",
+    ),
+)
+PRODUCTION_FORBIDDEN_PROMPT_PHRASES = (
+    "закрытый пилот",
+    "закрытого пилота",
+    "тестовая заявка",
+    "тестовый контакт",
+    "не вводите реальные данные",
+    "max не используется",
 )
 GENERIC_PADDING_PATTERNS = (
     re.compile(
@@ -248,7 +274,20 @@ def strip_generic_padding(answer: str) -> str:
     return re.sub(r"\s+", " ", result).strip()
 
 
-def guarded_responder_prompt(base_responder_prompt: Any) -> Any:
+def runtime_sources(
+    runtime_mode: str,
+) -> tuple[Path, tuple[Path, ...]]:
+    if runtime_mode == "preview":
+        return DEFAULT_PROFILE, DEFAULT_KNOWLEDGE
+    if runtime_mode == "production":
+        return DEFAULT_PRODUCTION_PROFILE, DEFAULT_PRODUCTION_KNOWLEDGE
+    raise ValueError("runtime mode must be preview or production")
+
+
+def guarded_responder_prompt(
+    base_responder_prompt: Any,
+    runtime_mode: str = "preview",
+) -> Any:
     def build(faq_text: str) -> str:
         prompt = base_responder_prompt(faq_text)
         if LEGACY_LENGTH_INSTRUCTION not in prompt:
@@ -258,11 +297,38 @@ def guarded_responder_prompt(base_responder_prompt: Any) -> Any:
             PILOT_LENGTH_INSTRUCTION,
             1,
         )
+        if runtime_mode == "production":
+            for old, new in PRODUCTION_FAQ_REPLACEMENTS:
+                if old not in prompt:
+                    raise ValueError(
+                        "Production FAQ guard changed: "
+                        + old
+                    )
+                prompt = prompt.replace(old, new, 1)
+            lowered = prompt.lower()
+            found = [
+                phrase
+                for phrase in PRODUCTION_FORBIDDEN_PROMPT_PHRASES
+                if phrase in lowered
+            ]
+            if found:
+                raise ValueError(
+                    "Production prompt contains preview-only language: "
+                    + ", ".join(found)
+                )
         return (
             prompt
             + "\nНе добавляй универсальную оговорку о комплектации, исходных "
             "данных или технической оценке в конец каждого ответа. Уточнение "
             "нужно только рядом с конкретным неподтверждённым утверждением.\n"
+            + (
+                "Работай как публичный AI-консультант РОСПАРК. Не называй "
+                "сервис тестом, пилотом или демонстрационным режимом. "
+                "Контактные данные собирает отдельная форма сайта, а не "
+                "AI-модель.\n"
+                if runtime_mode == "production"
+                else ""
+            )
         )
 
     return build

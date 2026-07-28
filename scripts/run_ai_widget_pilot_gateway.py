@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Loopback-only gateway for the short ROSPARK AI widget pilot.
+"""Loopback-only gateway for the ROSPARK AI widget.
 
 The gateway has no filesystem, browser, CRM, MAX or equipment tools. It loads
-the checksum-pinned cascade v3 evaluation engine read-only and exposes one
-authenticated local HTTP endpoint for the Next.js preview server.
+the checksum-pinned cascade v3 engine read-only and exposes one authenticated
+local HTTP endpoint. Preview and production use separate response profiles.
 """
 
 from __future__ import annotations
@@ -31,6 +31,7 @@ MAX_USER_MESSAGE = 1_200
 MAX_ASSISTANT_MESSAGE = 2_000
 DEFAULT_PORT = 8787
 DEFAULT_KEEP_ALIVE = "2h"
+RUNTIME_MODES = {"preview", "production"}
 SAFE_FALLBACK = (
     "По подтверждённым материалам нельзя надёжно дать запрошенное утверждение "
     "без проверки условий конкретного объекта. Можно зафиксировать исходные "
@@ -38,12 +39,19 @@ SAFE_FALLBACK = (
     "заранее. Для содержательного следующего шага нужны параметры объекта, "
     "существующего оборудования и требуемого сценария работы."
 )
-LEAD_TEST_OFFER = (
+LEAD_OFFERS = {
+    "preview": (
     "Могу подготовить тестовую заявку для проверки полного сценария. "
     "Понадобятся имя, тестовый контакт, объект и краткое описание задачи. "
     "На этом стенде заявка сохранится только в тестовом журнале: менеджер и MAX "
     "не будут уведомлены."
-)
+    ),
+    "production": (
+        "Могу передать задачу специалисту РОСПАРК. Нажмите «Оставить заявку» "
+        "в виджете — понадобятся имя, номер телефона, объект и краткое "
+        "описание задачи."
+    ),
+}
 CONVERSATION_RULES = (
     (
         "CONV-001",
@@ -52,11 +60,18 @@ CONVERSATION_RULES = (
             r"как\s+(?:вас|тебя)\s+зовут)\s*[?!.]*\s*$",
             re.I,
         ),
-        (
+        {
+            "preview": (
             "Я AI-консультант РОСПАРК. Помогаю разобраться в сценариях "
             "автоматизации парковок, найти подходящий раздел или демо и, "
             "если понадобится, подготовить тестовую заявку для специалиста."
-        ),
+            ),
+            "production": (
+                "Я AI-консультант РОСПАРК. Помогаю разобраться в сценариях "
+                "автоматизации парковок, подобрать подходящее решение, найти "
+                "нужный раздел сайта и передать задачу специалисту."
+            ),
+        },
     ),
     (
         "CONV-002",
@@ -69,12 +84,20 @@ CONVERSATION_RULES = (
             r"^\s*чем\s+(?:ты|вы)\s+полез\w*\s*[?!.]*\s*$",
             re.I,
         ),
-        (
+        {
+            "preview": (
             "Могу помочь выбрать сценарий доступа и оплаты, объяснить "
             "возможности системы, показать подходящие страницы и демо, а "
             "также собрать исходные данные для предметного обсуждения. "
             "Для начала расскажите, какой у вас объект и кого нужно пропускать."
-        ),
+            ),
+            "production": (
+                "Могу помочь выбрать сценарий доступа и оплаты, объяснить "
+                "возможности системы, показать подходящие страницы и собрать "
+                "исходные данные для предметного обсуждения. Для начала "
+                "расскажите, какой у вас объект и кого нужно пропускать."
+            ),
+        },
     ),
     (
         "CONV-003",
@@ -83,12 +106,21 @@ CONVERSATION_RULES = (
             r"\b(?:что|чего)\s+(?:для\s+этого\s+)?(?:надо|нужно|потребуется)\b",
             re.I,
         ),
-        (
+        {
+            "preview": (
             "Сначала нужно понять тип объекта, количество въездов и выездов, "
             "категории пользователей, правила доступа и оплаты, а также что "
             "уже установлено. После этого можно подобрать сценарий и состав "
             "системы. Начнём с типа объекта и количества проездов?"
-        ),
+            ),
+            "production": (
+                "Сначала нужно понять тип объекта, количество въездов и "
+                "выездов, категории пользователей, правила доступа и оплаты, "
+                "а также что уже установлено. После этого можно подобрать "
+                "сценарий и состав системы. Начнём с типа объекта и количества "
+                "проездов?"
+            ),
+        },
     ),
     (
         "CONV-004",
@@ -97,12 +129,20 @@ CONVERSATION_RULES = (
             r"\b(?:мо\w+\s+)?парк\w*",
             re.I,
         ),
-        (
+        {
+            "preview": (
             "Расскажите: какой это объект; сколько въездов и выездов; кто "
             "пользуется парковкой; какие нужны правила доступа и оплаты; что "
             "уже установлено; какая проблема сейчас главная. Можно начать "
             "с типа объекта и количества проездов."
-        ),
+            ),
+            "production": (
+                "Расскажите: какой это объект; сколько въездов и выездов; кто "
+                "пользуется парковкой; какие нужны правила доступа и оплаты; "
+                "что уже установлено; какая проблема сейчас главная. Можно "
+                "начать с типа объекта и количества проездов."
+            ),
+        },
     ),
 )
 APPROVED_LINK_RULES = (
@@ -160,10 +200,21 @@ def append_approved_links(question: str, answer: str) -> str:
     return f"{answer.rstrip()}\n\n{suffix}"
 
 
-def conversation_answer(question: str) -> GatewayResult | None:
-    for template_id, pattern, answer in CONVERSATION_RULES:
+def require_runtime_mode(value: str | None) -> str:
+    runtime_mode = (value or "preview").strip().lower()
+    if runtime_mode not in RUNTIME_MODES:
+        raise ValueError("runtime mode must be preview or production")
+    return runtime_mode
+
+
+def conversation_answer(
+    question: str,
+    runtime_mode: str = "preview",
+) -> GatewayResult | None:
+    mode = require_runtime_mode(runtime_mode)
+    for template_id, pattern, answers in CONVERSATION_RULES:
         if pattern.search(question):
-            return GatewayResult(answer, "conversation", template_id)
+            return GatewayResult(answers[mode], "conversation", template_id)
     return None
 
 
@@ -257,6 +308,7 @@ class PilotEngine:
         timeout: float,
         max_tokens: int,
         keep_alive: str = DEFAULT_KEEP_ALIVE,
+        runtime_mode: str = "preview",
     ) -> None:
         if model != adapter.ALLOWED_MODEL:
             raise ValueError(f"Only {adapter.ALLOWED_MODEL} is allowed")
@@ -265,11 +317,13 @@ class PilotEngine:
         self.timeout = timeout
         self.max_tokens = max_tokens
         self.keep_alive = require_keep_alive(keep_alive)
+        self.runtime_mode = require_runtime_mode(runtime_mode)
 
         v2_script, _ = adapter.verify_legacy_engine(ai_root)
         module = adapter.load_legacy_module(ai_root, v2_script)
-        module.PROFILE = adapter.DEFAULT_PROFILE
-        module.KNOWLEDGE_FILES = adapter.DEFAULT_KNOWLEDGE
+        profile, knowledge_files = adapter.runtime_sources(self.runtime_mode)
+        module.PROFILE = profile
+        module.KNOWLEDGE_FILES = knowledge_files
         module.parse_template_file = adapter.parse_current_template_file
         module.BOUNDARY_PATTERNS = adapter.v3_boundary_patterns()
         module.boundary_for = adapter.guarded_boundary_for(module.boundary_for)
@@ -280,7 +334,8 @@ class PilotEngine:
             adapter.DEFAULT_FAQ
         )
         self.system_prompt = adapter.guarded_responder_prompt(
-            module.responder_prompt
+            module.responder_prompt,
+            self.runtime_mode,
         )(
             adapter.DEFAULT_FAQ.read_text(encoding="utf-8")
         )
@@ -353,7 +408,7 @@ class PilotEngine:
             answer = self.module.SECURITY_ANSWERS[template_id or "SEC-001"]
             return GatewayResult(answer, route, template_id)
 
-        conversational = conversation_answer(question)
+        conversational = conversation_answer(question, self.runtime_mode)
         if conversational:
             return conversational
 
@@ -366,7 +421,7 @@ class PilotEngine:
             )
 
         if route == "crm":
-            return GatewayResult(LEAD_TEST_OFFER, route, None)
+            return GatewayResult(LEAD_OFFERS[self.runtime_mode], route, None)
 
         if route == "faq":
             answer = self.faq[template_id or ""]["answer"]
@@ -486,7 +541,13 @@ class GatewayHandler(BaseHTTPRequestHandler):
         if not authorized(self.headers.get("Authorization"), self.server.secret):
             self._write_json(HTTPStatus.UNAUTHORIZED, "UNAUTHORIZED")
             return
-        body = b'{"status":"ok"}'
+        body = json.dumps(
+            {
+                "status": "ok",
+                "runtime_mode": self.server.engine.runtime_mode,
+            },
+            ensure_ascii=False,
+        ).encode("utf-8")
         self.send_response(HTTPStatus.OK)
         self.send_header("Cache-Control", "no-store")
         self.send_header("Content-Type", "application/json")
@@ -577,6 +638,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--keep-alive", default=DEFAULT_KEEP_ALIVE)
     result.add_argument("--skip-warmup", action="store_true")
     result.add_argument("--env-file", type=Path)
+    result.add_argument("--runtime-mode", choices=sorted(RUNTIME_MODES))
     return result
 
 
@@ -590,6 +652,11 @@ def main() -> int:
             os.environ.get("AI_WIDGET_GATEWAY_SECRET")
             or read_env_value(args.env_file, "AI_WIDGET_GATEWAY_SECRET")
         )
+        runtime_mode = require_runtime_mode(
+            args.runtime_mode
+            or os.environ.get("AI_WIDGET_GATEWAY_MODE")
+            or read_env_value(args.env_file, "AI_WIDGET_GATEWAY_MODE")
+        )
         engine = PilotEngine(
             ai_root=args.ai_root.expanduser().resolve(),
             endpoint=args.endpoint,
@@ -597,6 +664,7 @@ def main() -> int:
             timeout=args.timeout,
             max_tokens=args.max_tokens,
             keep_alive=args.keep_alive,
+            runtime_mode=runtime_mode,
         )
         if not args.skip_warmup:
             engine.warmup()
@@ -617,6 +685,7 @@ def main() -> int:
                 "host": args.host,
                 "port": args.port,
                 "model": args.model,
+                "runtime_mode": engine.runtime_mode,
                 "external_sends": False,
             },
             ensure_ascii=False,
