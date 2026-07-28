@@ -137,6 +137,8 @@ def portable_legacy_module() -> SimpleNamespace:
     ) -> tuple[str | None, str | None]:
         if gateway.adapter.PRICE_REQUEST_RE.search(question):
             return "BND-005", boundaries["BND-005"]
+        if gateway.adapter.v3_boundary_patterns()[-1][1].search(question):
+            return "BND-006", boundaries["BND-006"]
         return None, None
 
     def responder_prompt(faq_text: str) -> str:
@@ -493,6 +495,85 @@ class DeterministicEngineTests(unittest.TestCase):
         self.assertIn("запрет ночного въезда", result.answer)
         self.assertIn("/vozmozhnosti/postoyannie-klienti", result.answer)
         self.assertNotIn("закупочную цену", result.answer)
+
+    def test_own_identifier_is_not_replaced_with_guest_application(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/vozmozhnosti/razovie-klienti",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Что означает проезд разового клиента по "
+                            "собственному идентификатору?"
+                        ),
+                    }
+                ],
+            }
+        )
+        self.assertEqual(result.route, "solution")
+        self.assertEqual(result.template_id, "SOL-009")
+        self.assertIn("свой совместимый идентификатор", result.answer)
+        self.assertIn("не нужно заранее знать посетителя", result.answer)
+        self.assertIn("/vozmozhnosti/razovie-klienti", result.answer)
+        self.assertNotIn("гостев", result.answer.lower())
+
+    def test_own_identifier_context_precedes_false_fault_boundary(self) -> None:
+        original = self.engine._ollama_answer
+        self.engine._ollama_answer = lambda _messages: self.fail(
+            "model must not be called for the confirmed own-ID scenario"
+        )
+        try:
+            result = self.engine.answer(
+                {
+                    "sourcePage": "/keysy",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": (
+                                "Мне нужен вариант для разовых клиентов по "
+                                "собственному идентификатору."
+                            ),
+                        },
+                        {
+                            "role": "assistant",
+                            "content": "Уточните условия въезда.",
+                        },
+                        {
+                            "role": "user",
+                            "content": (
+                                "Я не знаю кто ко мне приедет, а клиент должен "
+                                "заехать. Билеты и карты не хочу ему выдавать, "
+                                "распознавание ГРНЗ не работает. Что делать?"
+                            ),
+                        },
+                    ],
+                }
+            )
+        finally:
+            self.engine._ollama_answer = original
+        self.assertEqual(result.route, "solution")
+        self.assertEqual(result.template_id, "SOL-009")
+        self.assertNotIn("причин", result.answer.lower())
+        self.assertNotIn("неисправ", result.answer.lower())
+
+    def test_real_installed_anpr_fault_keeps_diagnostic_boundary(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "На установленном объекте распознавание ГРНЗ "
+                            "не работает и показывает ошибку. В чём причина?"
+                        ),
+                    }
+                ],
+            }
+        )
+        self.assertEqual(result.route, "boundary")
+        self.assertEqual(result.template_id, "BND-006")
 
     def test_conversation_starters_are_short_and_deterministic(self) -> None:
         cases = (

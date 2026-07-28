@@ -190,6 +190,16 @@ CONVERSATION_RULES = (
 )
 APPROVED_LINK_RULES = (
     (
+        re.compile(
+            r"\b(?:разов\w+\s+клиент|собственн\w+\s+идентификатор)\w*",
+            re.I,
+        ),
+        (
+            "Сценарии для разовых клиентов",
+            "/vozmozhnosti/razovie-klienti",
+        ),
+    ),
+    (
         re.compile(r"\bгостев\w*\b|\bзаявк\w*\b.*\bгост", re.I),
         ("Гостевая заявка", "/demo/gostevaya-zayavka"),
     ),
@@ -478,6 +488,38 @@ SOLUTION_RULES = (
     ),
 )
 
+OWN_IDENTIFIER_RE = re.compile(
+    r"\bсобственн\w+\s+идентификатор\w*\b",
+    re.I,
+)
+UNKNOWN_VISITOR_RE = re.compile(
+    r"\b(?:не\s+зна\w*\s+кто|неизвестн\w+\s+(?:клиент|посетител)|"
+    r"разов\w+\s+(?:клиент|посетител)|клиент\w*\s+долж\w+\s+заех)\b",
+    re.I,
+)
+NO_ISSUED_MEDIA_RE = re.compile(
+    r"\b(?:без|не\s+хоч\w*\s+(?:ему\s+)?выдава\w*)\b.{0,80}"
+    r"\b(?:билет|карт)\w*|"
+    r"\b(?:билет|карт)\w*\b.{0,80}"
+    r"\bне\s+хоч\w*\s+(?:ему\s+)?выдава\w*",
+    re.I,
+)
+ANPR_CONSTRAINT_RE = re.compile(
+    r"\b(?:грнз|номер\w*|распознаван\w*|камер\w*)\b.{0,80}"
+    r"\b(?:не\s+работ\w*|не\s+определ\w*|не\s+распозна\w*|"
+    r"сбо\w*|ненад[её]жн\w*)",
+    re.I,
+)
+OWN_IDENTIFIER_ANSWER = (
+    "Для такого сценария в РОСПАРК предусмотрен специальный режим "
+    "«Собственный идентификатор». Разовый посетитель предъявляет на въезде "
+    "свой совместимый идентификатор, система регистрирует его для текущего "
+    "визита и фиксирует проезд. Тот же идентификатор можно использовать в "
+    "дальнейшем сценарии выезда и оплаты. Парковке не нужно заранее знать "
+    "посетителя или выдавать ему билет либо свою карту. Конкретный носитель, "
+    "считыватель и правила оплаты нужно определить в комплектации проекта."
+)
+
 
 @dataclass(frozen=True)
 class GatewayResult:
@@ -524,6 +566,31 @@ def solution_answer_for(question: str) -> GatewayResult | None:
                 template_id,
             )
     return None
+
+
+def own_identifier_answer_for(
+    messages: list[dict[str, str]],
+) -> GatewayResult | None:
+    question = messages[-1]["content"]
+    user_history = "\n".join(
+        message["content"]
+        for message in messages[-10:]
+        if message["role"] == "user"
+    )
+    direct_question = bool(OWN_IDENTIFIER_RE.search(question))
+    continued_scenario = bool(
+        OWN_IDENTIFIER_RE.search(user_history)
+        and UNKNOWN_VISITOR_RE.search(question)
+        and NO_ISSUED_MEDIA_RE.search(question)
+        and ANPR_CONSTRAINT_RE.search(question)
+    )
+    if not direct_question and not continued_scenario:
+        return None
+    return GatewayResult(
+        append_approved_links(user_history, OWN_IDENTIFIER_ANSWER),
+        "solution",
+        "SOL-009",
+    )
 
 
 def model_state_context(module: Any, state: Any) -> str:
@@ -814,6 +881,10 @@ class PilotEngine:
 
         if route == "crm":
             return GatewayResult(LEAD_OFFERS[self.runtime_mode], route, None)
+
+        own_identifier = own_identifier_answer_for(messages)
+        if own_identifier:
+            return own_identifier
 
         boundary_id, boundary_answer = self.module.boundary_for(
             question, self.boundaries
