@@ -510,14 +510,49 @@ ANPR_CONSTRAINT_RE = re.compile(
     r"сбо\w*|ненад[её]жн\w*)",
     re.I,
 )
+OWN_IDENTIFIER_PAYMENT_RE = re.compile(
+    r"\b(?:оплат\w*|касс\w*|онлайн|банковск\w+\s+модул\w*)\b",
+    re.I,
+)
+IDENTIFIER_COMPARISON_RE = re.compile(
+    r"\b(?:билет\w*|карт\w*)\b.{0,100}"
+    r"\b(?:билет\w*|карт\w*)\b.{0,100}"
+    r"\b(?:лучш\w*|выбр\w*|выбор\w*|сравн\w*)\b|"
+    r"\b(?:что|какой|какая)\s+лучш\w*\b.{0,100}"
+    r"\b(?:билет\w*|карт\w*)\b",
+    re.I,
+)
+LINK_REQUEST_RE = re.compile(
+    r"\b(?:ссылк\w*|где\s+(?:это\s+)?(?:написан|прочит|посмотр))\b",
+    re.I,
+)
 OWN_IDENTIFIER_ANSWER = (
     "Для такого сценария в РОСПАРК предусмотрен специальный режим "
     "«Собственный идентификатор». Разовый посетитель предъявляет на въезде "
-    "свой совместимый идентификатор, система регистрирует его для текущего "
-    "визита и фиксирует проезд. Тот же идентификатор можно использовать в "
-    "дальнейшем сценарии выезда и оплаты. Парковке не нужно заранее знать "
-    "посетителя или выдавать ему билет либо свою карту. Конкретный носитель, "
-    "считыватель и правила оплаты нужно определить в комплектации проекта."
+    "свой совместимый идентификатор — например, поддерживаемую считывателем "
+    "банковскую, транспортную, домофонную или MIFARE-карту. Система "
+    "регистрирует идентификатор для текущего визита и фиксирует проезд. "
+    "Парковке не нужно заранее знать посетителя или выдавать ему билет либо "
+    "свою карту. Этот режим можно использовать и как резерв, если основной "
+    "въезд настроен по ГРНЗ, но номер не распознан."
+)
+OWN_IDENTIFIER_PAYMENT_ANSWER = (
+    "При въезде по собственному идентификатору онлайн-оплата по номеру "
+    "идентификатора обычно не подходит: посетитель не знает внутреннее "
+    "значение своей карты. Подтверждённые сценарии — оплата на выезде через "
+    "банковский модуль либо в кассовом терминале, оборудованном совместимым "
+    "считывателем того же идентификатора. На практике более простой вариант "
+    "для такого проезда — оплата на выезде. Для билета, парковочной карты или "
+    "ГРНЗ можно также предусматривать онлайн-оплату."
+)
+IDENTIFIER_COMPARISON_ANSWER = (
+    "У каждого варианта есть свой сценарий. Билет или парковочная карта "
+    "позволяют использовать онлайн-оплату, кассовый терминал и оплату на "
+    "выезде, но требуют выдачи носителя. ГРНЗ также поддерживает эти каналы и "
+    "удобен как основной способ, однако зависит от качества распознавания. "
+    "Собственный идентификатор посетителя не требует билета или карты "
+    "парковки и подходит как резерв для ГРНЗ; оплату при нём предусматривают "
+    "на выезде либо в кассовом терминале с совместимым считывателем."
 )
 
 
@@ -578,18 +613,37 @@ def own_identifier_answer_for(
         if message["role"] == "user"
     )
     direct_question = bool(OWN_IDENTIFIER_RE.search(question))
+    comparison_question = bool(IDENTIFIER_COMPARISON_RE.search(question))
+    link_follow_up = bool(
+        OWN_IDENTIFIER_RE.search(user_history)
+        and LINK_REQUEST_RE.search(question)
+    )
     continued_scenario = bool(
         OWN_IDENTIFIER_RE.search(user_history)
         and UNKNOWN_VISITOR_RE.search(question)
         and NO_ISSUED_MEDIA_RE.search(question)
         and ANPR_CONSTRAINT_RE.search(question)
     )
-    if not direct_question and not continued_scenario:
+    if (
+        not direct_question
+        and not comparison_question
+        and not link_follow_up
+        and not continued_scenario
+    ):
         return None
+    if comparison_question:
+        answer = IDENTIFIER_COMPARISON_ANSWER
+        template_id = "SOL-010"
+    elif direct_question and OWN_IDENTIFIER_PAYMENT_RE.search(question):
+        answer = OWN_IDENTIFIER_PAYMENT_ANSWER
+        template_id = "SOL-011"
+    else:
+        answer = OWN_IDENTIFIER_ANSWER
+        template_id = "SOL-009"
     return GatewayResult(
-        append_approved_links(user_history, OWN_IDENTIFIER_ANSWER),
+        append_approved_links(user_history, answer),
         "solution",
-        "SOL-009",
+        template_id,
     )
 
 

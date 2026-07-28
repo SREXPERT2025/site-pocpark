@@ -515,8 +515,81 @@ class DeterministicEngineTests(unittest.TestCase):
         self.assertEqual(result.template_id, "SOL-009")
         self.assertIn("свой совместимый идентификатор", result.answer)
         self.assertIn("не нужно заранее знать посетителя", result.answer)
+        self.assertIn("резерв", result.answer)
         self.assertIn("/vozmozhnosti/razovie-klienti", result.answer)
         self.assertNotIn("гостев", result.answer.lower())
+
+    def test_own_identifier_link_follow_up_returns_exact_link(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/demo",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Есть режим проезда по собственному "
+                            "идентификатору?"
+                        ),
+                    },
+                    {
+                        "role": "assistant",
+                        "content": "Да, такой сценарий описан.",
+                    },
+                    {
+                        "role": "user",
+                        "content": "Интересно, а ссылку дай где это написано.",
+                    },
+                ],
+            }
+        )
+        self.assertEqual(result.route, "solution")
+        self.assertEqual(result.template_id, "SOL-009")
+        self.assertIn("/vozmozhnosti/razovie-klienti", result.answer)
+
+    def test_own_identifier_payment_excludes_online_channel(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/demo",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Если разовый клиент заедет по собственному "
+                            "идентификатору, как он сможет оплатить?"
+                        ),
+                    },
+                ],
+            }
+        )
+        self.assertEqual(result.route, "solution")
+        self.assertEqual(result.template_id, "SOL-011")
+        self.assertIn("оплата на выезде", result.answer)
+        self.assertIn("кассовом терминале", result.answer)
+        self.assertIn("не знает внутреннее значение", result.answer)
+        self.assertNotIn("QR-код", result.answer)
+
+    def test_ticket_card_comparison_offers_own_identifier_alternative(
+        self,
+    ) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/keysy",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Что лучше использовать для разовых клиентов: "
+                            "билеты или карты?"
+                        ),
+                    },
+                ],
+            }
+        )
+        self.assertEqual(result.route, "solution")
+        self.assertEqual(result.template_id, "SOL-010")
+        self.assertIn("Собственный идентификатор", result.answer)
+        self.assertIn("резерв для ГРНЗ", result.answer)
+        self.assertIn("онлайн-оплату", result.answer)
 
     def test_own_identifier_context_precedes_false_fault_boundary(self) -> None:
         original = self.engine._ollama_answer

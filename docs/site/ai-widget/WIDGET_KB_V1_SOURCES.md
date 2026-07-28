@@ -28,7 +28,7 @@
 | `SRC-CONSENT` | `app/(narrow)/soglasie-na-obrabotku-personalnyh-dannyh/page.tsx` | Действующий общий текст согласия сайта |
 | `SRC-LEAD-CONTRACT` | `app/api/lead/route.ts`, `app/lib/lead-registry-service.ts` | Фактические обязательные поля и версия согласия |
 | `SRC-LEAD-RETENTION` | `app/lib/lead-registry-core.ts` | 60 дней для обычного лида, 30 дней для demo feedback |
-| `SRC-OWNER-20260727` | `docs/site/ai-widget/WIDGET_OWNER_DECISIONS_20260727.md` | Собственная разработка и производство, работа с 2010 года, более 350 объектов, обязательность имени, цены, retention и размещение пилота |
+| `SRC-OWNER-20260727` | `docs/site/ai-widget/WIDGET_OWNER_DECISIONS_20260727.md` | Собственная разработка и производство, работа с 2010 года, более 350 объектов, обязательность имени, цены, retention, размещение пилота и подтверждённая логика собственного идентификатора |
 | `SRC-DEMO-CATALOG` | `app/(narrow)/demo/page.tsx` | Назначение и границы демонстрационных сценариев |
 | `SRC-DEMO-GUEST` | `content/stati/gostevoy-dostup-na-parkovku.md` | Гостевая заявка и границы demo |
 | `SRC-DEMO-PAYMENT` | `content/stati/oplata-parkovki-gostey.md` | Оплата гостя арендатором и границы реального проекта |
