@@ -124,7 +124,7 @@ const leadDatabasePath = required('LEAD_REGISTRY_DB_PATH');
 const leadDatabase = inspectDatabase(
   leadDatabasePath,
   'lead_schema_migrations',
-  [1, 2, 3],
+  [1, 2, 3, 4],
 );
 
 const healthUrl = `${gatewayUrl.toString().replace(/\/$/, '')}/health`;

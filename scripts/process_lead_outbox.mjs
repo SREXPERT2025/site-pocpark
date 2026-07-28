@@ -79,7 +79,7 @@ try {
   const result = await processLeadOutboxBatch(
     db,
     async (job) => {
-      await sendLeadToChannel(notificationPayload(job), job.channel);
+      return sendLeadToChannel(notificationPayload(job), job.channel);
     },
     { limit: 20 },
   );

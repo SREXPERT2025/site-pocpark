@@ -45,6 +45,12 @@ export type LeadPayload = {
 
 export type LeadDeliveryChannel = 'email' | 'max';
 
+export type LeadDeliveryReceipt = {
+  providerMessageId?: string;
+  providerDestinationId?: string;
+  providerAcceptedAt?: string;
+};
+
 export class LeadDeliveryError extends Error {
   public readonly code: string;
 
@@ -152,19 +158,29 @@ function getMailTransport(): Transporter {
   return cachedTransport;
 }
 
-async function sendToMax(text: string): Promise<boolean> {
+async function sendToMax(text: string): Promise<LeadDeliveryReceipt> {
   const token = process.env.LEAD_MAX_BOT_TOKEN;
   const chatId = process.env.LEAD_MAX_CHAT_ID;
 
-  if (!token || !chatId) return false;
+  if (!token || !chatId) {
+    throw new LeadDeliveryError('MAX_NOT_CONFIGURED');
+  }
 
   const bot = getMaxBot(token);
-
-  await bot.api.sendMessageToChat(
+  const message = await bot.api.sendMessageToChat(
     Number(chatId),
     text
   );
-  return true;
+  const timestampMs = message.timestamp < 100_000_000_000
+    ? message.timestamp * 1_000
+    : message.timestamp;
+  return {
+    providerMessageId: message.body.mid,
+    providerDestinationId: String(message.recipient.chat_id ?? chatId),
+    providerAcceptedAt: Number.isFinite(timestampMs)
+      ? new Date(timestampMs).toISOString()
+      : undefined,
+  };
 }
 
 export async function sendLeadToChannel(
@@ -184,8 +200,11 @@ export async function sendLeadToChannel(
     try {
       const from = process.env.LEAD_EMAIL_FROM || emailTo[0];
       const transport = getMailTransport();
-      await transport.sendMail({ from, to: emailTo, subject, text });
-      return;
+      const info = await transport.sendMail({ from, to: emailTo, subject, text });
+      return {
+        providerMessageId: info.messageId || undefined,
+        providerDestinationId: emailTo.join(','),
+      };
     } catch {
       throw new LeadDeliveryError('EMAIL_SEND_FAILED');
     }
@@ -198,7 +217,7 @@ export async function sendLeadToChannel(
     throw new LeadDeliveryError('MAX_NOT_CONFIGURED');
   }
   try {
-    await sendToMax(text);
+    return await sendToMax(text);
   } catch {
     throw new LeadDeliveryError('MAX_SEND_FAILED');
   }

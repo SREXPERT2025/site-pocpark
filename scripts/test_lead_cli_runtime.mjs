@@ -103,6 +103,7 @@ try {
       { version: 1, name: 'lead_registry_foundation' },
       { version: 2, name: 'lead_notification_outbox' },
       { version: 3, name: 'lead_admin_audit' },
+      { version: 4, name: 'lead_notification_receipts' },
     ],
   );
   db.close();

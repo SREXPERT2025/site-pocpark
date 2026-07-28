@@ -151,6 +151,11 @@ const allLeads = listLeadAdminLeads(db, { pageSize: 25 });
 assert.equal(allLeads.total, 3);
 assert.equal(allLeads.items.length, 3);
 assert.match(allLeads.items[0].publicId, /^RSP-[0-9A-F]{8}$/);
+assert.equal(allLeads.items[0].latestMaxNotification.status, 'pending');
+assert.equal(
+  allLeads.items[0].latestMaxNotification.providerMessageId,
+  null,
+);
 assert.equal(listLeadAdminLeads(db, { kind: 'demo_feedback' }).total, 1);
 assert.equal(listLeadAdminLeads(db, { search: 'Алексей' }).total, 1);
 assert.equal(listLeadAdminLeads(db, { search: '0032' }).total, 1);

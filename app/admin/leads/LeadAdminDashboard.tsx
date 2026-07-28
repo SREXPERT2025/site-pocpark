@@ -30,6 +30,13 @@ type LeadItem = {
   latestSourcePage: string | null;
   latestContext: Record<string, string | string[]>;
   latestIsDuplicate: boolean;
+  latestMaxNotification: {
+    status: string;
+    sentAt: string | null;
+    providerMessageId: string | null;
+    providerDestinationId: string | null;
+    providerAcceptedAt: string | null;
+  } | null;
 };
 
 type LeadResponse = {
@@ -586,6 +593,52 @@ export default function LeadAdminDashboard({
                       <p className="mt-4 font-medium">
                         Результат: {outcomeLabels[lead.closeOutcome]}
                       </p>
+                    ) : null}
+                    {lead.latestMaxNotification ? (
+                      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Доставка MAX
+                        </p>
+                        <p className="mt-1 font-medium text-slate-900">
+                          {lead.latestMaxNotification.status === 'sent'
+                            ? 'Доставлено'
+                            : lead.latestMaxNotification.status === 'pending'
+                              ? 'Ожидает отправки'
+                              : lead.latestMaxNotification.status === 'processing'
+                                ? 'Отправляется'
+                                : lead.latestMaxNotification.status === 'failed'
+                                  ? 'Повторная попытка'
+                                  : 'Ошибка доставки'}
+                        </p>
+                        {lead.latestMaxNotification.sentAt ? (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {dateTime(lead.latestMaxNotification.sentAt)}
+                          </p>
+                        ) : null}
+                        {lead.latestMaxNotification.providerMessageId ? (
+                          <details className="mt-2 text-xs text-slate-500">
+                            <summary className="cursor-pointer font-medium text-blue-700">
+                              Подтверждение MAX
+                            </summary>
+                            <dl className="mt-2 grid gap-1">
+                              <div>
+                                <dt className="font-medium">Message ID</dt>
+                                <dd className="break-all font-mono">
+                                  {lead.latestMaxNotification.providerMessageId}
+                                </dd>
+                              </div>
+                              {lead.latestMaxNotification.providerDestinationId ? (
+                                <div>
+                                  <dt className="font-medium">Chat ID</dt>
+                                  <dd className="break-all font-mono">
+                                    {lead.latestMaxNotification.providerDestinationId}
+                                  </dd>
+                                </div>
+                              ) : null}
+                            </dl>
+                          </details>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
 

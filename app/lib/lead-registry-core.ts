@@ -171,6 +171,12 @@ export type ProcessLeadOutboxResult = {
   dead: number;
 };
 
+export type LeadNotificationReceipt = {
+  providerMessageId?: string;
+  providerDestinationId?: string;
+  providerAcceptedAt?: string;
+};
+
 export class LeadRegistryError extends Error {
   public readonly code: string;
 
@@ -348,6 +354,27 @@ function createLeadAdminAudit(db: Database.Database) {
   `);
 }
 
+function createLeadNotificationReceipts(db: Database.Database) {
+  if (!hasColumn(db, 'lead_notification_outbox', 'provider_message_id')) {
+    db.exec(`
+      ALTER TABLE lead_notification_outbox
+      ADD COLUMN provider_message_id TEXT;
+    `);
+  }
+  if (!hasColumn(db, 'lead_notification_outbox', 'provider_destination_id')) {
+    db.exec(`
+      ALTER TABLE lead_notification_outbox
+      ADD COLUMN provider_destination_id TEXT;
+    `);
+  }
+  if (!hasColumn(db, 'lead_notification_outbox', 'provider_accepted_at')) {
+    db.exec(`
+      ALTER TABLE lead_notification_outbox
+      ADD COLUMN provider_accepted_at TEXT;
+    `);
+  }
+}
+
 const migrations: LeadRegistryMigration[] = [
   {
     version: 1,
@@ -363,6 +390,11 @@ const migrations: LeadRegistryMigration[] = [
     version: 3,
     name: 'lead_admin_audit',
     up: createLeadAdminAudit,
+  },
+  {
+    version: 4,
+    name: 'lead_notification_receipts',
+    up: createLeadNotificationReceipts,
   },
 ];
 
@@ -1067,10 +1099,19 @@ export function markLeadNotificationSent(
     id: string;
     lockToken: string;
     nowMs?: number;
+    receipt?: LeadNotificationReceipt;
   },
 ) {
   const nowMs = input.nowMs ?? Date.now();
   const now = iso(nowMs);
+  const providerMessageId = input.receipt?.providerMessageId?.trim().slice(0, 500)
+    || null;
+  const providerDestinationId = input.receipt?.providerDestinationId
+    ?.trim()
+    .slice(0, 500) || null;
+  const providerAcceptedAt = input.receipt?.providerAcceptedAt
+    ?.trim()
+    .slice(0, 100) || null;
   const result = db.prepare(`
     UPDATE lead_notification_outbox
     SET
@@ -1078,12 +1119,23 @@ export function markLeadNotificationSent(
       locked_at_ms = NULL,
       lock_token = NULL,
       last_error_code = NULL,
+      provider_message_id = ?,
+      provider_destination_id = ?,
+      provider_accepted_at = ?,
       updated_at = ?,
       sent_at = ?
     WHERE id = ?
       AND status = 'processing'
       AND lock_token = ?
-  `).run(now, now, input.id, input.lockToken);
+  `).run(
+    providerMessageId,
+    providerDestinationId,
+    providerAcceptedAt,
+    now,
+    now,
+    input.id,
+    input.lockToken,
+  );
   if (result.changes !== 1) {
     throw new LeadRegistryError(
       'OUTBOX_LEASE_LOST',
@@ -1160,7 +1212,9 @@ function deliveryErrorCode(error: unknown) {
 
 export async function processLeadOutboxBatch(
   db: Database.Database,
-  deliver: (job: ClaimedLeadNotification) => Promise<void>,
+  deliver: (
+    job: ClaimedLeadNotification,
+  ) => Promise<LeadNotificationReceipt | void>,
   options: {
     nowMs?: number;
     limit?: number;
@@ -1180,11 +1234,12 @@ export async function processLeadOutboxBatch(
 
   for (const job of jobs) {
     try {
-      await deliver(job);
+      const receipt = await deliver(job);
       markLeadNotificationSent(db, {
         id: job.id,
         lockToken: job.lockToken,
         nowMs,
+        receipt: receipt || undefined,
       });
       result.sent += 1;
     } catch (error) {

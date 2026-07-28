@@ -420,7 +420,7 @@ Data:
 
 - `PRAGMA quick_check` — `ok`;
 - `PRAGMA foreign_key_check` — пусто;
-- lead migrations `1`, `2`, `3`;
+- lead migrations `1`, `2`, `3`, `4`;
 - одна TEST submission;
 - один lead;
 - один MAX outbox: сначала `pending`, затем `sent`;

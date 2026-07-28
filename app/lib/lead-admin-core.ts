@@ -58,6 +58,13 @@ export type LeadAdminListItem = {
   latestReceivedAt: string;
   latestContext: Record<string, string | string[]>;
   latestIsDuplicate: boolean;
+  latestMaxNotification: {
+    status: string;
+    sentAt: string | null;
+    providerMessageId: string | null;
+    providerDestinationId: string | null;
+    providerAcceptedAt: string | null;
+  } | null;
 };
 
 export type LeadAdminAnalytics = {
@@ -269,13 +276,30 @@ export function listLeadAdminLeads(
       latest_submission.source_page AS latest_source_page,
       latest_submission.received_at AS latest_received_at,
       latest_submission.context_json AS latest_context_json,
-      latest_submission.is_duplicate AS latest_is_duplicate
+      latest_submission.is_duplicate AS latest_is_duplicate,
+      latest_max_notification.status AS latest_max_status,
+      latest_max_notification.sent_at AS latest_max_sent_at,
+      latest_max_notification.provider_message_id
+        AS latest_max_provider_message_id,
+      latest_max_notification.provider_destination_id
+        AS latest_max_provider_destination_id,
+      latest_max_notification.provider_accepted_at
+        AS latest_max_provider_accepted_at
     FROM lead_records
     JOIN submission_counts
       ON submission_counts.lead_id = lead_records.id
     JOIN latest_submission
       ON latest_submission.lead_id = lead_records.id
       AND latest_submission.row_number = 1
+    LEFT JOIN lead_notification_outbox latest_max_notification
+      ON latest_max_notification.id = (
+        SELECT max_notification.id
+        FROM lead_notification_outbox max_notification
+        WHERE max_notification.lead_id = lead_records.id
+          AND max_notification.channel = 'max'
+        ORDER BY max_notification.created_at DESC, max_notification.id DESC
+        LIMIT 1
+      )
     ${where}
     ORDER BY lead_records.created_at_ms DESC, lead_records.id DESC
     LIMIT ? OFFSET ?
@@ -303,6 +327,11 @@ export function listLeadAdminLeads(
     latest_received_at: string;
     latest_context_json: string;
     latest_is_duplicate: number;
+    latest_max_status: string | null;
+    latest_max_sent_at: string | null;
+    latest_max_provider_message_id: string | null;
+    latest_max_provider_destination_id: string | null;
+    latest_max_provider_accepted_at: string | null;
   }>;
 
   const items: LeadAdminListItem[] = rows.map((row) => ({
@@ -326,6 +355,15 @@ export function listLeadAdminLeads(
     latestReceivedAt: row.latest_received_at,
     latestContext: parseContext(row.latest_context_json),
     latestIsDuplicate: row.latest_is_duplicate === 1,
+    latestMaxNotification: row.latest_max_status
+      ? {
+          status: row.latest_max_status,
+          sentAt: row.latest_max_sent_at,
+          providerMessageId: row.latest_max_provider_message_id,
+          providerDestinationId: row.latest_max_provider_destination_id,
+          providerAcceptedAt: row.latest_max_provider_accepted_at,
+        }
+      : null,
   }));
 
   return {

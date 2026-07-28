@@ -44,6 +44,7 @@ assert.deepEqual(
     { version: 1, name: 'lead_registry_foundation' },
     { version: 2, name: 'lead_notification_outbox' },
     { version: 3, name: 'lead_admin_audit' },
+    { version: 4, name: 'lead_notification_receipts' },
   ],
 );
 assert.equal(LEAD_REGISTRY_TIMEZONE, 'Europe/Moscow');
@@ -375,7 +376,11 @@ assert.equal(
 
 const sentBatch = await processLeadOutboxBatch(
   retryDb,
-  async () => {},
+  async () => ({
+    providerMessageId: 'mid.test-receipt',
+    providerDestinationId: '123456',
+    providerAcceptedAt: '2026-07-24T07:01:00.000Z',
+  }),
   {
     nowMs: baseTime + LEAD_OUTBOX_BACKOFF_MS[0],
     lockTokenFactory: idFactory,
@@ -383,13 +388,23 @@ const sentBatch = await processLeadOutboxBatch(
 );
 assert.deepEqual(sentBatch, { claimed: 1, sent: 1, failed: 0, dead: 0 });
 const sentRow = retryDb.prepare(`
-  SELECT status, attempt_count, last_error_code, sent_at
+  SELECT
+    status,
+    attempt_count,
+    last_error_code,
+    sent_at,
+    provider_message_id,
+    provider_destination_id,
+    provider_accepted_at
   FROM lead_notification_outbox
 `).get();
 assert.equal(sentRow.status, 'sent');
 assert.equal(sentRow.attempt_count, 2);
 assert.equal(sentRow.last_error_code, null);
 assert.ok(sentRow.sent_at);
+assert.equal(sentRow.provider_message_id, 'mid.test-receipt');
+assert.equal(sentRow.provider_destination_id, '123456');
+assert.equal(sentRow.provider_accepted_at, '2026-07-24T07:01:00.000Z');
 
 const deadDb = new Database(':memory:');
 deadDb.pragma('foreign_keys = ON');
