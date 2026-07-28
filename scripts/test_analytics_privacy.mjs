@@ -63,6 +63,7 @@ const consent = loadTypeScriptModule('app/lib/analytics-consent.ts');
 const analytics = loadTypeScriptModule('app/lib/analytics-events.ts', {
   '@/app/lib/analytics-consent': consent,
 });
+const googleAnalytics = loadTypeScriptModule('app/lib/google-analytics.ts');
 const metrika = loadTypeScriptModule('app/lib/yandex-metrika.ts');
 
 analytics.dispatchDemoEvent('demo_scenario_view', {
@@ -338,6 +339,159 @@ assert.deepEqual(metrikaWindow.ym.a[1], [
   'reachGoal',
   'rospark_form_success',
   { form_name: 'lead_form' },
+]);
+
+assert.equal(
+  googleAnalytics.parseGoogleAnalyticsId(' G-ABC123DEF4 '),
+  'G-ABC123DEF4',
+);
+assert.equal(googleAnalytics.parseGoogleAnalyticsId('UA-123456-1'), null);
+assert.equal(googleAnalytics.parseGoogleAnalyticsId('not-a-stream'), null);
+assert.equal(
+  googleAnalytics.isGoogleAnalyticsProductionHost(
+    'www.xn--80aukedde.xn--p1ai',
+  ),
+  true,
+);
+assert.equal(
+  googleAnalytics.isGoogleAnalyticsProductionHost(
+    'WWW.XN--80AUKEDDE.XN--P1AI.',
+  ),
+  true,
+);
+assert.equal(
+  googleAnalytics.isGoogleAnalyticsProductionHost('127.0.0.1'),
+  false,
+);
+assert.equal(
+  googleAnalytics.isGoogleAnalyticsProductionHost('localhost'),
+  false,
+);
+assert.equal(
+  googleAnalytics.isGoogleAnalyticsProductionHost(
+    'xn--80aukedde.xn--p1ai',
+  ),
+  false,
+);
+assert.deepEqual(
+  googleAnalytics.googleAnalyticsEventFromDataLayerEntry({
+    event: 'rospark_demo_scenario_view',
+    demo_name: 'guest_request_portal',
+  }),
+  {
+    name: 'rospark_demo_scenario_view',
+    params: {
+      demo_name: 'guest_request_portal',
+    },
+  },
+);
+assert.equal(
+  googleAnalytics.googleAnalyticsEventFromDataLayerEntry({
+    event: 'third_party_event',
+    phone: '+7 999 000-00-00',
+  }),
+  null,
+  'GA4 may replay only the controlled rospark namespace',
+);
+
+const googleReplayWindow = {
+  dataLayer: [
+    {
+      event: 'third_party_event',
+      phone: '+7 999 000-00-00',
+    },
+    {
+      event: 'rospark_demo_scenario_view',
+      demo_name: 'guest_request_portal',
+    },
+  ],
+};
+
+assert.equal(
+  googleAnalytics.flushGoogleAnalyticsEventsFromDataLayer(
+    googleReplayWindow,
+  ),
+  1,
+  'one queued ROSPARK event must be forwarded to GA4',
+);
+assert.equal(
+  googleAnalytics.flushGoogleAnalyticsEventsFromDataLayer(
+    googleReplayWindow,
+  ),
+  0,
+  'the same queued dataLayer entry must not be forwarded to GA4 twice',
+);
+assert.equal(
+  googleReplayWindow.dataLayer.length,
+  2,
+  'GA4 commands must not be mixed into the provider-neutral source dataLayer',
+);
+assert.deepEqual(googleReplayWindow.rosparkGoogleDataLayer[0], [
+  'event',
+  'rospark_demo_scenario_view',
+  { demo_name: 'guest_request_portal' },
+]);
+
+const googleAnalyticsWindow = {};
+const googleMeasurementId = 'G-ABC123DEF4';
+
+googleAnalytics.initializeGoogleAnalytics(
+  googleAnalyticsWindow,
+  fakeDocument,
+  googleMeasurementId,
+);
+googleAnalytics.initializeGoogleAnalytics(
+  googleAnalyticsWindow,
+  fakeDocument,
+  googleMeasurementId,
+);
+
+assert.equal(
+  appendedScripts.length,
+  2,
+  'Metrika and GA4 scripts must each be appended once',
+);
+assert.equal(
+  appendedScripts[1].src,
+  'https://www.googletagmanager.com/gtag/js?id=G-ABC123DEF4&l=rosparkGoogleDataLayer',
+);
+assert.deepEqual(googleAnalyticsWindow.rosparkGoogleDataLayer[0], [
+  'consent',
+  'default',
+  {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'granted',
+  },
+]);
+assert.equal(googleAnalyticsWindow.rosparkGoogleDataLayer[1][0], 'js');
+assert.equal(
+  googleAnalyticsWindow.rosparkGoogleDataLayer[1][1] instanceof Date,
+  true,
+);
+assert.deepEqual(googleAnalyticsWindow.rosparkGoogleDataLayer[2], [
+  'config',
+  googleMeasurementId,
+  {
+    allow_ad_personalization_signals: false,
+    allow_google_signals: false,
+    send_page_view: false,
+  },
+]);
+
+googleAnalytics.sendGoogleAnalyticsPageView(
+  googleAnalyticsWindow,
+  'https://www.xn--80aukedde.xn--p1ai/demo',
+  '/demo',
+);
+assert.deepEqual(googleAnalyticsWindow.rosparkGoogleDataLayer[3], [
+  'event',
+  'page_view',
+  {
+    page_location: 'https://www.xn--80aukedde.xn--p1ai/demo',
+    page_path: '/demo',
+  },
 ]);
 
 console.log('analytics privacy smoke: OK');

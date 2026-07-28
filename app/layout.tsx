@@ -7,6 +7,7 @@ import Footer from '@/app/components/layout/Footer';
 import PageTransition from '@/app/components/animations/PageTransition';
 import OrganizationJsonLd from '@/app/components/content/OrganizationJsonLd';
 import FunnelEntryTracker from '@/app/components/analytics/FunnelEntryTracker';
+import GoogleAnalytics from '@/app/components/analytics/GoogleAnalytics';
 import YandexMetrika from '@/app/components/analytics/YandexMetrika';
 import CookieBanner from '@/app/components/legal/CookieBanner';
 import AiWidgetPilot from '@/app/components/ai-widget/AiWidgetPilot';
@@ -63,6 +64,7 @@ export default function RootLayout({
 
         <Footer />
         <FunnelEntryTracker />
+        <GoogleAnalytics />
         <YandexMetrika />
         <CookieBanner />
         <AiWidgetPilot />

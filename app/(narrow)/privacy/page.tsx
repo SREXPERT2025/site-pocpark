@@ -23,6 +23,7 @@ type LegalSection = {
 const introBlocks: LegalBlock[] = [
   {"type": "p", "text": "Дата вступления в силу: «08» июня 2026 г."},
   {"type": "p", "text": "Дополнение об использовании AI-консультанта: «28» июля 2026 г."},
+  {"type": "p", "text": "Дополнение об использовании Google Analytics: «28» июля 2026 г."},
 ];
 
 const aiWidgetSection: LegalSection = {
@@ -39,6 +40,24 @@ const aiWidgetSection: LegalSection = {
     {
       type: 'p',
       text: 'Ответ AI-консультанта носит информационный характер. Состав решения и коммерческие условия определяются специалистом после уточнения требований объекта.',
+    },
+  ],
+};
+
+const googleAnalyticsSection: LegalSection = {
+  title: 'Использование Google Analytics',
+  blocks: [
+    {
+      type: 'p',
+      text: 'На сайте может использоваться сервис веб-аналитики Google Analytics 4 для получения статистической информации о посещаемости, действиях пользователей и эффективности разделов сайта.',
+    },
+    {
+      type: 'p',
+      text: 'Google Analytics подключается только после согласия пользователя на необязательные cookie. Передача рекламных сигналов и персонализация рекламы отключены в настройках сайта.',
+    },
+    {
+      type: 'p',
+      text: 'Пользователь может отозвать согласие через ссылку «Настройки cookie» в нижней части сайта. После отзыва сервис веб-аналитики не загружается при последующих просмотрах.',
     },
   ],
 };
@@ -86,6 +105,13 @@ export default function Page() {
               {aiWidgetSection.title}
             </h2>
             <LegalBlocks blocks={aiWidgetSection.blocks} />
+          </section>
+
+          <section className="mt-8">
+            <h2 className="mb-4 text-2xl font-semibold tracking-tight text-slate-950">
+              {googleAnalyticsSection.title}
+            </h2>
+            <LegalBlocks blocks={googleAnalyticsSection.blocks} />
           </section>
 
           {sections.map((section) => (
