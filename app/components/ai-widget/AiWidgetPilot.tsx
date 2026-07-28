@@ -270,10 +270,19 @@ export default function AiWidgetPilot() {
                     }`}
                   >
                     {message.content || (
-                      <span className="inline-flex gap-1" aria-label="AI-консультант отвечает">
-                        <span className="animate-pulse">●</span>
-                        <span className="animate-pulse [animation-delay:150ms]">●</span>
-                        <span className="animate-pulse [animation-delay:300ms]">●</span>
+                      <span
+                        className="inline-flex items-center gap-2"
+                        role="status"
+                        aria-label="AI-консультант готовит ответ"
+                      >
+                        <span className="text-xs font-semibold text-slate-600">
+                          Готовлю ответ
+                        </span>
+                        <span className="inline-flex items-center gap-1" aria-hidden="true">
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-300ms] motion-reduce:animate-none" />
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-150ms] motion-reduce:animate-none" />
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-blue-600 motion-reduce:animate-none" />
+                        </span>
                       </span>
                     )}
                   </div>
