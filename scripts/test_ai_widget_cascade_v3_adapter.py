@@ -128,6 +128,29 @@ class CascadeV3AdapterTest(unittest.TestCase):
             ("BND-005", boundaries["BND-005"]),
         )
 
+    def test_generic_padding_is_removed(self) -> None:
+        answer = (
+            "Я виртуальный помощник РОСПАРК. "
+            "Это не является обещанием конкретной комплектации: итоговое "
+            "решение зависит от исходных данных и технической оценки объекта. "
+            "Неподтверждённые параметры следует зафиксировать отдельно и "
+            "проверить до подготовки предложения. "
+            "Проверку должен выполнять уполномоченный технический специалист."
+        )
+        self.assertEqual(
+            adapter.strip_generic_padding(answer),
+            "Я виртуальный помощник РОСПАРК.",
+        )
+
+    def test_responder_prompt_has_no_forced_minimum(self) -> None:
+        def base(_faq_text: str) -> str:
+            return adapter.LEGACY_LENGTH_INSTRUCTION
+
+        prompt = adapter.guarded_responder_prompt(base)("faq")
+        self.assertNotIn("от 50 до 70 слов", prompt)
+        self.assertIn("одного-трёх предложений", prompt)
+        self.assertIn("Не добавляй универсальную оговорку", prompt)
+
     def test_v3_validation_uses_current_result_keys(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)

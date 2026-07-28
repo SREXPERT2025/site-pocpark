@@ -44,6 +44,67 @@ LEAD_TEST_OFFER = (
     "На этом стенде заявка сохранится только в тестовом журнале: менеджер и MAX "
     "не будут уведомлены."
 )
+CONVERSATION_RULES = (
+    (
+        "CONV-001",
+        re.compile(
+            r"^\s*(?:а\s+)?(?:вы\s+кто|ты\s+кто|кто\s+ты|кто\s+вы|"
+            r"как\s+(?:вас|тебя)\s+зовут)\s*[?!.]*\s*$",
+            re.I,
+        ),
+        (
+            "Я AI-консультант РОСПАРК. Помогаю разобраться в сценариях "
+            "автоматизации парковок, найти подходящий раздел или демо и, "
+            "если понадобится, подготовить тестовую заявку для специалиста."
+        ),
+    ),
+    (
+        "CONV-002",
+        re.compile(
+            r"^\s*(?:(?:привет|здравствуйте)[,! ]*)?(?:а\s+)?"
+            r"(?:ты|вы)?\s*чем\s+(?:(?:ты|вы)\s+)?"
+            r"(?:(?:можешь|сможешь|можете)\s+(?:мне\s+)?помочь|"
+            r"(?:мне\s+)?помочь\s+(?:можешь|сможешь|можете))"
+            r"\s*[?!.]*\s*$|"
+            r"^\s*чем\s+(?:ты|вы)\s+полез\w*\s*[?!.]*\s*$",
+            re.I,
+        ),
+        (
+            "Могу помочь выбрать сценарий доступа и оплаты, объяснить "
+            "возможности системы, показать подходящие страницы и демо, а "
+            "также собрать исходные данные для предметного обсуждения. "
+            "Для начала расскажите, какой у вас объект и кого нужно пропускать."
+        ),
+    ),
+    (
+        "CONV-003",
+        re.compile(
+            r"\bхоч\w*\s+автоматизир\w*\s+парк\w*.*"
+            r"\b(?:что|чего)\s+(?:для\s+этого\s+)?(?:надо|нужно|потребуется)\b",
+            re.I,
+        ),
+        (
+            "Сначала нужно понять тип объекта, количество въездов и выездов, "
+            "категории пользователей, правила доступа и оплаты, а также что "
+            "уже установлено. После этого можно подобрать сценарий и состав "
+            "системы. Начнём с типа объекта и количества проездов?"
+        ),
+    ),
+    (
+        "CONV-004",
+        re.compile(
+            r"\bчто\s+(?:тебе|вам)\s+(?:рассказать|сообщить)\b.*"
+            r"\b(?:мо\w+\s+)?парк\w*",
+            re.I,
+        ),
+        (
+            "Расскажите: какой это объект; сколько въездов и выездов; кто "
+            "пользуется парковкой; какие нужны правила доступа и оплаты; что "
+            "уже установлено; какая проблема сейчас главная. Можно начать "
+            "с типа объекта и количества проездов."
+        ),
+    ),
+)
 APPROVED_LINK_RULES = (
     (
         re.compile(r"\bгостев\w*\b|\bзаявк\w*\b.*\bгост", re.I),
@@ -97,6 +158,13 @@ def append_approved_links(question: str, answer: str) -> str:
         return answer
     suffix = "\n".join(f"{label}: {path}" for label, path in links)
     return f"{answer.rstrip()}\n\n{suffix}"
+
+
+def conversation_answer(question: str) -> GatewayResult | None:
+    for template_id, pattern, answer in CONVERSATION_RULES:
+        if pattern.search(question):
+            return GatewayResult(answer, "conversation", template_id)
+    return None
 
 
 def clean_text(value: Any, maximum: int) -> str | None:
@@ -211,7 +279,9 @@ class PilotEngine:
         self.faq, self.boundaries = adapter.parse_current_template_file(
             adapter.DEFAULT_FAQ
         )
-        self.system_prompt = module.responder_prompt(
+        self.system_prompt = adapter.guarded_responder_prompt(
+            module.responder_prompt
+        )(
             adapter.DEFAULT_FAQ.read_text(encoding="utf-8")
         )
 
@@ -279,6 +349,14 @@ class PilotEngine:
         question = messages[-1]["content"]
         route, template_id, _ = self.module.route_case(question, self.faq)
 
+        if route == "security":
+            answer = self.module.SECURITY_ANSWERS[template_id or "SEC-001"]
+            return GatewayResult(answer, route, template_id)
+
+        conversational = conversation_answer(question)
+        if conversational:
+            return conversational
+
         if adapter.is_employee_timed_access_request(question):
             answer = self.faq["FAQ-008"]["answer"]
             return GatewayResult(
@@ -286,10 +364,6 @@ class PilotEngine:
                 "faq",
                 "FAQ-008",
             )
-
-        if route == "security":
-            answer = self.module.SECURITY_ANSWERS[template_id or "SEC-001"]
-            return GatewayResult(answer, route, template_id)
 
         if route == "crm":
             return GatewayResult(LEAD_TEST_OFFER, route, None)
@@ -313,7 +387,17 @@ class PilotEngine:
             )
 
         state = self._state_for(messages)
-        history = messages[:-1][-10:]
+        history = [
+            {
+                "role": message["role"],
+                "content": (
+                    adapter.strip_generic_padding(message["content"])
+                    if message["role"] == "assistant"
+                    else message["content"]
+                ),
+            }
+            for message in messages[:-1][-10:]
+        ]
         model_messages = [{"role": "system", "content": self.system_prompt}]
         model_messages.extend(history)
         model_messages.append(
@@ -335,6 +419,7 @@ class PilotEngine:
         answer = self.module.sanitize_unconfirmed_diagnosis(
             self.module.remove_contact_request(answer, question)
         )
+        answer = adapter.strip_generic_padding(answer)
         answer = self.module.trim_words(answer, 70)
         flags = self.module.fact_gate(
             question,
@@ -349,7 +434,6 @@ class PilotEngine:
             answer = SAFE_FALLBACK
             route = "safe_fallback"
         else:
-            answer = self.module.ensure_minimum_words(answer, 50)
             route = "qwen36"
         return GatewayResult(
             append_approved_links(question, answer),

@@ -68,6 +68,39 @@ MONEY_AMOUNT_RE = re.compile(
     r"\b(?:\d[\d\s]*|миллион\w*|тысяч\w*)\s*(?:рубл\w*|₽)",
     re.I,
 )
+LEGACY_LENGTH_INSTRUCTION = (
+    "Ответь по-русски, прямо и полезно, обычно от 50 до 70 слов."
+)
+PILOT_LENGTH_INSTRUCTION = (
+    "Ответь по-русски, прямо и полезно. Длина должна соответствовать вопросу: "
+    "для знакомства или простой справки достаточно одного-трёх предложений, "
+    "для составной задачи можно дать более развёрнутый ответ."
+)
+GENERIC_PADDING_PATTERNS = (
+    re.compile(
+        r"Это не является обещанием конкретной комплектации:\s*"
+        r"итоговое решение зависит от исходных данных и технической оценки "
+        r"объекта\.?",
+        re.I,
+    ),
+    re.compile(
+        r"Неподтвержд[её]нные параметры следует зафиксировать отдельно и "
+        r"проверить до подготовки предложения\.?",
+        re.I,
+    ),
+    re.compile(
+        r"Проверку должен выполнять уполномоченный технический специалист\.?",
+        re.I,
+    ),
+    re.compile(
+        r"Самостоятельное вмешательство в оборудование исключается\.?",
+        re.I,
+    ),
+    re.compile(
+        r"Срок решения заранее не подтверждается\.?",
+        re.I,
+    ),
+)
 
 
 def sha256(path: Path) -> str:
@@ -206,6 +239,33 @@ def is_composite_solution_request(question: str) -> bool:
         for pattern in SOLUTION_REQUIREMENT_GROUPS
     )
     return matched_groups >= 2
+
+
+def strip_generic_padding(answer: str) -> str:
+    result = answer
+    for pattern in GENERIC_PADDING_PATTERNS:
+        result = pattern.sub("", result)
+    return re.sub(r"\s+", " ", result).strip()
+
+
+def guarded_responder_prompt(base_responder_prompt: Any) -> Any:
+    def build(faq_text: str) -> str:
+        prompt = base_responder_prompt(faq_text)
+        if LEGACY_LENGTH_INSTRUCTION not in prompt:
+            raise ValueError("Legacy responder length instruction changed.")
+        prompt = prompt.replace(
+            LEGACY_LENGTH_INSTRUCTION,
+            PILOT_LENGTH_INSTRUCTION,
+            1,
+        )
+        return (
+            prompt
+            + "\nНе добавляй универсальную оговорку о комплектации, исходных "
+            "данных или технической оценке в конец каждого ответа. Уточнение "
+            "нужно только рядом с конкретным неподтверждённым утверждением.\n"
+        )
+
+    return build
 
 
 def guarded_boundary_for(base_boundary_for: Any) -> Any:
@@ -454,6 +514,7 @@ def run(args: argparse.Namespace) -> int:
     module.KNOWLEDGE_FILES = DEFAULT_KNOWLEDGE
     module.parse_template_file = parse_current_template_file
     module.BOUNDARY_PATTERNS = v3_boundary_patterns()
+    module.responder_prompt = guarded_responder_prompt(module.responder_prompt)
     module.boundary_for = guarded_boundary_for(module.boundary_for)
     module.crm_payload = crm_payload_with_required_name
     module.fact_gate = guarded_fact_gate(module.fact_gate)
