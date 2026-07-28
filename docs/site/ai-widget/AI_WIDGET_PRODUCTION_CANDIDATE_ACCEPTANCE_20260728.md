@@ -33,7 +33,10 @@ Node.js: `22.23.1`.
 - production build — passed, 107/107 routes;
 - AI widget pilot tests — passed;
 - transcript/log/migration/rate-limit tests — passed;
-- gateway tests — 13/13 passed;
+- gateway tests — 14/14 passed on Mac Studio; on a non-Mac staging host
+  13 portable checks run and the one real legacy-cascade compatibility check
+  is explicitly skipped because that read-only engine exists only on Mac
+  Studio;
 - preview env tests — passed;
 - production env tests — passed;
 - lead registry tests — passed;

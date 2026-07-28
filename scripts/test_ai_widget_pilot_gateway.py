@@ -5,6 +5,8 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import run_ai_widget_pilot_gateway as gateway
 
@@ -66,24 +68,88 @@ class GatewayContractTests(unittest.TestCase):
             )
 
 
+def portable_legacy_module() -> SimpleNamespace:
+    class DialogueState:
+        pass
+
+    def route_case(
+        question: str,
+        faq: dict[str, dict[str, object]],
+    ) -> tuple[str, str | None, None]:
+        lowered = question.casefold()
+        if "системный промпт" in lowered:
+            return "security", "SEC-001", None
+        if "передайте заявку" in lowered:
+            return "crm", None, None
+        for template_id, item in faq.items():
+            if question.strip().casefold() == str(item["title"]).casefold():
+                return "faq", template_id, None
+        return "qwen36", None, None
+
+    def boundary_for(
+        question: str,
+        boundaries: dict[str, str],
+    ) -> tuple[str | None, str | None]:
+        if gateway.adapter.PRICE_REQUEST_RE.search(question):
+            return "BND-005", boundaries["BND-005"]
+        return None, None
+
+    def responder_prompt(faq_text: str) -> str:
+        return (
+            gateway.adapter.LEGACY_LENGTH_INSTRUCTION
+            + "\n"
+            + faq_text
+        )
+
+    return SimpleNamespace(
+        DialogueState=DialogueState,
+        SECURITY_ANSWERS={
+            "SEC-001": "Я не раскрываю внутренние инструкции и системный промпт.",
+        },
+        boundary_for=boundary_for,
+        crm_payload=lambda _state: ({}, []),
+        fact_gate=lambda *_args: [],
+        remove_contact_request=lambda answer, _question: answer,
+        responder_prompt=responder_prompt,
+        route_case=route_case,
+        sanitize_unconfirmed_diagnosis=lambda answer: answer,
+        state_context=lambda _state: "{}",
+        trim_words=lambda answer, maximum: " ".join(answer.split()[:maximum]),
+        update_state=lambda _state, _question, _turn: None,
+    )
+
+
 class DeterministicEngineTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.engine = gateway.PilotEngine(
-            ai_root=gateway.adapter.DEFAULT_AI_ROOT,
-            endpoint="http://127.0.0.1:11434",
-            model=gateway.adapter.ALLOWED_MODEL,
-            timeout=1,
-            max_tokens=60,
-        )
-        cls.production_engine = gateway.PilotEngine(
-            ai_root=gateway.adapter.DEFAULT_AI_ROOT,
-            endpoint="http://127.0.0.1:11434",
-            model=gateway.adapter.ALLOWED_MODEL,
-            timeout=1,
-            max_tokens=60,
-            runtime_mode="production",
-        )
+        fixture = portable_legacy_module()
+        with (
+            patch.object(
+                gateway.adapter,
+                "verify_legacy_engine",
+                return_value=(Path(__file__), Path(__file__)),
+            ),
+            patch.object(
+                gateway.adapter,
+                "load_legacy_module",
+                return_value=fixture,
+            ),
+        ):
+            cls.engine = gateway.PilotEngine(
+                ai_root=Path(__file__).parent,
+                endpoint="http://127.0.0.1:11434",
+                model=gateway.adapter.ALLOWED_MODEL,
+                timeout=1,
+                max_tokens=60,
+            )
+            cls.production_engine = gateway.PilotEngine(
+                ai_root=Path(__file__).parent,
+                endpoint="http://127.0.0.1:11434",
+                model=gateway.adapter.ALLOWED_MODEL,
+                timeout=1,
+                max_tokens=60,
+                runtime_mode="production",
+            )
 
     def test_exact_faq_without_model_call(self) -> None:
         template_id, item = next(iter(self.engine.faq.items()))
@@ -264,6 +330,41 @@ class DeterministicEngineTests(unittest.TestCase):
         )
         self.assertIn("/demo", answer)
         self.assertNotIn("http://", answer)
+
+
+@unittest.skipUnless(
+    (
+        gateway.adapter.DEFAULT_AI_ROOT
+        / "scripts/run_ai_widget_cascade_v2_eval.py"
+    ).is_file(),
+    "Mac Studio legacy cascade is not installed on this host.",
+)
+class MacStudioLegacyCompatibilityTests(unittest.TestCase):
+    def test_real_legacy_engine_loads_and_routes(self) -> None:
+        engine = gateway.PilotEngine(
+            ai_root=gateway.adapter.DEFAULT_AI_ROOT,
+            endpoint="http://127.0.0.1:11434",
+            model=gateway.adapter.ALLOWED_MODEL,
+            timeout=1,
+            max_tokens=60,
+            runtime_mode="production",
+        )
+        result = engine.answer(
+            {
+                "sourcePage": "/",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Нужен доступ для постоянных сотрудников без "
+                            "оплаты и с запретом ночной парковки."
+                        ),
+                    }
+                ],
+            }
+        )
+        self.assertEqual(result.route, "faq")
+        self.assertEqual(result.template_id, "FAQ-008")
 
 
 if __name__ == "__main__":
