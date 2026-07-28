@@ -35,7 +35,6 @@ DEFAULT_KNOWLEDGE = (
 )
 DEFAULT_PRODUCTION_KNOWLEDGE = (
     SITE_ROOT / "docs/site/ai-widget/WIDGET_CLAIM_LEDGER_V1.md",
-    SITE_ROOT / "docs/site/ai-widget/WIDGET_KB_V1_SOURCES.md",
 )
 
 LEGACY_V2_SHA256 = "a8d8fcfdd1a2e33fa0273df254664af1941730063a6c48a4f7a7c24a359eca5f"
@@ -46,14 +45,16 @@ EXPECTED_FAQ_COUNT = 26
 EXPECTED_BOUNDARY_COUNT = 6
 PRICE_REQUEST_RE = re.compile(
     r"\bцен(?:а|ы|е|у|ой|ами|ах)\b|\bстоимост\w*|"
-    r"\bсколько\s+сто(?:ит|ят)\b|\bсмет\w*|"
+    r"\bсколько\s+сто(?:ит|ят)\b|\bскока\s+(?:будет|сто(?:ит|ят))\b|"
+    r"\bсмет\w*|"
     r"\b(?:какой|какая|каково|определить|рассчитать|оценить)"
     r"\s+бюджет(?:а|у|ом|е)?\b|"
     r"\bбюджет(?:а|у|ом|е)?\s+(?:нужен|нужна|потребуется|до|от|около|"
     r"в\s+пределах)\b|"
     r"\b(?:уложиться|вписаться)\s+в\s+(?:бюджет(?:а|у|ом|е)?|"
     r"(?:\d[\d\s]*|миллион\w*|тысяч\w*)\s*(?:рубл\w*|₽))|"
-    r"\b(?:дешевле|дороже)\s+(?:ли|чем|на\s+сколько)\b",
+    r"\b(?:дешевле|дороже)\s+(?:ли|чем|на\s+сколько)\b|"
+    r"\b(?:дешевле|дороже)\s+или\s+(?:дешевле|дороже)\b",
     re.I,
 )
 EMPLOYEE_ACCESS_RE = re.compile(
@@ -244,8 +245,28 @@ def v3_boundary_patterns() -> tuple[tuple[str, re.Pattern[str]], ...]:
                 re.I,
             ),
         ),
-        ("BND-001", re.compile(r"came|hikvision|совместим|существующ\w+\s+(?:оборуд|камер|шлагбаум|контроллер)", re.I)),
-        ("BND-002", re.compile(r"гаранти|24\s*[xх/]\s*7|круглосуточ|восстанов|точност|99\s*процент", re.I)),
+        (
+            "BND-001",
+            re.compile(
+                r"\bcame\b|\bкаме\b|hikvision|совместим|"
+                r"(?:существующ|стар|действующ)\w*\s+"
+                r"(?:оборуд|камер|шлагбаум|контроллер)|"
+                r"(?:оборуд|камер|шлагбаум|контроллер)\w*.*"
+                r"\b(?:стар|действующ)\w*|"
+                r"оборудован\w*\s+другого\s+интегратор",
+                re.I,
+            ),
+        ),
+        (
+            "BND-002",
+            re.compile(
+                r"гаранти|24\s*[xх/]\s*7|круглосуточ|восстанов|"
+                r"точност|99\s*процент|"
+                r"как\s+быстро\b.{0,50}\b(?:инженер|приед|реакц)|"
+                r"\bвремя\s+(?:прибыт|реакц)\w*",
+                re.I,
+            ),
+        ),
         ("BND-003", re.compile(r"интернет|электрич|питан|сервер.*(?:пропад|связ)", re.I)),
         ("BND-004", re.compile(r"географ|регион|город|монтаж.*(?:москв|росси)|работаете\s+в", re.I)),
         ("BND-006", re.compile(r"не\s+работ|ошибк|неисправ|сломал|причин|диагноз", re.I)),
@@ -385,6 +406,72 @@ def contains_unsupported_price_amount(question: str, answer: str) -> bool:
     return bool(PRICE_REQUEST_RE.search(question) and MONEY_AMOUNT_RE.search(answer))
 
 
+UNCONFIRMED_CLAIM_RULES = (
+    (
+        "unconfirmed_mobile_app",
+        re.compile(
+            r"\b(?:использу\w*|есть|поддержива\w*|доступ\w*)\b.{0,80}"
+            r"\bмобильн\w+\s+приложен\w*",
+            re.I,
+        ),
+    ),
+    (
+        "unconfirmed_cargo_rules",
+        re.compile(
+            r"\b(?:ввести|задать|настроить|учитыва\w*|с\s+уч[её]том)\b.{0,100}"
+            r"\b(?:объ[её]м\w+\s+груз\w*|весов\w+\s+огранич\w*)",
+            re.I,
+        ),
+    ),
+    (
+        "unconfirmed_space_reservation",
+        re.compile(
+            r"\b(?:резервир\w+|зарезервир\w+)\s+мест\w*|"
+            r"\bмест\w*\b.{0,50}\bдоступ\w*\s+только\s+сотрудник\w*",
+            re.I,
+        ),
+    ),
+    (
+        "unconfirmed_multisite_management",
+        re.compile(
+            r"\b(?:объединя\w*|централизован\w*)\b.{0,100}"
+            r"\b(?:нескольк\w+\s+(?:объект|здан|въезд)|"
+            r"(?:объект|здан|въезд)\w*\s+из\s+одного\s+места)",
+            re.I,
+        ),
+    ),
+)
+
+
+def unconfirmed_claim_flags(question: str, answer: str) -> list[str]:
+    flags = [
+        flag
+        for flag, pattern in UNCONFIRMED_CLAIM_RULES
+        if pattern.search(answer)
+    ]
+    if (
+        re.search(r"\b(?:этап\w*|потом\s+добав|добав\w*\s+позже)\b", question, re.I)
+        and re.search(
+            r"^\s*да\b|\b(?:можно|подключаются|добавляются)\b.{0,80}"
+            r"\b(?:позже|постепенно|затем|на\s+следующ\w+\s+этап)",
+            answer,
+            re.I,
+        )
+    ):
+        flags.append("unconfirmed_phased_expansion")
+    if (
+        re.search(r"\bбез\b.{0,40}\b(?:кассир|охран)\w*", question, re.I)
+        and re.search(
+            r"^\s*да\b|\b(?:можно|позволя\w*)\b.{0,80}"
+            r"\bбез\b.{0,40}\b(?:кассир|охран)\w*",
+            answer,
+            re.I,
+        )
+    ):
+        flags.append("unconfirmed_unattended_operation")
+    return flags
+
+
 def guarded_fact_gate(base_fact_gate: Any) -> Any:
     def check(
         question: str,
@@ -409,6 +496,9 @@ def guarded_fact_gate(base_fact_gate: Any) -> Any:
             and "unsupported_price_amount" not in flags
         ):
             flags.append("unsupported_price_amount")
+        for flag in unconfirmed_claim_flags(question, answer):
+            if flag not in flags:
+                flags.append(flag)
         return flags
 
     return check

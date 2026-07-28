@@ -67,6 +67,50 @@ class GatewayContractTests(unittest.TestCase):
                 "safe-secret-value",
             )
 
+    def test_model_state_excludes_raw_message_history(self) -> None:
+        module = SimpleNamespace(
+            state_context=lambda _state: (
+                '{"object_type":"бизнес-центр",'
+                '"user_messages":["contact@example.ru"]}'
+            )
+        )
+        context = gateway.model_state_context(module, object())
+        self.assertIn("бизнес-центр", context)
+        self.assertNotIn("user_messages", context)
+        self.assertNotIn("contact@example.ru", context)
+
+    def test_compact_model_faq_omits_sources_and_lead_templates(self) -> None:
+        faq = {
+            "FAQ-001": {
+                "title": "Чем занимается РОСПАРК?",
+                "answer": "Подтверждённый ответ.",
+                "source": "private-source-path",
+                "variants": ["вариант"],
+            }
+        }
+        compact = gateway.compact_faq_for_model(
+            faq,
+            {"BND-001": "Нужна проверка."},
+        )
+        self.assertIn("FAQ-001", compact)
+        self.assertIn("Подтверждённый ответ.", compact)
+        self.assertIn("BND-001", compact)
+        self.assertNotIn("private-source-path", compact)
+        self.assertNotIn("вариант", compact)
+        self.assertNotIn("LEAD-", compact)
+
+    def test_complex_or_unconfirmed_questions_do_not_use_fast_faq(self) -> None:
+        questions = (
+            "Что произойдёт, если деньги списались, а система не увидела платёж?",
+            "Что произойдёт, если наша CRM или API временно не отвечает?",
+            "Система понимает армянские, казахстанские и белорусские номера?",
+            "Есть ли мобильное приложение для жителей?",
+        )
+        for question in questions:
+            with self.subTest(question=question):
+                self.assertIsNone(gateway.fast_faq_for(question))
+                self.assertIsNone(gateway.solution_answer_for(question))
+
 
 def portable_legacy_module() -> SimpleNamespace:
     class DialogueState:
@@ -151,6 +195,12 @@ class DeterministicEngineTests(unittest.TestCase):
                 runtime_mode="production",
             )
 
+    def test_production_prompt_has_no_preview_markers(self) -> None:
+        lowered = self.production_engine.system_prompt.lower()
+        self.assertNotIn("закрытый пилот", lowered)
+        self.assertNotIn("публичный запуск остаётся отдельным этапом", lowered)
+        self.assertIn("публичный ai-консультант", lowered)
+
     def test_exact_faq_without_model_call(self) -> None:
         template_id, item = next(iter(self.engine.faq.items()))
         result = self.engine.answer(
@@ -177,6 +227,209 @@ class DeterministicEngineTests(unittest.TestCase):
         )
         self.assertEqual(result.route, "boundary")
         self.assertNotRegex(result.answer, r"\d[\d\s]*(?:руб|₽)")
+
+    def test_competitor_price_comparison_uses_boundary(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/demo",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "У конкурентов один проезд стоит 600 тысяч. "
+                            "У вас дороже или дешевле?"
+                        ),
+                    }
+                ],
+            }
+        )
+        self.assertEqual(result.route, "boundary")
+        self.assertEqual(result.template_id, "BND-005")
+
+    def test_price_boundary_precedes_fast_integration_answer(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/demo",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            "Сколько стоит интегрировать парковку "
+                            "с нашей CRM?"
+                        ),
+                    }
+                ],
+            }
+        )
+        self.assertEqual(result.route, "boundary")
+        self.assertEqual(result.template_id, "BND-005")
+
+    def test_high_confidence_paraphrases_use_approved_faq(self) -> None:
+        cases = (
+            (
+                "Чем РОСПАРК отличается от компании, которая просто "
+                "продаёт шлагбаумы?",
+                "FAQ-002",
+            ),
+            ("Какие объекты вы обычно автоматизируете?", "FAQ-003"),
+            ("Что будет зимой, когда номера залеплены снегом?", "FAQ-007"),
+            ("Есть ли у вас онлайн-оплата?", "FAQ-013"),
+            (
+                "нам терминал не нужен пусть по куар платят и всё",
+                "FAQ-013",
+            ),
+            (
+                "Можно интегрировать парковку с нашей CRM?",
+                "FAQ-022",
+            ),
+            (
+                "У нас открытие через 10 дней. Успеете запустить?",
+                "FAQ-024",
+            ),
+            (
+                "Можно приехать завтра, посмотреть объект и сразу "
+                "начать монтаж?",
+                "FAQ-024",
+            ),
+        )
+        original = self.engine._ollama_answer
+        self.engine._ollama_answer = lambda _messages: self.fail(
+            "model must not be called for a high-confidence FAQ"
+        )
+        try:
+            for question, template_id in cases:
+                with self.subTest(question=question):
+                    result = self.engine.answer(
+                        {
+                            "sourcePage": "/demo",
+                            "messages": [
+                                {"role": "user", "content": question},
+                            ],
+                        }
+                    )
+                    self.assertEqual(result.route, "faq")
+                    self.assertEqual(result.template_id, template_id)
+        finally:
+            self.engine._ollama_answer = original
+
+    def test_common_solution_requests_use_guarded_templates(self) -> None:
+        cases = (
+            (
+                "Можно ли сделать систему без кассира и без постоянного "
+                "присутствия охраны?",
+                "SOL-001",
+                "нужно подтвердить при обследовании",
+            ),
+            (
+                "У нас постоянно чужие машины занимают места сотрудников. "
+                "Как это можно решить?",
+                "SOL-002",
+                "ограничить въезд незарегистрированных автомобилей",
+            ),
+            (
+                "У нас предприятие с грузовыми и легковыми машинами. "
+                "Их можно пропускать по разным правилам?",
+                "SOL-003",
+                "кто подтверждает въезд",
+            ),
+            (
+                "Нужно разделить въезд сотрудников, посетителей и "
+                "транспорта подрядчиков.",
+                "SOL-004",
+                "Физическое разделение проездов",
+            ),
+            (
+                "Можно сначала поставить базовую систему, а потом добавить "
+                "оплату и распознавание?",
+                "SOL-005",
+                "нужно подтвердить",
+            ),
+            (
+                "Парковка у гостиницы: гости бесплатно, остальные платят. "
+                "Что ставить?",
+                "SOL-006",
+                "разделить категории",
+            ),
+            (
+                "У нас три здания и два въезда. Можно управлять всем "
+                "из одного места?",
+                "SOL-007",
+                "заранее подтверждать единую конфигурацию нельзя",
+            ),
+            (
+                "сделайте так чтоб после оплаты он сразу выезжал "
+                "без охранника",
+                "SOL-008",
+                "зависит от оборудования",
+            ),
+        )
+        original = self.engine._ollama_answer
+        self.engine._ollama_answer = lambda _messages: self.fail(
+            "model must not be called for a guarded solution"
+        )
+        try:
+            for question, template_id, expected in cases:
+                with self.subTest(question=question):
+                    result = self.engine.answer(
+                        {
+                            "sourcePage": "/demo",
+                            "messages": [
+                                {"role": "user", "content": question},
+                            ],
+                        }
+                    )
+                    self.assertEqual(result.route, "solution")
+                    self.assertEqual(result.template_id, template_id)
+                    self.assertIn(expected, result.answer)
+        finally:
+            self.engine._ollama_answer = original
+
+    def test_ollama_metrics_are_returned_without_message_content(self) -> None:
+        class FakeResponse:
+            def __enter__(self) -> "FakeResponse":
+                return self
+
+            def __exit__(self, *_args: object) -> None:
+                return None
+
+            def __iter__(self):
+                return iter(
+                    (
+                        b'{"message":{"content":"Safe answer"},"done":false}\n',
+                        (
+                            b'{"message":{"content":""},"done":true,'
+                            b'"load_duration":250000000,'
+                            b'"prompt_eval_duration":1500000000,'
+                            b'"eval_duration":700000000,'
+                            b'"prompt_eval_count":4100,'
+                            b'"eval_count":62}\n'
+                        ),
+                    )
+                )
+
+        with (
+            patch.object(
+                gateway.urllib.request,
+                "urlopen",
+                return_value=FakeResponse(),
+            ),
+            patch.object(
+                gateway.time,
+                "monotonic",
+                side_effect=(100.0, 100.25),
+            ),
+        ):
+            result = self.engine._ollama_answer(
+                [{"role": "user", "content": "private question"}]
+            )
+        self.assertEqual(result.answer, "Safe answer")
+        self.assertEqual(result.metrics["time_to_first_token_ms"], 250)
+        self.assertEqual(result.metrics["load_ms"], 250)
+        self.assertEqual(result.metrics["prompt_eval_ms"], 1500)
+        self.assertEqual(result.metrics["eval_ms"], 700)
+        self.assertEqual(result.metrics["prompt_tokens"], 4100)
+        self.assertEqual(result.metrics["output_tokens"], 62)
+        self.assertNotIn("private question", str(result.metrics))
 
     def test_budget_word_does_not_hide_employee_access_scenario(self) -> None:
         result = self.engine.answer(
@@ -216,6 +469,17 @@ class DeterministicEngineTests(unittest.TestCase):
                 "Что тебе рассказать про мою парковку?",
                 "CONV-004",
                 "какая проблема сейчас главная",
+            ),
+            (
+                "Можно сначала получить консультацию, а потом решать, "
+                "нужен ли выезд специалиста?",
+                "CONV-005",
+                "без оформления заявки",
+            ),
+            (
+                "Я согласен, но имя и телефон писать не буду.",
+                "CONV-006",
+                "контакт оставлять не обязательно",
             ),
         )
         for question, template_id, expected in cases:

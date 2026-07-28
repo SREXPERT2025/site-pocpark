@@ -80,7 +80,15 @@ class CascadeV3AdapterTest(unittest.TestCase):
             )
         )
         self.assertEqual(match("Можно оставить шлагбаум Came?"), "BND-001")
+        self.assertEqual(
+            match("Контроллеры старые. Нужно менять всё?"),
+            "BND-001",
+        )
         self.assertEqual(match("Какая гарантия точности?"), "BND-002")
+        self.assertEqual(
+            match("Как быстро приезжает инженер при аварии?"),
+            "BND-002",
+        )
         self.assertEqual(match("Что будет без электричества?"), "BND-003")
         self.assertEqual(match("Работаете в Мурманске?"), "BND-004")
         self.assertEqual(match("Почему система не работает?"), "BND-006")
@@ -104,6 +112,16 @@ class CascadeV3AdapterTest(unittest.TestCase):
         self.assertTrue(adapter.PRICE_REQUEST_RE.search("Какой бюджет нужен?"))
         self.assertTrue(
             adapter.PRICE_REQUEST_RE.search("Можно уложиться в бюджет?")
+        )
+        self.assertTrue(
+            adapter.PRICE_REQUEST_RE.search(
+                "У конкурентов дороже или дешевле?"
+            )
+        )
+        self.assertTrue(
+            adapter.PRICE_REQUEST_RE.search(
+                "скока будет шлагбаум с камерой"
+            )
         )
 
     def test_composite_explicit_price_bypasses_price_only_boundary(self) -> None:
@@ -200,6 +218,63 @@ class CascadeV3AdapterTest(unittest.TestCase):
                 "Можно уложиться в миллион рублей?",
                 "Виджет не публикует цены и не называет ориентиры.",
             )
+        )
+
+    def test_unconfirmed_claims_are_flagged(self) -> None:
+        self.assertIn(
+            "unconfirmed_mobile_app",
+            adapter.unconfirmed_claim_flags(
+                "Как автоматизировать парковку?",
+                "Для доступа используются мобильные приложения.",
+            ),
+        )
+        self.assertIn(
+            "unconfirmed_cargo_rules",
+            adapter.unconfirmed_claim_flags(
+                "Как пропускать грузовики?",
+                "Можно настроить правила с учетом объема груза.",
+            ),
+        )
+        self.assertIn(
+            "unconfirmed_cargo_rules",
+            adapter.unconfirmed_claim_flags(
+                "Как пропускать грузовики?",
+                "Можно задать сценарий с учетом весовых ограничений.",
+            ),
+        )
+        self.assertIn(
+            "unconfirmed_multisite_management",
+            adapter.unconfirmed_claim_flags(
+                "Можно управлять тремя зданиями из одного места?",
+                (
+                    "Система позволяет централизованно управлять несколькими "
+                    "зданиями."
+                ),
+            ),
+        )
+        self.assertIn(
+            "unconfirmed_phased_expansion",
+            adapter.unconfirmed_claim_flags(
+                "Можно сначала базовую систему, а оплату добавить позже?",
+                "Да, оплату можно подключить позже.",
+            ),
+        )
+        self.assertIn(
+            "unconfirmed_unattended_operation",
+            adapter.unconfirmed_claim_flags(
+                "Можно работать без кассира и охраны?",
+                "Да, система позволяет работать без кассира и охраны.",
+            ),
+        )
+        self.assertEqual(
+            adapter.unconfirmed_claim_flags(
+                "Можно работать без кассира и охраны?",
+                (
+                    "Возможность работы без кассира и охраны зависит от "
+                    "правил объекта и требует проверки."
+                ),
+            ),
+            [],
         )
 
 

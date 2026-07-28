@@ -1,8 +1,8 @@
 # AI-WIDGET-0 — пакет знаний и правил
 
 Дата подготовки: 2026-07-27, production-дополнение 2026-07-28
-Статус: preview работает на Mac Studio; production release candidate
-подготовлен локально, VPS ещё не переключён.
+Статус: production-контур опубликован; latency/quality hardening прошёл QA в
+отдельном локальном release candidate и ещё не переключён в production.
 
 ## Назначение
 
@@ -18,8 +18,8 @@
 выключены feature flag. На 2026-07-27 владелец отдельно разрешил включить их
 на коротком Mac Studio preview. На 2026-07-28 директор подтвердил подготовку
 полноценного production-контура: публичный UI, реальный lead registry, журнал,
-MAX outbox и отдельный Mac Studio gateway. Фактический VPS cutover и первая
-контрольная отправка в MAX ещё не выполнялись.
+MAX outbox и отдельный Mac Studio gateway. Production cutover и контрольная
+заявка с подтверждённой доставкой в MAX выполнены 28.07.2026.
 
 ## Состав
 
@@ -41,6 +41,10 @@ MAX outbox и отдельный Mac Studio gateway. Фактический VPS 
    synthetic-контура с локальным журналом и тестовой карточкой.
 10. `WIDGET_PRODUCTION_PROFILE_V1.md` — отдельный профиль публичного
     AI-консультанта без preview-инструкций.
+11. `AI_WIDGET_PRODUCTION_ACCEPTANCE_20260728.md` — фактическая production
+    приёмка, включая первую заявку и MAX delivery evidence.
+12. `AI_WIDGET_LATENCY_QUALITY_V1_20260728.md` — диагностика задержек,
+    отклонение небезопасной 8B-модели и локальный hardening candidate.
 
 Изолированный повторный тест запускается через
 `scripts/ai_widget_cascade_v3_adapter.py`. Адаптер:
@@ -77,8 +81,9 @@ MAX outbox и отдельный Mac Studio gateway. Фактический VPS 
 - буферизует модельный ответ до Fact Gate и не отдаёт опасный черновик
   браузеру;
 - не имеет инструментов CRM, MAX, файловой системы, браузера или оборудования;
-- сам gateway журналирует только request ID, маршрут, HTTP-статус и
-  длительность;
+- production gateway журналирует request ID, маршрут, HTTP-статус и
+  длительность; hardening candidate дополнительно пишет только обезличенные
+  UTC/TTFT/load/prompt/eval/token metrics без вопросов и ответов;
 - site-side журнал закрытого теста отдельно сохраняет полный synthetic-диалог
   максимум на семь дней.
 
@@ -96,9 +101,10 @@ job. До VPS он доступен только через закрытый HTT
 npm run test:ai-widget-gateway
 ```
 
-Gateway установлен как отдельная фоновая служба Mac Studio, preview включён.
-Результат выпуска и границы приёмки:
-`AI_WIDGET_1_PREVIEW_ACCEPTANCE_20260727.md`.
+Gateway установлен как отдельная фоновая служба Mac Studio. Preview и
+production используют разные процессы и секреты. Результаты приёмки:
+`AI_WIDGET_1_PREVIEW_ACCEPTANCE_20260727.md` и
+`AI_WIDGET_PRODUCTION_ACCEPTANCE_20260728.md`.
 
 Операционный runbook:
 `docs/deployment/AI_WIDGET_PREVIEW_MAC_STUDIO.md`.
@@ -129,9 +135,10 @@ Production runbook:
 ## Граница текущего блока
 
 - рабочий OpenClaw `main` не изменяется;
-- preview не считается публичным production;
+- preview не считается публичным production и не делит с ним секрет;
 - production использует отдельный `/api/ai-widget/lead`, а не свободный
   доступ модели к `/api/lead`;
-- первая отправка в MAX выполняется только отдельным операционным gate;
-- публикация на VPS возможна после target SHA, backup, закрытого HTTPS gateway,
+- первая production-отправка в MAX выполнена и подтверждена outbox, worker и
+  read-only MAX API;
+- последующие изменения публикуются только после target SHA, backup, staging,
   readiness и отдельного подтверждения cutover.

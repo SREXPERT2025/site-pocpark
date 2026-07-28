@@ -17,6 +17,7 @@ import sys
 import time
 import urllib.request
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -144,6 +145,48 @@ CONVERSATION_RULES = (
             ),
         },
     ),
+    (
+        "CONV-005",
+        re.compile(
+            r"\bможно\s+сначала\s+(?:получить\s+)?консультац\w*\b.*"
+            r"\bпотом\b.*\b(?:выезд|реш\w*)",
+            re.I,
+        ),
+        {
+            "preview": (
+                "Да. Сначала можно обсудить задачу в этом виджете без "
+                "оформления заявки. Я помогу уточнить тип объекта, количество "
+                "проездов, пользователей и нужные правила доступа. После этого "
+                "будет понятнее, нужен ли выезд специалиста."
+            ),
+            "production": (
+                "Да. Сначала можно обсудить задачу в этом виджете без "
+                "оформления заявки. Я помогу уточнить тип объекта, количество "
+                "проездов, пользователей и нужные правила доступа. После этого "
+                "будет понятнее, нужен ли выезд специалиста."
+            ),
+        },
+    ),
+    (
+        "CONV-006",
+        re.compile(
+            r"\b(?:не\s+буду|не\s+хочу|не\s+оставлю|не\s+дам)\b.*"
+            r"\b(?:имя|телефон|контакт|email|почт)\w*|"
+            r"\b(?:имя|телефон|контакт|email|почт)\w*.*"
+            r"\b(?:не\s+буду|не\s+хочу|не\s+оставлю|не\s+дам)\b",
+            re.I,
+        ),
+        {
+            "preview": (
+                "Хорошо, контакт оставлять не обязательно. Продолжим "
+                "справочный диалог без оформления заявки."
+            ),
+            "production": (
+                "Хорошо, контакт оставлять не обязательно. Продолжим "
+                "справочный диалог без оформления заявки."
+            ),
+        },
+    ),
 )
 APPROVED_LINK_RULES = (
     (
@@ -177,12 +220,277 @@ APPROVED_LINK_RULES = (
     ),
 )
 
+FAST_FAQ_RULES = (
+    (
+        "FAQ-002",
+        re.compile(
+            r"\b(?:чем|как)\b.*\bотлича\w*\b.*\bшлагбаум\w*|"
+            r"\b(?:только|просто)\s+(?:прода[её]те\s+)?шлагбаум\w*|"
+            r"\bчто\s+входит\b.*\bпарков\w*\s+под\s+ключ\b",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-003",
+        re.compile(
+            r"\b(?:какие|для\s+каких)\s+объект\w*\b.*"
+            r"\b(?:автоматиз\w*|подход\w*)\b|"
+            r"\bзанима\w*\b.*\b(?:платн\w+\s+парков|закрыт\w+\s+территор)",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-004",
+        re.compile(
+            r"\b(?:с\s+чего|как)\s+нач(?:ать|инается)\b.*"
+            r"\b(?:проект|автоматизац)\w*|"
+            r"\bчто\s+(?:надо|нужно|потребуется)\b.*"
+            r"\b(?:для\s+)?автоматизац\w*",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-006",
+        re.compile(
+            r"\b(?:есть|поддержива\w*)\b.*"
+            r"\bраспознаван\w*\s+номер\w*",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-007",
+        re.compile(
+            r"\b(?:распознаван\w*|камер\w*|номер\w*)\b.*"
+            r"\b(?:без\s+ошиб\w*|точност\w*|снег\w*|под\s+угл\w*|"
+            r"не\s+распозна\w*|похож\w+\s+номер\w*)|"
+            r"\bпохож\w+\s+номер\w*\b",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-009",
+        re.compile(
+            r"\b(?:разов\w+|временн\w+)\s+(?:посетител|клиент)\w*\b.*"
+            r"\b(?:оформ\w*|пропус\w*|доступ\w*)",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-010",
+        re.compile(
+            r"\b(?:приглаш\w*\s+гост\w*|гостев\w+\s+"
+            r"(?:доступ|заявк|приглаш)\w*)",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-011",
+        re.compile(
+            r"\b(?:арендатор\w*|бизнес[-\s]?центр\w*)\b.*"
+            r"\b(?:гост\w*|лимит\w*|уч[её]т\w*|доступ\w*|сценари\w*)",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-012",
+        re.compile(
+            r"\b(?:rfid|qr|карт\w*|билет\w*)\b.*"
+            r"\b(?:поддержива\w*|доступ\w*|использ\w*)",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-013",
+        re.compile(
+            r"\b(?:есть|поддержива\w*)\b.*\bонлайн[-\s]?оплат\w*|"
+            r"\bможно\s+оплат\w*\b.*\b(?:qr|сбп|карт\w*|сайт\w*)|"
+            r"\b(?:принима\w*|оплат\w*|плат\w*)\b.*\b(?:qr|куар|"
+            r"банковск\w+\s+карт)\w*|"
+            r"\b(?:qr|куар)\b.*\b(?:оплат\w*|плат\w*)",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-017",
+        re.compile(
+            r"\bкакие\b.*\bотч[её]т\w*\b.*\b(?:можно|доступ|получ)|"
+            r"\b(?:есть|поддержива\w*)\b.*\bотч[её]тност\w*",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-019",
+        re.compile(
+            r"\b(?:можно|где)\b.*\b(?:посмотр\w*|откры\w*)\b.*\bdemo\b|"
+            r"\b(?:есть|покаж\w*)\b.*\bdemo\b",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-022",
+        re.compile(
+            r"\bможно\b.*\b(?:интегрир\w*|подключ\w*|связ\w*)\b.*"
+            r"\b(?:наш\w+\s+систем|crm|1с|api)\b|"
+            r"\b(?:есть|да[её]те|предоставля\w*)\b.*\bapi\b|"
+            r"\b(?:интегр\w*|передава\w*)\b.*\b(?:crm|1с)\b",
+            re.I,
+        ),
+    ),
+    (
+        "FAQ-024",
+        re.compile(
+            r"\b(?:за\s+сколько|сколько\s+(?:времени|дней)|"
+            r"через\s+(?:\d+|\w+)\s+(?:дн|недел)\w*|"
+            r"до\s+\w+\s+числа)\b.*"
+            r"\b(?:установ\w*|внедр\w*|запуст\w*|откры\w*|успе\w*)|"
+            r"\b(?:успе\w*|гарантир\w*)\b.*"
+            r"\b(?:через|за|до)\s+(?:\d+|\w+\s+числа)|"
+            r"\b(?:откры\w*|запуст\w*|монтаж\w*)\b.*"
+            r"\b(?:через\s+(?:\d+|\w+)\s+(?:дн|недел)\w*|завтра)\b|"
+            r"\bзавтра\b.*\b(?:монтаж\w*|установ\w*|запуст\w*)",
+            re.I,
+        ),
+    ),
+)
+
+SOLUTION_RULES = (
+    (
+        "SOL-001",
+        re.compile(
+            r"\bбез\s+кассир\w*\b.*\bбез\b.*\bохран\w*|"
+            r"\bбез\s+(?:постоянн\w+\s+)?присутств\w+\s+охран\w*",
+            re.I,
+        ),
+        (
+            "РОСПАРК автоматизирует идентификацию, доступ, оплату и фиксацию "
+            "событий. Возможность полностью работать без кассира и постоянного "
+            "присутствия охраны зависит от правил объекта, резервных сценариев "
+            "и требований безопасности; это нужно подтвердить при обследовании."
+        ),
+    ),
+    (
+        "SOL-002",
+        re.compile(
+            r"\bчуж\w+\s+машин\w*\b.*\bмест\w*\s+сотрудник\w*|"
+            r"\bмест\w*\s+сотрудник\w*\b.*\bчуж\w+\s+машин\w*",
+            re.I,
+        ),
+        (
+            "Для сотрудников можно использовать доступ по распознаванию "
+            "номера или RFID, а для гостей — отдельные временные заявки. Это "
+            "позволяет ограничить въезд незарегистрированных автомобилей. "
+            "Отдельно нужно уточнить, как контролировать уже занятые места и "
+            "какой резервный сценарий нужен охране."
+        ),
+    ),
+    (
+        "SOL-003",
+        re.compile(
+            r"\bгрузов\w*\b.*\bлегков\w*\b.*\bразн\w+\s+правил\w*|"
+            r"\bлегков\w*\b.*\bгрузов\w*\b.*\bразн\w+\s+правил\w*",
+            re.I,
+        ),
+        (
+            "Да, для легковых и грузовых автомобилей можно проектировать "
+            "разные сценарии доступа. Для легковых это может быть номер или "
+            "RFID, а правила для грузового транспорта нужно описать отдельно: "
+            "кто подтверждает въезд, в какое время и через какой проезд. "
+            "Конкретную схему определяют по потокам объекта."
+        ),
+    ),
+    (
+        "SOL-004",
+        re.compile(
+            r"\bсотрудник\w*\b.*\bпосетител\w*\b.*\bподрядчик\w*|"
+            r"\bподрядчик\w*\b.*\bпосетител\w*\b.*\bсотрудник\w*",
+            re.I,
+        ),
+        (
+            "Сотрудникам можно назначить постоянный доступ по номеру или RFID, "
+            "посетителям — гостевые заявки с временным окном, а для подрядчиков "
+            "зафиксировать отдельный порядок подтверждения. Физическое "
+            "разделение проездов не обязательно обещать заранее: сначала нужно "
+            "оценить потоки, роли и правила объекта."
+        ),
+    ),
+    (
+        "SOL-005",
+        re.compile(
+            r"\b(?:сначала|перв\w+\s+этап)\b.*\bбазов\w+\s+систем\w*\b.*"
+            r"\b(?:потом|позже|следующ\w+\s+этап)\b.*"
+            r"\b(?:оплат\w*|распознаван\w*)",
+            re.I,
+        ),
+        (
+            "Можно заранее спроектировать архитектуру с учётом будущих функций, "
+            "но возможность добавить оплату и распознавание без замены базовых "
+            "компонентов нужно подтвердить для выбранного оборудования и "
+            "интерфейсов. При подготовке первого этапа это требование следует "
+            "зафиксировать отдельно."
+        ),
+    ),
+    (
+        "SOL-006",
+        re.compile(
+            r"\bгостиниц\w*\b.*\bгост\w*\b.*\bбесплатн\w*\b.*"
+            r"\b(?:остальн\w*|посетител\w*)\b.*\bплат\w*",
+            re.I,
+        ),
+        (
+            "Для гостиницы можно разделить категории: гостям выдавать временный "
+            "доступ по заявке или номеру автомобиля, а для остальных "
+            "посетителей использовать платный сценарий. Связь статуса гостя с "
+            "доступом и оплатой нужно согласовать с процессом гостиницы и "
+            "доступными интеграциями."
+        ),
+    ),
+    (
+        "SOL-007",
+        re.compile(
+            r"\b(?:нескольк\w+|\d+|два|три|четыре|пять)\s+здан\w*\b.*"
+            r"\b(?:нескольк\w+|\d+|два|три|четыре|пять)\s+въезд\w*\b.*"
+            r"\b(?:из\s+одного\s+места|централизован\w*)",
+            re.I,
+        ),
+        (
+            "Централизованное управление несколькими зданиями можно "
+            "рассматривать как проектный сценарий, но заранее подтверждать "
+            "единую конфигурацию нельзя. Нужно уточнить расположение зданий, "
+            "связь между ними, общие и раздельные правила доступа, роли "
+            "операторов и требования к отчётности."
+        ),
+    ),
+    (
+        "SOL-008",
+        re.compile(
+            r"\b(?:после\s+оплат\w*|оплат\w*\s+и)\b.*"
+            r"\b(?:выезж\w*|выезд\w*|шлагбаум\w*)\b.*"
+            r"\bбез\s+охран\w*",
+            re.I,
+        ),
+        (
+            "Такой сценарий можно рассматривать: онлайн-оплата связывается "
+            "с визитом и правилами выезда. Автоматическое открытие после "
+            "подтверждения платежа без участия охранника зависит от "
+            "оборудования, резервных сценариев и интеграции платёжного "
+            "канала; подтвердить его можно после обследования объекта."
+        ),
+    ),
+)
+
 
 @dataclass(frozen=True)
 class GatewayResult:
     answer: str
     route: str
     template_id: str | None
+    model_metrics: dict[str, int] | None = None
+
+
+@dataclass(frozen=True)
+class ModelAnswer:
+    answer: str
+    metrics: dict[str, int]
 
 
 class ModelUnavailable(RuntimeError):
@@ -198,6 +506,49 @@ def append_approved_links(question: str, answer: str) -> str:
         return answer
     suffix = "\n".join(f"{label}: {path}" for label, path in links)
     return f"{answer.rstrip()}\n\n{suffix}"
+
+
+def fast_faq_for(question: str) -> str | None:
+    for template_id, pattern in FAST_FAQ_RULES:
+        if pattern.search(question):
+            return template_id
+    return None
+
+
+def solution_answer_for(question: str) -> GatewayResult | None:
+    for template_id, pattern, answer in SOLUTION_RULES:
+        if pattern.search(question):
+            return GatewayResult(
+                append_approved_links(question, answer),
+                "solution",
+                template_id,
+            )
+    return None
+
+
+def model_state_context(module: Any, state: Any) -> str:
+    payload = json.loads(module.state_context(state))
+    payload.pop("user_messages", None)
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+def compact_faq_for_model(
+    faq: dict[str, dict[str, Any]],
+    boundaries: dict[str, str],
+) -> str:
+    sections = [
+        "Статус: утверждён для закрытого пилота, не для публичного запуска.",
+        "Утверждённые ответы:",
+    ]
+    for template_id, item in faq.items():
+        sections.append(
+            f"{template_id} — {item['title']}\n{item['answer']}"
+        )
+    sections.append("Границы знаний:")
+    for template_id, answer in boundaries.items():
+        sections.append(f"{template_id}\n{answer}")
+    sections.append("Публичный запуск остаётся отдельным этапом.")
+    return "\n\n".join(sections)
 
 
 def require_runtime_mode(value: str | None) -> str:
@@ -337,7 +688,10 @@ class PilotEngine:
             module.responder_prompt,
             self.runtime_mode,
         )(
-            adapter.DEFAULT_FAQ.read_text(encoding="utf-8")
+            compact_faq_for_model(
+                self.faq,
+                self.boundaries,
+            )
         )
 
     def warmup(self) -> None:
@@ -358,7 +712,7 @@ class PilotEngine:
         with urllib.request.urlopen(request, timeout=self.timeout) as response:
             json.loads(response.read().decode("utf-8"))
 
-    def _ollama_answer(self, messages: list[dict[str, str]]) -> str:
+    def _ollama_answer(self, messages: list[dict[str, str]]) -> ModelAnswer:
         body = json.dumps(
             {
                 "model": self.model,
@@ -381,13 +735,35 @@ class PilotEngine:
             method="POST",
         )
         chunks: list[str] = []
+        first_chunk_ms: int | None = None
+        started = time.monotonic()
+        final: dict[str, Any] = {}
         with urllib.request.urlopen(request, timeout=self.timeout) as response:
             for raw_line in response:
                 if not raw_line.strip():
                     continue
                 item = json.loads(raw_line.decode("utf-8"))
-                chunks.append(str((item.get("message") or {}).get("content") or ""))
-        return "".join(chunks).strip()
+                content = str((item.get("message") or {}).get("content") or "")
+                if content and first_chunk_ms is None:
+                    first_chunk_ms = round((time.monotonic() - started) * 1000)
+                chunks.append(content)
+                if item.get("done"):
+                    final = item
+        metrics = {
+            "time_to_first_token_ms": (
+                first_chunk_ms
+                if first_chunk_ms is not None
+                else round((time.monotonic() - started) * 1000)
+            ),
+            "load_ms": round(int(final.get("load_duration") or 0) / 1_000_000),
+            "prompt_eval_ms": round(
+                int(final.get("prompt_eval_duration") or 0) / 1_000_000
+            ),
+            "eval_ms": round(int(final.get("eval_duration") or 0) / 1_000_000),
+            "prompt_tokens": int(final.get("prompt_eval_count") or 0),
+            "output_tokens": int(final.get("eval_count") or 0),
+        }
+        return ModelAnswer("".join(chunks).strip(), metrics)
 
     def _state_for(self, messages: list[dict[str, str]]) -> Any:
         state = self.module.DialogueState()
@@ -423,14 +799,6 @@ class PilotEngine:
         if route == "crm":
             return GatewayResult(LEAD_OFFERS[self.runtime_mode], route, None)
 
-        if route == "faq":
-            answer = self.faq[template_id or ""]["answer"]
-            return GatewayResult(
-                append_approved_links(question, answer),
-                route,
-                template_id,
-            )
-
         boundary_id, boundary_answer = self.module.boundary_for(
             question, self.boundaries
         )
@@ -439,6 +807,27 @@ class PilotEngine:
                 append_approved_links(question, boundary_answer),
                 "boundary",
                 boundary_id,
+            )
+
+        solution = solution_answer_for(question)
+        if solution:
+            return solution
+
+        fast_template_id = fast_faq_for(question)
+        if fast_template_id:
+            answer = self.faq[fast_template_id]["answer"]
+            return GatewayResult(
+                append_approved_links(question, answer),
+                "faq",
+                fast_template_id,
+            )
+
+        if route == "faq":
+            answer = self.faq[template_id or ""]["answer"]
+            return GatewayResult(
+                append_approved_links(question, answer),
+                route,
+                template_id,
             )
 
         state = self._state_for(messages)
@@ -461,15 +850,21 @@ class PilotEngine:
                 "content": (
                     "Ответь на текущий вопрос.\n\n"
                     "Типизированное состояние:\n"
-                    f"{self.module.state_context(state)}\n\n"
+                    f"{model_state_context(self.module, state)}\n\n"
                     f"Текущий вопрос:\n{question}"
                 ),
             }
         )
         try:
-            answer = self._ollama_answer(model_messages)
+            model_answer = self._ollama_answer(model_messages)
         except Exception as error:
             raise ModelUnavailable from error
+        if isinstance(model_answer, str):
+            answer = model_answer
+            model_metrics = None
+        else:
+            answer = model_answer.answer
+            model_metrics = model_answer.metrics
 
         answer = self.module.sanitize_unconfirmed_diagnosis(
             self.module.remove_contact_request(answer, question)
@@ -494,6 +889,7 @@ class PilotEngine:
             append_approved_links(question, answer),
             route,
             template_id,
+            model_metrics,
         )
 
 
@@ -561,6 +957,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
         request_id = clean_text(self.headers.get("X-Request-Id"), 120) or "missing"
         route = "rejected"
         status = HTTPStatus.INTERNAL_SERVER_ERROR
+        model_metrics: dict[str, int] | None = None
         try:
             if self.path != "/v1/chat":
                 status = HTTPStatus.NOT_FOUND
@@ -595,6 +992,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
                 self._write_json(status, "MODEL_UNAVAILABLE")
                 return
             route = result.route
+            model_metrics = result.model_metrics
             body = result.answer.encode("utf-8")
             status = HTTPStatus.OK
             self.send_response(status)
@@ -615,10 +1013,12 @@ class GatewayHandler(BaseHTTPRequestHandler):
             print(
                 json.dumps(
                     {
+                        "completed_at": datetime.now(timezone.utc).isoformat(),
                         "request_id": request_id,
                         "route": route,
                         "status": int(status),
                         "elapsed_ms": elapsed_ms,
+                        **(model_metrics or {}),
                     },
                     ensure_ascii=False,
                 ),
