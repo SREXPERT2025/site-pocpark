@@ -1,0 +1,371 @@
+.parkovka-shell {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  background: #071018;
+}
+
+.parkovka-preview-status {
+  position: relative;
+  z-index: 2;
+  padding: 9px 20px;
+  border-bottom: 1px solid rgb(255 255 255 / 12%);
+  color: #cbd8e6;
+  background: #0b1722;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.parkovka-frame {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: #071018;
+}
+
+.parkovka-lead-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow-y: auto;
+  background: rgb(0 0 0 / 68%);
+  backdrop-filter: blur(12px);
+}
+
+.parkovka-lead-modal {
+  position: relative;
+  width: min(100%, 620px);
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  padding: clamp(28px, 5vw, 48px);
+  overflow-y: auto;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 10px;
+  color: #f7faff;
+  background: #101d29;
+  box-shadow: 0 40px 120px rgb(0 0 0 / 55%);
+}
+
+.parkovka-lead-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 9px;
+  color: #fff;
+  background: rgb(255 255 255 / 9%);
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.parkovka-lead-eyebrow {
+  margin: 0 64px 24px 0;
+  color: #8eb7ff;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.parkovka-lead-modal h2 {
+  max-width: 540px;
+  margin: 0;
+  font-size: clamp(34px, 4vw, 58px);
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+}
+
+.parkovka-lead-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.parkovka-lead-form label {
+  display: grid;
+  gap: 8px;
+  color: #dce6ef;
+  font-weight: 800;
+}
+
+.parkovka-lead-form input,
+.parkovka-lead-form textarea {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 8px;
+  outline: none;
+  color: #fff;
+  background: rgb(255 255 255 / 7%);
+  font: inherit;
+}
+
+.parkovka-lead-form input {
+  height: 54px;
+}
+
+.parkovka-lead-form textarea {
+  resize: vertical;
+}
+
+.parkovka-lead-form input:focus,
+.parkovka-lead-form textarea:focus {
+  border-color: rgb(63 130 255 / 85%);
+  box-shadow: 0 0 0 4px rgb(63 130 255 / 12%);
+}
+
+.parkovka-lead-consent {
+  grid-template-columns: auto 1fr !important;
+  align-items: center;
+  color: #b9c7d5 !important;
+  font-weight: 600 !important;
+}
+
+.parkovka-lead-consent input {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  accent-color: #3478ff;
+}
+
+.parkovka-lead-error {
+  margin: 0;
+  color: #ff9b9b;
+}
+
+.parkovka-lead-submit,
+.parkovka-lead-success button {
+  min-height: 60px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: #3478ff;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.parkovka-lead-submit span {
+  margin-left: 10px;
+  font-size: 24px;
+}
+
+.parkovka-lead-success {
+  display: grid;
+  gap: 20px;
+  text-align: center;
+}
+
+.parkovka-lead-success > span {
+  color: #42d77d;
+  font-size: 64px;
+}
+
+.parkovka-lead-success p {
+  margin: 0;
+  color: #b9c7d5;
+}
+
+@media (max-width: 640px) {
+  .parkovka-lead-layer {
+    padding: 10px;
+  }
+
+  .parkovka-lead-modal {
+    max-height: calc(100dvh - 20px);
+    padding: 28px 20px;
+  }
+
+  .parkovka-lead-modal h2 {
+    font-size: clamp(30px, 10vw, 42px);
+  }
+}
+
+.parkovka-ai {
+  position: relative;
+  isolation: isolate;
+  width: min(100% - 64px, 1500px);
+  margin: 0 auto 80px;
+  padding: clamp(42px, 6vw, 82px);
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  align-items: center;
+  gap: clamp(36px, 7vw, 112px);
+  overflow: hidden;
+  border: 1px solid rgb(84 145 255 / 42%);
+  border-radius: 22px;
+  color: #f7faff;
+  background:
+    radial-gradient(circle at 86% 40%, rgb(60 130 255 / 28%), transparent 34%),
+    linear-gradient(135deg, #10243a, #07131f 68%);
+  box-shadow: 0 30px 90px rgb(0 0 0 / 34%);
+}
+
+.parkovka-ai::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.24;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 7%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 7%) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(90deg, transparent, #000 58%, #000);
+}
+
+.parkovka-ai__copy {
+  max-width: 790px;
+}
+
+.parkovka-ai__eyebrow {
+  margin: 0 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #8eb7ff;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.parkovka-ai h2 {
+  max-width: 760px;
+  margin: 0 0 22px;
+  font-size: clamp(36px, 4.2vw, 66px);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.parkovka-ai__copy > p:not(.parkovka-ai__eyebrow) {
+  max-width: 720px;
+  margin: 0;
+  color: #b9c9d9;
+  font-size: clamp(17px, 1.35vw, 21px);
+  line-height: 1.65;
+}
+
+.parkovka-ai button {
+  min-height: 58px;
+  margin-top: 30px;
+  padding: 0 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  background: #2d73ff;
+  box-shadow: 0 18px 46px rgb(45 115 255 / 36%);
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.parkovka-ai button:hover {
+  transform: translateY(-2px);
+  background: #1f66f4;
+}
+
+.parkovka-ai small {
+  display: block;
+  margin-top: 18px;
+  color: #91a5b9;
+  line-height: 1.5;
+}
+
+.parkovka-ai__visual {
+  min-height: 300px;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.parkovka-ai__pulse {
+  position: absolute;
+  width: min(28vw, 360px);
+  aspect-ratio: 1;
+  border: 1px solid rgb(92 153 255 / 34%);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 44px rgb(55 126 255 / 7%),
+    0 0 0 92px rgb(55 126 255 / 4%);
+}
+
+.parkovka-ai__icon {
+  width: 132px;
+  height: 132px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(148 188 255 / 50%);
+  border-radius: 34px;
+  color: #fff;
+  background: linear-gradient(145deg, #367df4, #16449a);
+  box-shadow: 0 24px 64px rgb(21 82 199 / 54%);
+  transform: rotate(-5deg);
+}
+
+.parkovka-ai__status {
+  position: absolute;
+  right: 4%;
+  bottom: 10%;
+  padding: 10px 14px;
+  border: 1px solid rgb(255 255 255 / 17%);
+  border-radius: 999px;
+  color: #dff9e8;
+  background: rgb(6 18 30 / 86%);
+  font-size: 13px;
+  font-weight: 750;
+  box-shadow: 0 14px 34px rgb(0 0 0 / 28%);
+}
+
+.parkovka-ai__status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  display: inline-block;
+  border-radius: 50%;
+  background: #42d77d;
+  box-shadow: 0 0 14px rgb(66 215 125 / 80%);
+}
+
+@media (max-width: 820px) {
+  .parkovka-ai {
+    width: min(100% - 32px, 1500px);
+    margin-bottom: 48px;
+    grid-template-columns: 1fr;
+    padding: 36px 24px;
+  }
+
+  .parkovka-ai__visual {
+    min-height: 230px;
+  }
+
+  .parkovka-ai__pulse {
+    width: min(70vw, 280px);
+  }
+
+  .parkovka-ai button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parkovka-ai button {
+    transition: none;
+  }
+}

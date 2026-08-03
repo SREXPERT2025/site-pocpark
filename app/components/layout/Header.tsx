@@ -20,7 +20,7 @@ export default function Header() {
     setMobileOpen(false);
   }, [pathname]);
 
-  if (pathname.startsWith('/admin')) return null;
+  if (pathname.startsWith('/admin') || pathname === '/v4-1') return null;
 
   return (
     <>

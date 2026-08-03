@@ -9,6 +9,60 @@ import {
   requireLoopbackGatewayUrl,
   validateAiWidgetChatPayload,
 } from '../app/lib/ai-widget-pilot.ts';
+import {
+  aiWidgetMessageParts,
+  normalizeAiWidgetHref,
+} from '../app/lib/ai-widget-links.ts';
+
+assert.equal(
+  normalizeAiWidgetHref('https://www.xn--80aukedde.xn--p1ai/vozmozhnosti/onlain-oplata%60'),
+  '/vozmozhnosti/onlain-oplata',
+);
+assert.equal(normalizeAiWidgetHref('/demo/web-skidki`).'), '/demo/web-skidki');
+assert.equal(normalizeAiWidgetHref('http://www.роспарк.рф/demo'), null);
+assert.deepEqual(
+  aiWidgetMessageParts(
+    '[**/vozmozhnosti/onlain-oplata`**](https://www.xn--80aukedde.xn--p1ai/vozmozhnosti/onlain-oplata`)',
+  ),
+  [{
+    type: 'link',
+    href: '/vozmozhnosti/onlain-oplata',
+    label: '/vozmozhnosti/onlain-oplata',
+  }],
+);
+
+const allSiteLinkSamples = [
+  '/vozmozhnosti',
+  '/vozmozhnosti/onlain-oplata',
+  '/demo',
+  '/demo/web-skidki',
+  '/keysy',
+  '/stati',
+];
+for (const sitePath of allSiteLinkSamples) {
+  assert.equal(normalizeAiWidgetHref(`${sitePath}\``), sitePath);
+  assert.equal(normalizeAiWidgetHref(`${sitePath}%60`), sitePath);
+  assert.equal(
+    normalizeAiWidgetHref(
+      `https://www.xn--80aukedde.xn--p1ai${sitePath}%60`,
+    ),
+    sitePath,
+  );
+}
+
+const categoryAnswerParts = aiWidgetMessageParts(
+  'На сайте описаны сценарии: **Разовые клиенты:** билет. **Постоянные клиенты:** госномер. Подробнее: `/vozmozhnosti`.',
+);
+assert.equal(
+  categoryAnswerParts.filter((part) => part.type === 'strong').length,
+  2,
+);
+assert.equal(
+  categoryAnswerParts.some(
+    (part) => part.type === 'link' && part.href === '/vozmozhnosti',
+  ),
+  true,
+);
 
 assert.equal(aiWidgetPilotEnabled({ AI_WIDGET_PILOT_ENABLED: 'true' }), true);
 assert.equal(aiWidgetPilotEnabled({ AI_WIDGET_PILOT_ENABLED: 'false' }), false);

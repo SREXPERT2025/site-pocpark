@@ -1,0 +1,39 @@
+import type { Metadata } from 'next';
+
+import { canonicalUrl } from '@/app/config/site-url';
+import {
+  landingIndexable,
+  landingRuntimeMode,
+} from '@/app/lib/landing-runtime';
+import ParkovkaExperience from './ParkovkaExperience';
+
+export function generateMetadata(): Metadata {
+  const index = landingIndexable();
+  return {
+    title: 'Решение для въезда и парковки',
+    description:
+      'РОСПАРК подбирает решения для въезда и парковки: шлагбаумы, распознавание номеров, билеты, карты, оплата и контроль.',
+    robots: {
+      index,
+      follow: landingRuntimeMode() === 'production',
+    },
+    alternates: {
+      canonical: canonicalUrl('/parkovka'),
+    },
+  };
+}
+
+export default function ParkovkaPage() {
+  const runtimeMode = landingRuntimeMode();
+  return (
+    <main id="main-content" className="parkovka-shell">
+      {runtimeMode === 'preview' ? (
+        <aside className="parkovka-preview-status">
+          Тестовый предпросмотр: форма лендинга не отправляет и не сохраняет
+          данные.
+        </aside>
+      ) : null}
+      <ParkovkaExperience runtimeMode={runtimeMode} />
+    </main>
+  );
+}

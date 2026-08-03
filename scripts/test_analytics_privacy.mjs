@@ -152,6 +152,34 @@ assert.equal(
   'equipment',
 );
 assert.equal(
+  analytics.classifyFunnelLandingGroup('/proshche'),
+  'landing',
+);
+assert.equal(
+  analytics.classifyFunnelLandingGroup('/puzzle'),
+  'landing',
+);
+assert.equal(
+  analytics.classifyFunnelLandingGroup('/test2'),
+  'landing',
+);
+assert.equal(
+  analytics.classifyFunnelLandingGroup('/v4-1'),
+  'landing',
+);
+assert.equal(
+  analytics.classifyFunnelLandingGroup('/v4-1/variant'),
+  'landing',
+);
+assert.equal(
+  analytics.classifyFunnelLandingGroup('/puzzle2'),
+  'landing',
+);
+assert.equal(
+  analytics.classifyFunnelLandingGroup('/parkovka'),
+  'landing',
+);
+assert.equal(
   analytics.classifyFunnelLandingGroup('/unexpected/+79990000000'),
   'other',
 );
@@ -174,13 +202,109 @@ assert.equal(
   'funnel events must not include URL or link data',
 );
 
-assert.equal(browserEvents.length, 3, 'accepted events must reach the local browser contract');
+analytics.dispatchAiPromoEvent('ai_quick_question_click', {
+  landing_variant: 'puzzle2',
+  source_section: 'ai_midpage',
+  selected_functions: [
+    'Въезд по госномеру',
+    'Оплата парковки',
+    '+7 999 000-00-00',
+  ],
+  quick_question: 'Как организовать гостевой въезд?',
+});
+
+assert.deepEqual(window.dataLayer[3], {
+  event: 'rospark_ai_quick_question_click',
+  landing_variant: 'puzzle2',
+  source_section: 'ai_midpage',
+  selected_functions: 'Въезд по госномеру | Оплата парковки',
+  selected_functions_count: 2,
+  quick_question: 'Как организовать гостевой въезд?',
+});
+assert.equal(
+  JSON.stringify(window.dataLayer[3]).includes('79990000000'),
+  false,
+  'AI promo events must only include controlled function labels',
+);
+
+analytics.dispatchAiPromoEvent('ai_chat_open', {
+  landing_variant: 'parkovka',
+  source_section: 'ai_after_problem_selector',
+  selected_problem: 'Открывать по номеру машины',
+  quick_question: 'Что выбрать: госномера, карты или билеты?',
+  session_id: '8fd0b9cb-8c6d-4f97-a00a-25cda7f59dc4',
+});
+
+assert.deepEqual(window.dataLayer[4], {
+  event: 'rospark_ai_chat_open',
+  landing_variant: 'parkovka',
+  source_section: 'ai_after_problem_selector',
+  selected_problem: 'Открывать по номеру машины',
+  quick_question: 'Что выбрать: госномера, карты или билеты?',
+  session_id: '8fd0b9cb-8c6d-4f97-a00a-25cda7f59dc4',
+});
+
+analytics.dispatchAiPromoEvent('ai_lead_handoff', {
+  landing_variant: 'parkovka',
+  source_section: 'ai_after_problem_selector',
+  selected_problem: '+7 999 000-00-00',
+  session_id: '+79990000000',
+  handoff_to_lead: true,
+});
+
+assert.deepEqual(window.dataLayer[5], {
+  event: 'rospark_ai_lead_handoff',
+  landing_variant: 'parkovka',
+  source_section: 'ai_after_problem_selector',
+  handoff_to_lead: true,
+});
+assert.equal(
+  JSON.stringify(window.dataLayer[5]).includes('79990000000'),
+  false,
+  'Parkovka AI attribution must drop unapproved problem labels and session data',
+);
+
+analytics.dispatchLandingEvent('landing_view', {
+  landing_variant: 'parkovka',
+  source_section: 'page',
+});
+assert.deepEqual(window.dataLayer[6], {
+  event: 'rospark_landing_view',
+  landing_variant: 'parkovka',
+  source_section: 'page',
+});
+
+analytics.dispatchLandingEvent('landing_choice_change', {
+  landing_variant: 'puzzle2',
+  source_section: 'function_selector',
+  selected_choice: '+7 999 000-00-00',
+  selected_choices_count: 99,
+  selection_action: 'select',
+});
+assert.deepEqual(window.dataLayer[7], {
+  event: 'rospark_landing_choice_change',
+  landing_variant: 'puzzle2',
+  source_section: 'function_selector',
+  selection_action: 'select',
+});
+assert.equal(
+  JSON.stringify(window.dataLayer[7]).includes('79990000000'),
+  false,
+  'landing events must drop uncontrolled choices and impossible counts',
+);
+
+assert.equal(browserEvents.length, 8, 'accepted events must reach the local browser contract');
 assert.equal(browserEvents[0].type, 'rospark:lead_form_event');
 assert.equal(browserEvents[1].type, 'rospark:demo_event');
 assert.equal(browserEvents[2].type, 'rospark:funnel_event');
+assert.equal(browserEvents[3].type, 'rospark:funnel_event');
+assert.equal(browserEvents[4].type, 'rospark:funnel_event');
+assert.equal(browserEvents[5].type, 'rospark:funnel_event');
+assert.equal(browserEvents[6].type, 'rospark:funnel_event');
+assert.equal(browserEvents[7].type, 'rospark:funnel_event');
 assert.deepEqual(
-  dataLayerLengthsAtDispatch.slice(-3),
-  [1, 2, 3],
+  dataLayerLengthsAtDispatch.slice(-8),
+  [1, 2, 3, 4, 5, 6, 7, 8],
   'dataLayer must contain each event before its browser event is dispatched',
 );
 

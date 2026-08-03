@@ -71,6 +71,20 @@ function resolveContent(source?: string) {
           'Оставьте контакты и тип объекта — мы подскажем, какие сценарии доступа, оплаты и контроля стоит заложить в проект.',
       };
 
+    case 'landing-proshche-v1':
+      return {
+        title: 'Подобрать решение для вашей парковки',
+        description:
+          'Расскажите об объекте и задаче — мы предложим подходящий сценарий въезда, оплаты и выезда.',
+      };
+
+    case 'landing-puzzle-v1':
+      return {
+        title: 'Собрать парковочную систему под ваш объект',
+        description:
+          'Опишите объект и задачу — мы поможем соединить доступ, оплату, оборудование и управление в цельное решение.',
+      };
+
     case 'article-kak-vybrat-sistemu-avtomatizacii-parkovki':
     case 'article-system-choice':
       return {

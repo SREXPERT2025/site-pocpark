@@ -9,10 +9,25 @@ export type LeadFormEventName =
 
 export type LeadFormEventParams = {
   form_name: string;
+  landing_variant?: 'puzzle2' | 'parkovka';
   source_page?: string;
   source_section?: string;
   product_slug?: string;
   error_type?: 'validation' | 'network' | 'server' | 'unknown';
+};
+
+export type LandingEventName =
+  | 'landing_view'
+  | 'landing_cta_click'
+  | 'landing_choice_change';
+
+export type LandingEventParams = {
+  landing_variant: 'puzzle2' | 'parkovka';
+  source_section: string;
+  cta_id?: string;
+  selected_choice?: string;
+  selected_choices_count?: number;
+  selection_action?: 'select' | 'unselect' | 'clear';
 };
 
 export type FunnelDestination = 'demo' | 'quiz';
@@ -24,6 +39,7 @@ export type FunnelLandingGroup =
   | 'equipment'
   | 'cases'
   | 'articles'
+  | 'landing'
   | 'company'
   | 'contacts'
   | 'other';
@@ -31,6 +47,24 @@ export type FunnelLandingGroup =
 export type FunnelEntryParams = {
   destination: FunnelDestination;
   landing_group: FunnelLandingGroup;
+};
+
+export type AiPromoEventName =
+  | 'ai_promo_view'
+  | 'ai_promo_click'
+  | 'ai_chat_open'
+  | 'ai_quick_question_click'
+  | 'ai_first_message_sent'
+  | 'ai_lead_handoff';
+
+export type AiPromoEventParams = {
+  landing_variant: 'puzzle2' | 'parkovka';
+  source_section: 'ai_midpage' | 'ai_after_problem_selector';
+  selected_functions?: string[];
+  selected_problem?: string;
+  quick_question?: string;
+  session_id?: string;
+  handoff_to_lead?: boolean;
 };
 
 type DataLayerWindow = Window & {
@@ -42,6 +76,32 @@ type DataLayerWindow = Window & {
 };
 
 const ANALYTICS_EVENT_DEDUPLICATION_WINDOW_MS = 250;
+const AI_PROMO_ALLOWED_FUNCTIONS = new Set([
+  'Закрыть въезд',
+  'Въезд по госномеру',
+  'Карты доступа',
+  'Билеты для посетителей',
+  'Оплата парковки',
+  'Доступ для гостей',
+  'Сотрудники и гости',
+  'Заменить старую систему',
+]);
+const AI_PROMO_ALLOWED_QUESTIONS = new Set([
+  'Что подойдёт для нашего объекта?',
+  'Как организовать гостевой въезд?',
+  'Нужны ли билеты или достаточно госномеров?',
+  'Как убрать очередь на въезде?',
+  'Что выбрать: госномера, карты или билеты?',
+  'Как организовать въезд для гостей?',
+]);
+const AI_PROMO_ALLOWED_PROBLEMS = new Set([
+  'Закрыть въезд для посторонних',
+  'Открывать по номеру машины',
+  'Убрать ручные пропуска',
+  'Принимать оплату',
+  'Обойтись без билетов',
+  'Заменить старую систему',
+]);
 
 export type DemoEventName =
   | 'demo_scenario_view'
@@ -98,10 +158,32 @@ function safeSourcePage(value: string | undefined) {
 function leadFormPayload(params: LeadFormEventParams) {
   return compactPayload({
     form_name: safeIdentifier(params.form_name),
+    landing_variant: params.landing_variant,
     source_page: safeSourcePage(params.source_page),
     source_section: safeIdentifier(params.source_section),
     product_slug: safeIdentifier(params.product_slug),
     error_type: params.error_type,
+  });
+}
+
+function landingPayload(params: LandingEventParams) {
+  const allowedChoice = [
+    ...AI_PROMO_ALLOWED_FUNCTIONS,
+    ...AI_PROMO_ALLOWED_PROBLEMS,
+  ].includes(params.selected_choice || '')
+    ? params.selected_choice
+    : undefined;
+  return compactPayload({
+    landing_variant: params.landing_variant,
+    source_section: safeIdentifier(params.source_section),
+    cta_id: safeIdentifier(params.cta_id),
+    selected_choice: allowedChoice,
+    selected_choices_count: Number.isInteger(params.selected_choices_count)
+      && Number(params.selected_choices_count) >= 0
+      && Number(params.selected_choices_count) <= 12
+      ? params.selected_choices_count
+      : undefined,
+    selection_action: params.selection_action,
   });
 }
 
@@ -124,6 +206,40 @@ function funnelEntryPayload(params: FunnelEntryParams) {
     destination: params.destination,
     landing_group: params.landing_group,
   };
+}
+
+function aiPromoPayload(params: AiPromoEventParams) {
+  const selectedFunctions = (params.selected_functions || [])
+    .map((value) => value.trim())
+    .filter((value) => AI_PROMO_ALLOWED_FUNCTIONS.has(value))
+    .slice(0, 12);
+  const validSource = (
+    params.landing_variant === 'puzzle2'
+    && params.source_section === 'ai_midpage'
+  ) || (
+    params.landing_variant === 'parkovka'
+    && params.source_section === 'ai_after_problem_selector'
+  );
+  return compactPayload({
+    landing_variant: validSource ? params.landing_variant : undefined,
+    source_section: validSource ? params.source_section : undefined,
+    selected_functions: params.landing_variant === 'puzzle2'
+      ? selectedFunctions.join(' | ') || 'none'
+      : undefined,
+    selected_functions_count: params.landing_variant === 'puzzle2'
+      ? selectedFunctions.length
+      : undefined,
+    selected_problem: params.selected_problem
+      && AI_PROMO_ALLOWED_PROBLEMS.has(params.selected_problem)
+      ? params.selected_problem
+      : undefined,
+    quick_question: params.quick_question
+      && AI_PROMO_ALLOWED_QUESTIONS.has(params.quick_question)
+      ? params.quick_question
+      : undefined,
+    session_id: safeIdentifier(params.session_id),
+    handoff_to_lead: params.handoff_to_lead === true ? true : undefined,
+  });
 }
 
 export function classifyFunnelDestination(
@@ -162,6 +278,22 @@ export function classifyFunnelLandingGroup(
   }
   if (pathname === '/keysy' || pathname.startsWith('/keysy/')) return 'cases';
   if (pathname === '/stati' || pathname.startsWith('/stati/')) return 'articles';
+  if (
+    pathname === '/proshche' ||
+    pathname.startsWith('/proshche/') ||
+    pathname === '/puzzle' ||
+    pathname.startsWith('/puzzle/') ||
+    pathname === '/test2' ||
+    pathname.startsWith('/test2/') ||
+    pathname === '/v4-1' ||
+    pathname.startsWith('/v4-1/') ||
+    pathname === '/parkovka' ||
+    pathname.startsWith('/parkovka/') ||
+    pathname === '/puzzle2' ||
+    pathname.startsWith('/puzzle2/')
+  ) {
+    return 'landing';
+  }
   if (pathname === '/o-kompanii' || pathname.startsWith('/o-kompanii/')) {
     return 'company';
   }
@@ -177,7 +309,7 @@ function dispatchPrivacySafeEvent(
     | 'rospark:lead_form_event'
     | 'rospark:demo_event'
     | 'rospark:funnel_event',
-  eventName: LeadFormEventName | DemoEventName | 'funnel_entry',
+  eventName: LeadFormEventName | DemoEventName | AiPromoEventName | LandingEventName | 'funnel_entry',
   params: Record<string, unknown>
 ) {
   if (typeof window === 'undefined' || !hasAnalyticsConsent()) return;
@@ -244,5 +376,27 @@ export function dispatchFunnelEntry(params: FunnelEntryParams) {
     'rospark:funnel_event',
     'funnel_entry',
     funnelEntryPayload(params),
+  );
+}
+
+export function dispatchAiPromoEvent(
+  eventName: AiPromoEventName,
+  params: AiPromoEventParams,
+) {
+  dispatchPrivacySafeEvent(
+    'rospark:funnel_event',
+    eventName,
+    aiPromoPayload(params),
+  );
+}
+
+export function dispatchLandingEvent(
+  eventName: LandingEventName,
+  params: LandingEventParams,
+) {
+  dispatchPrivacySafeEvent(
+    'rospark:funnel_event',
+    eventName,
+    landingPayload(params),
   );
 }

@@ -18,7 +18,12 @@ import {
   useRef,
   useState,
 } from 'react';
+import {
+  dispatchAiPromoEvent,
+  type AiPromoEventParams,
+} from '@/app/lib/analytics-events';
 import { AI_WIDGET_MAX_MESSAGE_LENGTH } from '@/app/lib/ai-widget-pilot';
+import { aiWidgetMessageParts } from '@/app/lib/ai-widget-links';
 
 type UiMessage = {
   id: string;
@@ -67,44 +72,72 @@ const quickQuestions = [
   'От чего зависит стоимость проекта?',
 ] as const;
 
-function messageParts(content: string) {
-  return content.split(/(https?:\/\/[^\s]+|\/[a-z0-9][^\s]*)/gi);
-}
+type AiWidgetOpenDetail = {
+  landingVariant?: string;
+  sourceSection?: string;
+  selectedFunctions?: unknown;
+  selectedProblem?: unknown;
+  prompt?: unknown;
+  sessionId?: unknown;
+};
 
-function safeHref(value: string) {
-  const cleaned = value.replace(/[),.;!?]+$/, '');
-  if (cleaned.startsWith('/') && !cleaned.startsWith('//')) {
-    return cleaned;
-  }
-  if (/^https:\/\//i.test(cleaned)) return cleaned;
-  return null;
+function promoAttributionFrom(detail: AiWidgetOpenDetail): AiPromoEventParams | null {
+  const isPuzzle2 = detail.landingVariant === 'puzzle2'
+    && detail.sourceSection === 'ai_midpage';
+  const isParkovka = detail.landingVariant === 'parkovka'
+    && detail.sourceSection === 'ai_after_problem_selector';
+  if (!isPuzzle2 && !isParkovka) return null;
+
+  const selectedFunctions = Array.isArray(detail.selectedFunctions)
+    ? detail.selectedFunctions
+      .filter((value): value is string => typeof value === 'string')
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, 12)
+    : [];
+
+  return {
+    landing_variant: isPuzzle2 ? 'puzzle2' : 'parkovka',
+    source_section: isPuzzle2
+      ? 'ai_midpage'
+      : 'ai_after_problem_selector',
+    selected_functions: selectedFunctions,
+    selected_problem: typeof detail.selectedProblem === 'string'
+      ? detail.selectedProblem.trim()
+      : undefined,
+    session_id: typeof detail.sessionId === 'string'
+      ? detail.sessionId.trim()
+      : undefined,
+  };
 }
 
 function MessageText({ content }: { content: string }) {
   return (
     <>
-      {messageParts(content).map((part, index) => {
-        const href = safeHref(part);
-        if (!href) return <span key={`${index}-${part}`}>{part}</span>;
-        const suffix = part.slice(href.length);
+      {aiWidgetMessageParts(content).map((part, index) => {
+        if (part.type === 'text') {
+          return <span key={`${index}-${part.value}`}>{part.value}</span>;
+        }
+        if (part.type === 'strong') {
+          return <strong key={`${index}-${part.value}`}>{part.value}</strong>;
+        }
         return (
-          <span key={`${index}-${part}`}>
-            {href.startsWith('/') ? (
+          <span key={`${index}-${part.href}-${part.label}`}>
+            {part.href.startsWith('/') ? (
               <Link
-                href={href}
+                href={part.href}
                 className="font-semibold underline decoration-2 underline-offset-2"
               >
-                {href}
+                {part.label}
               </Link>
             ) : (
               <a
-                href={href}
+                href={part.href}
                 className="font-semibold underline decoration-2 underline-offset-2"
               >
-                {href}
+                {part.label}
               </a>
             )}
-            {suffix}
           </span>
         );
       })}
@@ -140,12 +173,16 @@ export default function AiWidgetPilot() {
   } | null>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const sessionIdRef = useRef('');
   const submissionIdRef = useRef('');
+  const promoAttributionRef = useRef<AiPromoEventParams | null>(null);
+  const promoFirstMessageTrackedRef = useRef(false);
+  const pendingPromptRef = useRef('');
 
-  const isHidden = pathname.startsWith('/admin');
+  const isHidden = pathname.startsWith('/admin') || pathname === '/v4-1';
 
   useEffect(() => {
     if (isHidden) return;
@@ -197,7 +234,13 @@ export default function AiWidgetPilot() {
 
   useEffect(() => {
     if (!isOpen) return;
-    closeRef.current?.focus();
+    if (pendingPromptRef.current) {
+      setDraft(pendingPromptRef.current);
+      pendingPromptRef.current = '';
+      window.requestAnimationFrame(() => inputRef.current?.focus());
+    } else {
+      closeRef.current?.focus();
+    }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsOpen(false);
@@ -207,6 +250,33 @@ export default function AiWidgetPilot() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isHidden || !isEnabled) return;
+    const openFromPage = (event: Event) => {
+      const detail = event instanceof CustomEvent
+        ? event.detail as AiWidgetOpenDetail | undefined
+        : undefined;
+      const attribution = detail
+        ? promoAttributionFrom(detail)
+        : null;
+      promoAttributionRef.current = attribution;
+      promoFirstMessageTrackedRef.current = false;
+      pendingPromptRef.current = typeof detail?.prompt === 'string'
+        ? detail.prompt.trim().slice(0, AI_WIDGET_MAX_MESSAGE_LENGTH)
+        : '';
+      if (attribution) {
+        dispatchAiPromoEvent('ai_chat_open', attribution);
+      }
+      setShowInvite(false);
+      setIsOpen(true);
+    };
+    window.addEventListener('rospark:open-ai-widget', openFromPage);
+    return () => window.removeEventListener(
+      'rospark:open-ai-widget',
+      openFromPage,
+    );
+  }, [isEnabled, isHidden]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -267,6 +337,9 @@ export default function AiWidgetPilot() {
     setDraft('');
     setError('');
     setIsSending(false);
+    promoAttributionRef.current = null;
+    promoFirstMessageTrackedRef.current = false;
+    pendingPromptRef.current = '';
     resetLeadFlow();
   };
 
@@ -433,6 +506,15 @@ export default function AiWidgetPilot() {
         maxPreview: result.maxPreview || undefined,
       });
       setLeadStep('submitted');
+      if (promoAttributionRef.current) {
+        dispatchAiPromoEvent(
+          'ai_lead_handoff',
+          {
+            ...promoAttributionRef.current,
+            handoff_to_lead: true,
+          },
+        );
+      }
       appendLeadExchange(
         null,
         runtimeMode === 'production'
@@ -467,6 +549,16 @@ export default function AiWidgetPilot() {
       || leadStep === 'submitted'
     ) {
       return;
+    }
+    if (
+      promoAttributionRef.current
+      && !promoFirstMessageTrackedRef.current
+    ) {
+      promoFirstMessageTrackedRef.current = true;
+      dispatchAiPromoEvent(
+        'ai_first_message_sent',
+        promoAttributionRef.current,
+      );
     }
     const userMessage: UiMessage = {
       id: crypto.randomUUID(),
@@ -847,6 +939,7 @@ export default function AiWidgetPilot() {
                 Ваш вопрос
               </label>
               <textarea
+                ref={inputRef}
                 id="rospark-ai-widget-message"
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}

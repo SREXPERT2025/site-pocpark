@@ -13,7 +13,7 @@ export default function Footer() {
   const main = getMainNav();
   const solutions = getSolutionsFooterLinks();
 
-  if (pathname.startsWith('/admin')) return null;
+  if (pathname.startsWith('/admin') || pathname === '/v4-1') return null;
 
   return (
     <footer className="border-t border-neutral-200 bg-white">
