@@ -31,12 +31,6 @@ export default async function Page() {
     description: item.description,
     url: `/oborudovanie/${item.slug}`,
     image: item.coverImage,
-    brand: item.brand,
-    sku: item.sku,
-    category: item.category,
-    priceFrom: item.priceFrom,
-    currency: item.currency,
-    availability: item.availability,
   }));
 
   return (

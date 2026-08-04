@@ -21,6 +21,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: absoluteUrl('/resheniya') },
     { url: absoluteUrl('/privacy') },
     { url: absoluteUrl('/soglasie-na-obrabotku-personalnyh-dannyh') },
+    { url: absoluteUrl('/parkovka') },
+    { url: absoluteUrl('/parkovka-pod-klyuch') },
 
     // Решения (коммерческие страницы на TSX)
     { url: absoluteUrl('/resheniya/dlya-rukovoditeley') },

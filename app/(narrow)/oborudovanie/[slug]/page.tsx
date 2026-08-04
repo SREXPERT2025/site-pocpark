@@ -5,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
-import ProductJsonLd from '@/app/components/content/ProductJsonLd';
+import EquipmentJsonLd from '@/app/components/content/EquipmentJsonLd';
 import { canonicalUrl } from '@/app/config/site-url';
 import { isPublishedContent } from '@/lib/content-parser';
 import ProductView from './ProductView'; // Импортируем наш новый компонент
@@ -73,16 +73,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     .map((image) => (typeof image === 'string' ? image.trim() : ''))
     .filter(Boolean);
   const faq = Array.isArray(data.faq) ? data.faq : [];
-  const specifications = Array.isArray(data.specifications)
-    ? data.specifications
-        .map((spec: any) => {
-          const name = typeof spec?.name === 'string' ? spec.name.trim() : '';
-          const value = typeof spec?.value === 'string' ? spec.value.trim() : '';
-          return name && value ? { name, value } : null;
-        })
-        .filter(Boolean)
-    : [];
-
   return (
     <>
       <BreadcrumbJsonLd
@@ -93,7 +83,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         ]}
       />
       {faq.length > 0 ? <FaqJsonLd items={faq} /> : null}
-      <ProductJsonLd
+      <EquipmentJsonLd
         name={title}
         description={typeof data.description === 'string' ? data.description : undefined}
         images={images}
@@ -104,11 +94,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         mpn={typeof data.mpn === 'string' ? data.mpn : undefined}
         gtin={typeof data.gtin === 'string' ? data.gtin : undefined}
         url={`/oborudovanie/${params.slug}`}
-        priceFrom={typeof data.priceFrom === 'number' ? data.priceFrom : undefined}
-        currency={typeof data.currency === 'string' ? data.currency : undefined}
-        availability={typeof data.availability === 'string' ? data.availability : undefined}
-        condition={typeof data.condition === 'string' ? data.condition : undefined}
-        specifications={specifications}
       />
       <ProductView data={data} content={content} />
     </>
