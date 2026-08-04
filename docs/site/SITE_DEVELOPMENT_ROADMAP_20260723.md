@@ -2,7 +2,7 @@
 
 Дата актуализации: 2026-08-04
 База аудита и текущий production release:
-`5223dd80f6db384ca52685088522c9aba4c3f86a`
+`0c2b9310016f3f044a2d544c6c4aac2dd3a236e2`
 Production-ветка: `release/demo-production-ready-20260723`
 Статус: текущий источник правды после выпуска двух рекламных лендингов,
 site-wide AI-аналитики, исправления cookie settings, VPS-части улучшений
@@ -32,7 +32,7 @@ Production, публикация контента, изменение инфра
 - основной сайт и Demo Release v1 опубликованы;
 - production работает под Node.js 22 и Next.js 14.2.35;
 - reverse proxy — Nginx;
-- release SHA сайта — `5223dd80f6db384ca52685088522c9aba4c3f86a`;
+- release SHA сайта — `0c2b9310016f3f044a2d544c6c4aac2dd3a236e2`;
 - `/`, `/demo`, `/demo/gostevaya-zayavka`, `/demo/web-skidki` и
   `/demo/vladelec-parkovki` отвечают `200`;
 - `robots.txt` открыт для обхода и содержит ссылку на sitemap;

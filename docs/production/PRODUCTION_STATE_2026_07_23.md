@@ -19,7 +19,7 @@ PM2, SQLite или зависимости.
   GA4, подтверждения доставки MAX, два рекламных лендинга, site-wide
   AI-аналитика, VPS-часть контекста AI и исправление отправки вопросов с
   обычных страниц успешно выпущены.
-- Release SHA: `5223dd80f6db384ca52685088522c9aba4c3f86a`.
+- Release SHA: `0c2b9310016f3f044a2d544c6c4aac2dd3a236e2`.
 - Production branch: `release/demo-production-ready-20260723`.
 - Отдельный production gateway Mac Studio работает из release
   `80ffd254003eb45c0026db0598c83a0f6d5e830c`; это не изменение SHA сайта на
@@ -140,6 +140,23 @@ PM2, SQLite или зависимости.
 - внешний browser smoke на главной странице подтвердил принятие вопроса,
   получение содержательного ответа и работу внутренних ссылок;
 - контрольная проверка не создавала заявку и не отправляла сообщения в MAX.
+
+## SEO/GEO baseline release от 2026-08-04
+
+- production fast-forward:
+  `5223dd80f6db384ca52685088522c9aba4c3f86a` →
+  `0c2b9310016f3f044a2d544c6c4aac2dd3a236e2`;
+- опубликованы уникальные meta description для шлагбаумов РОСПАРК 3 м и 4 м;
+- roadmap, SEO/GEO baseline и контентный backlog приведены к первому
+  фактическому срезу Search Console и Яндекс Вебмастера;
+- staging прошёл typecheck, lint, AI widget/log/gateway tests и production
+  build 116 страниц;
+- transient service завершилась с `Result=success`, `ExecMainStatus=0`, PM2
+  `rospark-site` остался `online`;
+- публичная browser-проверка подтвердила оба новых description, canonical,
+  доступность `/demo` и кейса `/keysy/amaks-otel-kazan`;
+- контроль не создавал лиды и не отправлял сообщения в MAX;
+- backup и горячая откатная сборка сохранены на VPS.
 
 ## Отдельный AI gateway release от 2026-07-28
 
