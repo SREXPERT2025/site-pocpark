@@ -28,6 +28,21 @@ export const navigation: NavItem[] = [
     href: '/resheniya',
     groups: [
       {
+        label: 'С чего начать',
+        items: [
+          {
+            label: 'Организовать парковку',
+            href: '/parkovka',
+            description: 'Начните с конкретной проблемы на въезде или парковке',
+          },
+          {
+            label: 'Парковка под ключ',
+            href: '/parkovka-pod-klyuch',
+            description: 'Подберите оборудование, ПО, монтаж и поддержку как единую систему',
+          },
+        ],
+      },
+      {
         label: 'По ролям',
         items: [
           {

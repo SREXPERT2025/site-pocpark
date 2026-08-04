@@ -180,6 +180,10 @@ assert.equal(
   'landing',
 );
 assert.equal(
+  analytics.classifyFunnelLandingGroup('/parkovka-pod-klyuch'),
+  'landing',
+);
+assert.equal(
   analytics.classifyFunnelLandingGroup('/unexpected/+79990000000'),
   'other',
 );
@@ -293,7 +297,17 @@ assert.equal(
   'landing events must drop uncontrolled choices and impossible counts',
 );
 
-assert.equal(browserEvents.length, 8, 'accepted events must reach the local browser contract');
+analytics.dispatchLandingEntryEvent({
+  target_variant: 'puzzle2',
+  source_section: 'home_start',
+});
+assert.deepEqual(window.dataLayer[8], {
+  event: 'rospark_landing_entry_click',
+  target_variant: 'puzzle2',
+  source_section: 'home_start',
+});
+
+assert.equal(browserEvents.length, 9, 'accepted events must reach the local browser contract');
 assert.equal(browserEvents[0].type, 'rospark:lead_form_event');
 assert.equal(browserEvents[1].type, 'rospark:demo_event');
 assert.equal(browserEvents[2].type, 'rospark:funnel_event');
@@ -302,9 +316,10 @@ assert.equal(browserEvents[4].type, 'rospark:funnel_event');
 assert.equal(browserEvents[5].type, 'rospark:funnel_event');
 assert.equal(browserEvents[6].type, 'rospark:funnel_event');
 assert.equal(browserEvents[7].type, 'rospark:funnel_event');
+assert.equal(browserEvents[8].type, 'rospark:funnel_event');
 assert.deepEqual(
-  dataLayerLengthsAtDispatch.slice(-8),
-  [1, 2, 3, 4, 5, 6, 7, 8],
+  dataLayerLengthsAtDispatch.slice(-9),
+  [1, 2, 3, 4, 5, 6, 7, 8, 9],
   'dataLayer must contain each event before its browser event is dispatched',
 );
 

@@ -10,6 +10,7 @@ import ArticleJsonLd from '@/app/components/content/ArticleJsonLd';
 import LeadFormSection from '@/app/components/forms/LeadFormSection';
 import { canonicalUrl } from '@/app/config/site-url';
 import { getAllContentMeta, getContentBySlug } from '@/lib/content-parser';
+import LandingEntryBanner from '@/app/components/landing/LandingEntryBanner';
 
 function formatArticleDate(value?: string) {
   if (!value) return null;
@@ -132,6 +133,13 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         />
 
         <FaqBlock title="Вопросы и ответы" items={article.faq ?? []} />
+
+        <LandingEntryBanner
+          sourceSection="article_end"
+          target="parkovka"
+          title="Хотите применить решение на своём объекте?"
+          description="Начните с проблемы на въезде или парковке. Мы покажем простой сценарий и поможем сформулировать задачу для специалиста."
+        />
 
         <div className="mt-16 border-t border-border-primary pt-12">
           <LeadFormSection

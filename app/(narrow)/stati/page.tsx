@@ -7,6 +7,7 @@ import ArticleItemListJsonLd from '@/app/components/content/ArticleItemListJsonL
 import LeadFormSection from '@/app/components/forms/LeadFormSection';
 import { canonicalUrl } from '@/app/config/site-url';
 import { getAllContentMeta } from '@/lib/content-parser';
+import LandingEntryBanner from '@/app/components/landing/LandingEntryBanner';
 
 export const metadata: Metadata = {
   title: 'Статьи об автоматизации парковок',
@@ -90,6 +91,13 @@ export default function ArticlesPage() {
             />
           ))}
         </div>
+
+        <LandingEntryBanner
+          sourceSection="articles_hub"
+          target="parkovka"
+          title="Хотите перейти от информации к решению?"
+          description="Выберите, что сейчас не устраивает на парковке, и посмотрите возможный путь без технического задания и сложных терминов."
+        />
 
         <div className="mt-20">
           <LeadFormSection

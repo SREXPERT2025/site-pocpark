@@ -19,7 +19,8 @@ export type LeadFormEventParams = {
 export type LandingEventName =
   | 'landing_view'
   | 'landing_cta_click'
-  | 'landing_choice_change';
+  | 'landing_choice_change'
+  | 'landing_entry_click';
 
 export type LandingEventParams = {
   landing_variant: 'puzzle2' | 'parkovka';
@@ -28,6 +29,11 @@ export type LandingEventParams = {
   selected_choice?: string;
   selected_choices_count?: number;
   selection_action?: 'select' | 'unselect' | 'clear';
+};
+
+export type LandingEntryEventParams = {
+  target_variant: 'parkovka' | 'puzzle2';
+  source_section: string;
 };
 
 export type FunnelDestination = 'demo' | 'quiz';
@@ -187,6 +193,13 @@ function landingPayload(params: LandingEventParams) {
   });
 }
 
+function landingEntryPayload(params: LandingEntryEventParams) {
+  return compactPayload({
+    target_variant: params.target_variant,
+    source_section: safeIdentifier(params.source_section),
+  });
+}
+
 function demoPayload(params: DemoEventParams) {
   return compactPayload({
     demo_name: params.demo_name,
@@ -290,7 +303,9 @@ export function classifyFunnelLandingGroup(
     pathname === '/parkovka' ||
     pathname.startsWith('/parkovka/') ||
     pathname === '/puzzle2' ||
-    pathname.startsWith('/puzzle2/')
+    pathname.startsWith('/puzzle2/') ||
+    pathname === '/parkovka-pod-klyuch' ||
+    pathname.startsWith('/parkovka-pod-klyuch/')
   ) {
     return 'landing';
   }
@@ -398,5 +413,13 @@ export function dispatchLandingEvent(
     'rospark:funnel_event',
     eventName,
     landingPayload(params),
+  );
+}
+
+export function dispatchLandingEntryEvent(params: LandingEntryEventParams) {
+  dispatchPrivacySafeEvent(
+    'rospark:funnel_event',
+    'landing_entry_click',
+    landingEntryPayload(params),
   );
 }

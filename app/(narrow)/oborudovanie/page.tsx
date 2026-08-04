@@ -5,6 +5,7 @@ import ItemListJsonLd from '@/app/components/content/ItemListJsonLd';
 import { canonicalUrl } from '@/app/config/site-url';
 import { getAllContentMeta } from '@/lib/content-parser';
 import { getAllEquipment } from '@/lib/equipment';
+import LandingEntryBanner from '@/app/components/landing/LandingEntryBanner';
 
 export const metadata: Metadata = {
   title: 'Оборудование для автоматизации парковки',
@@ -46,6 +47,12 @@ export default async function Page() {
       <p className="mb-10 max-w-3xl text-lg leading-relaxed text-slate-600">
         Оборудование подбирается под объект: въезд, выезд, оплата, распознавание номеров, табло и управление доступом.
       </p>
+      <LandingEntryBanner
+        sourceSection="equipment_catalog"
+        target="puzzle2"
+        title="Сначала задача — потом состав оборудования"
+        description="Расскажите, как должен работать объект. Мы поможем подобрать только те элементы системы, которые нужны для вашего сценария."
+      />
       <EquipmentCatalogClient items={items} />
     </section>
   );

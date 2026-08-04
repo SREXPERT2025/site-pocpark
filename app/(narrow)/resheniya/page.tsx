@@ -7,6 +7,7 @@ import CompactInfographic from '@/app/components/content/CompactInfographic';
 import TrustConversionBlocks from '@/app/components/content/TrustConversionBlocks';
 import LeadFormSection from '@/app/components/forms/LeadFormSection';
 import { canonicalUrl } from '@/app/config/site-url';
+import LandingChoiceSection from '@/app/components/landing/LandingChoiceSection';
 
 type SolutionCard = {
   title: string;
@@ -277,6 +278,8 @@ export default function SolutionsPage() {
           />
         </div>
       </section>
+
+      <LandingChoiceSection />
 
       <SolutionGrid
         id="roles"

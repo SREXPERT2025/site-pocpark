@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 
 import type { NavItem } from '@/app/config/navigation';
+import { dispatchLandingEntryEvent } from '@/app/lib/analytics-events';
 
 export default function MobileMenu({
   id,
@@ -215,7 +216,15 @@ export default function MobileMenu({
                             <li key={link.href}>
                               <Link
                                 href={link.href}
-                                onClick={onClose}
+                                onClick={() => {
+                                  if (link.href === '/parkovka' || link.href === '/parkovka-pod-klyuch') {
+                                    dispatchLandingEntryEvent({
+                                      source_section: 'mobile_solutions',
+                                      target_variant: link.href === '/parkovka' ? 'parkovka' : 'puzzle2',
+                                    });
+                                  }
+                                  onClose();
+                                }}
                                 className="block min-w-0 rounded-md px-3 py-2 text-sm text-text-primary hover:bg-bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
                               >
                                 <div className="break-words font-medium">{link.label}</div>

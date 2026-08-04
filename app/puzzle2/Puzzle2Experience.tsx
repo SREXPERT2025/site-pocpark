@@ -36,7 +36,7 @@ export function Puzzle2Experience({
   const eventParams = {
     form_name: 'landing_request',
     landing_variant: 'puzzle2' as const,
-    source_page: '/puzzle2',
+    source_page: '/parkovka-pod-klyuch',
     source_section: 'final_form',
     product_slug: 'parking_system',
   };
@@ -92,7 +92,7 @@ export function Puzzle2Experience({
           message: task.trim() || selectedTask,
           projectInterests: selected.length ? selected : undefined,
           source: 'landing-puzzle2',
-          sourcePage: '/puzzle2',
+          sourcePage: '/parkovka-pod-klyuch',
           sourceSection: 'final_form',
           intent: 'calculate_parking',
           product: 'parking_system',

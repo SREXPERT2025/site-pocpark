@@ -39,6 +39,8 @@ for (const requiredPath of [
   'app/parkovka/ParkovkaLeadModal.tsx',
   'app/puzzle2/page.tsx',
   'app/puzzle2/Puzzle2Experience.tsx',
+  'app/parkovka-pod-klyuch/page.tsx',
+  'app/parkovka-pod-klyuch/layout.tsx',
   'app/lib/ai-widget-links.ts',
 ]) {
   assert.equal(existsSync(path.resolve(requiredPath)), true, `${requiredPath} missing`);
@@ -46,7 +48,8 @@ for (const requiredPath of [
 
 process.stdout.write(`${JSON.stringify({
   status: 'ready',
-  publicLandings: ['/parkovka', '/puzzle2'],
+  publicLandings: ['/parkovka', '/parkovka-pod-klyuch'],
+  compatibilityRedirect: '/puzzle2 -> /parkovka-pod-klyuch',
   previewOnlyLandings: ['/proshche', '/puzzle', '/test2', '/v4-1', '/v4-2'],
   analytics: {
     google: 'G-3Z9KNN3MMK',
@@ -56,4 +59,3 @@ process.stdout.write(`${JSON.stringify({
   aiWidget: 'production-live',
   externalMessagesSentByCheck: 0,
 })}\n`);
-

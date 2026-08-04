@@ -13,6 +13,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  if (
+    request.nextUrl.pathname === '/puzzle2'
+    || request.nextUrl.pathname.startsWith('/puzzle2/')
+  ) {
+    const destination = request.nextUrl.clone();
+    destination.pathname = request.nextUrl.pathname.replace(
+      /^\/puzzle2(?=\/|$)/,
+      '/parkovka-pod-klyuch',
+    );
+    return NextResponse.redirect(destination, 308);
+  }
+
   const isPreviewOnly = previewOnlyRoutes.some((route) => (
     request.nextUrl.pathname === route
     || request.nextUrl.pathname.startsWith(`${route}/`)
@@ -35,6 +47,6 @@ export const config = {
     '/test2/:path*',
     '/v4-1/:path*',
     '/v4-2/:path*',
+    '/puzzle2/:path*',
   ],
 };
-

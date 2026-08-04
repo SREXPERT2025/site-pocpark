@@ -10,7 +10,7 @@ import ParkovkaExperience from './ParkovkaExperience';
 export function generateMetadata(): Metadata {
   const index = landingIndexable();
   return {
-    title: 'Решение для въезда и парковки',
+    title: 'Организовать парковку — решение под вашу задачу',
     description:
       'РОСПАРК подбирает решения для въезда и парковки: шлагбаумы, распознавание номеров, билеты, карты, оплата и контроль.',
     robots: {

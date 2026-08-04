@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 
 import MobileMenu from '@/app/components/layout/MobileMenu';
 import { navigation, type NavItem } from '@/app/config/navigation';
+import { dispatchLandingEntryEvent } from '@/app/lib/analytics-events';
 
 export default function Header() {
   const pathname = usePathname();
@@ -217,7 +218,15 @@ function DesktopNavItem({ item }: { item: NavItem }) {
                   <Link
                     key={link.href}
                     href={link.href}
-                    onClick={() => setOpen(false)}
+                    onClick={() => {
+                      if (link.href === '/parkovka' || link.href === '/parkovka-pod-klyuch') {
+                        dispatchLandingEntryEvent({
+                          source_section: 'header_solutions',
+                          target_variant: link.href === '/parkovka' ? 'parkovka' : 'puzzle2',
+                        });
+                      }
+                      setOpen(false);
+                    }}
                     className="block rounded-md px-3 py-3 hover:bg-bg-secondary transition-colors"
                   >
                     <div className="text-sm font-semibold text-text-primary">

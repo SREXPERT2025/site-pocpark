@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { getMainNav, getSolutionsFooterLinks } from '@/app/lib/navigation';
 import { ANALYTICS_CONSENT_OPEN_EVENT } from '@/app/lib/analytics-consent';
+import LandingEntryLink from '@/app/components/landing/LandingEntryLink';
 
 export default function Footer() {
   const pathname = usePathname();
@@ -17,7 +18,7 @@ export default function Footer() {
 
   return (
     <footer className="border-t border-neutral-200 bg-white">
-      <div className="mx-auto max-w-[1088px] px-4 sm:px-6 py-12 grid gap-8 md:grid-cols-4">
+      <div className="mx-auto grid max-w-[1088px] gap-8 px-4 py-12 sm:px-6 md:grid-cols-2 lg:grid-cols-5">
         <div>
           <div className="mb-4">
             <Image
@@ -59,6 +60,37 @@ export default function Footer() {
                 </Link>
               </li>
             ))}
+          </ul>
+        </div>
+
+        <div>
+          <div className="mb-4 font-medium">Подбор решения</div>
+          <ul className="space-y-2">
+            <li>
+              <LandingEntryLink
+                href="/parkovka"
+                sourceSection="footer_solution"
+                targetVariant="parkovka"
+                className="text-sm text-neutral-600 hover:text-neutral-900"
+              >
+                Организовать парковку
+              </LandingEntryLink>
+            </li>
+            <li>
+              <LandingEntryLink
+                href="/parkovka-pod-klyuch"
+                sourceSection="footer_solution"
+                targetVariant="puzzle2"
+                className="text-sm text-neutral-600 hover:text-neutral-900"
+              >
+                Парковка под ключ
+              </LandingEntryLink>
+            </li>
+            <li>
+              <Link href="/quiz?source=footer-solution" className="text-sm text-neutral-600 hover:text-neutral-900">
+                Рассчитать проект
+              </Link>
+            </li>
           </ul>
         </div>
 
