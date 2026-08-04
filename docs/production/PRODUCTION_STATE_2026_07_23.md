@@ -17,8 +17,9 @@ PM2, SQLite или зависимости.
 - Статус: Production Release v1, analytics/demo-growth, `LEAD-OPS-002 / L4`,
   server-side сводка, privacy-safe demo/quiz, публичный AI-консультант,
   GA4, подтверждения доставки MAX, два рекламных лендинга, site-wide
-  AI-аналитика и VPS-часть контекста AI успешно выпущены.
-- Release SHA: `279d919820938e4ea87dcdd7a6138774df55f8c1`.
+  AI-аналитика, VPS-часть контекста AI и исправление отправки вопросов с
+  обычных страниц успешно выпущены.
+- Release SHA: `5223dd80f6db384ca52685088522c9aba4c3f86a`.
 - Production branch: `release/demo-production-ready-20260723`.
 - Отдельный production gateway Mac Studio работает из release
   `80ffd254003eb45c0026db0598c83a0f6d5e830c`; это не изменение SHA сайта на
@@ -91,6 +92,8 @@ PM2, SQLite или зависимости.
   production и не предназначены для индексации;
 - формы двух лендингов подключены к общему lead registry;
 - контекст лендингов передаётся AI API без текста клиента и PII;
+- обычные страницы без landing-контекста не отправляют пустой `pageContext`,
+  поэтому сервер принимает вопрос и не отвечает `INVALID_PAGE_CONTEXT`;
 - события открытия AI, первого сообщения, вовлечённого диалога и handoff
   входят в общий privacy-safe analytics contract;
 - production gateway Mac Studio по-прежнему работает из release `80ffd25`;
@@ -118,6 +121,25 @@ PM2, SQLite или зависимости.
   `/parkovka-pod-klyuch` как `200`, redirect `/puzzle2` и `404` архивных
   вариантов;
 - release smoke не создавал лиды и не отправлял сообщения в MAX.
+
+## Проверка AI context hotfix от 2026-08-04
+
+- production fast-forward:
+  `279d919820938e4ea87dcdd7a6138774df55f8c1` →
+  `5223dd80f6db384ca52685088522c9aba4c3f86a`;
+- исправлено формирование запроса AI-виджета на обычных страницах: отсутствие
+  landing attribution теперь означает отсутствие `pageContext`, а не пустой
+  объект;
+- сохранена строгая проверка контекста `/parkovka` и
+  `/parkovka-pod-klyuch`;
+- retention-fixture журнала сделана относительной к текущей дате, чтобы
+  release-проверка не зависела от календарного истечения тестовых записей;
+- staging прошёл typecheck, lint, gateway/widget/log tests и production build;
+- transient service завершилась с `Result=success`, `ExecMainStatus=0`, PM2
+  `rospark-site` остался `online`;
+- внешний browser smoke на главной странице подтвердил принятие вопроса,
+  получение содержательного ответа и работу внутренних ссылок;
+- контрольная проверка не создавала заявку и не отправляла сообщения в MAX.
 
 ## Отдельный AI gateway release от 2026-07-28
 
