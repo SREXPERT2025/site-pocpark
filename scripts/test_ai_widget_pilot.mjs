@@ -146,6 +146,23 @@ assert.deepEqual(
   },
 );
 
+const parkovkaContextWithoutSelection = validateAiWidgetChatPayload({
+  sessionId: 'session-20260728-test-0001',
+  turnId: 'turn-20260728-test-0000001',
+  sourcePage: '/parkovka',
+  pageContext: {
+    landingVariant: 'parkovka',
+  },
+  messages: [{ role: 'user', content: 'Что подойдёт для нашего объекта?' }],
+});
+assert.equal(parkovkaContextWithoutSelection.ok, true);
+assert.deepEqual(
+  parkovkaContextWithoutSelection.ok
+    ? parkovkaContextWithoutSelection.payload.pageContext
+    : null,
+  { landingVariant: 'parkovka' },
+);
+
 for (const invalid of [
   null,
   {},
@@ -202,6 +219,16 @@ for (const invalid of [
     pageContext: {
       landingVariant: 'puzzle2',
       selectedFunctions: [],
+    },
+    messages: [{ role: 'user', content: 'x' }],
+  },
+  {
+    sessionId: 'session-20260728-test-0001',
+    turnId: 'turn-20260728-test-0000001',
+    sourcePage: '/parkovka',
+    pageContext: {
+      landingVariant: 'parkovka',
+      selectedProblem: 'Произвольная проблема',
     },
     messages: [{ role: 'user', content: 'x' }],
   },

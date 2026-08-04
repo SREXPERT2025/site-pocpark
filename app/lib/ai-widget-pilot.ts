@@ -139,9 +139,12 @@ function validatePageContext(
   const context = value as Record<string, unknown>;
   if (context.landingVariant === 'parkovka') {
     if (sourcePage !== '/parkovka') return false;
+    if (context.selectedFunctions !== undefined) return false;
+    if (context.selectedProblem === undefined) {
+      return { landingVariant: 'parkovka' };
+    }
     const selectedProblem = cleanText(context.selectedProblem, 120);
     if (!selectedProblem || !PARKOVKA_PROBLEMS.has(selectedProblem)) return false;
-    if (context.selectedFunctions !== undefined) return false;
     return { landingVariant: 'parkovka', selectedProblem };
   }
   if (context.landingVariant === 'puzzle2') {

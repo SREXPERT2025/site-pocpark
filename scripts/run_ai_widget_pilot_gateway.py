@@ -998,6 +998,8 @@ def validate_page_context(value: Any, source_page: str) -> dict[str, Any] | None
     if variant == "parkovka":
         if source_page != "/parkovka" or "selectedFunctions" in value:
             raise ValueError("INVALID_PAGE_CONTEXT")
+        if "selectedProblem" not in value:
+            return {"landingVariant": variant}
         problem = clean_text(value.get("selectedProblem"), 120)
         if problem not in PARKOVKA_PROBLEMS:
             raise ValueError("INVALID_PAGE_CONTEXT")
@@ -1023,9 +1025,12 @@ def landing_context_for(payload: dict[str, Any]) -> str:
     if not context:
         return "Не передан."
     if context["landingVariant"] == "parkovka":
+        problem = context.get("selectedProblem")
+        if not problem:
+            return "Лендинг /parkovka. Посетитель пока не выбрал проблему."
         return (
             "Лендинг /parkovka. Посетитель выбрал проблему: «"
-            + context["selectedProblem"]
+            + problem
             + "»."
         )
     functions = context["selectedFunctions"]

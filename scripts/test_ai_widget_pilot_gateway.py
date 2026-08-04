@@ -89,6 +89,18 @@ class GatewayContractTests(unittest.TestCase):
         context = gateway.landing_context_for(payload)
         self.assertIn("/parkovka", context)
         self.assertIn("Убрать ручные пропуска", context)
+
+        with self.assertRaises(ValueError):
+            gateway.validate_request(
+                {
+                    "sourcePage": "/parkovka",
+                    "pageContext": {
+                        "landingVariant": "parkovka",
+                        "selectedProblem": "Произвольная проблема",
+                    },
+                    "messages": [{"role": "user", "content": "Вопрос"}],
+                }
+            )
         with self.assertRaises(ValueError):
             gateway.validate_request(
                 {
@@ -96,6 +108,25 @@ class GatewayContractTests(unittest.TestCase):
                     "messages": [{"role": "assistant", "content": "Ответ"}],
                 }
             )
+
+    def test_parkovka_context_without_selected_problem_is_allowed(self) -> None:
+        payload = gateway.validate_request(
+            {
+                "sourcePage": "/parkovka",
+                "pageContext": {"landingVariant": "parkovka"},
+                "messages": [
+                    {"role": "user", "content": "Что подойдёт для объекта?"}
+                ],
+            }
+        )
+        self.assertEqual(
+            payload["pageContext"],
+            {"landingVariant": "parkovka"},
+        )
+        self.assertIn(
+            "пока не выбрал проблему",
+            gateway.landing_context_for(payload),
+        )
 
     def test_env_value_is_read_without_shell_evaluation(self) -> None:
         with TemporaryDirectory() as directory:
