@@ -395,6 +395,106 @@ class DeterministicEngineTests(unittest.TestCase):
         finally:
             self.engine._ollama_answer = original
 
+    def test_wrong_keyboard_layout_is_normalized_before_routing(self) -> None:
+        original = self.engine._ollama_answer
+        self.engine._ollama_answer = lambda _messages: self.fail(
+            "model must not guess a recoverable keyboard-layout question"
+        )
+        try:
+            result = self.engine.answer(
+                {
+                    "sourcePage": "/",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": "Rfrbt ,sdf.n ltvj ljcnegs?",
+                        },
+                    ],
+                }
+            )
+        finally:
+            self.engine._ollama_answer = original
+        self.assertEqual(result.route, "faq")
+        self.assertEqual(result.template_id, "FAQ-019")
+        self.assertIn("/demo", result.answer)
+
+    def test_specific_api_question_is_stable_and_guarded(self) -> None:
+        question = (
+            "У Яндекс Заправки спрашивают: API есть у вас? "
+            "Можно по API открыть шлагбаум на въезд и выезд?"
+        )
+        original = self.engine._ollama_answer
+        self.engine._ollama_answer = lambda _messages: self.fail(
+            "model must not confirm a specific integration"
+        )
+        try:
+            results = [
+                self.engine.answer(
+                    {
+                        "sourcePage": "/",
+                        "messages": [{"role": "user", "content": question}],
+                    }
+                )
+                for _ in range(3)
+            ]
+        finally:
+            self.engine._ollama_answer = original
+        self.assertTrue(all(item.route == "faq" for item in results))
+        self.assertTrue(all(item.template_id == "FAQ-022" for item in results))
+        self.assertEqual(len({item.answer for item in results}), 1)
+        self.assertIn("не подтверждает интеграцию заранее", results[0].answer)
+
+    def test_direct_human_handoff_requests_use_crm_route(self) -> None:
+        for question in (
+            "Зови человека! С ним буду говорить.",
+            "Готов оставить заявку — куда нажимать?",
+        ):
+            with self.subTest(question=question):
+                result = self.production_engine.answer(
+                    {
+                        "sourcePage": "/demo",
+                        "messages": [{"role": "user", "content": question}],
+                    }
+                )
+                self.assertEqual(result.route, "crm")
+                self.assertIn("Оставить заявку", result.answer)
+
+    def test_safe_arithmetic_is_complete_then_returns_to_scope(self) -> None:
+        original = self.engine._ollama_answer
+        self.engine._ollama_answer = lambda _messages: self.fail(
+            "model must not be called for simple arithmetic"
+        )
+        try:
+            result = self.engine.answer(
+                {
+                    "sourcePage": "/contacts",
+                    "messages": [
+                        {"role": "user", "content": "Скок будет 2+2?"},
+                    ],
+                }
+            )
+        finally:
+            self.engine._ollama_answer = original
+        self.assertEqual(result.route, "conversation")
+        self.assertEqual(result.template_id, "CONV-007")
+        self.assertIn("2 + 2 = 4", result.answer)
+        self.assertIn("парков", result.answer.lower())
+
+    def test_numeric_arithmetic_follow_up_does_not_loop(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/contacts",
+                "messages": [
+                    {"role": "user", "content": "Скок будет 2+2?"},
+                    {"role": "assistant", "content": "2 + 2 = 4."},
+                    {"role": "user", "content": "4"},
+                ],
+            }
+        )
+        self.assertEqual(result.route, "conversation")
+        self.assertEqual(result.template_id, "CONV-008")
+        self.assertIn("Верно", result.answer)
+
     def test_common_solution_requests_use_guarded_templates(self) -> None:
         cases = (
             (
@@ -632,7 +732,7 @@ class DeterministicEngineTests(unittest.TestCase):
         self.assertEqual(result.template_id, "NAV-001")
         self.assertIn("/keysy", result.answer)
 
-    def test_ready_to_leave_request_returns_exact_form_link(self) -> None:
+    def test_ready_to_leave_request_enters_preview_handoff(self) -> None:
         result = self.engine.answer(
             {
                 "sourcePage": "/demo",
@@ -644,10 +744,10 @@ class DeterministicEngineTests(unittest.TestCase):
                 ],
             }
         )
-        self.assertEqual(result.route, "navigation")
-        self.assertEqual(result.template_id, "NAV-001")
-        self.assertIn("Оставить заявку", result.answer)
-        self.assertIn("/quiz", result.answer)
+        self.assertEqual(result.route, "crm")
+        self.assertEqual(result.template_id, "CRM-001")
+        self.assertIn("тестовую заявку", result.answer)
+        self.assertIn("не будут уведомлены", result.answer)
 
     def test_unknown_link_request_asks_for_topic_without_model(self) -> None:
         original = self.engine._ollama_answer
@@ -969,6 +1069,38 @@ class DeterministicEngineTests(unittest.TestCase):
         )
         self.assertIn("/demo", answer)
         self.assertNotIn("http://", answer)
+
+    def test_approved_link_is_not_appended_twice(self) -> None:
+        answer = gateway.append_approved_links(
+            "Где посмотреть demo?",
+            "Все demo-сценарии: /demo",
+        )
+        self.assertEqual(answer.count("/demo"), 1)
+
+    def test_contextual_link_can_use_previous_assistant_topic(self) -> None:
+        result = self.engine.answer(
+            {
+                "sourcePage": "/",
+                "messages": [
+                    {"role": "user", "content": "Что ещё есть?"},
+                    {
+                        "role": "assistant",
+                        "content": "Можно посмотреть оборудование РОСПАРК.",
+                    },
+                    {"role": "user", "content": "Дай точную ссылку."},
+                ],
+            }
+        )
+        self.assertEqual(result.route, "navigation")
+        self.assertIn("/oborudovanie", result.answer)
+
+    def test_markdown_bullets_are_normalized_for_widget(self) -> None:
+        answer = gateway.normalize_answer_formatting(
+            "Варианты: * **Первый:** описание. * **Второй:** описание."
+        )
+        self.assertNotIn("* **", answer)
+        self.assertIn("\n• **Первый:**", answer)
+        self.assertIn("\n• **Второй:**", answer)
 
 
 @unittest.skipUnless(

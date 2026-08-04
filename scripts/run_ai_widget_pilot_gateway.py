@@ -33,6 +33,18 @@ MAX_ASSISTANT_MESSAGE = 2_000
 DEFAULT_PORT = 8787
 DEFAULT_KEEP_ALIVE = "2h"
 RUNTIME_MODES = {"preview", "production"}
+KEYBOARD_LAYOUT_SOURCE = "`qwertyuiop[]asdfghjkl;'zxcvbnm,./"
+KEYBOARD_LAYOUT_TARGET = "ёйцукенгшщзхъфывапролджэячсмитьбю."
+KEYBOARD_LAYOUT_TABLE = str.maketrans(
+    KEYBOARD_LAYOUT_SOURCE + KEYBOARD_LAYOUT_SOURCE.upper(),
+    KEYBOARD_LAYOUT_TARGET + KEYBOARD_LAYOUT_TARGET.upper(),
+)
+RECOVERABLE_LAYOUT_TOPIC_RE = re.compile(
+    r"\b(?:парков\w*|демо\w*|доступ\w*|оплат\w*|номер\w*|"
+    r"билет\w*|карт\w*|гост\w*|оборудован\w*|ссылк\w*|"
+    r"въезд\w*|выезд\w*|шлагбаум\w*)\b",
+    re.I,
+)
 PARKOVKA_PROBLEMS = {
     "Закрыть въезд для посторонних",
     "Открывать по номеру машины",
@@ -71,6 +83,20 @@ LEAD_OFFERS = {
         "описание задачи."
     ),
 }
+DIRECT_HANDOFF_RE = re.compile(
+    r"\b(?:зови|позови|соедини|переключи)\w*\b.{0,40}"
+    r"\b(?:человек|менеджер|специалист)\w*\b|"
+    r"\b(?:хочу|буду|давайте)\b.{0,40}\b(?:говорить|поговорить|связаться)\b"
+    r".{0,40}\b(?:человек|менеджер|специалист)\w*\b|"
+    r"\bготов\w*\s+остав\w*\s+заявк\w*\b",
+    re.I,
+)
+SIMPLE_ARITHMETIC_RE = re.compile(
+    r"^\s*(?:(?:скок\w*|сколько(?:\s+будет)?|чему|будет)[^\d-]*)?"
+    r"(?P<left>-?\d{1,7})\s*(?P<operator>[+\-*/])\s*"
+    r"(?P<right>-?\d{1,7})\s*[?!.]*\s*$",
+    re.I,
+)
 CONVERSATION_RULES = (
     (
         "CONV-001",
@@ -442,8 +468,10 @@ FAST_FAQ_RULES = (
     (
         "FAQ-019",
         re.compile(
-            r"\b(?:можно|где)\b.*\b(?:посмотр\w*|откры\w*)\b.*\bdemo\b|"
-            r"\b(?:есть|покаж\w*)\b.*\bdemo\b",
+            r"\b(?:можно|где)\b.*\b(?:посмотр\w*|откры\w*)\b.*"
+            r"\b(?:demo|демо)\b|"
+            r"\b(?:есть|покаж\w*)\b.*\b(?:demo|демо)\b|"
+            r"\bкакие\b.*\bдемо\b.*\b(?:доступ|сценари)\w*",
             re.I,
         ),
     ),
@@ -453,7 +481,11 @@ FAST_FAQ_RULES = (
             r"\bможно\b.*\b(?:интегрир\w*|подключ\w*|связ\w*)\b.*"
             r"\b(?:наш\w+\s+систем|crm|1с|api)\b|"
             r"\b(?:есть|да[её]те|предоставля\w*)\b.*\bapi\b|"
-            r"\b(?:интегр\w*|передава\w*)\b.*\b(?:crm|1с)\b",
+            r"\bapi\b.*\b(?:есть|поддержива\w*|предоставля\w*|"
+            r"откры\w*|команд\w*)\b|"
+            r"\b(?:интегр\w*|передава\w*)\b.*\b(?:crm|1с)\b|"
+            r"\b(?:можно|идея|реализ\w*)\b.*\bapi\b.*"
+            r"\b(?:шлагбаум|въезд|выезд|интеграц)\w*",
             re.I,
         ),
     ),
@@ -679,6 +711,13 @@ class GatewayResult:
     template_id: str | None
     model_metrics: dict[str, int] | None = None
 
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "answer",
+            normalize_answer_formatting(self.answer),
+        )
+
 
 @dataclass(frozen=True)
 class ModelAnswer:
@@ -688,6 +727,87 @@ class ModelAnswer:
 
 class ModelUnavailable(RuntimeError):
     pass
+
+
+def normalize_keyboard_layout(text: str) -> str:
+    latin_count = len(re.findall(r"[A-Za-z]", text))
+    if latin_count < 4 or re.search(r"[А-Яа-яЁё]", text):
+        return text
+    candidate = text.translate(KEYBOARD_LAYOUT_TABLE)
+    return candidate if RECOVERABLE_LAYOUT_TOPIC_RE.search(candidate) else text
+
+
+def normalize_answer_formatting(answer: str) -> str:
+    result = re.sub(
+        r"(?m)(^|[:;])\s*[*-]\s+(?=\*\*|[А-Яа-яЁёA-Za-z0-9])",
+        lambda match: (match.group(1) if match.group(1) == ":" else "") + "\n• ",
+        answer,
+    )
+    result = re.sub(
+        r"(?<=[.!?])\s+[*-]\s+(?=\*\*|[А-Яа-яЁёA-Za-z0-9])",
+        "\n• ",
+        result,
+    )
+    result = re.sub(r"(?m)^\s*[*-]\s+", "• ", result)
+    return re.sub(r"\n{3,}", "\n\n", result).strip()
+
+
+def direct_handoff_answer_for(
+    question: str,
+    runtime_mode: str,
+) -> GatewayResult | None:
+    if not DIRECT_HANDOFF_RE.search(question):
+        return None
+    return GatewayResult(LEAD_OFFERS[runtime_mode], "crm", "CRM-001")
+
+
+def simple_arithmetic_answer_for(
+    messages: list[dict[str, str]],
+) -> GatewayResult | None:
+    question = messages[-1]["content"]
+    match = SIMPLE_ARITHMETIC_RE.search(question)
+    if match:
+        left = int(match.group("left"))
+        right = int(match.group("right"))
+        operator = match.group("operator")
+        if operator == "+":
+            value: int | float = left + right
+        elif operator == "-":
+            value = left - right
+        elif operator == "*":
+            value = left * right
+        elif right != 0:
+            value = left / right
+        else:
+            return GatewayResult(
+                "На ноль делить нельзя. Я специализируюсь на вопросах автоматизации парковок.",
+                "conversation",
+                "CONV-007",
+            )
+        rendered = (
+            str(int(value))
+            if isinstance(value, float) and value.is_integer()
+            else str(value)
+        )
+        return GatewayResult(
+            f"{left} {operator} {right} = {rendered}. "
+            "По вопросам автоматизации парковок тоже помогу.",
+            "conversation",
+            "CONV-007",
+        )
+    if not re.fullmatch(r"\s*-?\d+(?:[.,]\d+)?\s*", question):
+        return None
+    prior = "\n".join(message["content"] for message in messages[:-1][-2:])
+    if SIMPLE_ARITHMETIC_RE.search(prior) or re.search(
+        r"\d+\s*[+\-*/]\s*\d+\s*=",
+        prior,
+    ):
+        return GatewayResult(
+            "Верно. Если хотите, продолжим с вопросом о вашей парковке.",
+            "conversation",
+            "CONV-008",
+        )
+    return None
 
 
 def site_links_for(text: str, limit: int = 2) -> list[tuple[str, str]]:
@@ -701,7 +821,14 @@ def site_links_for(text: str, limit: int = 2) -> list[tuple[str, str]]:
 
 
 def append_approved_links(question: str, answer: str) -> str:
-    links = site_links_for(question)
+    links = [
+        link
+        for link in site_links_for(question)
+        if not re.search(
+            re.escape(link[1]) + r"(?=$|[\s`),.;!?])",
+            answer,
+        )
+    ]
     if not links:
         return answer
     suffix = "\n".join(f"{label}: {path}" for label, path in links)
@@ -720,13 +847,12 @@ def contextual_link_answer_for(
         links = current_links
     else:
         links = []
-        previous_user_messages = (
+        previous_messages = (
             message["content"]
             for message in reversed(messages[:-1])
-            if message["role"] == "user"
         )
-        for previous_question in previous_user_messages:
-            links = site_links_for(previous_question)
+        for previous_message in previous_messages:
+            links = site_links_for(previous_message)
             if links:
                 break
 
@@ -1129,7 +1255,17 @@ class PilotEngine:
         return state
 
     def answer(self, payload: dict[str, Any]) -> GatewayResult:
-        messages = payload["messages"]
+        messages = [
+            {
+                **message,
+                "content": (
+                    normalize_keyboard_layout(message["content"])
+                    if message["role"] == "user"
+                    else message["content"]
+                ),
+            }
+            for message in payload["messages"]
+        ]
         question = messages[-1]["content"]
         route, template_id, _ = self.module.route_case(question, self.faq)
 
@@ -1137,9 +1273,17 @@ class PilotEngine:
             answer = self.module.SECURITY_ANSWERS[template_id or "SEC-001"]
             return GatewayResult(answer, route, template_id)
 
+        direct_handoff = direct_handoff_answer_for(question, self.runtime_mode)
+        if direct_handoff:
+            return direct_handoff
+
         contextual_link = contextual_link_answer_for(messages)
         if contextual_link:
             return contextual_link
+
+        arithmetic = simple_arithmetic_answer_for(messages)
+        if arithmetic:
+            return arithmetic
 
         conversational = conversation_answer(question, self.runtime_mode)
         if conversational:
