@@ -184,6 +184,7 @@ export default function AiWidgetPilot() {
   const [loggingEnabled, setLoggingEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [showInvite, setShowInvite] = useState(true);
+  const [isFooterVisible, setIsFooterVisible] = useState(false);
   const [messages, setMessages] = useState<UiMessage[]>([
     greetingFor('preview'),
   ]);
@@ -259,6 +260,21 @@ export default function AiWidgetPilot() {
         setLoggingEnabled(false);
       });
     return () => controller.abort();
+  }, [isHidden]);
+
+  useEffect(() => {
+    if (isHidden || typeof IntersectionObserver === 'undefined') return;
+
+    const footer = document.querySelector('footer');
+    if (!footer) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsFooterVisible(entry?.isIntersecting === true),
+      { threshold: 0.05 },
+    );
+    observer.observe(footer);
+
+    return () => observer.disconnect();
   }, [isHidden]);
 
   useEffect(() => {
@@ -732,7 +748,7 @@ export default function AiWidgetPilot() {
     <>
       {!isOpen && (
         <div className="fixed bottom-5 right-4 z-40 flex max-w-[calc(100vw-2rem)] items-end gap-3 sm:bottom-6 sm:right-6">
-          {showInvite && (
+          {showInvite && !isFooterVisible && (
             <div className="relative max-w-64 rounded-2xl border border-blue-100 bg-white p-4 pr-9 text-sm leading-5 text-slate-700 shadow-xl">
               <button
                 type="button"
