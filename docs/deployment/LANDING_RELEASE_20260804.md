@@ -1,6 +1,7 @@
 # РОСПАРК — пакет релиза `/parkovka` + `/parkovka-pod-klyuch`
 
-Статус: подготовка завершена локально; production/VPS не изменён.
+Статус: опубликовано и принято в production 2026-08-04.
+Production SHA: `279d919820938e4ea87dcdd7a6138774df55f8c1`.
 
 ## Состав релиза
 
@@ -79,37 +80,31 @@ AI-воронки:
 вовлечённый диалог оставить наблюдаемыми событиями, чтобы не завышать число
 бизнес-конверсий.
 
-## Завтрашняя последовательность
+## Фактический результат
 
-1. Зафиксировать точный release SHA и убедиться, что ветка чистая.
-2. На VPS выполнить онлайн-backup `.env.production`, обеих SQLite-баз,
-   systemd unit-файлов и текущей `.next`; записать SHA256.
-3. Создать отдельный staging worktree и скопировать в него production env с
-   правами `600`, не меняя работающий сайт.
-4. Настроить env именно внутри staging worktree до сборки, потому что публичные
-   идентификаторы аналитики встраиваются Next.js на этапе build:
+- release собран поверх production `0fe1047` и опубликован через контролируемый
+  fast-forward до `279d919`;
+- до переключения созданы checksummed online backups env, demo SQLite, lead
+  registry, AI transcript SQLite, Nginx и systemd units;
+- typecheck, lint, production build 116 страниц, AI/VPS/gateway/cascade/log
+  suites прошли;
+- две некорректные версии post-release smoke безопасно вызвали автоматический
+  rollback без потери данных и без внешних сообщений;
+- финальный smoke проверяет реальный HTTPS/Nginx маршрут и фактический
+  text/plain контракт AI API;
+- transient release service завершилась с `Result=success` и exit code `0`;
+- production SHA подтверждён как `279d919820938e4ea87dcdd7a6138774df55f8c1`;
+- PM2 `rospark-site` подтверждён `online`;
+- внешний smoke: `/`, `/parkovka`, `/parkovka-pod-klyuch` — `200`;
+- `/puzzle2` — redirect на `/parkovka-pod-klyuch`;
+- `/v4-1`, `/v4-2`, `/proshche`, `/puzzle`, `/test2` — `404`;
+- safe AI smoke создал только технический диалог, не создал лид и не отправил
+  сообщение в MAX;
+- production Mac Studio gateway не переключался и продолжает работать из
+  отдельного release `80ffd25`.
 
-   ```text
-   LANDING_ENV_FILE=/var/www/rospark-site-stage-<sha>/.env.production \
-   npm run landing-production:configure
-   ```
-
-5. Запустить typecheck, lint, production build и автоматические тесты.
-6. До переключения выполнить `npm run landing-production:check` с тем же
-   `LANDING_ENV_FILE`.
-7. При переключении перенести проверенный staging env вместе со сборкой и один
-   раз перезапустить приложение.
-8. Проверить без отправки заявок:
-   - `/parkovka` и `/parkovka-pod-klyuch` — `200`;
-   - `/puzzle2` — постоянное перенаправление на `/parkovka-pod-klyuch`;
-   - служебных тестовых надписей нет;
-   - `/v4-1`, `/v4-2`, `/proshche`, `/puzzle`, `/test2` — `404`;
-   - AI-виджет открывается, внутренняя ссылка не закрывает диалог;
-   - GA/Метрика не запускаются до согласия и запускаются после него;
-   - формы визуально готовы, но не отправляются на этом шаге.
-9. После отдельного подтверждения директора отправить ровно одну контрольную
-   заявку, проверить реестр, outbox и одно сообщение в MAX.
-10. Удалить только staging worktree; backup и rollback build сохранить.
+Следующий отдельный release-gate: активировать на Mac Studio подготовленные в
+`279d919` изменения качества gateway и проверить их без повторного VPS deploy.
 
 ## Критерий отката
 

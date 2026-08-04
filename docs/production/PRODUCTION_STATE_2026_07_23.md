@@ -1,6 +1,6 @@
 # РОСПАРК: состояние Production Release v1
 
-Дата последней сверки: 28 июля 2026 года.
+Дата последней сверки: 4 августа 2026 года.
 
 ## Статус документа
 
@@ -16,9 +16,9 @@ PM2, SQLite или зависимости.
 
 - Статус: Production Release v1, analytics/demo-growth, `LEAD-OPS-002 / L4`,
   server-side сводка, privacy-safe demo/quiz, публичный AI-консультант,
-  GA4, подтверждения доставки MAX и обновлённые обложки статей успешно
-  выпущены.
-- Release SHA: `47529cc83489534c4ba25cfe7a069e590d924851`.
+  GA4, подтверждения доставки MAX, два рекламных лендинга, site-wide
+  AI-аналитика и VPS-часть контекста AI успешно выпущены.
+- Release SHA: `279d919820938e4ea87dcdd7a6138774df55f8c1`.
 - Production branch: `release/demo-production-ready-20260723`.
 - Отдельный production gateway Mac Studio работает из release
   `80ffd254003eb45c0026db0598c83a0f6d5e830c`; это не изменение SHA сайта на
@@ -84,6 +84,40 @@ PM2, SQLite или зависимости.
 - Три статьи используют обновлённые production-обложки WebP `1920 × 1080`.
 - AI-консультант знает подтверждённый сценарий собственного идентификатора и
   использует allowlist-каталог контекстных ссылок на страницы сайта.
+- `/parkovka` и `/parkovka-pod-klyuch` опубликованы, встроены в общий сайт и
+  отвечают `200`;
+- `/puzzle2` перенаправляется на `/parkovka-pod-klyuch`;
+- `/proshche`, `/puzzle`, `/test2`, `/v4-1`, `/v4-2` отвечают `404` в
+  production и не предназначены для индексации;
+- формы двух лендингов подключены к общему lead registry;
+- контекст лендингов передаётся AI API без текста клиента и PII;
+- события открытия AI, первого сообщения, вовлечённого диалога и handoff
+  входят в общий privacy-safe analytics contract;
+- production gateway Mac Studio по-прежнему работает из release `80ffd25`;
+  новые Python gateway-изменения из site release `279d919` ещё не активированы
+  на Mac Studio и требуют отдельной приёмки.
+
+## Проверка release от 2026-08-04
+
+- production fast-forward:
+  `0fe1047f9e25dd7b49550c491166c22ff1b55155` →
+  `279d919820938e4ea87dcdd7a6138774df55f8c1`;
+- перед переключением созданы online backups env, трёх SQLite, Nginx и systemd
+  units, а также hot rollback build;
+- staging прошёл typecheck, lint, 46 gateway tests, 13 cascade tests, 5 review
+  tests, transcript-log test и production build 116 страниц;
+- две первые попытки переключения автоматически вернули `0fe1047`: сначала
+  из-за некорректного обходного HTTP smoke, затем из-за ожидания JSON от
+  text/plain AI API; данные, outbox и MAX не изменялись;
+- финальная проверка приведена к фактическому контракту HTTPS/Nginx и
+  text/plain AI response;
+- финальная transient service завершилась с `Result=success`,
+  `ExecMainStatus=0`;
+- PM2 `rospark-site` — `online`;
+- внешний smoke после завершения подтвердил `/`, `/parkovka` и
+  `/parkovka-pod-klyuch` как `200`, redirect `/puzzle2` и `404` архивных
+  вариантов;
+- release smoke не создавал лиды и не отправлял сообщения в MAX.
 
 ## Отдельный AI gateway release от 2026-07-28
 
@@ -371,6 +405,17 @@ Analytics release также не означает, что уже:
    ежедневную retention cleanup и наличие свежего backup. TEST-лид не удалять
    до окончания документальной приёмки.
 
+8. Отдельно выпустить и принять на Mac Studio gateway-код качества ответов из
+   `279d919`; не считать обновление VPS автоматическим обновлением gateway.
+
+9. Снять Search Console/Яндекс Вебмастер baseline после релиза и проверить,
+   что рекламные лендинги остаются вне индекса до решения
+   `LANDING-GROWTH-002`.
+
+10. Накопить сопоставимые данные двух лендингов по форме и AI-воронке; решение
+    об индексации или выборе концепции принимать по рабочим лидам, а не по
+    просмотрам.
+
 ## Связанные актуальные документы
 
 - `docs/site/SITE_DEVELOPMENT_ROADMAP_20260723.md`;
@@ -380,3 +425,4 @@ Analytics release также не означает, что уже:
 - `docs/deployment/AFTER_DEPLOY_GUEST_DEMO_MAX.md`;
 - `docs/site/ARCHITECTURE.md`;
 - `docs/site/SITE_STRUCTURE.md`.
+- `docs/deployment/LANDING_RELEASE_20260804.md`.
