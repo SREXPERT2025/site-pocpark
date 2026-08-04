@@ -268,11 +268,53 @@ assert.equal(
   'Parkovka AI attribution must drop unapproved problem labels and session data',
 );
 
+analytics.dispatchAiPromoEvent('ai_chat_open', {
+  source_section: 'floating_launcher',
+  source_page: 'https://www.роспарк.рф/resheniya/biznes-centry?phone=+79990000000',
+  session_id: '1d0ffb5e-529c-49d4-93e3-0dd2b2e56d11',
+});
+
+assert.deepEqual(window.dataLayer[6], {
+  event: 'rospark_ai_chat_open',
+  source_section: 'floating_launcher',
+  source_page: '/resheniya/biznes-centry',
+  session_id: '1d0ffb5e-529c-49d4-93e3-0dd2b2e56d11',
+});
+assert.equal(
+  JSON.stringify(window.dataLayer[6]).includes('79990000000'),
+  false,
+  'Floating AI events must remove query parameters from the source page',
+);
+
+analytics.dispatchAiPromoEvent('ai_engaged_chat', {
+  landing_variant: 'puzzle2',
+  source_section: 'floating_launcher',
+  source_page: '/parkovka-pod-klyuch?yclid=private-click-id',
+  session_id: '1d0ffb5e-529c-49d4-93e3-0dd2b2e56d11',
+  user_message_count: 2,
+});
+
+assert.deepEqual(window.dataLayer[7], {
+  event: 'rospark_ai_engaged_chat',
+  landing_variant: 'puzzle2',
+  source_section: 'floating_launcher',
+  source_page: '/parkovka-pod-klyuch',
+  selected_functions: 'none',
+  selected_functions_count: 0,
+  session_id: '1d0ffb5e-529c-49d4-93e3-0dd2b2e56d11',
+  user_message_count: 2,
+});
+assert.equal(
+  JSON.stringify(window.dataLayer[7]).includes('private-click-id'),
+  false,
+  'Engaged-chat analytics must not include URL identifiers',
+);
+
 analytics.dispatchLandingEvent('landing_view', {
   landing_variant: 'parkovka',
   source_section: 'page',
 });
-assert.deepEqual(window.dataLayer[6], {
+assert.deepEqual(window.dataLayer[8], {
   event: 'rospark_landing_view',
   landing_variant: 'parkovka',
   source_section: 'page',
@@ -285,14 +327,14 @@ analytics.dispatchLandingEvent('landing_choice_change', {
   selected_choices_count: 99,
   selection_action: 'select',
 });
-assert.deepEqual(window.dataLayer[7], {
+assert.deepEqual(window.dataLayer[9], {
   event: 'rospark_landing_choice_change',
   landing_variant: 'puzzle2',
   source_section: 'function_selector',
   selection_action: 'select',
 });
 assert.equal(
-  JSON.stringify(window.dataLayer[7]).includes('79990000000'),
+  JSON.stringify(window.dataLayer[9]).includes('79990000000'),
   false,
   'landing events must drop uncontrolled choices and impossible counts',
 );
@@ -301,13 +343,13 @@ analytics.dispatchLandingEntryEvent({
   target_variant: 'puzzle2',
   source_section: 'home_start',
 });
-assert.deepEqual(window.dataLayer[8], {
+assert.deepEqual(window.dataLayer[10], {
   event: 'rospark_landing_entry_click',
   target_variant: 'puzzle2',
   source_section: 'home_start',
 });
 
-assert.equal(browserEvents.length, 9, 'accepted events must reach the local browser contract');
+assert.equal(browserEvents.length, 11, 'accepted events must reach the local browser contract');
 assert.equal(browserEvents[0].type, 'rospark:lead_form_event');
 assert.equal(browserEvents[1].type, 'rospark:demo_event');
 assert.equal(browserEvents[2].type, 'rospark:funnel_event');
@@ -317,9 +359,11 @@ assert.equal(browserEvents[5].type, 'rospark:funnel_event');
 assert.equal(browserEvents[6].type, 'rospark:funnel_event');
 assert.equal(browserEvents[7].type, 'rospark:funnel_event');
 assert.equal(browserEvents[8].type, 'rospark:funnel_event');
+assert.equal(browserEvents[9].type, 'rospark:funnel_event');
+assert.equal(browserEvents[10].type, 'rospark:funnel_event');
 assert.deepEqual(
-  dataLayerLengthsAtDispatch.slice(-9),
-  [1, 2, 3, 4, 5, 6, 7, 8, 9],
+  dataLayerLengthsAtDispatch.slice(-11),
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
   'dataLayer must contain each event before its browser event is dispatched',
 );
 

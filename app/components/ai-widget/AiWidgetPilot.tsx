@@ -81,7 +81,33 @@ type AiWidgetOpenDetail = {
   sessionId?: unknown;
 };
 
-function promoAttributionFrom(detail: AiWidgetOpenDetail): AiPromoEventParams | null {
+function landingVariantForPathname(
+  pathname: string,
+): AiPromoEventParams['landing_variant'] {
+  if (pathname === '/parkovka') return 'parkovka';
+  if (pathname === '/puzzle2' || pathname === '/parkovka-pod-klyuch') {
+    return 'puzzle2';
+  }
+  return undefined;
+}
+
+function launcherAttribution(
+  pathname: string,
+  sessionId: string,
+): AiPromoEventParams {
+  return {
+    landing_variant: landingVariantForPathname(pathname),
+    source_section: 'floating_launcher',
+    source_page: pathname,
+    session_id: sessionId,
+  };
+}
+
+function promoAttributionFrom(
+  detail: AiWidgetOpenDetail,
+  pathname: string,
+  fallbackSessionId: string,
+): AiPromoEventParams | null {
   const isPuzzle2 = detail.landingVariant === 'puzzle2'
     && detail.sourceSection === 'ai_midpage';
   const isParkovka = detail.landingVariant === 'parkovka'
@@ -105,9 +131,10 @@ function promoAttributionFrom(detail: AiWidgetOpenDetail): AiPromoEventParams | 
     selected_problem: typeof detail.selectedProblem === 'string'
       ? detail.selectedProblem.trim()
       : undefined,
+    source_page: pathname,
     session_id: typeof detail.sessionId === 'string'
       ? detail.sessionId.trim()
-      : undefined,
+      : fallbackSessionId,
   };
 }
 
@@ -180,6 +207,8 @@ export default function AiWidgetPilot() {
   const submissionIdRef = useRef('');
   const promoAttributionRef = useRef<AiPromoEventParams | null>(null);
   const promoFirstMessageTrackedRef = useRef(false);
+  const promoEngagedChatTrackedRef = useRef(false);
+  const userMessageCountRef = useRef(0);
   const pendingPromptRef = useRef('');
 
   const isHidden = pathname.startsWith('/admin') || pathname === '/v4-1';
@@ -258,10 +287,9 @@ export default function AiWidgetPilot() {
         ? event.detail as AiWidgetOpenDetail | undefined
         : undefined;
       const attribution = detail
-        ? promoAttributionFrom(detail)
+        ? promoAttributionFrom(detail, pathname, sessionId())
         : null;
       promoAttributionRef.current = attribution;
-      promoFirstMessageTrackedRef.current = false;
       pendingPromptRef.current = typeof detail?.prompt === 'string'
         ? detail.prompt.trim().slice(0, AI_WIDGET_MAX_MESSAGE_LENGTH)
         : '';
@@ -276,7 +304,7 @@ export default function AiWidgetPilot() {
       'rospark:open-ai-widget',
       openFromPage,
     );
-  }, [isEnabled, isHidden]);
+  }, [isEnabled, isHidden, pathname]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -315,9 +343,11 @@ export default function AiWidgetPilot() {
   };
 
   const openWidget = () => {
+    const attribution = launcherAttribution(pathname, sessionId());
+    promoAttributionRef.current = attribution;
+    dispatchAiPromoEvent('ai_chat_open', attribution);
     setShowInvite(false);
     setIsOpen(true);
-    sessionId();
   };
 
   const closeWidget = () => {
@@ -339,6 +369,8 @@ export default function AiWidgetPilot() {
     setIsSending(false);
     promoAttributionRef.current = null;
     promoFirstMessageTrackedRef.current = false;
+    promoEngagedChatTrackedRef.current = false;
+    userMessageCountRef.current = 0;
     pendingPromptRef.current = '';
     resetLeadFlow();
   };
@@ -560,6 +592,21 @@ export default function AiWidgetPilot() {
         promoAttributionRef.current,
       );
     }
+    userMessageCountRef.current += 1;
+    if (
+      promoAttributionRef.current
+      && userMessageCountRef.current >= 2
+      && !promoEngagedChatTrackedRef.current
+    ) {
+      promoEngagedChatTrackedRef.current = true;
+      dispatchAiPromoEvent(
+        'ai_engaged_chat',
+        {
+          ...promoAttributionRef.current,
+          user_message_count: 2,
+        },
+      );
+    }
     const userMessage: UiMessage = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -641,6 +688,19 @@ export default function AiWidgetPilot() {
       if (abortRef.current === controller) abortRef.current = null;
       setIsSending(false);
     }
+  };
+
+  const sendQuickQuestion = (question: string) => {
+    if (promoAttributionRef.current) {
+      dispatchAiPromoEvent(
+        'ai_quick_question_click',
+        {
+          ...promoAttributionRef.current,
+          quick_question: question,
+        },
+      );
+    }
+    void sendMessage(question);
   };
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -790,7 +850,7 @@ export default function AiWidgetPilot() {
                     <button
                       key={question}
                       type="button"
-                      onClick={() => void sendMessage(question)}
+                      onClick={() => sendQuickQuestion(question)}
                       className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-left text-xs font-semibold leading-5 text-blue-900 transition hover:border-blue-300 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                     >
                       {question}

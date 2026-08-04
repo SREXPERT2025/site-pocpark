@@ -61,15 +61,21 @@ export type AiPromoEventName =
   | 'ai_chat_open'
   | 'ai_quick_question_click'
   | 'ai_first_message_sent'
+  | 'ai_engaged_chat'
   | 'ai_lead_handoff';
 
 export type AiPromoEventParams = {
-  landing_variant: 'puzzle2' | 'parkovka';
-  source_section: 'ai_midpage' | 'ai_after_problem_selector';
+  landing_variant?: 'puzzle2' | 'parkovka';
+  source_section:
+    | 'ai_midpage'
+    | 'ai_after_problem_selector'
+    | 'floating_launcher';
+  source_page?: string;
   selected_functions?: string[];
   selected_problem?: string;
   quick_question?: string;
   session_id?: string;
+  user_message_count?: number;
   handoff_to_lead?: boolean;
 };
 
@@ -99,6 +105,9 @@ const AI_PROMO_ALLOWED_QUESTIONS = new Set([
   'Как убрать очередь на въезде?',
   'Что выбрать: госномера, карты или билеты?',
   'Как организовать въезд для гостей?',
+  'Для каких объектов подходит система?',
+  'Как работает гостевой доступ?',
+  'От чего зависит стоимость проекта?',
 ]);
 const AI_PROMO_ALLOWED_PROBLEMS = new Set([
   'Закрыть въезд для посторонних',
@@ -226,16 +235,19 @@ function aiPromoPayload(params: AiPromoEventParams) {
     .map((value) => value.trim())
     .filter((value) => AI_PROMO_ALLOWED_FUNCTIONS.has(value))
     .slice(0, 12);
-  const validSource = (
+  const validLandingPromo = (
     params.landing_variant === 'puzzle2'
     && params.source_section === 'ai_midpage'
   ) || (
     params.landing_variant === 'parkovka'
     && params.source_section === 'ai_after_problem_selector'
   );
+  const validFloatingLauncher = params.source_section === 'floating_launcher';
+  const validSource = validLandingPromo || validFloatingLauncher;
   return compactPayload({
     landing_variant: validSource ? params.landing_variant : undefined,
     source_section: validSource ? params.source_section : undefined,
+    source_page: validSource ? safeSourcePage(params.source_page) : undefined,
     selected_functions: params.landing_variant === 'puzzle2'
       ? selectedFunctions.join(' | ') || 'none'
       : undefined,
@@ -251,6 +263,9 @@ function aiPromoPayload(params: AiPromoEventParams) {
       ? params.quick_question
       : undefined,
     session_id: safeIdentifier(params.session_id),
+    user_message_count: params.user_message_count === 2
+      ? 2
+      : undefined,
     handoff_to_lead: params.handoff_to_lead === true ? true : undefined,
   });
 }

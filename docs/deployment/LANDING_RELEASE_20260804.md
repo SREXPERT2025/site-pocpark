@@ -51,6 +51,8 @@
 | `rospark_ai_promo_click` | открытие AI из промо |
 | `rospark_ai_quick_question_click` | выбран быстрый вопрос |
 | `rospark_ai_first_message_sent` | отправлено первое сообщение AI |
+| `rospark_ai_engaged_chat` | пользователь отправил второй вопрос в одной AI-сессии |
+| `rospark_ai_chat_open` | AI открыт из промо или плавающей кнопки на любой публичной странице |
 
 Общие параметры A/B-сравнения:
 
@@ -59,14 +61,23 @@
 - `cta_id`;
 - `selected_problem` или `selected_functions_count`;
 - `session_id` — только случайный технический ID AI-сессии.
+- `source_page` — только путь страницы без query string;
+- `user_message_count = 2` — фиксированная отметка вовлечённого диалога, без
+  текста сообщений.
 
-В Яндекс Метрике после публикации создать две основные JavaScript-цели:
+В Яндекс Метрике после публикации создать четыре новые JavaScript-цели
+AI-воронки:
 
-1. `Лендинг — успешная заявка`: `rospark_form_success`;
-2. `Лендинг — заявка из AI`: `rospark_ai_lead_handoff`.
+1. `AI — открыт консультант`: `rospark_ai_chat_open`;
+2. `AI — отправлен первый вопрос`: `rospark_ai_first_message_sent`;
+3. `AI — вовлечённый диалог`: `rospark_ai_engaged_chat`;
+4. `AI — создана заявка`: `rospark_ai_lead_handoff`.
 
-Остальные события использовать в отчёте параметров как этапы воронки. В GA4
-пометить `rospark_form_success` и `rospark_ai_lead_handoff` как key events.
+Существующая цель `Форма — успешная отправка` (`rospark_form_success`)
+сохраняется. В GA4 все четыре AI-события использовать как этапы воронки, а
+`rospark_ai_lead_handoff` пометить как основное key event. Первое сообщение и
+вовлечённый диалог оставить наблюдаемыми событиями, чтобы не завышать число
+бизнес-конверсий.
 
 ## Завтрашняя последовательность
 
