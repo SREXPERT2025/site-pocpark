@@ -652,6 +652,17 @@ export default function AiWidgetPilot() {
           sessionId: sessionId(),
           turnId: userMessage.id,
           sourcePage: pathname,
+          ...(promoAttributionRef.current ? {
+            pageContext: {
+              landingVariant: promoAttributionRef.current.landing_variant,
+              ...(promoAttributionRef.current.selected_problem ? {
+                selectedProblem: promoAttributionRef.current.selected_problem,
+              } : {}),
+              ...(promoAttributionRef.current.selected_functions ? {
+                selectedFunctions: promoAttributionRef.current.selected_functions,
+              } : {}),
+            },
+          } : {}),
           messages: modelHistory.map(({ role, content: messageContent }) => ({
             role,
             content: messageContent,

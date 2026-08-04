@@ -18,6 +18,8 @@ class CascadeV3AdapterTest(unittest.TestCase):
             / "docs/site/ai-widget/WIDGET_CLAIM_LEDGER_V1.md",
             adapter.SITE_ROOT
             / "docs/site/ai-widget/WIDGET_SITE_LINK_CATALOG_V1.md",
+            adapter.SITE_ROOT
+            / "docs/site/ai-widget/WIDGET_RESPONSE_KNOWLEDGE_V1.md",
         )
         _, preview_knowledge = adapter.runtime_sources("preview")
         _, production_knowledge = adapter.runtime_sources("production")
@@ -180,6 +182,9 @@ class CascadeV3AdapterTest(unittest.TestCase):
         self.assertNotIn("от 50 до 70 слов", prompt)
         self.assertIn("одного-трёх предложений", prompt)
         self.assertIn("Не добавляй универсальную оговорку", prompt)
+        self.assertIn("сравни каждый из них", prompt)
+        self.assertIn("ровно один конкретный уточняющий вопрос", prompt)
+        self.assertIn("заметное сокращение", prompt)
 
     def test_v3_validation_uses_current_result_keys(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -27,13 +27,18 @@ DEFAULT_PROFILE = SITE_ROOT / "docs/site/ai-widget/WIDGET_AGENT_PROFILE_V1.md"
 DEFAULT_PRODUCTION_PROFILE = (
     SITE_ROOT / "docs/site/ai-widget/WIDGET_PRODUCTION_PROFILE_V1.md"
 )
+DEFAULT_RESPONSE_KNOWLEDGE = (
+    SITE_ROOT / "docs/site/ai-widget/WIDGET_RESPONSE_KNOWLEDGE_V1.md"
+)
 DEFAULT_KNOWLEDGE = (
     SITE_ROOT / "docs/site/ai-widget/WIDGET_CLAIM_LEDGER_V1.md",
     SITE_ROOT / "docs/site/ai-widget/WIDGET_SITE_LINK_CATALOG_V1.md",
+    DEFAULT_RESPONSE_KNOWLEDGE,
 )
 DEFAULT_PRODUCTION_KNOWLEDGE = (
     SITE_ROOT / "docs/site/ai-widget/WIDGET_CLAIM_LEDGER_V1.md",
     SITE_ROOT / "docs/site/ai-widget/WIDGET_SITE_LINK_CATALOG_V1.md",
+    DEFAULT_RESPONSE_KNOWLEDGE,
 )
 
 LEGACY_V2_SHA256 = "a8d8fcfdd1a2e33fa0273df254664af1941730063a6c48a4f7a7c24a359eca5f"
@@ -349,6 +354,19 @@ def guarded_responder_prompt(
                 if runtime_mode == "production"
                 else ""
             )
+            + "Если вопрос перечисляет несколько вариантов, сравни каждый из них; "
+            "не заканчивай ответ после первого пункта. После полезного ответа "
+            "задай ровно один конкретный уточняющий вопрос, если без параметров "
+            "объекта нельзя выбрать вариант. Не перечисляй анкету и не задавай "
+            "несколько вопросов в одном предложении. Не задавай вопрос, если "
+            "пользователь просит "
+            "только ссылку, уже сообщил нужные параметры или обсуждается безопасность, "
+            "согласие либо передача заявки.\n"
+            "Если спрашивают об очереди, объясни достижимое заметное сокращение "
+            "задержек без гарантии полного исчезновения и назови несколько "
+            "релевантных именно названному узкому месту рычагов, а не только "
+            "один способ идентификации. Никогда не спрашивай повторно то, что "
+            "уже прямо указано в текущем вопросе.\n"
         )
 
     return build

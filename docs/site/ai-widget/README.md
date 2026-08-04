@@ -45,6 +45,8 @@ MAX outbox и отдельный Mac Studio gateway. Production cutover и ко�
     приёмка, включая первую заявку и MAX delivery evidence.
 12. `AI_WIDGET_LATENCY_QUALITY_V1_20260728.md` — диагностика задержек,
     отклонение небезопасной 8B-модели и локальный hardening candidate.
+13. `WIDGET_RESPONSE_KNOWLEDGE_V1.md` — утверждённые сравнительные ориентиры
+    для идентификации, очередей, гостевого доступа и первичного подбора.
 
 Изолированный повторный тест запускается через
 `scripts/ai_widget_cascade_v3_adapter.py`. Адаптер:

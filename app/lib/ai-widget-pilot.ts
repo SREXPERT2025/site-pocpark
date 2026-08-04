@@ -9,10 +9,17 @@ export type AiWidgetChatMessage = {
   content: string;
 };
 
+export type AiWidgetPageContext = {
+  landingVariant: 'parkovka' | 'puzzle2';
+  selectedProblem?: string;
+  selectedFunctions?: string[];
+};
+
 export type AiWidgetChatPayload = {
   sessionId: string;
   turnId: string;
   sourcePage: string;
+  pageContext?: AiWidgetPageContext;
   messages: AiWidgetChatMessage[];
 };
 
@@ -103,6 +110,59 @@ function cleanText(value: unknown, maxLength: number): string | null {
   return cleaned;
 }
 
+const PARKOVKA_PROBLEMS = new Set([
+  'Закрыть въезд для посторонних',
+  'Открывать по номеру машины',
+  'Убрать ручные пропуска',
+  'Принимать оплату',
+  'Обойтись без билетов',
+  'Заменить старую систему',
+]);
+
+const PUZZLE2_FUNCTIONS = new Set([
+  'Закрыть въезд',
+  'Въезд по госномеру',
+  'Карты доступа',
+  'Билеты для посетителей',
+  'Оплата парковки',
+  'Доступ для гостей',
+  'Сотрудники и гости',
+  'Заменить старую систему',
+]);
+
+function validatePageContext(
+  value: unknown,
+  sourcePage: string,
+): AiWidgetPageContext | null | false {
+  if (value === undefined) return null;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const context = value as Record<string, unknown>;
+  if (context.landingVariant === 'parkovka') {
+    if (sourcePage !== '/parkovka') return false;
+    const selectedProblem = cleanText(context.selectedProblem, 120);
+    if (!selectedProblem || !PARKOVKA_PROBLEMS.has(selectedProblem)) return false;
+    if (context.selectedFunctions !== undefined) return false;
+    return { landingVariant: 'parkovka', selectedProblem };
+  }
+  if (context.landingVariant === 'puzzle2') {
+    if (!['/puzzle2', '/parkovka-pod-klyuch'].includes(sourcePage)) return false;
+    if (context.selectedProblem !== undefined) return false;
+    if (!Array.isArray(context.selectedFunctions)) return false;
+    const selectedFunctions = context.selectedFunctions.map((item) => (
+      cleanText(item, 120)
+    ));
+    if (
+      selectedFunctions.some((item) => !item || !PUZZLE2_FUNCTIONS.has(item))
+      || selectedFunctions.length > 8
+    ) return false;
+    return {
+      landingVariant: 'puzzle2',
+      selectedFunctions: selectedFunctions as string[],
+    };
+  }
+  return false;
+}
+
 export function validateAiWidgetChatPayload(
   value: unknown,
 ): AiWidgetValidationResult {
@@ -123,6 +183,10 @@ export function validateAiWidgetChatPayload(
   const sourcePage = cleanText(body.sourcePage, 240);
   if (!sourcePage || !sourcePage.startsWith('/') || sourcePage.startsWith('//')) {
     return { ok: false, code: 'INVALID_SOURCE_PAGE' };
+  }
+  const pageContext = validatePageContext(body.pageContext, sourcePage);
+  if (pageContext === false) {
+    return { ok: false, code: 'INVALID_PAGE_CONTEXT' };
   }
   if (
     !Array.isArray(body.messages)
@@ -156,6 +220,7 @@ export function validateAiWidgetChatPayload(
       sessionId,
       turnId,
       sourcePage,
+      ...(pageContext ? { pageContext } : {}),
       messages,
     },
   };
