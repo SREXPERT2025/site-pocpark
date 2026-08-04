@@ -7,6 +7,8 @@ import {
   readAnalyticsConsent,
   saveAnalyticsConsent,
   ANALYTICS_CONSENT_OPEN_EVENT,
+  ANALYTICS_CONSENT_SETTINGS_HASH,
+  isAnalyticsConsentSettingsHash,
   type AnalyticsConsentValue,
 } from '@/app/lib/analytics-consent';
 
@@ -17,15 +19,25 @@ export default function CookieBanner() {
   useEffect(() => {
     const savedConsent = readAnalyticsConsent();
 
-    if (savedConsent !== 'accepted' && savedConsent !== 'declined') {
+    if (
+      (savedConsent !== 'accepted' && savedConsent !== 'declined')
+      || isAnalyticsConsentSettingsHash(window.location.hash)
+    ) {
       setIsVisible(true);
     }
 
     const openSettings = () => setIsVisible(true);
+    const openSettingsFromHash = () => {
+      if (isAnalyticsConsentSettingsHash(window.location.hash)) {
+        setIsVisible(true);
+      }
+    };
     window.addEventListener(ANALYTICS_CONSENT_OPEN_EVENT, openSettings);
+    window.addEventListener('hashchange', openSettingsFromHash);
 
     return () => {
       window.removeEventListener(ANALYTICS_CONSENT_OPEN_EVENT, openSettings);
+      window.removeEventListener('hashchange', openSettingsFromHash);
     };
   }, []);
 
@@ -33,6 +45,14 @@ export default function CookieBanner() {
     const previousConsent = readAnalyticsConsent();
     saveAnalyticsConsent(value);
     setIsVisible(false);
+
+    if (isAnalyticsConsentSettingsHash(window.location.hash)) {
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `${window.location.pathname}${window.location.search}`,
+      );
+    }
 
     if (previousConsent === 'accepted' && value === 'declined') {
       window.location.reload();

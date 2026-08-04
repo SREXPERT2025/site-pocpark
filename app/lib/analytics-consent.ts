@@ -1,8 +1,13 @@
 export const ANALYTICS_CONSENT_STORAGE_KEY = 'rospark_cookie_consent';
 export const ANALYTICS_CONSENT_CHANGE_EVENT = 'rospark:analytics_consent_change';
 export const ANALYTICS_CONSENT_OPEN_EVENT = 'rospark:analytics_consent_open';
+export const ANALYTICS_CONSENT_SETTINGS_HASH = '#cookie-settings';
 
 export type AnalyticsConsentValue = 'accepted' | 'declined';
+
+export function isAnalyticsConsentSettingsHash(hash: string) {
+  return hash === ANALYTICS_CONSENT_SETTINGS_HASH;
+}
 
 export function readAnalyticsConsent(): AnalyticsConsentValue | null {
   if (typeof window === 'undefined') return null;

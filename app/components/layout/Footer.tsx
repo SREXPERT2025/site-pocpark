@@ -4,7 +4,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { getMainNav, getSolutionsFooterLinks } from '@/app/lib/navigation';
-import { ANALYTICS_CONSENT_OPEN_EVENT } from '@/app/lib/analytics-consent';
+import {
+  ANALYTICS_CONSENT_OPEN_EVENT,
+  ANALYTICS_CONSENT_SETTINGS_HASH,
+} from '@/app/lib/analytics-consent';
 import LandingEntryLink from '@/app/components/landing/LandingEntryLink';
 
 export default function Footer() {
@@ -129,8 +132,8 @@ export default function Footer() {
               </Link>
             </li>
             <li>
-              <button
-                type="button"
+              <a
+                href={ANALYTICS_CONSENT_SETTINGS_HASH}
                 onClick={() => {
                   window.dispatchEvent(
                     new Event(ANALYTICS_CONSENT_OPEN_EVENT),
@@ -139,7 +142,7 @@ export default function Footer() {
                 className="text-left text-sm text-neutral-600 hover:text-neutral-900"
               >
                 Настройки cookie
-              </button>
+              </a>
             </li>
           </ul>
         </div>

@@ -66,6 +66,10 @@ const analytics = loadTypeScriptModule('app/lib/analytics-events.ts', {
 const googleAnalytics = loadTypeScriptModule('app/lib/google-analytics.ts');
 const metrika = loadTypeScriptModule('app/lib/yandex-metrika.ts');
 
+assert.equal(consent.ANALYTICS_CONSENT_SETTINGS_HASH, '#cookie-settings');
+assert.equal(consent.isAnalyticsConsentSettingsHash('#cookie-settings'), true);
+assert.equal(consent.isAnalyticsConsentSettingsHash('#other'), false);
+
 analytics.dispatchDemoEvent('demo_scenario_view', {
   demo_name: 'guest_request_portal',
 });
