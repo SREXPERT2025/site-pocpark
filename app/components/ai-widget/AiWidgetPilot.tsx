@@ -22,7 +22,10 @@ import {
   dispatchAiPromoEvent,
   type AiPromoEventParams,
 } from '@/app/lib/analytics-events';
-import { AI_WIDGET_MAX_MESSAGE_LENGTH } from '@/app/lib/ai-widget-pilot';
+import {
+  AI_WIDGET_MAX_MESSAGE_LENGTH,
+  aiWidgetPageContextFromAttribution,
+} from '@/app/lib/ai-widget-pilot';
 import { aiWidgetMessageParts } from '@/app/lib/ai-widget-links';
 
 type UiMessage = {
@@ -643,6 +646,9 @@ export default function AiWidgetPilot() {
     setIsSending(true);
     const controller = new AbortController();
     abortRef.current = controller;
+    const pageContext = aiWidgetPageContextFromAttribution(
+      promoAttributionRef.current,
+    );
 
     try {
       const response = await fetch('/api/ai-widget/chat', {
@@ -652,17 +658,7 @@ export default function AiWidgetPilot() {
           sessionId: sessionId(),
           turnId: userMessage.id,
           sourcePage: pathname,
-          ...(promoAttributionRef.current ? {
-            pageContext: {
-              landingVariant: promoAttributionRef.current.landing_variant,
-              ...(promoAttributionRef.current.selected_problem ? {
-                selectedProblem: promoAttributionRef.current.selected_problem,
-              } : {}),
-              ...(promoAttributionRef.current.selected_functions ? {
-                selectedFunctions: promoAttributionRef.current.selected_functions,
-              } : {}),
-            },
-          } : {}),
+          ...(pageContext ? { pageContext } : {}),
           messages: modelHistory.map(({ role, content: messageContent }) => ({
             role,
             content: messageContent,

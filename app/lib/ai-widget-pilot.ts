@@ -15,6 +15,32 @@ export type AiWidgetPageContext = {
   selectedFunctions?: string[];
 };
 
+type AiWidgetAttributionContext = {
+  landing_variant?: 'parkovka' | 'puzzle2';
+  selected_problem?: string;
+  selected_functions?: string[];
+};
+
+export function aiWidgetPageContextFromAttribution(
+  attribution: AiWidgetAttributionContext | null,
+): AiWidgetPageContext | undefined {
+  if (attribution?.landing_variant === 'parkovka') {
+    return {
+      landingVariant: 'parkovka',
+      ...(attribution.selected_problem ? {
+        selectedProblem: attribution.selected_problem,
+      } : {}),
+    };
+  }
+  if (attribution?.landing_variant === 'puzzle2') {
+    return {
+      landingVariant: 'puzzle2',
+      selectedFunctions: attribution.selected_functions ?? [],
+    };
+  }
+  return undefined;
+}
+
 export type AiWidgetChatPayload = {
   sessionId: string;
   turnId: string;

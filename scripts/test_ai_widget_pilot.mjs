@@ -3,6 +3,7 @@ import {
   aiWidgetHandoffMode,
   aiWidgetEnabled,
   aiWidgetOriginAllowed,
+  aiWidgetPageContextFromAttribution,
   aiWidgetPilotEnabled,
   aiWidgetRuntimeMode,
   requireAiWidgetGatewayUrl,
@@ -84,6 +85,45 @@ assert.equal(aiWidgetHandoffMode({
   AI_WIDGET_HANDOFF_MODE: 'test',
 }), 'off');
 assert.equal(aiWidgetHandoffMode({}), 'off');
+
+assert.equal(
+  aiWidgetPageContextFromAttribution({
+    source_section: 'floating_launcher',
+  }),
+  undefined,
+);
+assert.deepEqual(
+  aiWidgetPageContextFromAttribution({
+    landing_variant: 'parkovka',
+  }),
+  { landingVariant: 'parkovka' },
+);
+assert.deepEqual(
+  aiWidgetPageContextFromAttribution({
+    landing_variant: 'parkovka',
+    selected_problem: 'Открывать по номеру машины',
+  }),
+  {
+    landingVariant: 'parkovka',
+    selectedProblem: 'Открывать по номеру машины',
+  },
+);
+assert.deepEqual(
+  aiWidgetPageContextFromAttribution({
+    landing_variant: 'puzzle2',
+  }),
+  { landingVariant: 'puzzle2', selectedFunctions: [] },
+);
+assert.deepEqual(
+  aiWidgetPageContextFromAttribution({
+    landing_variant: 'puzzle2',
+    selected_functions: ['Въезд по госномеру', 'Доступ для гостей'],
+  }),
+  {
+    landingVariant: 'puzzle2',
+    selectedFunctions: ['Въезд по госномеру', 'Доступ для гостей'],
+  },
+);
 
 assert.equal(
   requireLoopbackGatewayUrl('http://127.0.0.1:4317/'),

@@ -30,7 +30,7 @@ assert.deepEqual(
   ],
 );
 
-const nowMs = Date.UTC(2026, 6, 28, 9, 0, 0);
+const nowMs = Date.now();
 const sessionId = 'session-20260728-test-0001';
 const turnId = 'turn-20260728-test-0000001';
 const requestId = 'request-20260728-test-0001';
