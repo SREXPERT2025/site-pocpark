@@ -748,6 +748,8 @@ Implementation remains gated by a fresh post-release Google/Yandex query slice
 and source-backed entity data; no mass metadata edits are authorized yet.
 The first local candidate removes inherited/template and filesystem dates while
 preserving source-backed ISO dates; it is verified but not published.
+The source-status inventory for remaining entity fields is recorded in
+`docs/site/GEO_ENTITY_SOURCE_LEDGER_20260805.md`.
 
 - добавить Breadcrumb/FAQ JSON-LD на динамические страницы возможностей;
 - добавить уместную Service-разметку на коммерческие страницы;
