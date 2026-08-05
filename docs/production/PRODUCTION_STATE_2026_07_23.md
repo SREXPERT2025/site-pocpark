@@ -19,7 +19,7 @@ PM2, SQLite или зависимости.
   GA4, подтверждения доставки MAX, два рекламных лендинга, site-wide
   AI-аналитика, VPS-часть контекста AI и исправление отправки вопросов с
   обычных страниц успешно выпущены.
-- Release SHA: `a736baff6d024b44aa8aa181515975b3f4dedf28`.
+- Release SHA: `2f8b2b2b914f7c24c03e2693ccf3e036e1a68d44`.
 - Production branch: `release/demo-production-ready-20260723`.
 - Отдельный production gateway Mac Studio работает из release
   `80ffd254003eb45c0026db0598c83a0f6d5e830c`; это не изменение SHA сайта на
@@ -178,6 +178,23 @@ PM2, SQLite или зависимости.
   `/root/rospark-backups/seo-indexing-a736baf-20260805T041634Z`;
 - hot rollback:
   `/var/www/rospark-release-builds/next-hot-0c2b931-20260805T041634Z`;
+- релиз не создавал лиды и не отправлял сообщения в MAX.
+
+## Индексируемый режим лендингов от 2026-08-05
+
+- production fast-forward:
+  `a736baff6d024b44aa8aa181515975b3f4dedf28` →
+  `2f8b2b2b914f7c24c03e2693ccf3e036e1a68d44`;
+- `/parkovka` и `/parkovka-pod-klyuch` отдают `index, follow`, корректные
+  self-canonical и присутствуют в sitemap;
+- staging, production build и три post-release проверки завершились успешно;
+- PM2 `rospark-site` остался `online`;
+- backup:
+  `/root/rospark-backups/landing-index-2f8b2b2-20260805T061207Z`;
+- hot rollback:
+  `/var/www/rospark-release-builds/next-hot-a736baf-20260805T061207Z`;
+- актуальный sitemap повторно отправлен в Google Search Console и поставлен на
+  переобход в Яндекс Вебмастере;
 - релиз не создавал лиды и не отправлял сообщения в MAX.
 
 ## Отдельный AI gateway release от 2026-07-28
