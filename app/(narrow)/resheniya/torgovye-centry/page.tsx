@@ -5,6 +5,7 @@ import AnswerFirst from '@/app/components/content/AnswerFirst';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
+import RelatedCaseStudies from '@/app/components/content/RelatedCaseStudies';
 import SolutionVisual from '@/app/components/content/SolutionVisual';
 import LeadForm from '@/app/components/forms/LeadForm';
 import { canonicalUrl } from '@/app/config/site-url';
@@ -156,6 +157,36 @@ export default function TorgovyeCentresPage() {
           </div>
         </div>
       </section>
+
+      <RelatedCaseStudies
+        description="Примеры объектов, где РОСПАРК решает задачи высокого трафика, оплаты, льгот и разделения потоков посетителей."
+        items={[
+          {
+            title: 'Фудмолл «Депо. Три вокзала»',
+            description:
+              'Управление высоким трафиком и снижение очередей в часы пик.',
+            href: '/keysy/depo3vokzala',
+            coverImage: '/images/cases/depo3vokzala-cover.jpg',
+            category: 'Торговый центр',
+          },
+          {
+            title: 'ТЦ «Горизонт», Ростов',
+            description:
+              'Управление трафиком, интеграция скидок от арендаторов и снижение заторов.',
+            href: '/keysy/gorizont-rostov',
+            coverImage: '/images/cases/gorisont-rostov-cover.jpg',
+            category: 'Торговый центр',
+          },
+          {
+            title: 'Супермаркет «EUROSPAR», Чертановская',
+            description:
+              'Интеграция с приложением, въезд по QR-коду и оплата картой на выезде.',
+            href: '/keysy/spar-chertanovskaya',
+            coverImage: '/images/cases/spar-chertanovskaya-cover.jpg',
+            category: 'Торговый центр',
+          },
+        ]}
+      />
 
       <section className="py-16 bg-blue-600 text-white">
         <div className="container mx-auto max-w-6xl min-w-0 px-4">

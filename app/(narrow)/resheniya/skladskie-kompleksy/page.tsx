@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
+import RelatedCaseStudies from '@/app/components/content/RelatedCaseStudies';
 import SolutionVisual from '@/app/components/content/SolutionVisual';
 import LeadForm from '@/app/components/forms/LeadForm';
 import { canonicalUrl } from '@/app/config/site-url';
@@ -261,6 +262,21 @@ export default function WarehouseSolutionsPage() {
           </ul>
         </div>
       </section>
+
+      <RelatedCaseStudies
+        title="Выполненный объект со складским трафиком"
+        description="Пример автоматизации КПП с грузовым и легковым транспортом, заявками арендаторов и контролем финансовых операций."
+        items={[
+          {
+            title: 'Складской комплекс «Элма-Курьяново»',
+            description:
+              'Управление грузовым трафиком, электронные заявки арендаторов и контроль проездов.',
+            href: '/keysy/elma-kuryanovo',
+            coverImage: '/images/cases/elma-kuryanovo-cover.jpg',
+            category: 'Складской комплекс',
+          },
+        ]}
+      />
 
       <section className="border-y bg-slate-50 py-12">
         <div className="container mx-auto max-w-6xl min-w-0 px-4">

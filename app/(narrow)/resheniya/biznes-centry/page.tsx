@@ -5,6 +5,7 @@ import AnswerFirst from '@/app/components/content/AnswerFirst';
 import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import ExtendedInfo from '@/app/components/content/ExtendedInfo';
 import FaqJsonLd from '@/app/components/content/FaqJsonLd';
+import RelatedCaseStudies from '@/app/components/content/RelatedCaseStudies';
 import SolutionVisual from '@/app/components/content/SolutionVisual';
 import DemoCommercialCallout from '@/app/components/demo/DemoCommercialCallout';
 import LeadForm from '@/app/components/forms/LeadForm';
@@ -160,6 +161,28 @@ export default function BiznesCentresPage() {
           </div>
         </div>
       </section>
+
+      <RelatedCaseStudies
+        description="Примеры объектов с гостевыми потоками, постоянными пользователями, платным проездом и разными правилами доступа."
+        items={[
+          {
+            title: 'Мосфильм',
+            description:
+              'Управление спецтранспортом, гостевыми потоками и режимным контролем доступа.',
+            href: '/keysy/mosflim',
+            coverImage: '/images/cases/mosfilm-cover.jpg',
+            category: 'Бизнес-центр',
+          },
+          {
+            title: 'БЦ «Рябовская мануфактура»',
+            description:
+              'Доступ арендаторов, карточная система и безналичная оплата на выезде.',
+            href: '/keysy/ryabovskaya-manufaktura',
+            coverImage: '/images/cases/ryabovskaya-manufaktura.webp',
+            category: 'Бизнес-центр',
+          },
+        ]}
+      />
 
       <section className="py-16 bg-blue-600 text-white">
         <div className="container mx-auto px-4 max-w-6xl">
