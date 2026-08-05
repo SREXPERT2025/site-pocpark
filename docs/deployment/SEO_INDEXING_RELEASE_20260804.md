@@ -1,7 +1,8 @@
 # РОСПАРК — release packet SEO-INDEXING-002
 
 Дата подготовки: 2026-08-04  
-Статус: локальный кандидат, production не изменён
+Дата выпуска: 2026-08-05
+Статус: опубликован и принят в production
 
 ## Цель
 
@@ -38,7 +39,7 @@
 
 ## Production acceptance
 
-Проверять только после отдельного разрешения на релиз:
+Выполнено после отдельного разрешения на релиз:
 
 1. `200` и точное содержимое verification-файла;
 2. `200` sitemap и наличие обоих лендингов;
@@ -49,9 +50,26 @@
 6. PM2 online, Nginx active, timers active;
 7. `LEADS_CREATED=0`, `MAX_MESSAGES_SENT=0`.
 
-После acceptance подтвердить property в Яндекс Вебмастере. Проверку
-исправления товарной разметки в Google запускать после того, как публичный HTML
-подтверждён и Search Console увидит обновлённые страницы.
+Результат:
+
+- production SHA:
+  `a736baff6d024b44aa8aa181515975b3f4dedf28`;
+- transient service завершилась с `Result=success`, `ExecMainStatus=0`;
+- PM2 `rospark-site` остался `online`;
+- публичный sitemap содержит 80 URL, включая `/parkovka` и
+  `/parkovka-pod-klyuch`;
+- verification-файл Яндекса отвечает `200`;
+- карточка оборудования и каталог публикуют информационную разметку без
+  фиктивных Product/Offer;
+- три страницы решений и шесть связанных кейсов прошли HTTPS acceptance;
+- сохранены backup
+  `/root/rospark-backups/seo-indexing-a736baf-20260805T041634Z` и hot rollback
+  `/var/www/rospark-release-builds/next-hot-0c2b931-20260805T041634Z`;
+- `LEADS_CREATED=0`, `MAX_MESSAGES_SENT=0`.
+
+Read-only контроль кабинетов 2026-08-05 вынесен в
+`docs/site/SEO_POST_RELEASE_CHECK_20260805.md`. Подтверждение URL-prefix
+property Яндекса и ручные запросы переиндексации не выполнялись.
 
 ## Rollback
 

@@ -7,6 +7,18 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-08-05 — production SEO indexing release `a736baf`
+
+- общий пакет `SEO-INDEXING-002` опубликован поверх `0c2b931`;
+- публичный sitemap расширен до 80 URL и содержит оба утверждённых лендинга;
+- опубликован HTML verification-файл дополнительной property Яндекса;
+- убрана неподтверждённая заявка на Product/Merchant rich results без цен,
+  отзывов и рейтингов;
+- шесть кейсов связаны с релевантными страницами решений;
+- staging, HTTPS acceptance и no-send gate прошли успешно;
+- PM2 остался `online`, backup и hot rollback сохранены;
+- `LEADS_CREATED=0`, `MAX_MESSAGES_SENT=0`.
+
 ## 2026-08-04 — подготовлен общий SEO-кандидат `SEO-INDEXING-002`
 
 - добавлен HTML verification-файл для дополнительной URL-prefix property

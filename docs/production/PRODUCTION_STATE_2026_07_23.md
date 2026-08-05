@@ -1,6 +1,6 @@
 # РОСПАРК: состояние Production Release v1
 
-Дата последней сверки: 4 августа 2026 года.
+Дата последней сверки: 5 августа 2026 года.
 
 ## Статус документа
 
@@ -19,7 +19,7 @@ PM2, SQLite или зависимости.
   GA4, подтверждения доставки MAX, два рекламных лендинга, site-wide
   AI-аналитика, VPS-часть контекста AI и исправление отправки вопросов с
   обычных страниц успешно выпущены.
-- Release SHA: `0c2b9310016f3f044a2d544c6c4aac2dd3a236e2`.
+- Release SHA: `a736baff6d024b44aa8aa181515975b3f4dedf28`.
 - Production branch: `release/demo-production-ready-20260723`.
 - Отдельный production gateway Mac Studio работает из release
   `80ffd254003eb45c0026db0598c83a0f6d5e830c`; это не изменение SHA сайта на
@@ -157,6 +157,26 @@ PM2, SQLite или зависимости.
   доступность `/demo` и кейса `/keysy/amaks-otel-kazan`;
 - контроль не создавал лиды и не отправлял сообщения в MAX;
 - backup и горячая откатная сборка сохранены на VPS.
+
+## SEO indexing release от 2026-08-05
+
+- production fast-forward:
+  `0c2b9310016f3f044a2d544c6c4aac2dd3a236e2` →
+  `a736baff6d024b44aa8aa181515975b3f4dedf28`;
+- опубликован HTML verification-файл дополнительной URL-prefix property
+  Яндекса;
+- `/parkovka` и `/parkovka-pod-klyuch` включены в публичный sitemap;
+- страницы оборудования сохраняют информационную разметку без неподтверждённых
+  Product/Offer, цен, рейтингов и отзывов;
+- страницы решений получили естественные ссылки на шесть подтверждённых
+  кейсов;
+- staging и публичный HTTPS acceptance прошли успешно, PM2 остался `online`;
+- публичный sitemap содержит 80 URL, verification-файл отвечает `200`;
+- backup:
+  `/root/rospark-backups/seo-indexing-a736baf-20260805T041634Z`;
+- hot rollback:
+  `/var/www/rospark-release-builds/next-hot-0c2b931-20260805T041634Z`;
+- релиз не создавал лиды и не отправлял сообщения в MAX.
 
 ## Отдельный AI gateway release от 2026-07-28
 
