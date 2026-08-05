@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import ServiceJsonLd from '@/app/components/content/ServiceJsonLd';
 import { canonicalUrl } from '@/app/config/site-url';
 import {
   landingIndexable,
@@ -38,4 +39,16 @@ export function generateMetadata(): Metadata {
   };
 }
 
-export default PuzzlePage;
+export default function TurnkeyParkingPage() {
+  return (
+    <>
+      <ServiceJsonLd
+        name="Парковка под ключ"
+        description="Подбор и запуск парковочной системы РОСПАРК: оборудование, программное обеспечение, монтаж и поддержка."
+        serviceType="Парковочная система под ключ"
+        url="/parkovka-pod-klyuch"
+      />
+      <PuzzlePage />
+    </>
+  );
+}

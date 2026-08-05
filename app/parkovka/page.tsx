@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import ServiceJsonLd from '@/app/components/content/ServiceJsonLd';
 import { canonicalUrl } from '@/app/config/site-url';
 import {
   landingIndexable,
@@ -26,14 +27,22 @@ export function generateMetadata(): Metadata {
 export default function ParkovkaPage() {
   const runtimeMode = landingRuntimeMode();
   return (
-    <main id="main-content" className="parkovka-shell">
-      {runtimeMode === 'preview' ? (
-        <aside className="parkovka-preview-status">
-          Тестовый предпросмотр: форма лендинга не отправляет и не сохраняет
-          данные.
-        </aside>
-      ) : null}
-      <ParkovkaExperience runtimeMode={runtimeMode} />
-    </main>
+    <>
+      <ServiceJsonLd
+        name="Организация въезда и парковки под задачу объекта"
+        description="Подбор решения РОСПАРК для въезда и парковки: шлагбаумы, распознавание номеров, билеты, карты, оплата и контроль."
+        serviceType="Автоматизация парковки"
+        url="/parkovka"
+      />
+      <main id="main-content" className="parkovka-shell">
+        {runtimeMode === 'preview' ? (
+          <aside className="parkovka-preview-status">
+            Тестовый предпросмотр: форма лендинга не отправляет и не сохраняет
+            данные.
+          </aside>
+        ) : null}
+        <ParkovkaExperience runtimeMode={runtimeMode} />
+      </main>
+    </>
   );
 }

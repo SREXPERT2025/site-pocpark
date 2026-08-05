@@ -25,6 +25,7 @@
     "landing-production:configure": "node scripts/configure_landing_production_env.mjs",
     "landing-production:check": "node scripts/check_landing_release_readiness.mjs",
     "test:landing-production-env": "node scripts/test_configure_landing_production_env.mjs",
+    "test:parkovka-assets": "node scripts/test_parkovka_assets.mjs",
     "lead-admin:hash-password": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/hash_lead_admin_password.mjs",
     "lead-outbox:process": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/process_lead_outbox.mjs",
     "lead-registry:cleanup": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/cleanup_lead_registry.mjs",

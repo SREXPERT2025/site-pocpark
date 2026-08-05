@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import LandingCtaTracker from '@/app/components/analytics/LandingCtaTracker';
+import FaqJsonLd from '@/app/components/content/FaqJsonLd';
 import { canonicalUrl } from '@/app/config/site-url';
 import {
   landingIndexable,
@@ -140,7 +141,9 @@ function PuzzleIcon() {
 export default function PuzzlePage() {
   const runtimeMode = landingRuntimeMode();
   return (
-    <main id="main-content" className="puzzle-landing puzzle2-landing">
+    <>
+      <FaqJsonLd items={faq} />
+      <main id="main-content" className="puzzle-landing puzzle2-landing">
       <section className="puzzle-hero" id="top">
         <div className="hero-grid">
           <div className="hero-copy">
@@ -463,6 +466,7 @@ export default function PuzzlePage() {
           />
         </div>
       </section>
-    </main>
+      </main>
+    </>
   );
 }
