@@ -19,7 +19,7 @@ PM2, SQLite или зависимости.
   GA4, подтверждения доставки MAX, два рекламных лендинга, site-wide
   AI-аналитика, VPS-часть контекста AI и исправление отправки вопросов с
   обычных страниц успешно выпущены.
-- Release SHA: `c57887f81f53408d273e3b978184c68e09e06c1a`.
+- Release SHA: `1351b9334ef9e5a6017b4852783dd70e40d94c71`.
 - Production branch: `release/demo-production-ready-20260723`.
 - Отдельный production gateway Mac Studio работает из release
   `80ffd254003eb45c0026db0598c83a0f6d5e830c`; это не изменение SHA сайта на
@@ -234,6 +234,26 @@ PM2, SQLite или зависимости.
 - `LEADS_CREATED=0`, `MAX_MESSAGES_SENT=0`, outbox и три SQLite не изменены;
 - немедленный read-only GA4-срез после выпуска ещё показывает 0 недавних
   событий; повторная проверка назначена после стандартного окна обработки.
+
+## GEO content dates и Hero performance release от 2026-08-05
+
+- production fast-forward:
+  `2fc363e07404b3e880c200f5baca6a34dc45b0ac` →
+  `1351b9334ef9e5a6017b4852783dd70e40d94c71`;
+- удалена унаследованная из шаблона дата `2025-12-21` у 30 кейсов;
+- filesystem mtime больше не публикуется как редакционная дата; sitemap
+  содержит 11 подтверждённых `lastmod`;
+- главная использует версионное Hero-видео размером `1 764 574` байта вместо
+  прежнего файла около 12 МБ;
+- публичная доставка видео подтверждена по HTTPS: корректный SHA256 и
+  `Cache-Control: public, max-age=31536000, immutable`;
+- страницы, Service/FAQ schema, sitemap, редакционные даты и контрольные WebP
+  прошли публичный acceptance;
+- backup:
+  `/root/rospark-backups/seo-geo-perf-1351b93-20260805T091751Z`;
+- hot rollback:
+  `/var/www/rospark-release-builds/next-hot-2fc363e-20260805T091751Z`;
+- `LEADS_CREATED=0`, `MAX_MESSAGES_SENT=0`, PM2 `rospark-site` — `online`.
 
 ## Отдельный AI gateway release от 2026-07-28
 

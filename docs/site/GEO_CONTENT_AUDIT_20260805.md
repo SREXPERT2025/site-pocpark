@@ -1,7 +1,7 @@
 # GEO/content audit after SEO analytics release
 
 Date: 2026-08-05  
-Production baseline: `2fc363e07404b3e880c200f5baca6a34dc45b0ac`
+Production baseline: `1351b9334ef9e5a6017b4852783dd70e40d94c71`
 
 ## Scope and boundary
 
@@ -83,9 +83,9 @@ search engines as an editorial update date. Missing entity and date fields must
 remain absent until supported by a source; they must not be inferred or generated
 for schema completeness.
 
-## Local correction candidate
+## Published correction
 
-A local, non-production candidate now:
+Production release `1351b93` now:
 
 - removes the inherited `2025-12-21` value from all 30 cases;
 - stops using filesystem mtime as a public editorial-date fallback;
@@ -99,7 +99,9 @@ URLs, no longer contains the template date, and contains 11 source-backed
 `lastmod` values. The audited article retains `dateModified: 2026-07-08`; the
 audited case correctly omits `dateModified` until a source-backed value exists.
 
-This candidate is not published and does not change the production baseline.
+Public HTTPS acceptance confirmed the 80-URL sitemap, 11 source-backed
+`lastmod` values, the retained article update date and omission of an
+unsupported case date. The release created no leads and sent no MAX messages.
 
 ## Recommended implementation package: `GEO-CONTENT-001`
 
