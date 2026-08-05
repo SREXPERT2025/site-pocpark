@@ -8,6 +8,8 @@ const previewOnlyRoutes = [
   '/v4-2',
 ];
 
+const canonicalProductionOrigin = 'https://www.xn--80aukedde.xn--p1ai';
+
 export function middleware(request: NextRequest) {
   if (process.env.ROSPARK_LANDING_RUNTIME_MODE !== 'production') {
     return NextResponse.next();
@@ -22,6 +24,12 @@ export function middleware(request: NextRequest) {
       /^\/puzzle2(?=\/|$)/,
       '/parkovka-pod-klyuch',
     );
+    return NextResponse.redirect(destination, 308);
+  }
+
+  if (request.nextUrl.pathname === '/mobile/index.html') {
+    const destination = new URL('/', canonicalProductionOrigin);
+    destination.search = request.nextUrl.search;
     return NextResponse.redirect(destination, 308);
   }
 
@@ -48,5 +56,6 @@ export const config = {
     '/v4-1/:path*',
     '/v4-2/:path*',
     '/puzzle2/:path*',
+    '/mobile/index.html',
   ],
 };
