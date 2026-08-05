@@ -746,6 +746,8 @@ sitemap с 80 URL.
 Read-only audit recorded in `docs/site/GEO_CONTENT_AUDIT_20260805.md`.
 Implementation remains gated by a fresh post-release Google/Yandex query slice
 and source-backed entity data; no mass metadata edits are authorized yet.
+The first local candidate removes inherited/template and filesystem dates while
+preserving source-backed ISO dates; it is verified but not published.
 
 - добавить Breadcrumb/FAQ JSON-LD на динамические страницы возможностей;
 - добавить уместную Service-разметку на коммерческие страницы;

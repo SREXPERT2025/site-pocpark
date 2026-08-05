@@ -74,10 +74,32 @@ Repository inventory on 2026-08-05:
 - the content parser falls back to filesystem mtime when an explicit editorial
   date is absent.
 
+Git history confirms that the identical `2025-12-21` value in all 30 case files
+was inherited from `content/keysy/primer-proekta.md`; it is not evidence that all
+30 case pages were edited on that date.
+
 Filesystem mtime is a build/deployment property and must not be presented to
 search engines as an editorial update date. Missing entity and date fields must
 remain absent until supported by a source; they must not be inferred or generated
 for schema completeness.
+
+## Local correction candidate
+
+A local, non-production candidate now:
+
+- removes the inherited `2025-12-21` value from all 30 cases;
+- stops using filesystem mtime as a public editorial-date fallback;
+- normalizes valid explicit dates to stable ISO values;
+- omits invalid or absent dates from sitemap and JSON-LD;
+- adds a regression test for missing, valid, and invalid editorial dates.
+
+Candidate verification: dedicated test passed, TypeScript passed, ESLint passed,
+and the production build generated all 116 pages. The built sitemap still has 80
+URLs, no longer contains the template date, and contains 11 source-backed
+`lastmod` values. The audited article retains `dateModified: 2026-07-08`; the
+audited case correctly omits `dateModified` until a source-backed value exists.
+
+This candidate is not published and does not change the production baseline.
 
 ## Recommended implementation package: `GEO-CONTENT-001`
 

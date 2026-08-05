@@ -140,6 +140,24 @@ function normalizeString(v: any): string | undefined {
   return s ? s : undefined;
 }
 
+function normalizeEditorialDate(v: unknown): string | undefined {
+  if (v === null || v === undefined || v === '') return undefined;
+
+  if (v instanceof Date) {
+    return Number.isNaN(v.getTime()) ? undefined : v.toISOString().slice(0, 10);
+  }
+
+  const value = String(v).trim();
+  if (!value) return undefined;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const timestamp = Date.parse(`${value}T00:00:00Z`);
+    return Number.isNaN(timestamp) ? undefined : value;
+  }
+
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? undefined : new Date(timestamp).toISOString();
+}
+
 export function isPublishedContent(data: unknown): boolean {
   if (!data || typeof data !== 'object') return true;
   return normalizeString((data as Record<string, unknown>).status)?.toLowerCase() !== 'draft';
@@ -262,10 +280,9 @@ export function getAllContentMeta(section: string): ContentMeta[] {
 
     if (!isPublishedContent(fm)) return [];
 
-    const lastModified =
-      normalizeString(fm.lastModified) ||
-      normalizeString(fm.date) ||
-      fs.statSync(filePath).mtime.toISOString();
+    // Only explicit editorial dates may be exposed in sitemap/schema/UI.
+    // Filesystem mtime changes during checkout/build and is not content evidence.
+    const lastModified = normalizeEditorialDate(fm.lastModified) || normalizeEditorialDate(fm.date);
 
     const meta: ContentMeta = {
       slug,
@@ -306,10 +323,8 @@ export function getContentBySlug<T = Record<string, any>>(
 
   const html = marked.parse(content) as string;
 
-  const lastModified =
-    normalizeString(fm.lastModified) ||
-    normalizeString(fm.date) ||
-    fs.statSync(filePath).mtime.toISOString();
+  // Do not turn checkout/build time into a public editorial date.
+  const lastModified = normalizeEditorialDate(fm.lastModified) || normalizeEditorialDate(fm.date);
 
   const answerFirst = normalizeAnswerFirst(fm.answerFirst ?? fm.answer_first);
   const doc: any = {
@@ -370,10 +385,8 @@ export function getExtendedContentBySlug(
 
   const html = marked.parse(content) as string;
 
-  const lastModified =
-    normalizeString(fm.lastModified) ||
-    normalizeString(fm.date) ||
-    fs.statSync(filePath).mtime.toISOString();
+  // Extended content follows the same source-backed editorial-date rule.
+  const lastModified = normalizeEditorialDate(fm.lastModified) || normalizeEditorialDate(fm.date);
 
   const doc: ContentDoc = {
     slug,
