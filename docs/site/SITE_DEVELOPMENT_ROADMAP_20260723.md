@@ -25,6 +25,12 @@ Hero-видео главной. Следующий этап — дождатьс
 Текущий контентный backlog:
 `docs/site/CONTENT_SEO_GEO_BACKLOG_20260723.md`.
 
+Послерелизный контроль и evidence gate:
+
+- `docs/site/SEO_GEO_MEASUREMENT_MATRIX_20260805.md`;
+- `docs/site/GEO_CONTENT_SOURCE_INPUT_20260805.md`;
+- `docs/site/GEO_ENTITY_SOURCE_LEDGER_20260805.md`.
+
 Production, публикация контента, изменение инфраструктуры, подключение внешних
 сервисов и реальные отправки выполняются только после отдельного подтверждения.
 
