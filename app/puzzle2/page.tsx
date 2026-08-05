@@ -196,7 +196,6 @@ export default function PuzzlePage() {
               fill
               sizes="(max-width: 900px) 100vw, 52vw"
               priority
-              unoptimized
             />
             <figcaption>
               <PuzzleIcon />
@@ -218,7 +217,6 @@ export default function PuzzlePage() {
             alt="Световой маршрут между въездной стойкой, оплатой и выездной стойкой РОСПАРК"
             fill
             sizes="100vw"
-            unoptimized
           />
           <span className="image-shade" />
         </div>
@@ -291,7 +289,6 @@ export default function PuzzlePage() {
             alt="Въездная стойка РОСПАРК на объекте"
             fill
             sizes="(max-width: 800px) 100vw, 46vw"
-            unoptimized
           />
         </div>
         <div className="delivery-copy">
@@ -330,7 +327,6 @@ export default function PuzzlePage() {
             height={1152}
             sizes="100vw"
             style={{ width: '100%', height: 'auto' }}
-            unoptimized
           />
         </div>
         <div className="equipment-grid">
@@ -340,7 +336,6 @@ export default function PuzzlePage() {
               alt="Въездная стойка РОСПАРК Премиум"
               fill
               sizes="(max-width: 640px) 100vw, 33vw"
-              unoptimized
             />
             <figcaption>
               <span>01</span>
@@ -353,7 +348,6 @@ export default function PuzzlePage() {
               alt="Кассовый терминал РОСПАРК Премиум"
               fill
               sizes="(max-width: 640px) 100vw, 33vw"
-              unoptimized
             />
             <figcaption>
               <span>02</span>
@@ -366,7 +360,6 @@ export default function PuzzlePage() {
               alt="Выездная стойка РОСПАРК на объекте"
               fill
               sizes="(max-width: 640px) 100vw, 33vw"
-              unoptimized
             />
             <figcaption>
               <span>03</span>
@@ -396,7 +389,6 @@ export default function PuzzlePage() {
                 alt={`Проект РОСПАРК — ${project.title}`}
                 fill
                 sizes="(max-width: 640px) 100vw, 33vw"
-                unoptimized
               />
               <span className="project-overlay" />
               <span className="project-copy">
@@ -462,7 +454,6 @@ export default function PuzzlePage() {
             alt=""
             fill
             sizes="(max-width: 800px) 100vw, 48vw"
-            unoptimized
           />
         </div>
       </section>
