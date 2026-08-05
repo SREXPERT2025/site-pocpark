@@ -743,6 +743,10 @@ sitemap с 80 URL.
 
 ### GEO-CONTENT-001
 
+Read-only audit recorded in `docs/site/GEO_CONTENT_AUDIT_20260805.md`.
+Implementation remains gated by a fresh post-release Google/Yandex query slice
+and source-backed entity data; no mass metadata edits are authorized yet.
+
 - добавить Breadcrumb/FAQ JSON-LD на динамические страницы возможностей;
 - добавить уместную Service-разметку на коммерческие страницы;
 - добавить собственные metadata/canonical юридическим страницам;
