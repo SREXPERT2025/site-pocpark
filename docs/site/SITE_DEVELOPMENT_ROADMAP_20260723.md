@@ -2,7 +2,7 @@
 
 Дата актуализации: 2026-08-05
 База аудита и текущий production release:
-`2f8b2b2b914f7c24c03e2693ccf3e036e1a68d44`
+`c57887f81f53408d273e3b978184c68e09e06c1a`
 Production-ветка: `release/demo-production-ready-20260723`
 Статус: текущий источник правды после выпуска двух рекламных лендингов,
 site-wide AI-аналитики, SEO baseline, AI context hotfix и объединённого
@@ -10,7 +10,10 @@ site-wide AI-аналитики, SEO baseline, AI context hotfix и объеди
 повторно отправлен в Google Search Console и поставлен на переобход в Яндекс
 Вебмастере 2026-08-05. Следующий этап — дождаться переобработки, проверить
 поступление событий двух лендингов и выполнить первый безопасный
-performance/GEO-пакет без новых контентных страниц.
+performance/GEO-пакет без новых контентных страниц опубликован. Следующий
+накопительный кандидат — responsive image delivery страницы «Парковка под
+ключ», подтверждение AI-аналитики и новый срез поисковых кабинетов после
+переобхода.
 
 Предыдущие планы сохранены как исторические документы:
 
@@ -33,7 +36,7 @@ Production, публикация контента, изменение инфра
 - основной сайт и Demo Release v1 опубликованы;
 - production работает под Node.js 22 и Next.js 14.2.35;
 - reverse proxy — Nginx;
-- release SHA сайта — `2f8b2b2b914f7c24c03e2693ccf3e036e1a68d44`;
+- release SHA сайта — `c57887f81f53408d273e3b978184c68e09e06c1a`;
 - `/`, `/demo`, `/demo/gostevaya-zayavka`, `/demo/web-skidki` и
   `/demo/vladelec-parkovki` отвечают `200`;
 - `robots.txt` открыт для обхода и содержит ссылку на sitemap;
@@ -844,24 +847,27 @@ production-зависимостей уровня high, включая прямы
    baseline.
 4. `ANALYTICS-001-D / LANDING-GROWTH-002` — подтвердить события GA4/Метрики и
    начать сопоставимое измерение двух лендингов, форм и AI-воронки.
-5. `SEO-PERF-GEO-001` — первый кандидат: WebP для тяжёлых изображений
-   `/parkovka`, Service JSON-LD для двух утверждённых лендингов и FAQ JSON-LD
-   для видимого FAQ страницы «Парковка под ключ»; после публикации повторить
-   Lighthouse и проверку сгенерированного JSON-LD.
-6. `GEO-CONTENT-001` — по результатам baseline исправить entity/schema,
+5. `SEO-PERF-GEO-001` — опубликован в `c57887f`: WebP тяжёлых изображений
+   `/parkovka`, Service JSON-LD двух утверждённых лендингов и FAQ JSON-LD
+   страницы «Парковка под ключ»; публичные Lighthouse и JSON-LD проверены.
+6. `SEO-PERF-GEO-002` — локально подготовить responsive Next Image для
+   `/parkovka-pod-klyuch`, подтвердить мобильную компоновку и включить в
+   следующий накопительный release только вместе с актуальным SEO/analytics
+   срезом.
+7. `GEO-CONTENT-001` — по результатам baseline исправить entity/schema,
    provenance, кейсы и answer-first блоки на уже имеющих спрос страницах.
-7. `CONTENT-SEO-GEO-PACK-001` — выбрать максимум три материала по данным
+8. `CONTENT-SEO-GEO-PACK-001` — выбрать максимум три материала по данным
    поисковых кабинетов, диалогов и отдела продаж; публикация отдельно.
-8. `LEAD-OPS-002 / DEMO-GROWTH-001 / CONTENT-DEMO-001` — завершены как
+9. `LEAD-OPS-002 / DEMO-GROWTH-001 / CONTENT-DEMO-001` — завершены как
    разработка; вести эксплуатационный мониторинг очереди, SLA, retention,
    demo/quiz и опубликованных статей.
-9. `CRM-INTEGRATION-001` — discovery и последующая интеграция заявок с
+10. `CRM-INTEGRATION-001` — discovery и последующая интеграция заявок с
    действующей amoCRM; до настройки сайт сохраняет собственный реестр.
-10. `PERFORMANCE-002` — измерить production CWV, затем оптимизировать самые
+11. `PERFORMANCE-002` — измерить production CWV, затем оптимизировать самые
    тяжёлые hero/video/assets и cache headers.
-11. `CONTENT-INTELLIGENCE-001` — ручной, затем локальный approval-gated runner.
-12. `PROD-DATA-OPS` — отложен; вернуть перед крупным production-изменением.
-13. `SECURITY-RELEASE-2` — перенесённый этап зависимостей; вернуть раньше при
+12. `CONTENT-INTELLIGENCE-001` — ручной, затем локальный approval-gated runner.
+13. `PROD-DATA-OPS` — отложен; вернуть перед крупным production-изменением.
+14. `SECURITY-RELEASE-2` — перенесённый этап зависимостей; вернуть раньше при
    активном росте трафика или новом high/critical finding.
 
 Режим накопительного релиза, подтверждённый 2026-07-27:

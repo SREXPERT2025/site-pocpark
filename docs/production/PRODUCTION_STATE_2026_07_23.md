@@ -19,7 +19,7 @@ PM2, SQLite или зависимости.
   GA4, подтверждения доставки MAX, два рекламных лендинга, site-wide
   AI-аналитика, VPS-часть контекста AI и исправление отправки вопросов с
   обычных страниц успешно выпущены.
-- Release SHA: `2f8b2b2b914f7c24c03e2693ccf3e036e1a68d44`.
+- Release SHA: `c57887f81f53408d273e3b978184c68e09e06c1a`.
 - Production branch: `release/demo-production-ready-20260723`.
 - Отдельный production gateway Mac Studio работает из release
   `80ffd254003eb45c0026db0598c83a0f6d5e830c`; это не изменение SHA сайта на
@@ -195,6 +195,24 @@ PM2, SQLite или зависимости.
   `/var/www/rospark-release-builds/next-hot-a736baf-20260805T061207Z`;
 - актуальный sitemap повторно отправлен в Google Search Console и поставлен на
   переобход в Яндекс Вебмастере;
+- релиз не создавал лиды и не отправлял сообщения в MAX.
+
+## SEO performance и GEO release от 2026-08-05
+
+- production fast-forward:
+  `2f8b2b2b914f7c24c03e2693ccf3e036e1a68d44` →
+  `c57887f81f53408d273e3b978184c68e09e06c1a`;
+- 13 тяжёлых PNG/JPG лендинга `/parkovka` заменены на проверенные WebP;
+- опубликованы Service JSON-LD двух утверждённых лендингов и FAQ JSON-LD
+  видимого FAQ страницы `/parkovka-pod-klyuch`;
+- публичные HTTPS, canonical, robots, JSON-LD и WebP-проверки прошли;
+- Lighthouse mobile после выпуска: `/parkovka` — performance 92, SEO 100,
+  около 967 КБ; `/parkovka-pod-klyuch` — performance 93, SEO 100, около
+  589 КБ;
+- backup:
+  `/root/rospark-backups/seo-perf-geo-c57887f-20260805T070347Z`;
+- hot rollback:
+  `/var/www/rospark-release-builds/next-hot-2f8b2b2-20260805T070347Z`;
 - релиз не создавал лиды и не отправлял сообщения в MAX.
 
 ## Отдельный AI gateway release от 2026-07-28

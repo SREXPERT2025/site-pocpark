@@ -7,6 +7,25 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-08-05 — responsive image candidate для `/parkovka-pod-klyuch`
+
+- все девять изображений страницы переведены с исходной доставки на
+  адаптивный Next Image `srcset` без изменения визуальной композиции;
+- проверены desktop 1440 px и mobile 390 px: горизонтального переполнения нет;
+- локальный Lighthouse уменьшил переданный объём примерно с 589 КБ до 399 КБ;
+- добавлен regression-test, запрещающий возврат `unoptimized` на странице;
+- кандидат подготовлен локально и production пока не изменяет.
+
+## 2026-08-05 — production `SEO-PERF-GEO-001` (`c57887f`)
+
+- ранее подготовленные WebP, Service JSON-LD и FAQ JSON-LD опубликованы;
+- публичные HTTPS, canonical, robots, JSON-LD и WebP-проверки пройдены;
+- Lighthouse mobile после выпуска: `/parkovka` — performance 92, SEO 100,
+  около 967 КБ; `/parkovka-pod-klyuch` — performance 93, SEO 100, около
+  589 КБ;
+- PM2 остался `online`, backup и hot rollback сохранены;
+- `LEADS_CREATED=0`, `MAX_MESSAGES_SENT=0`.
+
 ## 2026-08-05 — подготовлен кандидат `SEO-PERF-GEO-001`
 
 - 13 используемых на `/parkovka` PNG/JPG заменены ссылками на визуально
