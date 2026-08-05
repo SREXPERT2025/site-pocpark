@@ -784,6 +784,10 @@ The source-status inventory for remaining entity fields is recorded in
 - измерить LCP/CLS/INP на production;
 - не удалять master-файлы без отдельного решения.
 
+Локальный кандидат главного видео готов: 12,0 → 1,76 МБ, SSIM 0,98,
+версионный URL и точечный immutable cache; оригинал сохранён, production не
+изменён.
+
 ## 7. P2 — публичный MAX
 
 Разделять:

@@ -15,11 +15,12 @@ export default function Hero() {
       <div className="absolute inset-0 overflow-hidden">
         <video
           className="h-full w-full object-cover scale-[1.02] animate-heroZoom"
-          src="/hero.mp4"
+          src="/hero-v2-20260805.mp4"
           autoPlay
           muted
           loop
           playsInline
+          preload="metadata"
         />
 
         {/* Overlay: базовый затемняющий слой */}

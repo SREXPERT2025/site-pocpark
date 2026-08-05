@@ -17,6 +17,10 @@ const nextConfig = {
       { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive, nosnippet' },
     ];
     return [
+      {
+        source: '/hero-v2-20260805.mp4',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
       { source: '/admin/:path*', headers: privateHeaders },
       { source: '/api/admin/:path*', headers: privateHeaders },
     ];
