@@ -594,6 +594,8 @@ const googleReplayWindow = {
   ],
 };
 
+const googleCommand = (value) => Array.from(value);
+
 assert.equal(
   googleAnalytics.flushGoogleAnalyticsEventsFromDataLayer(
     googleReplayWindow,
@@ -613,7 +615,14 @@ assert.equal(
   2,
   'GA4 commands must not be mixed into the provider-neutral source dataLayer',
 );
-assert.deepEqual(googleReplayWindow.rosparkGoogleDataLayer[0], [
+assert.equal(
+  Object.prototype.toString.call(
+    googleReplayWindow.rosparkGoogleDataLayer[0],
+  ),
+  '[object Arguments]',
+  'GA4 commands must use the native Arguments envelope from the official gtag snippet',
+);
+assert.deepEqual(googleCommand(googleReplayWindow.rosparkGoogleDataLayer[0]), [
   'event',
   'rospark_demo_scenario_view',
   { demo_name: 'guest_request_portal' },
@@ -642,7 +651,7 @@ assert.equal(
   appendedScripts[1].src,
   'https://www.googletagmanager.com/gtag/js?id=G-ABC123DEF4&l=rosparkGoogleDataLayer',
 );
-assert.deepEqual(googleAnalyticsWindow.rosparkGoogleDataLayer[0], [
+assert.deepEqual(googleCommand(googleAnalyticsWindow.rosparkGoogleDataLayer[0]), [
   'consent',
   'default',
   {
@@ -657,7 +666,7 @@ assert.equal(
   googleAnalyticsWindow.rosparkGoogleDataLayer[1][1] instanceof Date,
   true,
 );
-assert.deepEqual(googleAnalyticsWindow.rosparkGoogleDataLayer[2], [
+assert.deepEqual(googleCommand(googleAnalyticsWindow.rosparkGoogleDataLayer[2]), [
   'config',
   googleMeasurementId,
   {
@@ -672,7 +681,7 @@ googleAnalytics.sendGoogleAnalyticsPageView(
   'https://www.xn--80aukedde.xn--p1ai/demo',
   '/demo',
 );
-assert.deepEqual(googleAnalyticsWindow.rosparkGoogleDataLayer[3], [
+assert.deepEqual(googleCommand(googleAnalyticsWindow.rosparkGoogleDataLayer[3]), [
   'event',
   'page_view',
   {

@@ -96,8 +96,11 @@ function ensureGoogleTagQueue(browserWindow: GoogleAnalyticsWindow) {
     : [];
   browserWindow.rosparkGoogleDataLayer = dataLayer;
 
-  const gtag: GoogleTagCommand = (...args: unknown[]) => {
-    dataLayer.push(args);
+  const gtag: GoogleTagCommand = function (..._args: unknown[]) {
+    // gtag.js expects the native Arguments object used by Google's official
+    // snippet. A plain Array looks equivalent in unit tests but is not the
+    // documented command envelope consumed by the external tag runtime.
+    dataLayer.push(arguments);
   };
 
   browserWindow.gtag = gtag;
