@@ -1,6 +1,6 @@
 # РОСПАРК — post-release SEO и analytics check
 
-Дата: 2026-08-05  
+Дата: 2026-08-05
 Режим: read-only, без ручной переиндексации, лидов и сообщений в MAX
 
 ## Production
