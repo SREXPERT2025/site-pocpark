@@ -215,6 +215,26 @@ PM2, SQLite или зависимости.
   `/var/www/rospark-release-builds/next-hot-2f8b2b2-20260805T070347Z`;
 - релиз не создавал лиды и не отправлял сообщения в MAX.
 
+## SEO analytics и responsive-image release от 2026-08-05
+
+- production fast-forward:
+  `c57887f81f53408d273e3b978184c68e09e06c1a` →
+  `2fc363e07404b3e880c200f5baca6a34dc45b0ac`;
+- responsive Next Image включён для девяти изображений
+  `/parkovka-pod-klyuch`; проверены `srcset` и отсутствие horizontal overflow;
+- опубликован native `Arguments` envelope официального контракта `gtag.js`;
+- `/mobile/index.html` отвечает постоянным `308` на каноническую главную с
+  сохранением query string; `/to.html` и `/overviews.html` остаются `404`;
+- staging Node.js 22, production build `116/116`, HTTPS и AI runtime status
+  прошли; PM2 `rospark-site` — `online`;
+- backup:
+  `/root/rospark-backups/seo-analytics-2fc363e-20260805T081519Z`;
+- hot rollback:
+  `/var/www/rospark-release-builds/next-hot-c57887f-20260805T081519Z`;
+- `LEADS_CREATED=0`, `MAX_MESSAGES_SENT=0`, outbox и три SQLite не изменены;
+- немедленный read-only GA4-срез после выпуска ещё показывает 0 недавних
+  событий; повторная проверка назначена после стандартного окна обработки.
+
 ## Отдельный AI gateway release от 2026-07-28
 
 - production LaunchAgent

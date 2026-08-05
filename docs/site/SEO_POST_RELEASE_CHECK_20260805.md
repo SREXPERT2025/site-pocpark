@@ -125,7 +125,7 @@ SEO 69 у обеих посадочных вызван не качеством m
   `c57887f81f53408d273e3b978184c68e09e06c1a`; публичные HTTPS-проверки,
   canonical, robots и JSON-LD пройдены.
 
-## Post-release Lighthouse и следующий локальный кандидат
+## Post-release Lighthouse и responsive-image release
 
 Lighthouse 13.4.1, mobile simulated throttling, production HTTPS после
 `c57887f`:
@@ -139,9 +139,23 @@ Lighthouse 13.4.1, mobile simulated throttling, production HTTPS после
 5,70 МБ до 0,97 МБ. LCP остался около 3,2 с; следующий резерв — не структура
 страницы, а доставка оставшихся изображений и общий клиентский JavaScript.
 
-Локально подготовлено включение responsive Next Image для всех девяти
-изображений `/parkovka-pod-klyuch`. Проверка при 1440 и 390 px подтвердила
+В production SHA `2fc363e` опубликовано включение responsive Next Image для
+всех девяти изображений `/parkovka-pod-klyuch`. Проверка при 1440 и 390 px подтвердила
 адаптивный `srcset`, отсутствие горизонтального переполнения и сохранение
 компоновки. Локальный Lighthouse показал 399 КБ вместо 589 КБ; аудит больше не
-предлагает экономию image delivery. Этот следующий кандидат production пока не
-изменяет.
+предлагает экономию image delivery.
+
+В тот же накопительный release вошли native GA4 command envelope и постоянный
+308 `/mobile/index.html` на каноническую главную с сохранением query string.
+Публичный HTTPS smoke, read-only AI status, SQLite quick check и no-send gate
+пройдены; создано 0 лидов и отправлено 0 сообщений в MAX.
+
+Немедленный read-only срез GA4 после выпуска показывает:
+
+- `rospark_ai_lead_handoff` отмечен как key event;
+- недавних событий пока 0;
+- для key events всё ещё показано «Поток данных не обнаружен»;
+- интерфейс GA4 указывает, что стандартный отчёт может обновляться до 24 часов.
+
+Следующая проверка — после окна обработки, без искусственной заявки или
+контрольного сообщения AI.
