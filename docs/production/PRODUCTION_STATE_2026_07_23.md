@@ -172,6 +172,8 @@ PM2, SQLite или зависимости.
   кейсов;
 - staging и публичный HTTPS acceptance прошли успешно, PM2 остался `online`;
 - публичный sitemap содержит 80 URL, verification-файл отвечает `200`;
+- дополнительная URL-prefix property Яндекса подтверждена 2026-08-05 через
+  этот HTML-файл; `rospark.adver` получил роль «Владелец»;
 - backup:
   `/root/rospark-backups/seo-indexing-a736baf-20260805T041634Z`;
 - hot rollback:
