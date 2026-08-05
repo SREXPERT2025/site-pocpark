@@ -21,7 +21,7 @@ function value(contents, key) {
 const env = readFileSync(envPath, 'utf8');
 const expected = new Map([
   ['ROSPARK_LANDING_RUNTIME_MODE', 'production'],
-  ['ROSPARK_LANDING_INDEXABLE', 'false'],
+  ['ROSPARK_LANDING_INDEXABLE', 'true'],
   ['NEXT_PUBLIC_GOOGLE_ANALYTICS_ID', 'G-3Z9KNN3MMK'],
   ['NEXT_PUBLIC_YANDEX_METRIKA_ID', '110980303'],
   ['LEAD_REGISTRY_ENABLED', 'true'],

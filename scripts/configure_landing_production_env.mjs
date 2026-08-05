@@ -46,7 +46,7 @@ for (const [key, expected] of requiredCurrent) {
 
 const values = new Map([
   ['ROSPARK_LANDING_RUNTIME_MODE', 'production'],
-  ['ROSPARK_LANDING_INDEXABLE', 'false'],
+  ['ROSPARK_LANDING_INDEXABLE', 'true'],
   ['NEXT_PUBLIC_GOOGLE_ANALYTICS_ID', 'G-3Z9KNN3MMK'],
   ['NEXT_PUBLIC_YANDEX_METRIKA_ID', '110980303'],
 ]);
@@ -86,6 +86,5 @@ chmodSync(targetPath, 0o600);
 process.stdout.write(`${JSON.stringify({
   backupPath,
   updatedKeys: Array.from(values.keys()),
-  indexable: false,
+  indexable: true,
 })}\n`);
-

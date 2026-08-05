@@ -34,7 +34,7 @@ const result = JSON.parse(output);
 const configured = readFileSync(envFile, 'utf8');
 
 assert.match(configured, /^ROSPARK_LANDING_RUNTIME_MODE=production$/m);
-assert.match(configured, /^ROSPARK_LANDING_INDEXABLE=false$/m);
+assert.match(configured, /^ROSPARK_LANDING_INDEXABLE=true$/m);
 assert.match(configured, /^NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=G-3Z9KNN3MMK$/m);
 assert.match(configured, /^NEXT_PUBLIC_YANDEX_METRIKA_ID=110980303$/m);
 assert.match(configured, /^KEEP_ME=safe$/m);
@@ -52,4 +52,3 @@ execFileSync(
 );
 
 process.stdout.write('landing production env checks: OK\n');
-
