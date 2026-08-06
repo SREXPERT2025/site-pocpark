@@ -1,7 +1,8 @@
 # GEO entity source ledger
 
-Date: 2026-08-05  
-Status: local inventory, not production data
+Date: 2026-08-05
+Owner confirmation updated: 2026-08-06
+Status: approved local source inventory; not production state
 
 ## Rule
 
@@ -12,6 +13,7 @@ date, author, or official external profile.
 
 Statuses:
 
+- `CONFIRMED_OWNER`: explicitly confirmed by the company owner for public use;
 - `CONFIRMED_INTERNAL`: stated explicitly in the current approved case/article;
 - `CANDIDATE`: strongly suggested by the title or slug, requires confirmation;
 - `BLOCKED`: no acceptable source exists in the repository.
@@ -29,8 +31,13 @@ not normalized:
 - sports complexes, business centres, warehouses, retail, hotels, and residential
   objects need separate stable values.
 
-Status: `CONFIRMED_INTERNAL` for the visible category, `CANDIDATE` for a new
-normalized `objectType` value.
+The owner has now confirmed normalized object types for the first priority
+package: shopping/entertainment centre, supermarket, hotel/pension, sports
+complex, business centre, warehouse/industrial complex and film studio.
+`Мосфильм` must be corrected from `Бизнес-центр` to `Киноконцерн/киностудия`.
+
+Status: `CONFIRMED_OWNER` for the priority package; remaining case taxonomy is
+still `CANDIDATE`.
 
 ### City and region
 
@@ -52,7 +59,14 @@ Names such as Пресня, Рассказовка, Чертановская, Д
 Ярославское шоссе and Курьяново identify areas/streets but must not be converted
 to `city: Москва` without an explicit source.
 
-Status: `CANDIDATE`; no city or region values are authorized for publication yet.
+The owner confirmed city/region and public names for the first priority package:
+Moscow, Kazan/Republic of Tatarstan, Sochi/Krasnodar Krai,
+Rostov-on-Don/Rostov Region, Saransk/Republic of Mordovia and
+Murmansk/Murmansk Region. The exact per-case values and approved wording are
+recorded in `GEO_CONTENT_SOURCE_INPUT_20260805.md`.
+
+Status: priority package values are `CONFIRMED_OWNER`; remaining city and region
+values are still `CANDIDATE`.
 
 ### Equipment
 
@@ -63,53 +77,55 @@ ANPR, online payment, reports, and administration software. The vocabulary and
 per-case mapping still require review because some pages use broad claims or
 generic template language.
 
-Status: `CONFIRMED_INTERNAL` for the existing free text, `CANDIDATE` for normalized
-equipment identifiers.
+The owner reviewed the equipment and scenarios for the first priority package.
+Important corrections include project-only values for W-Plaza and cashless-only
+payment at `Элма-Курьяново`.
+
+Status: first priority package is `CONFIRMED_OWNER`; remaining mappings are
+`CANDIDATE`.
 
 ### Customer and project dates
 
-No case has a confirmed `customer`, `datePublished`, or verified editorial
-`dateModified` field. The former common `2025-12-21` value came from the template
-and is removed in the local candidate.
+Approved public object names are recorded for the first priority package. Case
+publication dates and verified editorial `dateModified` values are still not
+available; the former common `2025-12-21` value came from the template and must
+remain removed.
 
-Status: `BLOCKED` pending project-registry or editorial evidence.
+Status: public names for the priority package are `CONFIRMED_OWNER`; case dates
+remain `BLOCKED` and must be omitted.
 
 ## Article fields
 
 - 9 of 12 articles have an explicit update date; the remaining 3 correctly omit
   it in the local candidate.
-- No article has a confirmed original publication date.
-- No article has a confirmed human author or editor.
-- The site can continue to use the organization as publisher, but must not invent
-  a named author.
+- Original publication dates are confirmed from the first Git commit and owner
+  confirmation: five articles on 2026-07-06, four on 2026-07-08, and three on
+  2026-07-26.
+- The visible author is approved as `Команда РОСПАРК`; the legal publisher is
+  approved as ООО «СР Эксперт».
 
-Status: update dates `CONFIRMED_INTERNAL` where present; publication dates and
-authors `BLOCKED` pending editorial records.
+Status: publication dates, the organizational author, and publisher are
+`CONFIRMED_OWNER`; update dates are `CONFIRMED_INTERNAL` where present.
 
 ## Organization fields
 
 - Repository logo assets exist: `public/logo.svg`, `public/logo_black.svg`, and
   `public/logo.png` (600 x 160).
-- No canonical schema-logo decision is documented; the available PNG is a wide
-  wordmark rather than a square identity asset.
-- No approved official social/profile URLs suitable for `sameAs` are stored in
-  the repository.
+- The owner approved `public/logo.png` as the official schema logo on
+  2026-08-05.
+- The owner confirmed that official VK and RuTube profiles do not yet exist;
+  both are only planned. They must not be added to `sameAs`.
 - `NEXT_PUBLIC_TELEGRAM_CONTACT_URL` is only an optional contact environment
   variable and is not proof of an official entity profile.
 
-Status: `logo` and `sameAs` remain `BLOCKED` until brand/profile ownership is
-confirmed.
+Status: `logo` is `CONFIRMED_OWNER`; `sameAs` remains omitted until an official
+profile is created and its ownership is confirmed.
 
-## Required owner input
+## Remaining source gates
 
-One compact source package is enough to unblock the next phase:
-
-1. case/project registry with city, region, object type, and approved customer
-   naming;
-2. confirmed equipment list per priority case;
-3. editorial owner and original publication dates for priority articles;
-4. approved schema logo asset;
-5. official public profile URLs owned by РОСПАРК or ООО «СР Эксперт».
-
-Until those sources are supplied, the implementation must omit the fields rather
-than infer them.
+1. obtain current barrier passports after testing and OTK approval for technical
+   characteristics and compatibility claims;
+2. omit case publication/modification dates until editorial evidence exists;
+3. add `sameAs` only after official public profiles are created and ownership is
+   confirmed;
+4. keep all unreviewed case fields omitted rather than inferred.

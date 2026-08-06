@@ -752,8 +752,10 @@ sitemap с 80 URL.
 ### GEO-CONTENT-001
 
 Read-only audit recorded in `docs/site/GEO_CONTENT_AUDIT_20260805.md`.
-Implementation remains gated by a fresh post-release Google/Yandex query slice
-and source-backed entity data; no mass metadata edits are authorized yet.
+The first implementation package is now unblocked by owner-confirmed source data
+recorded in `docs/site/GEO_CONTENT_SOURCE_INPUT_20260805.md`; production
+publication remains a separate gate. No mass metadata edits outside the approved
+priority package are authorized.
 The first local candidate removes inherited/template and filesystem dates while
 preserving source-backed ISO dates; it is verified but not published.
 The source-status inventory for remaining entity fields is recorded in
@@ -767,6 +769,17 @@ The source-status inventory for remaining entity fields is recorded in
 - прекратить использовать filesystem mtime как редакционную дату sitemap;
 - добавить подтверждённые `logo` и `sameAs` в Organization;
 - проверять schema после каждого шаблонного изменения.
+
+Owner-confirmed scope on 2026-08-06:
+
+- all 12 article publication dates, author `Команда РОСПАРК`, publisher
+  ООО «СР Эксперт» and `/logo.png` are approved;
+- unavailable VK/RuTube profiles remain omitted from `sameAs`;
+- 11 priority cases have approved public names, entity fields, equipment and
+  result wording, including explicit corrections and restrictions for W-Plaza,
+  «Мосфильм», «Горизонт» and «Элма-Курьяново»;
+- barrier specifications and compatibility remain blocked pending engineer
+  passports with test and OTK evidence.
 
 ### CONTENT-INTELLIGENCE-001
 
@@ -795,6 +808,23 @@ The source-status inventory for remaining entity fields is recorded in
 Локальный кандидат главного видео готов: 12,0 → 1,76 МБ, SSIM 0,98,
 версионный URL и точечный immutable cache; оригинал сохранён, production не
 изменён.
+
+### LANDING-MOBILE-001 — мобильная адаптация блоков на главной
+
+Получена обратная связь клиента: два последних добавленных на главную страницу
+блока со входами в рекламные лендинги не адаптированы для мобильных экранов.
+
+Задача следующего UI-пакета:
+
+- определить оба фактических блока по DOM и визуальному порядку на production;
+- исправить переполнение, переносы, размеры изображений, CTA и вертикальные
+  интервалы без изменения согласованных смыслов;
+- проверить ширины 320, 375 и 390 px, а также desktop 1440 px;
+- проверить отсутствие горизонтальной прокрутки и перекрытия AI-виджетом;
+- выполнить локальную визуальную приёмку и отдельный production smoke после
+  включения в накопительный релиз.
+
+Статус: `PLANNED`, код главной страницы в рамках фиксации задачи не изменён.
 
 ## 7. P2 — публичный MAX
 
@@ -888,21 +918,24 @@ production-зависимостей уровня high, включая прямы
    `/parkovka-pod-klyuch`, native GA4 envelope и точечный 308
    `/mobile/index.html` с сохранением query string; HTTPS, AI status, БД и
    no-send gate пройдены.
-7. `GEO-CONTENT-001` — следующий разработческий блок: по результатам baseline
+7. `LANDING-MOBILE-001` — исправить мобильную адаптацию двух последних блоков
+   со входами в лендинги на главной; принять на 320/375/390 px и desktop до
+   включения в накопительный релиз.
+8. `GEO-CONTENT-001` — следующий контентный блок: по результатам baseline
    исправить entity/schema,
    provenance, кейсы и answer-first блоки на уже имеющих спрос страницах.
-8. `CONTENT-SEO-GEO-PACK-001` — выбрать максимум три материала по данным
+9. `CONTENT-SEO-GEO-PACK-001` — выбрать максимум три материала по данным
    поисковых кабинетов, диалогов и отдела продаж; публикация отдельно.
-9. `LEAD-OPS-002 / DEMO-GROWTH-001 / CONTENT-DEMO-001` — завершены как
+10. `LEAD-OPS-002 / DEMO-GROWTH-001 / CONTENT-DEMO-001` — завершены как
    разработка; вести эксплуатационный мониторинг очереди, SLA, retention,
    demo/quiz и опубликованных статей.
-10. `CRM-INTEGRATION-001` — discovery и последующая интеграция заявок с
+11. `CRM-INTEGRATION-001` — discovery и последующая интеграция заявок с
    действующей amoCRM; до настройки сайт сохраняет собственный реестр.
-11. `PERFORMANCE-002` — измерить production CWV, затем оптимизировать самые
+12. `PERFORMANCE-002` — измерить production CWV, затем оптимизировать самые
    тяжёлые hero/video/assets и cache headers.
-12. `CONTENT-INTELLIGENCE-001` — ручной, затем локальный approval-gated runner.
-13. `PROD-DATA-OPS` — отложен; вернуть перед крупным production-изменением.
-14. `SECURITY-RELEASE-2` — перенесённый этап зависимостей; вернуть раньше при
+13. `CONTENT-INTELLIGENCE-001` — ручной, затем локальный approval-gated runner.
+14. `PROD-DATA-OPS` — отложен; вернуть перед крупным production-изменением.
+15. `SECURITY-RELEASE-2` — перенесённый этап зависимостей; вернуть раньше при
    активном росте трафика или новом high/critical finding.
 
 Режим накопительного релиза, подтверждённый 2026-07-27:
