@@ -85,6 +85,7 @@ export type ContentMeta = {
   slug: string;
   title: string;
   description: string;
+  datePublished?: string;
   lastModified?: string;
 
   // витринные поля (опционально)
@@ -115,6 +116,10 @@ export type ContentDoc = ContentMeta & {
   downloads?: { title: string; url: string }[];
   customer?: string;
   industry?: string;
+  city?: string;
+  region?: string;
+  objectType?: string;
+  equipment?: string[];
   cta?: CtaItem;
   ctas?: CtaItem[];
   faq?: { question: string; answer: string }[];
@@ -282,12 +287,14 @@ export function getAllContentMeta(section: string): ContentMeta[] {
 
     // Only explicit editorial dates may be exposed in sitemap/schema/UI.
     // Filesystem mtime changes during checkout/build and is not content evidence.
+    const datePublished = normalizeEditorialDate(fm.datePublished);
     const lastModified = normalizeEditorialDate(fm.lastModified) || normalizeEditorialDate(fm.date);
 
     const meta: ContentMeta = {
       slug,
       title: String(fm.title ?? slug),
       description: String(fm.description ?? ''),
+      datePublished,
       lastModified,
       coverImage: normalizeString(fm.coverImage),
       coverImageAspect: normalizeString(fm.coverImageAspect),
@@ -324,6 +331,7 @@ export function getContentBySlug<T = Record<string, any>>(
   const html = marked.parse(content) as string;
 
   // Do not turn checkout/build time into a public editorial date.
+  const datePublished = normalizeEditorialDate(fm.datePublished);
   const lastModified = normalizeEditorialDate(fm.lastModified) || normalizeEditorialDate(fm.date);
 
   const answerFirst = normalizeAnswerFirst(fm.answerFirst ?? fm.answer_first);
@@ -331,6 +339,7 @@ export function getContentBySlug<T = Record<string, any>>(
     slug,
     title: String(fm.title ?? slug),
     description: String(fm.description ?? ''),
+    datePublished,
     lastModified,
     coverImage: normalizeString(fm.coverImage),
     coverImageAspect: normalizeString(fm.coverImageAspect),
@@ -354,6 +363,10 @@ export function getContentBySlug<T = Record<string, any>>(
     downloads: normalizeDownloads(fm.downloads),
     customer: normalizeString(fm.customer),
     industry: normalizeString(fm.industry),
+    city: normalizeString(fm.city),
+    region: normalizeString(fm.region),
+    objectType: normalizeString(fm.objectType),
+    equipment: normalizeStringArray(fm.equipment),
     cta: normalizeCta(fm.cta),
     ctas: normalizeCtas(fm.ctas),
     faq: normalizeFaq(fm.faq),

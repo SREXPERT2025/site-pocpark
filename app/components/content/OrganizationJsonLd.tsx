@@ -1,4 +1,4 @@
-import { getSiteUrl } from '@/app/config/site-url';
+import { absoluteUrl, getSiteUrl } from '@/app/config/site-url';
 
 function normalizeBaseUrl(baseUrl: string) {
   return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
@@ -17,6 +17,12 @@ export default function OrganizationJsonLd() {
     legalName: 'Общество с ограниченной ответственностью «СР Эксперт»',
     alternateName: 'ООО «СР Эксперт»',
     url: normalizeBaseUrl(siteUrl),
+    logo: {
+      '@type': 'ImageObject',
+      url: absoluteUrl('/logo.png'),
+      width: 600,
+      height: 160,
+    },
     telephone: '+74993212040',
     email: 'is@srexpert.su',
     taxID: '5040100635',

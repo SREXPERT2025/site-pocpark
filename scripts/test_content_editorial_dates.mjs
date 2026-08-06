@@ -21,6 +21,7 @@ try {
       '---',
       'title: With date',
       'description: Test',
+      'datePublished: 2026-07-26',
       'lastModified: 2026-08-05',
       '---',
       '',
@@ -44,11 +45,15 @@ try {
 
   const metaBySlug = new Map(getAllContentMeta('test').map((item) => [item.slug, item]));
   assert.equal(metaBySlug.get('without-date')?.lastModified, undefined);
+  assert.equal(metaBySlug.get('without-date')?.datePublished, undefined);
   assert.equal(metaBySlug.get('with-date')?.lastModified, '2026-08-05');
+  assert.equal(metaBySlug.get('with-date')?.datePublished, '2026-07-26');
   assert.equal(metaBySlug.get('with-invalid-date')?.lastModified, undefined);
 
   assert.equal(getContentBySlug('test', 'without-date')?.lastModified, undefined);
+  assert.equal(getContentBySlug('test', 'without-date')?.datePublished, undefined);
   assert.equal(getContentBySlug('test', 'with-date')?.lastModified, '2026-08-05');
+  assert.equal(getContentBySlug('test', 'with-date')?.datePublished, '2026-07-26');
   assert.equal(getContentBySlug('test', 'with-invalid-date')?.lastModified, undefined);
 } finally {
   process.chdir(originalCwd);

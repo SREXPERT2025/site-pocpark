@@ -45,6 +45,9 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
       description: article.description,
       url: canonicalUrl(`/stati/${params.slug}`),
       type: 'article',
+      publishedTime: article.datePublished,
+      modifiedTime: article.lastModified,
+      authors: ['Команда РОСПАРК'],
       images: article.coverImage ? [canonicalUrl(article.coverImage)] : undefined,
     },
   };
@@ -53,6 +56,10 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
 export default function ArticlePage({ params }: { params: { slug: string } }) {
   const article = getContentBySlug('stati', params.slug);
   if (!article) notFound();
+  if (!article.datePublished) {
+    throw new Error(`Article ${article.slug} is missing a source-backed datePublished`);
+  }
+  const publishedAt = formatArticleDate(article.datePublished);
   const updatedAt = formatArticleDate(article.lastModified);
 
   return (
@@ -69,6 +76,7 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         title={article.title}
         description={article.description}
         url={`/stati/${article.slug}`}
+        datePublished={article.datePublished}
         dateModified={article.lastModified}
         image={article.coverImage}
       />
@@ -89,9 +97,11 @@ export default function ArticlePage({ params }: { params: { slug: string } }) {
         cta={{ label: 'Обсудить проект', href: `/quiz?source=article-${article.slug}` }}
       />
 
-      {article.category || updatedAt ? (
+      {article.category || publishedAt || updatedAt ? (
         <div className="mx-auto mt-5 flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 text-sm text-text-secondary">
           {article.category ? <span className="font-medium text-text-primary">{article.category}</span> : null}
+          <span>Команда РОСПАРК</span>
+          {publishedAt ? <time dateTime={article.datePublished}>Опубликовано {publishedAt}</time> : null}
           {updatedAt ? <time dateTime={article.lastModified}>Обновлено {updatedAt}</time> : null}
         </div>
       ) : null}

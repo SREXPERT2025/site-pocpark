@@ -1,5 +1,6 @@
 ---
 title: "Отчётность владельца парковки: арендаторы, проезды и оплаты"
+datePublished: "2026-07-26"
 description: "Как организовать отчётность владельца парковки: сводка по арендаторам, гостевым заявкам, проездам, оплатам, журналу операций и отчётным периодам."
 coverImage: "/images/articles/otchetnost-vladelca-parkovki.webp"
 status: published

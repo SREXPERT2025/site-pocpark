@@ -84,7 +84,7 @@ Production, публикация контента, изменение инфра
 - canonical URL и metadata ключевых страниц;
 - хабы `/resheniya`, `/vozmozhnosti`, `/oborudovanie`, `/keysy` и `/stati`;
 - Organization, CaseStudy, Article, FAQ, Breadcrumb и ItemList JSON-LD;
-- 9 опубликованных статей;
+- 12 опубликованных статей;
 - 30 опубликованных кейсов;
 - 6 опубликованных страниц возможностей;
 - 8 опубликованных карточек оборудования;
@@ -752,10 +752,10 @@ sitemap с 80 URL.
 ### GEO-CONTENT-001
 
 Read-only audit recorded in `docs/site/GEO_CONTENT_AUDIT_20260805.md`.
-The first implementation package is now unblocked by owner-confirmed source data
-recorded in `docs/site/GEO_CONTENT_SOURCE_INPUT_20260805.md`; production
-publication remains a separate gate. No mass metadata edits outside the approved
-priority package are authorized.
+The first implementation package is now implemented locally from owner-confirmed
+source data recorded in `docs/site/GEO_CONTENT_SOURCE_INPUT_20260805.md`;
+production publication remains a separate gate. No mass metadata edits outside
+the approved priority package are authorized.
 The first local candidate removes inherited/template and filesystem dates while
 preserving source-backed ISO dates; it is verified but not published.
 The source-status inventory for remaining entity fields is recorded in
@@ -780,6 +780,20 @@ Owner-confirmed scope on 2026-08-06:
   «Мосфильм», «Горизонт» and «Элма-Курьяново»;
 - barrier specifications and compatibility remain blocked pending engineer
   passports with test and OTK evidence.
+
+Local candidate completed on 2026-08-06:
+
+- all 12 articles now expose source-backed `datePublished`, author
+  `Команда РОСПАРК` and legal publisher ООО «СР Эксперт»;
+- Organization JSON-LD uses the approved `/logo.png` and still omits unavailable
+  VK/RuTube profiles;
+- 11 priority cases now carry normalized public object name, city, region,
+  object type and equipment fields in CaseStudy JSON-LD;
+- corrected visible facts for AMAKS, «Горизонт», W-Plaza,
+  «Элма-Курьяново» and «Мосфильм»; W-Plaza remains explicitly an
+  uncommissioned project with expected, not achieved, results;
+- source-backed case dates remain omitted;
+- focused GEO tests, TypeScript, ESLint and the 116-page Node.js 22 build pass.
 
 ### CONTENT-INTELLIGENCE-001
 
@@ -824,7 +838,11 @@ Owner-confirmed scope on 2026-08-06:
 - выполнить локальную визуальную приёмку и отдельный production smoke после
   включения в накопительный релиз.
 
-Статус: `PLANNED`, код главной страницы в рамках фиксации задачи не изменён.
+Статус: `LOCAL_CANDIDATE_VERIFIED`. Две карточки `LandingChoiceSection`
+получили мобильные отступы, переносы, `min-width: 0`, компактную типографику и
+равномерное расположение CTA без изменения согласованных смыслов. Проверены
+320/375/390/1440 px: горизонтального переполнения нет, ширина карточек не
+превышает контейнер. Production smoke остаётся отдельным release gate.
 
 ## 7. P2 — публичный MAX
 
@@ -918,12 +936,11 @@ production-зависимостей уровня high, включая прямы
    `/parkovka-pod-klyuch`, native GA4 envelope и точечный 308
    `/mobile/index.html` с сохранением query string; HTTPS, AI status, БД и
    no-send gate пройдены.
-7. `LANDING-MOBILE-001` — исправить мобильную адаптацию двух последних блоков
-   со входами в лендинги на главной; принять на 320/375/390 px и desktop до
-   включения в накопительный релиз.
-8. `GEO-CONTENT-001` — следующий контентный блок: по результатам baseline
-   исправить entity/schema,
-   provenance, кейсы и answer-first блоки на уже имеющих спрос страницах.
+7. `LANDING-MOBILE-001` — локальный кандидат принят на 320/375/390/1440 px;
+   включить в накопительный релиз и выполнить отдельный production smoke.
+8. `GEO-CONTENT-001` — первый source-backed пакет локально готов; включить в
+   накопительный релиз, затем проверить публичный JSON-LD и видимый текст без
+   генерации лидов.
 9. `CONTENT-SEO-GEO-PACK-001` — выбрать максимум три материала по данным
    поисковых кабинетов, диалогов и отдела продаж; публикация отдельно.
 10. `LEAD-OPS-002 / DEMO-GROWTH-001 / CONTENT-DEMO-001` — завершены как

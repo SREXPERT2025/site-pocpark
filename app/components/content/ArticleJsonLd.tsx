@@ -4,6 +4,7 @@ export type ArticleJsonLdProps = {
   title: string;
   description: string;
   url: string;
+  datePublished: string;
   dateModified?: string;
   image?: string;
 };
@@ -20,6 +21,7 @@ export default function ArticleJsonLd({
   title,
   description,
   url,
+  datePublished,
   dateModified,
   image,
 }: ArticleJsonLdProps) {
@@ -30,17 +32,23 @@ export default function ArticleJsonLd({
     description,
     url: toAbsoluteUrl(url),
     mainEntityOfPage: toAbsoluteUrl(url),
+    datePublished,
     dateModified,
     image: image ? [toAbsoluteUrl(image)] : undefined,
     author: {
       '@type': 'Organization',
-      name: 'РОСПАРК',
+      name: 'Команда РОСПАРК',
       url: getSiteUrl(),
     },
     publisher: {
       '@type': 'Organization',
-      name: 'РОСПАРК',
+      name: 'ООО «СР Эксперт»',
+      alternateName: 'РОСПАРК',
       url: getSiteUrl(),
+      logo: {
+        '@type': 'ImageObject',
+        url: absoluteUrl('/logo.png'),
+      },
     },
   };
 

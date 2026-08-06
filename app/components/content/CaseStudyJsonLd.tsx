@@ -8,6 +8,11 @@ export type CaseStudyJsonLdProps = {
   image?: string;
   category?: string;
   tags?: string[];
+  customer?: string;
+  city?: string;
+  region?: string;
+  objectType?: string;
+  equipment?: string[];
   metrics?: { label: string; value: string }[];
 };
 
@@ -34,12 +39,23 @@ export default function CaseStudyJsonLd({
   image,
   category,
   tags,
+  customer,
+  city,
+  region,
+  objectType,
+  equipment,
   metrics,
 }: CaseStudyJsonLdProps) {
   const pageUrl = toAbsoluteUrl(url);
-  const about = [...(category ? [category] : []), ...(tags ?? [])]
+  const about = [
+    ...(customer ? [customer] : []),
+    ...(objectType ? [objectType] : []),
+    ...(category ? [category] : []),
+    ...(tags ?? []),
+    ...(equipment ?? []),
+  ]
     .map((item) => item.trim())
-    .filter(Boolean);
+    .filter((item, index, items) => Boolean(item) && items.indexOf(item) === index);
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -51,6 +67,18 @@ export default function CaseStudyJsonLd({
     mainEntityOfPage: pageUrl,
     dateModified: toIsoDate(dateModified),
     image: image ? [toAbsoluteUrl(image)] : undefined,
+    spatialCoverage:
+      city || region
+        ? {
+            '@type': 'Place',
+            address: {
+              '@type': 'PostalAddress',
+              addressLocality: city,
+              addressRegion: region,
+              addressCountry: 'RU',
+            },
+          }
+        : undefined,
     about: about.length
       ? about.map((name) => ({
           '@type': 'Thing',
@@ -60,11 +88,13 @@ export default function CaseStudyJsonLd({
     provider: {
       '@type': 'Organization',
       name: 'РОСПАРК',
+      legalName: 'ООО «СР Эксперт»',
       url: getSiteUrl(),
     },
     publisher: {
       '@type': 'Organization',
-      name: 'РОСПАРК',
+      name: 'ООО «СР Эксперт»',
+      alternateName: 'РОСПАРК',
       url: getSiteUrl(),
     },
     variableMeasured: metrics?.length

@@ -80,6 +80,9 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
 
   const faq = data.faq ?? [];
   const metrics = data.metrics ?? [];
+  const location = [data.city, data.region]
+    .filter((value, index, values) => Boolean(value) && values.indexOf(value) === index)
+    .join(', ');
 
   return (
     <div className="w-full px-0 sm:px-[20px] overflow-hidden">
@@ -98,6 +101,11 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
         image={data.coverImage}
         category={data.category}
         tags={data.tags}
+        customer={data.customer}
+        city={data.city}
+        region={data.region}
+        objectType={data.objectType}
+        equipment={data.equipment}
         metrics={metrics}
       />
       {faq.length > 0 && <FaqJsonLd items={faq} />}
@@ -113,6 +121,23 @@ export default function KeysyPage({ params }: { params: { slug: string } }) {
 
       {/* ВЕСЬ КОНТЕНТ (раньше был container) */}
       <section className="w-full px-4 sm:px-[20px] min-w-0">
+        {data.objectType || location ? (
+          <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3 text-sm">
+            {data.objectType ? (
+              <div>
+                <dt className="text-text-secondary">Тип объекта</dt>
+                <dd className="mt-1 font-semibold text-text-primary">{data.objectType}</dd>
+              </div>
+            ) : null}
+            {location ? (
+              <div>
+                <dt className="text-text-secondary">География</dt>
+                <dd className="mt-1 font-semibold text-text-primary">{location}</dd>
+              </div>
+            ) : null}
+          </dl>
+        ) : null}
+
         {data.coverImage && (
           <div className="mt-10 overflow-hidden rounded-2xl bg-slate-100">
             <Image

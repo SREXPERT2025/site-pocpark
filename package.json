@@ -28,6 +28,7 @@
     "test:parkovka-assets": "node scripts/test_parkovka_assets.mjs",
     "test:landing-image-delivery": "node scripts/test_landing_image_delivery.mjs",
     "test:content-dates": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_content_editorial_dates.mjs",
+    "test:geo-content": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_geo_content_package.mjs",
     "test:home-hero-media": "node scripts/test_home_hero_media.mjs",
     "lead-admin:hash-password": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/hash_lead_admin_password.mjs",
     "lead-outbox:process": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/process_lead_outbox.mjs",
