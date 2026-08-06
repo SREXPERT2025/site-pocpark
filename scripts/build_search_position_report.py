@@ -16,9 +16,10 @@ from urllib.parse import urlparse
 
 
 ROOT = Path(__file__).resolve().parents[1]
+WORKSPACE_ROOT = Path("/Volumes/POCPARK_AI_DATA/POCPARK_SITE_AI")
 DEFAULT_CORE = ROOT / "reports/seo/rospark_semantic_core_approved_2026-07-30.csv"
-DEFAULT_HISTORY = ROOT / "reports/seo/rospark_search_position_history.csv"
-DEFAULT_OUTPUT = ROOT / "generated/seo_position_reports"
+DEFAULT_HISTORY = WORKSPACE_ROOT / "reports/seo/rospark_search_position_history.csv"
+DEFAULT_OUTPUT = WORKSPACE_ROOT / "generated/seo_position_reports"
 ENGINES = ("Yandex", "Google")
 STATUSES = {"found", "not_found_top_100", "captcha", "unavailable"}
 ROSPARK_HOSTS = {

@@ -13,12 +13,13 @@ from typing import Any, Iterable
 
 
 ROOT = Path(__file__).resolve().parents[1]
-ALLOWED_REPORT_ROOT = (ROOT / "generated/seo_position_reports").resolve()
+WORKSPACE_ROOT = Path("/Volumes/POCPARK_AI_DATA/POCPARK_SITE_AI")
+ALLOWED_REPORT_ROOT = (WORKSPACE_ROOT / "generated/seo_position_reports").resolve()
 POCPARK_AI_ROOT = Path("/Volumes/POCPARK_AI_DATA/POCPARK_AI")
 DEFAULT_SENDER = POCPARK_AI_ROOT / "scripts/send_daily_email_report_max.py"
 DEFAULT_DELIVERY_LOG = POCPARK_AI_ROOT / "generated/daily_reports/max_personal_delivery.jsonl"
-DEFAULT_STATE = ROOT / "generated/seo_position_reports/personal_max_delivery.jsonl"
-DEFAULT_LOCK = ROOT / "generated/seo_position_reports/personal_max_delivery.lock"
+DEFAULT_STATE = ALLOWED_REPORT_ROOT / "personal_max_delivery.jsonl"
+DEFAULT_LOCK = ALLOWED_REPORT_ROOT / "personal_max_delivery.lock"
 MAX_PART_CHARS = 3300
 APPROVAL = "recurring-personal-search-position-report"
 

@@ -16,7 +16,7 @@ description: Проверяет позиции сайта РОСПАРК по у
 1. Семантическое ядро:
    `reports/seo/rospark_semantic_core_approved_2026-07-30.csv`.
 2. История измерений:
-   `reports/seo/rospark_search_position_history.csv`.
+   `/Volumes/POCPARK_AI_DATA/POCPARK_SITE_AI/reports/seo/rospark_search_position_history.csv`.
 3. В выдаче учитывай только адреса домена `роспарк.рф` и его punycode-вариант
    `xn--80aukedde.xn--p1ai`.
 
@@ -85,7 +85,8 @@ description: Проверяет позиции сайта РОСПАРК по у
 ```bash
 python3 scripts/build_search_position_report.py \
   --observations <путь-к-json> \
-  --output-dir generated/seo_position_reports
+  --history /Volumes/POCPARK_AI_DATA/POCPARK_SITE_AI/reports/seo/rospark_search_position_history.csv \
+  --output-dir /Volumes/POCPARK_AI_DATA/POCPARK_SITE_AI/generated/seo_position_reports
 ```
 
 Сценарий сам проверит запросы по утвержденному ядру, добавит строки в историю и
@@ -122,4 +123,3 @@ python3 scripts/deliver_search_position_report_personal_max.py \
 доставки и не отправляет уже подтвержденную часть повторно. После отправки
 обязательно проверь для каждой части `status=sent`, `recipient=director_only`,
 `max_send_called=true` и наличие `message_id`.
-
