@@ -98,16 +98,16 @@ const ecosystemLinks: SolutionCard[] = [
 ];
 
 export const metadata: Metadata = {
-  title: 'Решения для автоматизации парковок',
+  title: 'Автоматизированные парковочные системы для разных объектов',
   description:
-    'Решения РОСПАРК для торговых центров, бизнес-центров, складских комплексов, жилых комплексов, руководителей, инженеров и служб безопасности: доступ, оплата, контроль и внедрение под ключ.',
+    'Автоматизированные парковочные системы РОСПАРК для торговых центров, бизнес-центров, складов и жилых комплексов: въезд, доступ, оплата, контроль и отчётность.',
   alternates: {
     canonical: canonicalUrl('/resheniya'),
   },
   openGraph: {
-    title: 'Решения РОСПАРК для автоматизации парковок',
+    title: 'Автоматизированные парковочные системы РОСПАРК',
     description:
-      'Выберите сценарий парковочной системы по роли, типу объекта или этапу внедрения.',
+      'Выберите сценарий автоматизированной парковочной системы по типу объекта, роли или этапу внедрения.',
     url: canonicalUrl('/resheniya'),
     type: 'website',
   },
@@ -243,12 +243,12 @@ export default function SolutionsPage() {
               Решения РОСПАРК
             </p>
             <h1 className="mt-3 max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-slate-950 md:text-5xl">
-              Парковочная система под задачу объекта, роли и этап внедрения
+              Автоматизированная парковочная система под задачу объекта
             </h1>
             <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-              РОСПАРК помогает собрать единый сценарий парковки: въезд и выезд,
-              оплату, доступы, роли операторов, отчётность, оборудование и поддержку.
-              Начните с типа объекта или с того, кто принимает решение.
+              Система объединяет въезд и выезд, идентификацию автомобиля,
+              правила доступа, оплату, контроль и отчётность в одном сценарии.
+              Выберите решение по типу объекта, роли в проекте или этапу внедрения.
             </p>
           </div>
 
@@ -264,6 +264,12 @@ export default function SolutionsPage() {
               className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-6 py-3 text-center font-semibold text-slate-900 transition hover:bg-slate-50"
             >
               Смотреть по объектам
+            </Link>
+            <Link
+              href="/parkovka-pod-klyuch"
+              className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-6 py-3 text-center font-semibold text-blue-800 transition hover:border-blue-300 hover:bg-blue-100"
+            >
+              Парковка под ключ
             </Link>
           </div>
 

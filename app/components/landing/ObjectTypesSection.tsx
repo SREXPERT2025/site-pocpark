@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 type ObjectTypeCardItem = {
@@ -53,12 +54,12 @@ function ObjectTypeCard({ item }: { item: ObjectTypeCardItem }) {
       aria-label={`${item.title}: ${item.focus}`}
     >
       <div className="relative h-[258px] w-full">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={item.imageSrc}
           alt={item.imageAlt}
+          fill
+          sizes="(min-width: 768px) 33vw, 100vw"
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-          loading="lazy"
         />
 
         {/* мягкий градиент для читаемости + “тег” */}

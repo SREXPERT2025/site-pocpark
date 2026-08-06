@@ -1,5 +1,6 @@
 
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import EquipmentCatalogClient from './EquipmentCatalogClient';
 import ItemListJsonLd from '@/app/components/content/ItemListJsonLd';
 import { canonicalUrl } from '@/app/config/site-url';
@@ -10,14 +11,14 @@ import LandingEntryBanner from '@/app/components/landing/LandingEntryBanner';
 export const metadata: Metadata = {
   title: 'Оборудование для автоматизации парковки',
   description:
-    'Каталог оборудования РОСПАРК для автоматизации парковок: стойки въезда и выезда, шлагбаумы, терминалы оплаты, табло и светофоры.',
+    'Оборудование РОСПАРК для платной и закрытой парковки: шлагбаумы, стойки въезда и выезда, камеры, терминалы оплаты, табло и программное обеспечение.',
   alternates: {
     canonical: canonicalUrl('/oborudovanie'),
   },
   openGraph: {
     title: 'Оборудование для автоматизации парковки | РОСПАРК',
     description:
-      'Оборудование подбирается под объект: въезд, выезд, оплата, распознавание номеров, табло и управление доступом.',
+      'Оборудование для платной и закрытой парковки: въезд, идентификация, доступ, оплата и контроль.',
     url: canonicalUrl('/oborudovanie'),
     type: 'website',
   },
@@ -38,9 +39,41 @@ export default async function Page() {
       <ItemListJsonLd name="Оборудование РОСПАРК" items={jsonLdItems} />
 
       <h1 className="text-4xl font-bold mb-5">Оборудование для автоматизации парковки</h1>
-      <p className="mb-10 max-w-3xl text-lg leading-relaxed text-slate-600">
-        Оборудование подбирается под объект: въезд, выезд, оплата, распознавание номеров, табло и управление доступом.
+      <p className="max-w-4xl text-lg leading-relaxed text-slate-600">
+        Для въезда используются шлагбаумы и парковочные стойки, для
+        идентификации — камеры распознавания госномеров и карты доступа, для
+        оплаты — терминалы и онлайн-оплата, для контроля — программное
+        обеспечение, табло и периферия. Состав подбирается под задачу объекта.
       </p>
+      <nav
+        className="mb-10 mt-6 flex flex-wrap gap-3"
+        aria-label="Основные категории парковочного оборудования"
+      >
+        <Link
+          href="/oborudovanie/shlagbaumy"
+          className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-blue-500 hover:text-blue-700"
+        >
+          Шлагбаумы
+        </Link>
+        <Link
+          href="/oborudovanie/stoika-rospark-standart-enter"
+          className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-blue-500 hover:text-blue-700"
+        >
+          Стойки въезда
+        </Link>
+        <Link
+          href="/oborudovanie/stoika-rospark-standart-exit"
+          className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-blue-500 hover:text-blue-700"
+        >
+          Стойки выезда
+        </Link>
+        <Link
+          href="/oborudovanie/terminal-oplati-rospark-standart"
+          className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-blue-500 hover:text-blue-700"
+        >
+          Терминалы оплаты
+        </Link>
+      </nav>
       <LandingEntryBanner
         sourceSection="equipment_catalog"
         target="puzzle2"

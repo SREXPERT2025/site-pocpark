@@ -10,12 +10,16 @@ import LandingChoiceSection from '@/app/components/landing/LandingChoiceSection'
 import { canonicalUrl } from '@/app/config/site-url';
 
 export const metadata: Metadata = {
+  title: 'Автоматизация парковок и контроль въезда',
+  description:
+    'РОСПАРК автоматизирует въезд, доступ, оплату и контроль парковки. Подберём решение под задачу торгового центра, бизнес-центра, ЖК, гостиницы или предприятия.',
   alternates: {
     canonical: canonicalUrl('/'),
   },
   openGraph: {
-    title: 'РОСПАРК — автоматизация парковок нового поколения',
-    description: 'Инженерные решения для автоматизации парковок: оборудование, проекты, внедрение.',
+    title: 'Автоматизация парковок и контроль въезда — РОСПАРК',
+    description:
+      'Автоматизация въезда, доступа, оплаты и контроля парковки под задачу вашего объекта.',
     url: canonicalUrl('/'),
     type: 'website',
   },

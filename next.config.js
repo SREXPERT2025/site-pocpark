@@ -21,6 +21,10 @@ const nextConfig = {
         source: '/hero-v2-20260805.mp4',
         headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
       },
+      {
+        source: '/hero-v2-20260805-poster.jpg',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
       { source: '/admin/:path*', headers: privateHeaders },
       { source: '/api/admin/:path*', headers: privateHeaders },
     ];

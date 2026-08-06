@@ -15,13 +15,20 @@ export default function Hero() {
       <div className="absolute inset-0 overflow-hidden">
         <video
           className="h-full w-full object-cover scale-[1.02] animate-heroZoom"
-          src="/hero-v2-20260805.mp4"
+          poster="/hero-v2-20260805-poster.jpg"
           autoPlay
           muted
           loop
           playsInline
           preload="metadata"
-        />
+          aria-hidden="true"
+        >
+          <source
+            src="/hero-v2-20260805.mp4"
+            type="video/mp4"
+            media="(min-width: 768px) and (prefers-reduced-motion: no-preference)"
+          />
+        </video>
 
         {/* Overlay: базовый затемняющий слой */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/55 to-black/30" />
@@ -53,7 +60,9 @@ export default function Hero() {
 
           {/* Description */}
           <p className="mx-auto mt-6 max-w-[760px] text-[17px] leading-7 text-white/85 sm:mt-8 sm:text-[20px] sm:leading-[30px]">
-            РОСПАРК помогает превратить парковку из набора оборудования в управляемый актив объекта: с понятным въездом, оплатой, доступом, распознаванием номеров, отчётностью и поддержкой после запуска.
+            РОСПАРК автоматизирует въезд, доступ, оплату и контроль парковки под
+            задачу вашего объекта. Оборудование, программное обеспечение,
+            отчётность и поддержка работают как единая система.
           </p>
 
           {/* Trust metrics */}
@@ -102,6 +111,24 @@ export default function Hero() {
               Смотреть выполненные проекты
             </a>
           </div>
+
+          <nav
+            className="mt-6 flex flex-col items-center justify-center gap-3 text-sm font-semibold sm:flex-row sm:gap-6"
+            aria-label="Выбор направления автоматизации парковки"
+          >
+            <a
+              href="/resheniya"
+              className="text-white/80 underline decoration-white/30 underline-offset-4 transition hover:text-white hover:decoration-white"
+            >
+              Подобрать парковочную систему
+            </a>
+            <a
+              href="/oborudovanie"
+              className="text-white/80 underline decoration-white/30 underline-offset-4 transition hover:text-white hover:decoration-white"
+            >
+              Посмотреть оборудование
+            </a>
+          </nav>
 
         </div>
       </div>
