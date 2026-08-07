@@ -927,15 +927,68 @@ production-зависимостей уровня high, включая прямы
 Критерий готовности: нет неисследованных high/critical production findings,
 все функциональные и визуальные проверки пройдены на Node.js 22.
 
-Статус на 2026-08-07: `LOCAL_CANDIDATE_VERIFIED`. В отдельной ветке поверх
-production SHA `3177187` подготовлен переход на Next.js `16.3.0`, React
+Статус на 2026-08-07: `PRODUCTION_COMPLETE`. Отдельный Release 2 опубликован
+на exact SHA `6b665a56cdea523e2e72673763a46c5a4fca9542`: Next.js `16.3.0`, React
 `19.2.8`, Nodemailer `9.0.4` и Sharp `0.35.3`. Повторные production и full
 dependency audit возвращают 0 vulnerabilities; TypeScript, ESLint,
-production build, Stage B/C, функциональные и адаптивные проверки пройдены.
-SMTP-транспорт дополнительно закрыт от чтения локальных файлов и URL.
-Production не изменён. Публикация остаётся отдельным Release 2 с обязательным
-backup, hot rollback и HTTPS acceptance по
-`docs/deployment/SECURITY_RELEASE_2_20260807.md`.
+production build, Stage B/C, функциональные, адаптивные и публичные HTTPS-
+проверки пройдены. SMTP-транспорт дополнительно закрыт от чтения локальных
+файлов и URL. Сохранены checksummed backup, hot rollback `.next` и отдельный
+hot rollback `node_modules`; лиды и сообщения в MAX не создавались.
+
+## 8.1. RELEASE-STORAGE-RETENTION-001 — автоматическая очистка релизного хранилища
+
+Цель: не допускать накопления staging-worktree, failed build, hot rollback и
+backup-каталогов, сохраняя гарантированный откат и проверенные резервные копии
+данных.
+
+Автоматизация выполняется только после отдельной разработки, dry-run приёмки
+и production-разрешения. До этого удаление релизных артефактов остаётся ручной
+операцией с отдельным подтверждением владельца.
+
+Политика хранения:
+
+- всегда сохранять текущий production checkout и его активные `.next` и
+  `node_modules`;
+- сохранять два последних полных комплекта hot rollback: `.next`,
+  `node_modules`, previous SHA и связанный backup конфигурации;
+- сохранять минимум три последних проверенных online backup SQLite, env,
+  Nginx и systemd units независимо от возраста;
+- успешные дополнительные backup хранить не менее 30 дней;
+- staging-worktree и failed build разрешено удалять только старше 7 дней;
+- Tailscale inbox и release-state не очищать тем же правилом без отдельного
+  allowlist;
+- последний проверенный SQLite backup не удалять никогда автоматически.
+
+Fail-closed gate перед каждым удалением:
+
+1. нет активного `rospark-*.service`, выполняющего release или rollback;
+2. PM2 `rospark-site` имеет статус `online`, Nginx активен;
+3. production Git SHA, branch и clean worktree подтверждены;
+4. все три production SQLite проходят read-only `PRAGMA quick_check`;
+5. определены и защищены active build, два rollback-комплекта и минимум три
+   checksummed backup;
+6. каждый кандидат разрешён точным каталогом и не является symlink;
+7. при любой неоднозначности операция завершается без удаления.
+
+Порядок внедрения:
+
+1. создать read-only inventory с размером, возрастом, SHA-связью и причиной
+   `KEEP` или `DELETE_CANDIDATE`;
+2. запускать dry-run не менее двух релизов и сравнивать отчёт вручную;
+3. добавить тестовые fixtures для active, rollback, failed, staging и
+   checksummed backup;
+4. включить отдельный one-shot cleanup, который удаляет только утверждённый
+   snapshot кандидатов и ведёт append-only журнал;
+5. после приёмки установить еженедельный systemd timer;
+6. отправлять директору отчёт: использовано/освобождено, что сохранено, что
+   удалено, production SHA и результат всех gates;
+7. отдельно проверить восстановление из самого старого сохраняемого rollback-
+   комплекта.
+
+Критерий готовности: два последовательных dry-run без ложных кандидатов,
+тестовый cleanup проходит без затрагивания active/rollback/SQLite, журнал
+полон, а production-активация timer выполнена отдельным подтверждением.
 
 ## 9. Порядок следующих блоков
 
@@ -987,8 +1040,11 @@ backup, hot rollback и HTTPS acceptance по
    готово к накопительному релизу; production CWV измеряется после публикации.
 13. `CONTENT-INTELLIGENCE-001` — ручной, затем локальный approval-gated runner.
 14. `PROD-DATA-OPS` — отложен; вернуть перед крупным production-изменением.
-15. `SECURITY-RELEASE-2` — перенесённый этап зависимостей; вернуть раньше при
-   активном росте трафика или новом high/critical finding.
+15. `SECURITY-RELEASE-2` — завершён в production на SHA `6b665a5`, audit
+   возвращает 0 vulnerabilities, полный rollback сохранён.
+16. `RELEASE-STORAGE-RETENTION-001` — подготовить fail-closed inventory,
+   провести минимум два dry-run после релизов и только затем отдельно
+   согласовать one-shot cleanup и еженедельный systemd timer.
 
 Режим накопительного релиза, подтверждённый 2026-07-27:
 

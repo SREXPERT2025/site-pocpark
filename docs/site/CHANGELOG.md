@@ -7,7 +7,7 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
-## 2026-08-07 — локальный кандидат Security Release 2
+## 2026-08-07 — Security Release 2 опубликован
 
 - кандидат собран в отдельной ветке поверх production SHA `3177187`;
 - Next.js обновлён до `16.3.0`, React — до `19.2.8`, Nodemailer — до `9.0.4`,
@@ -21,9 +21,26 @@
   интерфейсные тесты пройдены;
 - `/`, `/parkovka`, `/parkovka-pod-klyuch` и `/demo` проверены на
   320/375/390/1440 px без горизонтального переполнения и сломанных изображений;
-- production, VPS, Mac Studio gateway, лиды и MAX не изменялись;
+- production обновлён до exact SHA `6b665a5`, Next.js `16.3.0`, PM2 online;
+- публичные HTTPS-маршруты и защитные заголовки приняты после выпуска;
+- сохранены checksummed backup, hot rollback `.next` и `node_modules`;
+- лиды и сообщения в MAX не создавались, Mac Studio gateway не изменялся;
 - release gate и rollback-порядок описаны в
   `docs/deployment/SECURITY_RELEASE_2_20260807.md`.
+
+## 2026-08-07 — оформлен RELEASE-STORAGE-RETENTION-001
+
+- в roadmap добавлена отдельная задача автоматической очистки release storage;
+- зафиксировано хранение двух полных rollback-комплектов и минимум трёх
+  проверенных online backup;
+- staging/failed артефакты нельзя удалять раньше 7 дней, остальные backup —
+  раньше 30 дней;
+- последний проверенный SQLite backup запрещено удалять автоматически;
+- до любого удаления обязательны active-release, PM2/Nginx, Git, SQLite,
+  checksum, symlink и allowlist gates;
+- внедрение проходит через два dry-run, отдельный one-shot cleanup и только
+  затем через отдельно разрешённый еженедельный systemd timer;
+- текущие backup и rollback Security Release 2 не удалялись.
 
 ## 2026-08-06 — technical SEO и лёгкая мобильная доставка Hero
 
