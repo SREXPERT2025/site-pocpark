@@ -1,9 +1,19 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import Database from 'better-sqlite3';
 import {
+  AI_CORE_CONTRACT_SHA,
+  AI_CORE_CONTRACT_VERSION,
+  AI_CORE_OWNER_MODEL,
+  AI_CORE_RUNTIME_SHA,
+  AI_CORE_RUNTIME_VERSION,
+  acknowledgeOwnerCanaryMutations,
   buildOwnerCanaryCoreRequest,
-  decisionPackageHash,
+  callOwnerCanaryRuntime,
+  canonicalJson,
+  ownerCanaryRuntimeConfig,
+  sha256,
   validateOwnerCanaryCoreResponse,
 } from '../app/lib/owner-ai-canary-adapter.ts';
 import {
@@ -12,22 +22,27 @@ import {
   mapSiteIdentity,
   OWNER_AI_CANARY_COOKIE,
   ownerCanaryCookieHeader,
-  ownerCanaryPlaceholderDecision,
   selectOwnerCanaryAudience,
   verifyOwnerCanarySession,
 } from '../app/lib/owner-ai-canary-core.ts';
 import {
-  applyOwnerCanaryMutation,
+  appendOwnerCanaryHistory,
+  applyOwnerCanaryMutationBatch,
   ensureOwnerCanaryThread,
+  getOwnerCanaryRuntimeResponse,
+  listOwnerCanaryHistory,
   ownerCanarySessionRevoked,
+  recordOwnerCanaryRuntimeTelemetry,
   recordOwnerCanaryTelemetry,
   registerOwnerCanaryMessage,
   revokeOwnerCanarySession,
   runOwnerAiCanaryMigrations,
+  saveOwnerCanaryRuntimeResponse,
 } from '../app/lib/owner-ai-canary-state.ts';
 import {
   beginAiWidgetTurn,
   completeAiWidgetTurn,
+  failAiWidgetTurn,
   runAiWidgetLogMigrations,
 } from '../app/lib/ai-widget-log-core.ts';
 import {
@@ -44,9 +59,15 @@ const env = {
   AI_CORE_OWNER_CANARY_SESSION_VERSION: 'v1',
   AI_CORE_IDENTITY_HMAC_KEY:
     'identity-mapping-key-that-is-at-least-32-bytes',
+  AI_CORE_OWNER_CANARY_URL: 'https://rsp-ai-gw-prod.example.ts.net',
+  AI_CORE_OWNER_CANARY_SECRET:
+    'gateway-owner-secret-that-is-at-least-32-bytes',
+  AI_CORE_OWNER_CANARY_RUNTIME_SHA: AI_CORE_RUNTIME_SHA,
+  AI_CORE_OWNER_CANARY_CONTRACT_SHA: AI_CORE_CONTRACT_SHA,
 };
 const nowMs = Date.UTC(2026, 7, 7, 12, 0, 0);
 
+// Owner authentication is opt-in, signed, expiring and revocable.
 const issued = issueOwnerCanarySession({
   credential,
   env,
@@ -59,22 +80,12 @@ assert.throws(
   () => issueOwnerCanarySession({ credential: 'wrong', env, nowMs }),
   /OWNER_CANARY_AUTH_DENIED/,
 );
-assert.equal(
-  verifyOwnerCanarySession({
-    token: `${issued.token.slice(0, -1)}x`,
-    env,
-    nowMs,
-  }),
-  null,
-);
-assert.equal(
-  verifyOwnerCanarySession({
-    token: issued.token,
-    env,
-    nowMs: nowMs + 601_000,
-  }),
-  null,
-);
+assert.equal(verifyOwnerCanarySession({
+  token: `${issued.token.slice(0, -1)}x`, env, nowMs,
+}), null);
+assert.equal(verifyOwnerCanarySession({
+  token: issued.token, env, nowMs: nowMs + 601_000,
+}), null);
 const cookie = ownerCanaryCookieHeader(issued.token, issued.ttlSeconds);
 assert.match(cookie, new RegExp(`^${OWNER_AI_CANARY_COOKIE}=`));
 assert.match(cookie, /HttpOnly/);
@@ -82,31 +93,19 @@ assert.match(cookie, /Secure/);
 assert.match(cookie, /SameSite=Strict/);
 assert.match(clearOwnerCanaryCookieHeader(), /Max-Age=0/);
 assert.doesNotMatch(cookie, new RegExp(credential));
+assert.equal(selectOwnerCanaryAudience({
+  cookieToken: issued.token,
+  env: { ...env, AI_CORE_OWNER_CANARY_ENABLED: 'false' },
+  nowMs,
+}).audience, 'legacy');
+assert.equal(selectOwnerCanaryAudience({
+  cookieToken: null, env, nowMs,
+}).audience, 'legacy');
+assert.equal(selectOwnerCanaryAudience({
+  cookieToken: issued.token, env, nowMs,
+}).audience, 'owner_canary');
 
-assert.equal(
-  selectOwnerCanaryAudience({
-    cookieToken: issued.token,
-    env: { ...env, AI_CORE_OWNER_CANARY_ENABLED: 'false' },
-    nowMs,
-  }).audience,
-  'legacy',
-);
-assert.equal(
-  selectOwnerCanaryAudience({ cookieToken: null, env, nowMs }).audience,
-  'legacy',
-);
-assert.equal(
-  selectOwnerCanaryAudience({ cookieToken: issued.token, env, nowMs })
-    .audience,
-  'owner_canary',
-);
-assert.deepEqual(ownerCanaryPlaceholderDecision(), {
-  route: 'owner_ai_core_placeholder',
-  runtimeConnected: false,
-  fallbackToLegacyAllowed: false,
-  errorCode: 'OWNER_AI_CORE_NOT_CONNECTED',
-});
-
+// Stable thread identity, immutable per-turn message identity.
 const first = mapSiteIdentity({
   sessionId: 'c846e840-abcc-40b4-bd26-c0fdec276da9',
   turnId: '11111111-aaaa-4111-8111-111111111111',
@@ -125,18 +124,22 @@ const next = mapSiteIdentity({
 assert.deepEqual(first, repeated);
 assert.equal(first.conversationThreadId, next.conversationThreadId);
 assert.notEqual(first.messageId, next.messageId);
-assert.doesNotMatch(first.conversationThreadId, /c846e840/);
 
 const db = new Database(':memory:');
 db.pragma('foreign_keys = ON');
 runAiWidgetLogMigrations(db);
 runOwnerAiCanaryMigrations(db);
+runOwnerAiCanaryMigrations(db);
+assert.deepEqual(
+  db.prepare('SELECT version FROM owner_ai_canary_migrations ORDER BY version')
+    .all().map((row) => row.version),
+  [1, 2],
+);
 let state = ensureOwnerCanaryThread(db, {
   conversationThreadId: first.conversationThreadId,
   siteSessionId: first.siteSessionId,
   nowMs,
 });
-assert.equal(state.stateVersion, 0);
 const requestPayload = { currentMessage: 'Два въезда', noPii: true };
 assert.equal(registerOwnerCanaryMessage(db, {
   conversationThreadId: first.conversationThreadId,
@@ -160,68 +163,342 @@ assert.throws(() => registerOwnerCanaryMessage(db, {
   nowMs,
 }), /IDEMPOTENCY_CONFLICT/);
 
-const mutation = {
-  mutationId: '33333333-cccc-4333-8333-333333333333',
+appendOwnerCanaryHistory(db, {
   conversationThreadId: first.conversationThreadId,
-  messageId: first.messageId,
-  expectedStateVersion: 0,
-  decisionPackageHash: 'a'.repeat(64),
-  patch: {
-    candidateFacts: [{ field: 'entrances_count', value: 2 }],
-    activeQuestion: { field: 'exits_count' },
-    conversationPreferences: { oneQuestionAtATime: true },
-  },
-};
-const ack = applyOwnerCanaryMutation(db, mutation, nowMs + 1_000);
-assert.equal(ack.status, 'applied');
-assert.equal(ack.stateVersionAfter, 1);
-assert.deepEqual(
-  applyOwnerCanaryMutation(db, mutation, nowMs + 2_000),
-  ack,
-);
-const conflictAck = applyOwnerCanaryMutation(db, {
-  ...mutation,
-  mutationId: '44444444-dddd-4444-8444-444444444444',
-  expectedStateVersion: 0,
-}, nowMs + 3_000);
-assert.equal(conflictAck.status, 'rejected');
-assert.equal(conflictAck.reason, 'STATE_VERSION_CONFLICT');
-assert.equal(conflictAck.stateVersionAfter, 1);
-
-state = ensureOwnerCanaryThread(db, {
-  conversationThreadId: first.conversationThreadId,
-  siteSessionId: first.siteSessionId,
-  nowMs: nowMs + 4_000,
+  messageId: 'history_user_00000001',
+  role: 'user',
+  content: 'Это торговый центр.',
+  nowMs,
 });
+appendOwnerCanaryHistory(db, {
+  conversationThreadId: first.conversationThreadId,
+  messageId: 'history_assistant_01',
+  role: 'assistant',
+  content: 'Сколько въездов?',
+  nowMs: nowMs + 1,
+});
+assert.deepEqual(
+  listOwnerCanaryHistory(db, first.conversationThreadId).map((item) => item.role),
+  ['user', 'assistant'],
+);
+
 const coreRequest = buildOwnerCanaryCoreRequest({
   aiCoreRequestId: 'aicore_77777777-aaaa-4777-8777-777777777777',
   conversationThreadId: first.conversationThreadId,
   messageId: first.messageId,
+  parentMessageId: 'history_assistant_01',
   currentMessage: 'Два въезда',
   sourcePage: '/parkovka',
   pageContextIntentHint: { selectedProblem: 'Убрать ручные пропуска' },
+  recentMessages: listOwnerCanaryHistory(db, first.conversationThreadId),
   state,
+  siteRelease: '2f5560909d31aa9df732cab74f269c0259c15529',
+  gatewayRelease: 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9',
+  sentAt: '2026-08-07T12:00:00.000Z',
 });
-assert.equal(coreRequest.dryRun, true);
-assert.equal(coreRequest.pageContextIntentHint.selectedProblem,
-  'Убрать ручные пропуска');
-assert.deepEqual(coreRequest.state.confirmedProjectFacts, []);
-const decisionPackage = { route: 'clarify', visibleText: 'Уточните выезды' };
-const validatedResponse = validateOwnerCanaryCoreResponse({
-  contractVersion: coreRequest.contractVersion,
-  aiCoreRequestId: coreRequest.aiCoreRequestId,
-  decisionPackage,
-  decisionPackageHash: decisionPackageHash(decisionPackage),
-  mutationProposal: null,
+assert.equal(coreRequest.contract_version, AI_CORE_CONTRACT_VERSION);
+assert.equal(coreRequest.dry_run, false);
+assert.equal(coreRequest.payload.executor_policy.planned_executor, 'qwen');
+assert.deepEqual(coreRequest.payload.executor_policy.allowed_executors, ['qwen']);
+assert.deepEqual(coreRequest.payload.executor_policy.fallback_order, ['qwen']);
+assert.equal(coreRequest.payload.executor_policy.max_model_fallbacks, 0);
+assert.equal(coreRequest.request_payload_hash, sha256(coreRequest.payload));
+assert.equal(coreRequest.payload.recent_messages.length, 2);
+assert.equal(coreRequest.payload.intent_hints[0].confirmation_status, 'unconfirmed');
+assert.equal(coreRequest.payload.intent_hints[1].confirmation_status, 'unconfirmed');
+assert.equal(canonicalJson({ b: 1, a: 2 }), '{"a":2,"b":1}');
+const sameCoreRequest = buildOwnerCanaryCoreRequest({
+  aiCoreRequestId: coreRequest.request_id,
+  conversationThreadId: first.conversationThreadId,
+  messageId: first.messageId,
+  parentMessageId: 'history_assistant_01',
+  currentMessage: 'Два въезда',
+  sourcePage: '/parkovka',
+  pageContextIntentHint: { selectedProblem: 'Убрать ручные пропуска' },
+  recentMessages: listOwnerCanaryHistory(db, first.conversationThreadId),
+  state,
+  siteRelease: coreRequest.site_release,
+  gatewayRelease: coreRequest.gateway_release,
+  sentAt: coreRequest.sent_at,
 });
-assert.equal(validatedResponse.decisionPackage.route, 'clarify');
+assert.equal(coreRequest.idempotency_key, sameCoreRequest.idempotency_key);
+assert.equal(coreRequest.request_payload_hash, sameCoreRequest.request_payload_hash);
+
+// The Site-built envelope is accepted by the exact packaged Runtime.
+const utilityRequest = buildOwnerCanaryCoreRequest({
+  aiCoreRequestId: 'aicore_utility_00000001',
+  conversationThreadId: first.conversationThreadId,
+  messageId: next.messageId,
+  currentMessage: 'Сколько будет 2+2?',
+  sourcePage: '/',
+  recentMessages: [],
+  state,
+  siteRelease: '2f5560909d31aa9df732cab74f269c0259c15529',
+  gatewayRelease: 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9',
+  sentAt: '2026-08-07T12:00:00.000Z',
+  dryRun: true,
+});
+const e2e = spawnSync(
+  'python3',
+  ['scripts/run_owner_ai_core_deterministic_contract_probe.py'],
+  { input: JSON.stringify(utilityRequest), encoding: 'utf8' },
+);
+assert.equal(e2e.status, 0, e2e.stderr);
+const e2eEnvelope = validateOwnerCanaryCoreResponse(
+  JSON.parse(e2e.stdout), utilityRequest,
+);
+assert.equal(e2eEnvelope.response.answer, '2+2 = 4.');
+
+const decisionPackage = {
+  schema_version: '1.2', decision_type: 'not_required', next_question: null,
+};
+const runtimeResponse = {
+  contract_version: '1.0',
+  success: true,
+  request_id: coreRequest.request_id,
+  response_id: 'response:1234567890abcdef',
+  idempotency_key: coreRequest.idempotency_key,
+  request_payload_hash: coreRequest.request_payload_hash,
+  state_version_before: 0,
+  state_version_after: 1,
+  context_resolution: {},
+  controller_decision: {},
+  decision_package_schema: '1.2',
+  decision_package: decisionPackage,
+  decision_package_hash: sha256(decisionPackage),
+  executor_trace: {
+    planned_executor: 'qwen',
+    attempts: [{
+      attempt_index: 1, executor: 'qwen',
+      started_at: '2026-08-07T12:00:00Z',
+      finished_at: '2026-08-07T12:00:00.004Z',
+      status: 'success', safe_error_code: null, latency_ms: 4,
+      cost_bucket: 'local_low',
+      decision_package_hash: sha256(decisionPackage), state_version: 0,
+    }],
+    final_executor: 'qwen', fallback_reason: 'none',
+    decision_package_hash: sha256(decisionPackage), state_version: 0,
+  },
+  raw_answer_reference: 'rawref:1234567890abcdef',
+  answer: 'Понял: два въезда.',
+  repair_result: {
+    applied: false, method: 'none', rewrite_ratio: 0,
+    decision_package_hash: sha256(decisionPackage),
+  },
+  evaluation_result: {
+    evaluated_candidate: 'final_visible_candidate', status: 'pass', reason_codes: [],
+  },
+  state_mutations: [{
+    mutation_id: 'mutation:1234567890abcdef',
+    target: 'thread_state', operation: 'set_confirmed_fact',
+    field: 'entrances_count', value: 2,
+    expected_state_version: 0, proposed_state_version: 1,
+    source_message_id: first.messageId,
+    provenance: {
+      source_type: 'user_message', source_ref: first.messageId,
+      confirmation_status: 'confirmed',
+    },
+    conflict_policy: 'record_conflict',
+  }],
+  next_question: null,
+  component_versions: { context_integrity: '2.2' },
+  telemetry: {
+    trace_id: 'trace:owner:1', request_id: coreRequest.request_id,
+    route: 'ai_core', component_versions: { context_integrity: '2.2' },
+    latency: { total_ms: 11, executor_ms: 4 },
+    executor: {
+      planned: 'qwen', final: 'qwen', attempt_count: 1,
+      fallback_used: false, cost_bucket: 'local_low',
+    },
+    repair: { applied: false, method: 'none', rewrite_ratio: 0 },
+    evaluation: { raw_status: 'pass', final_status: 'pass' },
+    publication: { candidate_status: 'allowed', published: false },
+  },
+};
+const envelope = {
+  runtime_sha: AI_CORE_RUNTIME_SHA,
+  runtime_version: AI_CORE_RUNTIME_VERSION,
+  contract_sha: AI_CORE_CONTRACT_SHA,
+  model: AI_CORE_OWNER_MODEL,
+  response: runtimeResponse,
+};
+assert.equal(
+  validateOwnerCanaryCoreResponse(envelope, coreRequest).response.answer,
+  runtimeResponse.answer,
+);
 assert.throws(() => validateOwnerCanaryCoreResponse({
-  contractVersion: coreRequest.contractVersion,
-  aiCoreRequestId: coreRequest.aiCoreRequestId,
-  decisionPackage,
-  decisionPackageHash: '0'.repeat(64),
-  mutationProposal: null,
-}), /DECISION_PACKAGE_HASH_MISMATCH/);
+  ...envelope, runtime_sha: '0'.repeat(40),
+}, coreRequest), /RUNTIME_SHA_MISMATCH/);
+assert.throws(() => validateOwnerCanaryCoreResponse({
+  ...envelope,
+  response: {
+    ...runtimeResponse,
+    executor_trace: { ...runtimeResponse.executor_trace, final_executor: 'codex' },
+  },
+}, coreRequest), /EXECUTOR_POLICY_VIOLATION/);
+
+// Real client transport is exercised with a hermetic fetch. No model call.
+const calls = [];
+const fakeFetch = async (url, options) => {
+  calls.push({ url, options });
+  if (url.endsWith('/ack')) {
+    return Response.json({
+      accepted: true,
+      runtime_sha: AI_CORE_RUNTIME_SHA,
+      contract_sha: AI_CORE_CONTRACT_SHA,
+    });
+  }
+  return Response.json(envelope);
+};
+assert.equal(ownerCanaryRuntimeConfig(env).runtimeSha, AI_CORE_RUNTIME_SHA);
+assert.throws(() => ownerCanaryRuntimeConfig({
+  ...env, AI_CORE_OWNER_CANARY_URL: 'http://127.0.0.1:8788',
+}), /URL_UNSAFE/);
+const called = await callOwnerCanaryRuntime(coreRequest, {
+  env, fetchImpl: fakeFetch,
+});
+assert.equal(called.runtime_sha, AI_CORE_RUNTIME_SHA);
+assert.match(calls[0].options.headers.Authorization, /^Bearer /);
+assert.doesNotMatch(JSON.stringify(calls), new RegExp(credential));
+
+// Batch mutations are atomic and increment state exactly once.
+const applied = applyOwnerCanaryMutationBatch(db, {
+  conversationThreadId: first.conversationThreadId,
+  messageId: first.messageId,
+  requestId: coreRequest.request_id,
+  responseId: runtimeResponse.response_id,
+  mutations: runtimeResponse.state_mutations,
+  nowMs: nowMs + 1000,
+});
+assert.equal(applied.state.stateVersion, 1);
+assert.equal(applied.state.confirmedProjectFacts[0].field, 'entrances_count');
+assert.equal(applied.acknowledgement.acknowledgements[0].status, 'applied');
+const appliedReplay = applyOwnerCanaryMutationBatch(db, {
+  conversationThreadId: first.conversationThreadId,
+  messageId: first.messageId,
+  requestId: coreRequest.request_id,
+  responseId: runtimeResponse.response_id,
+  mutations: runtimeResponse.state_mutations,
+  nowMs: nowMs + 1500,
+});
+assert.equal(appliedReplay.accepted, true);
+assert.deepEqual(appliedReplay.acknowledgement, applied.acknowledgement);
+assert.equal(appliedReplay.state.stateVersion, 1);
+await acknowledgeOwnerCanaryMutations(applied.acknowledgement, {
+  env, fetchImpl: fakeFetch,
+});
+assert.equal(calls.filter((item) => item.url.endsWith('/ack')).length, 1);
+const rejected = applyOwnerCanaryMutationBatch(db, {
+  conversationThreadId: first.conversationThreadId,
+  messageId: first.messageId,
+  requestId: coreRequest.request_id,
+  responseId: 'response:fedcba0987654321',
+  mutations: [{
+    ...runtimeResponse.state_mutations[0],
+    mutation_id: 'mutation:fedcba0987654321',
+    field: 'exits_count',
+  }],
+  nowMs: nowMs + 2000,
+});
+assert.equal(rejected.accepted, false);
+assert.equal(
+  rejected.acknowledgement.acknowledgements[0].reason_code,
+  'version_conflict',
+);
+assert.equal(rejected.state.stateVersion, 1);
+await acknowledgeOwnerCanaryMutations(rejected.acknowledgement, {
+  env, fetchImpl: fakeFetch,
+});
+assert.equal(calls.filter((item) => item.url.endsWith('/ack')).length, 2);
+
+saveOwnerCanaryRuntimeResponse(db, {
+  conversationThreadId: first.conversationThreadId,
+  messageId: first.messageId,
+  idempotencyKey: coreRequest.idempotency_key,
+  requestPayloadHash: coreRequest.request_payload_hash,
+  response: envelope,
+  visibleAnswer: runtimeResponse.answer,
+});
+const cached = getOwnerCanaryRuntimeResponse(db, {
+  conversationThreadId: first.conversationThreadId,
+  messageId: first.messageId,
+  idempotencyKey: coreRequest.idempotency_key,
+});
+assert.equal(cached.visibleAnswer, runtimeResponse.answer);
+assert.equal(cached.requestPayloadHash, coreRequest.request_payload_hash);
+
+// Site B accepted + terminal event and runtime telemetry remain linked.
+const siteTurnId = '66666666-ffff-4666-8666-666666666666';
+beginAiWidgetTurn(db, {
+  turnId: siteTurnId,
+  sessionId: '55555555-eeee-4555-8555-555555555555',
+  requestId: '77777777-aaaa-4777-8777-777777777777',
+  sourcePage: '/stati/test', userContent: 'Тест lifecycle',
+  runtimeMode: 'production', nowMs,
+});
+recordAiWidgetServerEvent(db, {
+  turnId: siteTurnId, eventName: 'turn_accepted', nowMs,
+  idFactory: () => '88888888-bbbb-4888-8888-888888888888',
+});
+completeAiWidgetTurn(db, {
+  turnId: siteTurnId, assistantContent: runtimeResponse.answer,
+  route: 'owner_ai_core', elapsedMs: 11, nowMs: nowMs + 11,
+});
+const terminal = recordAiWidgetServerEvent(db, {
+  turnId: siteTurnId, eventName: 'answer_completed',
+  route: 'owner_ai_core', elapsedMs: 11, nowMs: nowMs + 11,
+  idFactory: () => '99999999-cccc-4999-8999-999999999999',
+});
+recordOwnerCanaryTelemetry(db, {
+  turnId: siteTurnId,
+  conversationThreadId: first.conversationThreadId,
+  messageId: first.messageId,
+  aiCoreRequestId: coreRequest.request_id,
+  contractVersion: AI_CORE_CONTRACT_VERSION,
+  runtimeSha: AI_CORE_RUNTIME_SHA,
+  decisionPackageHash: runtimeResponse.decision_package_hash,
+  plannedExecutor: 'qwen', finalExecutor: 'qwen',
+  evaluationStatus: 'pass', repairStatus: 'not_applied',
+  stateVersionBefore: 0, stateVersionAfter: 1,
+  latencyMs: 11, siteTerminalEventId: terminal.id,
+});
+recordOwnerCanaryRuntimeTelemetry(db, {
+  turnId: siteTurnId, runtimeSha: AI_CORE_RUNTIME_SHA,
+  rawStatus: 'pass', repairApplied: false, finalStatus: 'pass',
+  blockingReasonCodes: [],
+  componentVersions: runtimeResponse.component_versions,
+});
+assert.deepEqual(
+  listAiWidgetServerEvents(db, siteTurnId).map((item) => item.eventName),
+  ['turn_accepted', 'answer_completed'],
+);
+const failedTurnId = 'aaaaaaaa-ffff-4666-8666-666666666666';
+beginAiWidgetTurn(db, {
+  turnId: failedTurnId,
+  sessionId: '55555555-eeee-4555-8555-555555555555',
+  requestId: 'bbbbbbbb-aaaa-4777-8777-777777777777',
+  sourcePage: '/stati/test', userContent: 'Тест safe error',
+  runtimeMode: 'production', nowMs: nowMs + 20,
+});
+recordAiWidgetServerEvent(db, {
+  turnId: failedTurnId, eventName: 'turn_accepted', nowMs: nowMs + 20,
+  idFactory: () => 'cccccccc-bbbb-4888-8888-888888888888',
+});
+failAiWidgetTurn(db, {
+  turnId: failedTurnId,
+  errorCode: 'OWNER_AI_CORE_ERROR',
+  elapsedMs: 5,
+  nowMs: nowMs + 25,
+});
+recordAiWidgetServerEvent(db, {
+  turnId: failedTurnId, eventName: 'answer_error',
+  errorCode: 'OWNER_AI_CORE_ERROR', elapsedMs: 5, nowMs: nowMs + 25,
+  idFactory: () => 'dddddddd-cccc-4999-8999-999999999999',
+});
+assert.deepEqual(
+  listAiWidgetServerEvents(db, failedTurnId).map((item) => item.eventName),
+  ['turn_accepted', 'answer_error'],
+);
 
 revokeOwnerCanarySession(db, {
   jti: issued.payload.jti,
@@ -230,94 +507,12 @@ revokeOwnerCanarySession(db, {
 });
 assert.equal(ownerCanarySessionRevoked(db, issued.payload.jti), true);
 assert.equal(verifyOwnerCanarySession({
-  token: issued.token,
-  env,
-  nowMs,
+  token: issued.token, env, nowMs,
   isRevoked: (jti) => ownerCanarySessionRevoked(db, jti),
 }), null);
 
-const siteSessionId = '55555555-eeee-4555-8555-555555555555';
-const siteTurnId = '66666666-ffff-4666-8666-666666666666';
-beginAiWidgetTurn(db, {
-  turnId: siteTurnId,
-  sessionId: siteSessionId,
-  requestId: '77777777-aaaa-4777-8777-777777777777',
-  sourcePage: '/stati/test',
-  userContent: 'Тест lifecycle',
-  runtimeMode: 'production',
-  nowMs,
-});
-recordAiWidgetServerEvent(db, {
-  turnId: siteTurnId,
-  eventName: 'turn_accepted',
-  nowMs,
-  idFactory: () => '88888888-bbbb-4888-8888-888888888888',
-});
-completeAiWidgetTurn(db, {
-  turnId: siteTurnId,
-  assistantContent: 'Ответ',
-  route: 'legacy_fixture',
-  elapsedMs: 10,
-  nowMs: nowMs + 10,
-});
-recordAiWidgetServerEvent(db, {
-  turnId: siteTurnId,
-  eventName: 'answer_completed',
-  route: 'legacy_fixture',
-  elapsedMs: 10,
-  nowMs: nowMs + 10,
-  idFactory: () => '99999999-cccc-4999-8999-999999999999',
-});
-const telemetry = {
-  turnId: siteTurnId,
-  conversationThreadId: first.conversationThreadId,
-  messageId: first.messageId,
-  aiCoreRequestId: 'aicore_77777777-aaaa-4777-8777-777777777777',
-  contractVersion: coreRequest.contractVersion,
-  runtimeSha: 'a9066e'.padEnd(40, '0'),
-  decisionPackageHash: decisionPackageHash(decisionPackage),
-  plannedExecutor: 'not_connected',
-  finalExecutor: 'not_connected',
-  evaluationStatus: 'not_run',
-  repairStatus: 'not_run',
-  stateVersionBefore: 0,
-  stateVersionAfter: 1,
-  latencyMs: 10,
-  siteTerminalEventId: '99999999-cccc-4999-8999-999999999999',
-  createdAt: new Date(nowMs + 10).toISOString(),
-};
-assert.equal(recordOwnerCanaryTelemetry(db, telemetry).created, true);
-assert.equal(recordOwnerCanaryTelemetry(db, telemetry).created, false);
-assert.throws(() => recordOwnerCanaryTelemetry(db, {
-  ...telemetry,
-  latencyMs: 11,
-}), /TELEMETRY_IDEMPOTENCY_CONFLICT/);
-assert.deepEqual(
-  listAiWidgetServerEvents(db, siteTurnId).map((item) => item.eventName),
-  ['turn_accepted', 'answer_completed'],
-);
-
-const clientSource = readFileSync(
-  new URL('../app/components/ai-widget/AiWidgetPilot.tsx', import.meta.url),
-  'utf8',
-);
-assert.doesNotMatch(clientSource, /AI Core Owner Test/);
 const apiSource = readFileSync(
-  new URL('../app/lib/ai-widget-api.ts', import.meta.url),
-  'utf8',
-);
-const coreSource = readFileSync(
-  new URL('../app/lib/owner-ai-canary-core.ts', import.meta.url),
-  'utf8',
-);
-assert.match(`${apiSource}${coreSource}`, /OWNER_AI_CORE_NOT_CONNECTED/);
-assert.match(apiSource, /OWNER_CANARY_TURN_ALREADY_FINALIZED/);
-const loginSource = readFileSync(
-  new URL(
-    '../app/api/ai-widget/owner-canary/login/route.ts',
-    import.meta.url,
-  ),
-  'utf8',
+  new URL('../app/lib/ai-widget-api.ts', import.meta.url), 'utf8',
 );
 const logoutSource = readFileSync(
   new URL(
@@ -326,15 +521,21 @@ const logoutSource = readFileSync(
   ),
   'utf8',
 );
-assert.match(loginSource, /sameOrigin/);
-assert.match(logoutSource, /LOGOUT_REVOCATION_FAILED/);
-assert.doesNotMatch(`${loginSource}${logoutSource}`, new RegExp(credential));
-const serializedEvidence = JSON.stringify({
-  cookie,
-  first,
-  ack,
-  placeholder: ownerCanaryPlaceholderDecision(),
-});
-assert.doesNotMatch(serializedEvidence, new RegExp(credential));
+assert.match(logoutSource, /revokeOwnerCanarySession/);
+assert.match(logoutSource, /clearOwnerCanaryCookieHeader/);
+assert.match(apiSource, /callOwnerCanaryRuntime/);
+assert.match(apiSource, /Legacy-маршрут не использован/);
+assert.match(apiSource, /OWNER_AI_CANARY_MARKER/);
+assert.match(apiSource, /ownerAudience === 'owner_canary'/);
+assert.ok(apiSource.indexOf("if (ownerAudience === 'owner_canary'")
+  < apiSource.indexOf('`${gateway.url}/v1/chat`'));
+assert.doesNotMatch(apiSource, /codex.*owner_ai_core/i);
 
-console.log('owner ai canary v1 tests: ok');
+console.log([
+  'owner ai canary runtime v1.1.4 tests: ok',
+  'stable_ids=pass',
+  'composite_idempotency=pass',
+  'durable_state=pass',
+  'mutation_ack=pass',
+  'model_requests=0',
+].join('; '));

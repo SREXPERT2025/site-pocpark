@@ -1,126 +1,411 @@
 import { createHash } from 'node:crypto';
 
-const OWNER_AI_CANARY_CONTRACT_VERSION = 'AI_CORE_SITE_CONTRACT_V1';
+export const AI_CORE_RUNTIME_SHA =
+  '5713258de76d4aa689baf30eae016df54cd8d579';
+export const AI_CORE_CONTRACT_SHA =
+  '8834367e7412656b5a83d0c01b05dbffae6d3dee';
+export const AI_CORE_CONTRACT_VERSION = '1.0';
+export const AI_CORE_RUNTIME_VERSION = '1.1.4';
+export const AI_CORE_OWNER_MODEL = 'qwen3.6:27b';
 
-type OwnerCanaryThreadState = {
-  conversationThreadId: string;
-  stateVersion: number;
-  confirmedProjectFacts: unknown[];
-  [key: string]: unknown;
-};
-
-type OwnerCanaryMutationProposal = {
-  mutationId: string;
-  expectedStateVersion: number;
-  patch: Record<string, unknown>;
-  [key: string]: unknown;
-};
-
-function canonicalJson(value: unknown): string {
+export function canonicalJson(value: unknown): string {
   if (Array.isArray(value)) {
     return `[${value.map(canonicalJson).join(',')}]`;
   }
   if (value && typeof value === 'object') {
-    return `{${Object.entries(value as Record<string, unknown>)
-      .sort(([left], [right]) => left.localeCompare(right))
-      .map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`)
+    const source = value as Record<string, unknown>;
+    return `{${Object.keys(source)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(source[key])}`)
       .join(',')}}`;
   }
   return JSON.stringify(value);
 }
 
-export function decisionPackageHash(decisionPackage: unknown) {
-  return createHash('sha256')
-    .update(canonicalJson(decisionPackage))
-    .digest('hex');
+export function sha256(value: unknown) {
+  const source = typeof value === 'string' ? value : canonicalJson(value);
+  return createHash('sha256').update(source, 'utf8').digest('hex');
 }
 
-export type OwnerCanaryCoreRequest = Readonly<{
-  contractVersion: typeof OWNER_AI_CANARY_CONTRACT_VERSION;
-  aiCoreRequestId: string;
-  idempotencyKey: string;
+export const decisionPackageHash = sha256;
+
+export type OwnerCanaryRecentMessage = {
+  message_id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  created_at: string;
+};
+
+export type OwnerCanaryThreadState = {
   conversationThreadId: string;
-  messageId: string;
-  currentMessage: string;
-  sourcePage: string;
-  pageContextIntentHint: unknown | null;
   stateVersion: number;
-  state: OwnerCanaryThreadState;
-  dryRun: true;
+  confirmedProjectFacts: unknown[];
+  candidateFacts: unknown[];
+  conflicts: unknown[];
+  activeQuestion: unknown | null;
+  askedQuestions: unknown[];
+  conversationPreferences: Record<string, unknown>;
+  lastMutationAcknowledgement: unknown | null;
+};
+
+export type OwnerCanaryCoreRequest = Readonly<{
+  contract_version: typeof AI_CORE_CONTRACT_VERSION;
+  request_id: string;
+  idempotency_key: string;
+  request_payload_hash: string;
+  site_release: string;
+  gateway_release: string;
+  sent_at: string;
+  trace_context: {
+    trace_id: string;
+    span_id: string;
+    parent_span_id: string | null;
+  };
+  dry_run: boolean;
+  payload: Record<string, unknown>;
 }>;
+
+function safeHintCode(value: string) {
+  return value
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[^a-z0-9:_/-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 160) || 'unknown';
+}
+
+function buildIntentHints(input: {
+  sourcePage: string;
+  pageContextIntentHint?: unknown;
+  messageId: string;
+}) {
+  const hints: Record<string, unknown>[] = [];
+  const sourcePage = input.sourcePage.trim().slice(0, 160);
+  if (sourcePage) {
+    hints.push({
+      hint_id: `hint:${sha256(`path\0${sourcePage}`).slice(0, 24)}`,
+      source_type: 'pathname',
+      value_code: safeHintCode(sourcePage),
+      provenance_ref: `hintref:path_${sha256(sourcePage).slice(0, 20)}`,
+      confirmation_status: 'unconfirmed',
+    });
+  }
+  if (input.pageContextIntentHint !== undefined
+    && input.pageContextIntentHint !== null) {
+    const encoded = canonicalJson(input.pageContextIntentHint);
+    hints.push({
+      hint_id: `hint:${sha256(`ui\0${encoded}`).slice(0, 24)}`,
+      source_type: 'ui_selection',
+      value_code: `ui:${sha256(encoded).slice(0, 24)}`,
+      provenance_ref: `hintref:message_${sha256(input.messageId).slice(0, 20)}`,
+      confirmation_status: 'unconfirmed',
+    });
+  }
+  return hints;
+}
+
+export function ownerCanaryIdempotencyKey(
+  conversationThreadId: string,
+  messageId: string,
+) {
+  return `idem:${sha256(
+    `${conversationThreadId}\0${messageId}`,
+  ).slice(0, 48)}`;
+}
 
 export function buildOwnerCanaryCoreRequest(input: {
   aiCoreRequestId: string;
   conversationThreadId: string;
   messageId: string;
+  parentMessageId?: string | null;
   currentMessage: string;
   sourcePage: string;
   pageContextIntentHint?: unknown;
+  recentMessages?: OwnerCanaryRecentMessage[];
   state: OwnerCanaryThreadState;
+  siteRelease: string;
+  gatewayRelease: string;
+  sentAt?: string;
+  traceId?: string;
+  spanId?: string;
+  dryRun?: boolean;
 }): OwnerCanaryCoreRequest {
   if (input.state.conversationThreadId !== input.conversationThreadId) {
     throw new Error('STATE_IDENTITY_MISMATCH');
   }
+  const sentAt = input.sentAt ?? new Date().toISOString();
+  const idempotencyKey = ownerCanaryIdempotencyKey(
+    input.conversationThreadId,
+    input.messageId,
+  );
+  const payload = {
+    potential_project_id: null,
+    conversation_thread_id: input.conversationThreadId,
+    conversation_id: input.conversationThreadId,
+    message_id: input.messageId,
+    parent_message_id: input.parentMessageId ?? null,
+    timestamp: sentAt,
+    channel: 'website',
+    current_message: input.currentMessage,
+    recent_messages: (input.recentMessages ?? []).slice(-20),
+    state_version: input.state.stateVersion,
+    confirmed_project_facts: input.state.confirmedProjectFacts,
+    candidate_facts: input.state.candidateFacts,
+    fact_conflicts: input.state.conflicts,
+    intent_hints: buildIntentHints(input),
+    active_question: input.state.activeQuestion,
+    consent_safe_context_refs: [],
+    executor_policy: {
+      policy_id: 'policy:owner_qwen_v1',
+      assignment_id: `assignment:${sha256(input.conversationThreadId).slice(0, 32)}`,
+      planned_executor: 'qwen',
+      allowed_executors: ['qwen'],
+      max_model_fallbacks: 0,
+      fallback_order: ['qwen'],
+      attempt_timeout_ms: 90_000,
+      total_timeout_ms: 90_000,
+      cost_bucket_limit: 'local_high',
+      deterministic_route_handling: 'outside_executor_attempts',
+    },
+  };
   return Object.freeze({
-    contractVersion: OWNER_AI_CANARY_CONTRACT_VERSION,
-    aiCoreRequestId: input.aiCoreRequestId,
-    idempotencyKey: input.messageId,
-    conversationThreadId: input.conversationThreadId,
-    messageId: input.messageId,
-    currentMessage: input.currentMessage,
-    sourcePage: input.sourcePage,
-    // Landing/demo/article context remains an unconfirmed intent hint.
-    pageContextIntentHint: input.pageContextIntentHint ?? null,
-    stateVersion: input.state.stateVersion,
-    state: input.state,
-    dryRun: true,
+    contract_version: AI_CORE_CONTRACT_VERSION,
+    request_id: input.aiCoreRequestId,
+    idempotency_key: idempotencyKey,
+    request_payload_hash: sha256(payload),
+    site_release: input.siteRelease,
+    gateway_release: input.gatewayRelease,
+    sent_at: sentAt,
+    trace_context: {
+      trace_id: input.traceId ?? `trace:${sha256(input.aiCoreRequestId).slice(0, 24)}`,
+      span_id: input.spanId ?? `span:${sha256(input.messageId).slice(0, 24)}`,
+      parent_span_id: null,
+    },
+    dry_run: input.dryRun ?? false,
+    payload,
   });
 }
 
-export type OwnerCanaryCoreResponse = Readonly<{
-  contractVersion: typeof OWNER_AI_CANARY_CONTRACT_VERSION;
-  aiCoreRequestId: string;
-  decisionPackage: Readonly<Record<string, unknown>>;
-  decisionPackageHash: string;
-  mutationProposal: OwnerCanaryMutationProposal | null;
+export type OwnerCanaryRuntimeEnvelope = Readonly<{
+  runtime_sha: typeof AI_CORE_RUNTIME_SHA;
+  runtime_version: typeof AI_CORE_RUNTIME_VERSION;
+  contract_sha: typeof AI_CORE_CONTRACT_SHA;
+  model: typeof AI_CORE_OWNER_MODEL;
+  response: Record<string, unknown>;
 }>;
+
+function record(value: unknown, code: string) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(code);
+  }
+  return value as Record<string, unknown>;
+}
 
 export function validateOwnerCanaryCoreResponse(
   value: unknown,
-): OwnerCanaryCoreResponse {
-  if (!value || typeof value !== 'object') {
-    throw new Error('INVALID_AI_CORE_RESPONSE');
+  request?: OwnerCanaryCoreRequest,
+): OwnerCanaryRuntimeEnvelope {
+  const envelope = record(value, 'INVALID_AI_CORE_RESPONSE');
+  if (envelope.runtime_sha !== AI_CORE_RUNTIME_SHA) {
+    throw new Error('AI_CORE_RUNTIME_SHA_MISMATCH');
   }
-  const candidate = value as Record<string, unknown>;
-  if (candidate.contractVersion !== OWNER_AI_CANARY_CONTRACT_VERSION) {
-    throw new Error('AI_CORE_CONTRACT_VERSION_MISMATCH');
+  if (envelope.runtime_version !== AI_CORE_RUNTIME_VERSION) {
+    throw new Error('AI_CORE_RUNTIME_VERSION_MISMATCH');
   }
-  if (typeof candidate.aiCoreRequestId !== 'string') {
-    throw new Error('INVALID_AI_CORE_REQUEST_ID');
+  if (envelope.contract_sha !== AI_CORE_CONTRACT_SHA) {
+    throw new Error('AI_CORE_CONTRACT_SHA_MISMATCH');
   }
-  if (!candidate.decisionPackage
-    || typeof candidate.decisionPackage !== 'object'
-    || Array.isArray(candidate.decisionPackage)) {
-    throw new Error('INVALID_DECISION_PACKAGE');
+  if (envelope.model !== AI_CORE_OWNER_MODEL) {
+    throw new Error('AI_CORE_MODEL_MISMATCH');
   }
-  const actualHash = decisionPackageHash(candidate.decisionPackage);
-  if (candidate.decisionPackageHash !== actualHash) {
+  const response = record(envelope.response, 'INVALID_AI_CORE_RESPONSE_BODY');
+  if (response.contract_version !== AI_CORE_CONTRACT_VERSION
+    || response.success !== true) {
+    throw new Error('AI_CORE_CONTRACT_RESPONSE_REJECTED');
+  }
+  if (request) {
+    if (response.request_id !== request.request_id
+      || response.idempotency_key !== request.idempotency_key
+      || response.request_payload_hash !== request.request_payload_hash) {
+      throw new Error('AI_CORE_RESPONSE_CORRELATION_MISMATCH');
+    }
+    if (response.state_version_before !== request.payload.state_version) {
+      throw new Error('AI_CORE_STATE_VERSION_MISMATCH');
+    }
+  }
+  const decisionPackage = record(
+    response.decision_package,
+    'INVALID_DECISION_PACKAGE',
+  );
+  if (response.decision_package_hash !== sha256(decisionPackage)) {
     throw new Error('DECISION_PACKAGE_HASH_MISMATCH');
   }
-  const mutationProposal = candidate.mutationProposal ?? null;
-  if (mutationProposal !== null
-    && (typeof mutationProposal !== 'object'
-      || Array.isArray(mutationProposal))) {
-    throw new Error('INVALID_MUTATION_PROPOSAL');
+  const executorTrace = record(response.executor_trace, 'INVALID_EXECUTOR_TRACE');
+  if (executorTrace.planned_executor !== 'qwen'
+    || executorTrace.final_executor !== 'qwen'
+    || executorTrace.fallback_reason !== 'none') {
+    throw new Error('AI_CORE_EXECUTOR_POLICY_VIOLATION');
+  }
+  const attempts = executorTrace.attempts;
+  if (!Array.isArray(attempts) || attempts.length !== 1
+    || record(attempts[0], 'INVALID_EXECUTOR_ATTEMPT').executor !== 'qwen') {
+    throw new Error('AI_CORE_EXECUTOR_ATTEMPTS_VIOLATION');
+  }
+  const telemetry = record(response.telemetry, 'INVALID_AI_CORE_TELEMETRY');
+  const evaluation = record(
+    response.evaluation_result,
+    'INVALID_AI_CORE_EVALUATION',
+  );
+  const publication = record(
+    telemetry.publication,
+    'INVALID_AI_CORE_PUBLICATION',
+  );
+  if (evaluation.status !== 'pass'
+    || publication.candidate_status !== 'allowed'
+    || publication.published !== false) {
+    throw new Error('AI_CORE_FINAL_GATE_BLOCKED');
+  }
+  if (typeof response.answer !== 'string' || !response.answer.trim()) {
+    throw new Error('AI_CORE_EMPTY_ANSWER');
+  }
+  if (!Array.isArray(response.state_mutations)) {
+    throw new Error('INVALID_AI_CORE_MUTATIONS');
+  }
+  const mutations = response.state_mutations.map((item) =>
+    record(item, 'INVALID_AI_CORE_MUTATION'));
+  const stateBefore = Number(response.state_version_before);
+  const expectedAfter = stateBefore + (mutations.length > 0 ? 1 : 0);
+  if (response.state_version_after !== expectedAfter
+    || mutations.some((item) =>
+      item.target !== 'thread_state'
+      || String(item.field).startsWith('decision_package')
+      || item.expected_state_version !== stateBefore
+      || item.proposed_state_version !== expectedAfter
+      || (request && item.source_message_id !== request.payload.message_id))) {
+    throw new Error('AI_CORE_MUTATION_VERSION_OR_AUTHORITY_VIOLATION');
   }
   return Object.freeze({
-    contractVersion: OWNER_AI_CANARY_CONTRACT_VERSION,
-    aiCoreRequestId: candidate.aiCoreRequestId,
-    decisionPackage: Object.freeze({
-      ...(candidate.decisionPackage as Record<string, unknown>),
-    }),
-    decisionPackageHash: actualHash,
-    mutationProposal:
-      mutationProposal as OwnerCanaryMutationProposal | null,
+    runtime_sha: AI_CORE_RUNTIME_SHA,
+    runtime_version: AI_CORE_RUNTIME_VERSION,
+    contract_sha: AI_CORE_CONTRACT_SHA,
+    model: AI_CORE_OWNER_MODEL,
+    response: Object.freeze({ ...response }),
   });
+}
+
+function requiredTransportSecret(value: string | undefined) {
+  if (!value || Buffer.byteLength(value, 'utf8') < 32) {
+    throw new Error('AI_CORE_OWNER_CANARY_SECRET_INVALID');
+  }
+  return value;
+}
+
+export function ownerCanaryRuntimeConfig(
+  env: NodeJS.ProcessEnv = process.env,
+) {
+  const rawUrl = env.AI_CORE_OWNER_CANARY_URL?.trim();
+  if (!rawUrl) throw new Error('AI_CORE_OWNER_CANARY_URL_MISSING');
+  const url = new URL(rawUrl);
+  if (url.protocol !== 'https:' || url.username || url.password
+    || url.search || url.hash) {
+    throw new Error('AI_CORE_OWNER_CANARY_URL_UNSAFE');
+  }
+  if (env.AI_CORE_OWNER_CANARY_RUNTIME_SHA !== AI_CORE_RUNTIME_SHA) {
+    throw new Error('AI_CORE_OWNER_CANARY_RUNTIME_PIN_MISMATCH');
+  }
+  if (env.AI_CORE_OWNER_CANARY_CONTRACT_SHA !== AI_CORE_CONTRACT_SHA) {
+    throw new Error('AI_CORE_OWNER_CANARY_CONTRACT_PIN_MISMATCH');
+  }
+  return Object.freeze({
+    url: url.toString().replace(/\/$/, ''),
+    secret: requiredTransportSecret(env.AI_CORE_OWNER_CANARY_SECRET),
+    runtimeSha: AI_CORE_RUNTIME_SHA,
+    contractSha: AI_CORE_CONTRACT_SHA,
+  });
+}
+
+async function readTransportJson(response: Response) {
+  const body = await response.json().catch(() => null);
+  if (!response.ok) {
+    const error = new Error('AI_CORE_OWNER_CANARY_UPSTREAM_ERROR');
+    Object.assign(error, { status: response.status, safeBody: body });
+    throw error;
+  }
+  return body;
+}
+
+export async function callOwnerCanaryRuntime(
+  request: OwnerCanaryCoreRequest,
+  input: {
+    env?: NodeJS.ProcessEnv;
+    fetchImpl?: typeof fetch;
+    timeoutMs?: number;
+  } = {},
+) {
+  const config = ownerCanaryRuntimeConfig(input.env);
+  const response = await (input.fetchImpl ?? fetch)(
+    `${config.url}/v1/owner-ai-core`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.secret}`,
+        'Content-Type': 'application/json',
+        'X-AI-Core-Runtime-SHA': config.runtimeSha,
+        'X-AI-Core-Contract-SHA': config.contractSha,
+        'X-Request-Id': request.request_id,
+      },
+      body: JSON.stringify(request),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(input.timeoutMs ?? 95_000),
+    },
+  );
+  return validateOwnerCanaryCoreResponse(
+    await readTransportJson(response),
+    request,
+  );
+}
+
+type MutationAcknowledgement = {
+  contract_version: '1.0';
+  request_id: string;
+  response_id: string;
+  acknowledged_at: string;
+  acknowledgements: unknown[];
+};
+
+export async function acknowledgeOwnerCanaryMutations(
+  acknowledgement: MutationAcknowledgement,
+  input: {
+    env?: NodeJS.ProcessEnv;
+    fetchImpl?: typeof fetch;
+    timeoutMs?: number;
+  } = {},
+) {
+  if (acknowledgement.contract_version !== '1.0') {
+    throw new Error('AI_CORE_MUTATION_ACK_CONTRACT_MISMATCH');
+  }
+  const config = ownerCanaryRuntimeConfig(input.env);
+  const response = await (input.fetchImpl ?? fetch)(
+    `${config.url}/v1/owner-ai-core/ack`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${config.secret}`,
+        'Content-Type': 'application/json',
+        'X-AI-Core-Runtime-SHA': config.runtimeSha,
+        'X-AI-Core-Contract-SHA': config.contractSha,
+        'X-Request-Id': acknowledgement.request_id,
+      },
+      body: JSON.stringify(acknowledgement),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(input.timeoutMs ?? 10_000),
+    },
+  );
+  const body = await readTransportJson(response) as Record<string, unknown>;
+  if (body.accepted !== true
+    || body.runtime_sha !== AI_CORE_RUNTIME_SHA
+    || body.contract_sha !== AI_CORE_CONTRACT_SHA) {
+    throw new Error('AI_CORE_MUTATION_ACK_REJECTED');
+  }
+  return body;
 }

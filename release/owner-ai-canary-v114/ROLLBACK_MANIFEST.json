@@ -1,0 +1,23 @@
+{
+  "schema": "rospark-owner-ai-canary-rollback-v1",
+  "scope": "owner canary only",
+  "default_flag": "AI_CORE_OWNER_CANARY_ENABLED=false",
+  "deactivation_script": "scripts/deactivate_owner_ai_canary.sh",
+  "preserve": [
+    "Gateway A e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
+    "Site Foundation B",
+    "ordinary visitor legacy route",
+    "owner durable state",
+    "Site B events",
+    "runtime and transport diagnostic evidence"
+  ],
+  "must_not_do": [
+    "roll back Gateway A",
+    "roll back Site Foundation B",
+    "change preview 8787",
+    "delete owner evidence",
+    "send model, lead, MAX or CRM requests"
+  ],
+  "owner_return_to_legacy": "only after explicit flag deactivation and Site restart",
+  "activation_authorized": false
+}

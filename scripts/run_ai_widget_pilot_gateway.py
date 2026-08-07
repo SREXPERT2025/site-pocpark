@@ -29,9 +29,11 @@ from ai_widget_fast_route_context_gate import (
     FastRouteDecision,
     require_mode as require_fast_route_mode,
 )
+from ai_core_owner_runtime_bridge import OwnerRuntimeBridge
 
 
 MAX_BODY_BYTES = 32_000
+MAX_OWNER_BODY_BYTES = 512_000
 MAX_HISTORY_ITEMS = 12
 MAX_USER_MESSAGE = 1_200
 MAX_ASSISTANT_MESSAGE = 2_000
@@ -1526,10 +1528,12 @@ class GatewayServer(ThreadingHTTPServer):
         *,
         engine: PilotEngine,
         secret: str,
+        owner_runtime_bridge: OwnerRuntimeBridge | None = None,
     ) -> None:
         super().__init__(address, handler)
         self.engine = engine
         self.secret = secret
+        self.owner_runtime_bridge = owner_runtime_bridge
 
 
 class GatewayHandler(BaseHTTPRequestHandler):
@@ -1541,8 +1545,11 @@ class GatewayHandler(BaseHTTPRequestHandler):
         return
 
     def _write_json(self, status: HTTPStatus, code: str) -> None:
+        self._write_json_body(status, {"success": False, "code": code})
+
+    def _write_json_body(self, status: HTTPStatus, value: Any) -> None:
         body = json.dumps(
-            {"success": False, "code": code},
+            value,
             ensure_ascii=False,
         ).encode("utf-8")
         self.send_response(status)
@@ -1564,6 +1571,15 @@ class GatewayHandler(BaseHTTPRequestHandler):
             {
                 "status": "ok",
                 "runtime_mode": self.server.engine.runtime_mode,
+                "owner_ai_core_ready": self.server.owner_runtime_bridge is not None,
+                "owner_ai_core_runtime_sha": (
+                    self.server.owner_runtime_bridge.manifest["runtime_sha"]
+                    if self.server.owner_runtime_bridge else None
+                ),
+                "owner_ai_core_contract_sha": (
+                    self.server.owner_runtime_bridge.manifest["contract_sha"]
+                    if self.server.owner_runtime_bridge else None
+                ),
             },
             ensure_ascii=False,
         ).encode("utf-8")
@@ -1583,7 +1599,9 @@ class GatewayHandler(BaseHTTPRequestHandler):
         model_metrics: dict[str, int] | None = None
         route_telemetry: dict[str, Any] | None = None
         try:
-            if self.path != "/v1/chat":
+            if self.path not in {
+                "/v1/chat", "/v1/owner-ai-core", "/v1/owner-ai-core/ack"
+            }:
                 status = HTTPStatus.NOT_FOUND
                 self._write_json(status, "NOT_FOUND")
                 return
@@ -1595,15 +1613,44 @@ class GatewayHandler(BaseHTTPRequestHandler):
                 length = int(self.headers.get("Content-Length", "0"))
             except ValueError:
                 length = 0
-            if length < 1 or length > MAX_BODY_BYTES:
+            maximum = (
+                MAX_BODY_BYTES if self.path == "/v1/chat" else MAX_OWNER_BODY_BYTES
+            )
+            if length < 1 or length > maximum:
                 status = HTTPStatus.REQUEST_ENTITY_TOO_LARGE
                 self._write_json(status, "PAYLOAD_TOO_LARGE")
                 return
             try:
-                payload = validate_request(
-                    json.loads(self.rfile.read(length).decode("utf-8"))
-                )
+                raw_payload = json.loads(self.rfile.read(length).decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError, ValueError):
+                status = HTTPStatus.BAD_REQUEST
+                self._write_json(status, "INVALID_REQUEST")
+                return
+
+            if self.path != "/v1/chat":
+                bridge = self.server.owner_runtime_bridge
+                if bridge is None:
+                    status = HTTPStatus.SERVICE_UNAVAILABLE
+                    self._write_json(status, "OWNER_AI_CORE_NOT_CONFIGURED")
+                    return
+                try:
+                    if self.path == "/v1/owner-ai-core":
+                        result_body = bridge.process(raw_payload)
+                        route = "owner_ai_core"
+                    else:
+                        result_body = bridge.acknowledge(raw_payload)
+                        route = "owner_ai_core_ack"
+                except ValueError:
+                    status = HTTPStatus.CONFLICT
+                    self._write_json(status, "OWNER_AI_CORE_CONTRACT_REJECTED")
+                    return
+                status = HTTPStatus.OK
+                self._write_json_body(status, result_body)
+                return
+
+            try:
+                payload = validate_request(raw_payload)
+            except ValueError:
                 status = HTTPStatus.BAD_REQUEST
                 self._write_json(status, "INVALID_REQUEST")
                 return
@@ -1675,6 +1722,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--boundary-mode", choices=sorted(
         {"off", "shadow_only", "context_gated", "visible_legacy"}
     ))
+    result.add_argument("--ai-core-runtime-dir", type=Path)
     return result
 
 
@@ -1711,6 +1759,27 @@ def main() -> int:
         )
         if not args.skip_warmup:
             engine.warmup()
+        owner_runtime_dir = (
+            args.ai_core_runtime_dir
+            or (
+                Path(os.environ["AI_CORE_OWNER_RUNTIME_DIR"])
+                if os.environ.get("AI_CORE_OWNER_RUNTIME_DIR") else None
+            )
+            or (
+                Path(value) if (
+                    value := read_env_value(args.env_file, "AI_CORE_OWNER_RUNTIME_DIR")
+                ) else None
+            )
+        )
+        owner_runtime_bridge = (
+            OwnerRuntimeBridge(
+                runtime_dir=owner_runtime_dir,
+                endpoint=args.endpoint,
+                timeout=args.timeout,
+                keep_alive=args.keep_alive,
+            )
+            if owner_runtime_dir else None
+        )
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"Gateway stopped: {error}", file=sys.stderr)
         return 2
@@ -1720,6 +1789,7 @@ def main() -> int:
         GatewayHandler,
         engine=engine,
         secret=secret,
+        owner_runtime_bridge=owner_runtime_bridge,
     )
     print(
         json.dumps(
@@ -1729,6 +1799,7 @@ def main() -> int:
                 "port": args.port,
                 "model": args.model,
                 "runtime_mode": engine.runtime_mode,
+                "owner_ai_core_ready": owner_runtime_bridge is not None,
                 "external_sends": False,
             },
             ensure_ascii=False,

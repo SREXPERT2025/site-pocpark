@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type Database from 'better-sqlite3';
 
-export const OWNER_AI_CANARY_STATE_SCHEMA_VERSION = 1;
+export const OWNER_AI_CANARY_STATE_SCHEMA_VERSION = 2;
 
 export type OwnerCanaryThreadState = {
   conversationThreadId: string;
@@ -89,11 +89,10 @@ export function runOwnerAiCanaryMigrations(db: Database.Database) {
       applied_at TEXT NOT NULL
     );
   `);
-  const current = db.prepare(`
+  const v1 = db.prepare(`
     SELECT version FROM owner_ai_canary_migrations WHERE version = 1
   `).get();
-  if (current) return;
-  db.transaction(() => {
+  if (!v1) db.transaction(() => {
     db.exec(`
       CREATE TABLE owner_ai_canary_threads (
         conversation_thread_id TEXT PRIMARY KEY,
@@ -173,6 +172,79 @@ export function runOwnerAiCanaryMigrations(db: Database.Database) {
     db.prepare(`
       INSERT INTO owner_ai_canary_migrations(version, name, applied_at)
       VALUES (1, 'owner_ai_canary_foundation_v1', ?)
+    `).run(new Date().toISOString());
+  })();
+  const v2 = db.prepare(`
+    SELECT version FROM owner_ai_canary_migrations WHERE version = 2
+  `).get();
+  if (v2) return;
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE owner_ai_canary_history (
+        message_id TEXT PRIMARY KEY,
+        conversation_thread_id TEXT NOT NULL,
+        role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+        content TEXT NOT NULL CHECK (length(content) BETWEEN 1 AND 4000),
+        created_at TEXT NOT NULL,
+        created_at_ms INTEGER NOT NULL,
+        FOREIGN KEY (conversation_thread_id)
+          REFERENCES owner_ai_canary_threads(conversation_thread_id)
+          ON DELETE CASCADE
+      );
+
+      CREATE INDEX owner_ai_canary_history_thread_time
+        ON owner_ai_canary_history(
+          conversation_thread_id, created_at_ms, message_id
+        );
+
+      CREATE TABLE owner_ai_canary_runtime_responses (
+        conversation_thread_id TEXT NOT NULL,
+        message_id TEXT NOT NULL,
+        idempotency_key TEXT NOT NULL,
+        request_payload_hash TEXT NOT NULL,
+        response_hash TEXT NOT NULL,
+        response_json TEXT NOT NULL,
+        visible_answer TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        PRIMARY KEY (
+          conversation_thread_id, message_id, idempotency_key
+        ),
+        FOREIGN KEY (conversation_thread_id)
+          REFERENCES owner_ai_canary_threads(conversation_thread_id)
+          ON DELETE CASCADE
+      );
+
+      CREATE TABLE owner_ai_canary_runtime_mutation_acks (
+        response_id TEXT PRIMARY KEY,
+        request_id TEXT NOT NULL,
+        conversation_thread_id TEXT NOT NULL,
+        message_id TEXT NOT NULL,
+        proposal_hash TEXT NOT NULL,
+        acknowledgement_json TEXT NOT NULL,
+        accepted INTEGER NOT NULL CHECK (accepted IN (0, 1)),
+        state_version_after INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (conversation_thread_id)
+          REFERENCES owner_ai_canary_threads(conversation_thread_id)
+          ON DELETE CASCADE
+      );
+
+      CREATE TABLE owner_ai_canary_runtime_telemetry (
+        turn_id TEXT PRIMARY KEY,
+        runtime_sha TEXT NOT NULL,
+        raw_status TEXT NOT NULL,
+        repair_applied INTEGER NOT NULL CHECK (repair_applied IN (0, 1)),
+        final_status TEXT NOT NULL,
+        blocking_reason_codes_json TEXT NOT NULL,
+        component_versions_json TEXT NOT NULL,
+        evidence_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (turn_id) REFERENCES ai_widget_turns(id) ON DELETE CASCADE
+      );
+    `);
+    db.prepare(`
+      INSERT INTO owner_ai_canary_migrations(version, name, applied_at)
+      VALUES (2, 'owner_ai_canary_runtime_v114', ?)
     `).run(new Date().toISOString());
   })();
 }
@@ -558,4 +630,453 @@ export function recordOwnerCanaryTelemetry(
 
 export function ownerCanaryRequestId() {
   return `aicore_${randomUUID()}`;
+}
+
+export type OwnerCanaryRuntimeMutation = {
+  mutation_id: string;
+  target: 'thread_state';
+  operation: string;
+  field: string;
+  value: unknown;
+  expected_state_version: number;
+  proposed_state_version: number;
+  source_message_id: string;
+  provenance: Record<string, unknown>;
+  conflict_policy: string;
+};
+
+export type OwnerCanaryMutationAcknowledgement = {
+  contract_version: '1.0';
+  request_id: string;
+  response_id: string;
+  acknowledged_at: string;
+  acknowledgements: Array<{
+    mutation_id: string;
+    status: 'applied' | 'rejected';
+    reason_code: 'applied' | 'version_conflict' | 'schema_invalid'
+      | 'decision_package_immutable';
+    entity_version_before: number;
+    entity_version_after: number;
+    audit_ref: string;
+  }>;
+};
+
+export function listOwnerCanaryHistory(
+  db: Database.Database,
+  conversationThreadId: string,
+  limit = 20,
+) {
+  const threadId = validId(
+    conversationThreadId,
+    'conversation_thread_id',
+  );
+  const safeLimit = Math.min(Math.max(Math.trunc(limit), 1), 20);
+  const rows = db.prepare(`
+    SELECT message_id, role, content, created_at
+    FROM owner_ai_canary_history
+    WHERE conversation_thread_id = ?
+    ORDER BY created_at_ms DESC, message_id DESC
+    LIMIT ?
+  `).all(threadId, safeLimit) as Array<{
+    message_id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    created_at: string;
+  }>;
+  return rows.reverse();
+}
+
+export function appendOwnerCanaryHistory(
+  db: Database.Database,
+  input: {
+    conversationThreadId: string;
+    messageId: string;
+    role: 'user' | 'assistant';
+    content: string;
+    nowMs?: number;
+  },
+) {
+  const threadId = validId(
+    input.conversationThreadId,
+    'conversation_thread_id',
+  );
+  const messageId = validId(input.messageId, 'message_id');
+  const content = input.content.replace(/\0/g, '').trim();
+  if (!content || content.length > 4_000) {
+    throw new Error('INVALID_HISTORY_CONTENT');
+  }
+  const nowMs = input.nowMs ?? Date.now();
+  const row = {
+    messageId,
+    threadId,
+    role: input.role,
+    content,
+    createdAt: new Date(nowMs).toISOString(),
+    nowMs,
+  };
+  const result = db.prepare(`
+    INSERT OR IGNORE INTO owner_ai_canary_history (
+      message_id, conversation_thread_id, role, content,
+      created_at, created_at_ms
+    ) VALUES (
+      @messageId, @threadId, @role, @content, @createdAt, @nowMs
+    )
+  `).run(row);
+  const existing = db.prepare(`
+    SELECT conversation_thread_id, role, content
+    FROM owner_ai_canary_history WHERE message_id = ?
+  `).get(messageId) as {
+    conversation_thread_id: string;
+    role: string;
+    content: string;
+  };
+  if (existing.conversation_thread_id !== threadId
+    || existing.role !== input.role
+    || existing.content !== content) {
+    throw new Error('HISTORY_IDEMPOTENCY_CONFLICT');
+  }
+  return { created: result.changes === 1 };
+}
+
+function validRuntimeMutation(value: OwnerCanaryRuntimeMutation) {
+  validId(value.mutation_id, 'mutation_id');
+  validId(value.source_message_id, 'source_message_id');
+  if (value.target !== 'thread_state'
+    || value.field.startsWith('decision_package')) {
+    return 'decision_package_immutable' as const;
+  }
+  const operations = new Set([
+    'set_confirmed_fact',
+    'add_candidate_fact',
+    'resolve_open_question',
+    'record_conflict',
+    'update_stage',
+    'update_topic',
+    'update_intent',
+    'add_asked_question',
+  ]);
+  if (!operations.has(value.operation)
+    || !/^[a-z][a-z0-9_]{0,79}$/.test(value.field)
+    || !Number.isInteger(value.expected_state_version)
+    || !Number.isInteger(value.proposed_state_version)
+    || value.proposed_state_version !== value.expected_state_version + 1) {
+    return 'schema_invalid' as const;
+  }
+  stableJson(value);
+  return null;
+}
+
+export function applyOwnerCanaryMutationBatch(
+  db: Database.Database,
+  input: {
+    conversationThreadId: string;
+    messageId: string;
+    requestId: string;
+    responseId: string;
+    mutations: OwnerCanaryRuntimeMutation[];
+    nowMs?: number;
+  },
+): {
+  acknowledgement: OwnerCanaryMutationAcknowledgement;
+  state: OwnerCanaryThreadState;
+  accepted: boolean;
+} {
+  const threadId = validId(
+    input.conversationThreadId,
+    'conversation_thread_id',
+  );
+  const messageId = validId(input.messageId, 'message_id');
+  validId(input.requestId, 'request_id');
+  validId(input.responseId, 'response_id');
+  if (input.mutations.length > 100) {
+    throw new Error('TOO_MANY_MUTATIONS');
+  }
+  const nowMs = input.nowMs ?? Date.now();
+  const acknowledgedAt = new Date(nowMs).toISOString();
+  const proposalHash = hash({
+    requestId: input.requestId,
+    responseId: input.responseId,
+    conversationThreadId: threadId,
+    messageId,
+    mutations: input.mutations,
+  });
+
+  return db.transaction(() => {
+    const row = db.prepare(`
+      SELECT * FROM owner_ai_canary_threads
+      WHERE conversation_thread_id = ?
+    `).get(threadId) as Parameters<typeof rowToState>[0] | undefined;
+    if (!row) throw new Error('THREAD_NOT_FOUND');
+    const before = rowToState(row);
+    const prior = db.prepare(`
+      SELECT proposal_hash, acknowledgement_json, accepted
+      FROM owner_ai_canary_runtime_mutation_acks
+      WHERE response_id = ?
+    `).get(input.responseId) as {
+      proposal_hash: string;
+      acknowledgement_json: string;
+      accepted: number;
+    } | undefined;
+    if (prior) {
+      if (prior.proposal_hash !== proposalHash) {
+        throw new Error('MUTATION_BATCH_IDEMPOTENCY_CONFLICT');
+      }
+      return {
+        acknowledgement: parseJson<OwnerCanaryMutationAcknowledgement>(
+          prior.acknowledgement_json,
+        ),
+        state: before,
+        accepted: prior.accepted === 1,
+      };
+    }
+    const invalid: 'schema_invalid' | 'decision_package_immutable' | null =
+      input.mutations.map(validRuntimeMutation)
+        .find((item) => item !== null) ?? null;
+    const versionsMatch = input.mutations.every(
+      (item) => item.expected_state_version === before.stateVersion,
+    );
+    const proposedVersionsMatch = input.mutations.every(
+      (item) => item.proposed_state_version === before.stateVersion + 1,
+    );
+    const accepted = invalid === null && versionsMatch
+      && proposedVersionsMatch;
+    const reason: 'applied' | 'version_conflict' | 'schema_invalid'
+      | 'decision_package_immutable' = invalid
+      ?? (accepted ? 'applied' : 'version_conflict');
+    const nextVersion = accepted && input.mutations.length > 0
+      ? before.stateVersion + 1
+      : before.stateVersion;
+
+    const facts = new Map(
+      before.confirmedProjectFacts.map((item) => [
+        String((item as Record<string, unknown>).field), item,
+      ]),
+    );
+    const candidates = [...before.candidateFacts];
+    const conflicts = [...before.conflicts];
+    const asked = [...before.askedQuestions];
+    const preferences = { ...before.conversationPreferences };
+    let activeQuestion = before.activeQuestion;
+
+    if (accepted) for (const mutation of input.mutations) {
+      if (mutation.operation === 'set_confirmed_fact') {
+        facts.set(mutation.field, {
+          fact_id: `fact_${hash(mutation.mutation_id).slice(0, 16)}`,
+          field: mutation.field,
+          value: mutation.value,
+          source_message_id: mutation.source_message_id,
+          confirmed_at: acknowledgedAt,
+          version: Math.max(1, mutation.proposed_state_version),
+          conflict_state: 'none',
+        });
+      } else if (mutation.operation === 'add_candidate_fact') {
+        candidates.push(mutation.value);
+      } else if (mutation.operation === 'record_conflict') {
+        const current = facts.get(mutation.field) as
+          | Record<string, unknown> | undefined;
+        conflicts.push({
+          conflict_id: `conflict_${hash(mutation.mutation_id).slice(0, 16)}`,
+          field: mutation.field,
+          existing_fact_id: current?.fact_id
+            ?? `fact_${hash(mutation.field).slice(0, 16)}`,
+          candidate_id: `candidate_${hash(mutation.mutation_id).slice(0, 16)}`,
+          status: 'open',
+        });
+      } else if (mutation.operation === 'resolve_open_question') {
+        activeQuestion = null;
+      } else if (mutation.operation === 'add_asked_question') {
+        const value = mutation.value as Record<string, unknown>;
+        const question = {
+          question_id: `question_${hash(mutation.mutation_id).slice(0, 16)}`,
+          goal: value.question_goal,
+          expected_fields: value.expected_fields,
+          asked_at_message_id: mutation.source_message_id,
+        };
+        asked.push(question);
+        activeQuestion = question;
+      } else if (mutation.operation === 'update_stage'
+        || mutation.operation === 'update_topic'
+        || mutation.operation === 'update_intent') {
+        preferences[mutation.field] = mutation.value;
+      }
+    }
+
+    const acknowledgements = input.mutations.map((mutation) => ({
+      mutation_id: mutation.mutation_id,
+      status: accepted ? 'applied' as const : 'rejected' as const,
+      reason_code: accepted ? 'applied' as const : reason,
+      entity_version_before: before.stateVersion,
+      entity_version_after: nextVersion,
+      audit_ref: `auditref:${hash(
+        `${input.responseId}\0${mutation.mutation_id}`,
+      ).slice(0, 32)}`,
+    }));
+    const acknowledgement: OwnerCanaryMutationAcknowledgement = {
+      contract_version: '1.0',
+      request_id: input.requestId,
+      response_id: input.responseId,
+      acknowledged_at: acknowledgedAt,
+      acknowledgements,
+    };
+
+    if (accepted && input.mutations.length > 0) {
+      const update = db.prepare(`
+        UPDATE owner_ai_canary_threads SET
+          state_version = ?, confirmed_project_facts_json = ?,
+          candidate_facts_json = ?, conflicts_json = ?,
+          active_question_json = ?, asked_questions_json = ?,
+          conversation_preferences_json = ?, last_mutation_ack_json = ?,
+          updated_at = ?, updated_at_ms = ?
+        WHERE conversation_thread_id = ? AND state_version = ?
+      `).run(
+        nextVersion,
+        stableJson([...facts.values()]),
+        stableJson(candidates),
+        stableJson(conflicts),
+        activeQuestion === null ? null : stableJson(activeQuestion),
+        stableJson(asked),
+        stableJson(preferences),
+        stableJson(acknowledgement),
+        acknowledgedAt,
+        nowMs,
+        threadId,
+        before.stateVersion,
+      );
+      if (update.changes !== 1) throw new Error('STATE_VERSION_RACE');
+    }
+    const afterRow = db.prepare(`
+      SELECT * FROM owner_ai_canary_threads
+      WHERE conversation_thread_id = ?
+    `).get(threadId) as Parameters<typeof rowToState>[0];
+    db.prepare(`
+      INSERT INTO owner_ai_canary_runtime_mutation_acks (
+        response_id, request_id, conversation_thread_id, message_id,
+        proposal_hash, acknowledgement_json, accepted,
+        state_version_after, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      input.responseId,
+      input.requestId,
+      threadId,
+      messageId,
+      proposalHash,
+      stableJson(acknowledgement),
+      accepted || input.mutations.length === 0 ? 1 : 0,
+      rowToState(afterRow).stateVersion,
+      acknowledgedAt,
+    );
+    return {
+      acknowledgement,
+      state: rowToState(afterRow),
+      accepted: accepted || input.mutations.length === 0,
+    };
+  })();
+}
+
+export function saveOwnerCanaryRuntimeResponse(
+  db: Database.Database,
+  input: {
+    conversationThreadId: string;
+    messageId: string;
+    idempotencyKey: string;
+    requestPayloadHash: string;
+    response: unknown;
+    visibleAnswer: string;
+    createdAt?: string;
+  },
+) {
+  const row = {
+    conversationThreadId: validId(
+      input.conversationThreadId,
+      'conversation_thread_id',
+    ),
+    messageId: validId(input.messageId, 'message_id'),
+    idempotencyKey: validId(input.idempotencyKey, 'idempotency_key'),
+    requestPayloadHash: input.requestPayloadHash,
+    responseHash: hash(input.response),
+    responseJson: stableJson(input.response),
+    visibleAnswer: input.visibleAnswer.trim(),
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+  if (!/^[a-f0-9]{64}$/.test(row.requestPayloadHash)
+    || !row.visibleAnswer) throw new Error('INVALID_RUNTIME_RESPONSE_CACHE');
+  db.prepare(`
+    INSERT INTO owner_ai_canary_runtime_responses (
+      conversation_thread_id, message_id, idempotency_key,
+      request_payload_hash, response_hash, response_json,
+      visible_answer, created_at
+    ) VALUES (
+      @conversationThreadId, @messageId, @idempotencyKey,
+      @requestPayloadHash, @responseHash, @responseJson,
+      @visibleAnswer, @createdAt
+    )
+  `).run(row);
+  return { responseHash: row.responseHash };
+}
+
+export function getOwnerCanaryRuntimeResponse(
+  db: Database.Database,
+  input: {
+    conversationThreadId: string;
+    messageId: string;
+    idempotencyKey: string;
+  },
+) {
+  const row = db.prepare(`
+    SELECT * FROM owner_ai_canary_runtime_responses
+    WHERE conversation_thread_id = ? AND message_id = ?
+      AND idempotency_key = ?
+  `).get(
+    validId(input.conversationThreadId, 'conversation_thread_id'),
+    validId(input.messageId, 'message_id'),
+    validId(input.idempotencyKey, 'idempotency_key'),
+  ) as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return {
+    requestPayloadHash: row.request_payload_hash as string,
+    responseHash: row.response_hash as string,
+    response: parseJson(row.response_json as string),
+    visibleAnswer: row.visible_answer as string,
+  };
+}
+
+export function recordOwnerCanaryRuntimeTelemetry(
+  db: Database.Database,
+  input: {
+    turnId: string;
+    runtimeSha: string;
+    rawStatus: string;
+    repairApplied: boolean;
+    finalStatus: string;
+    blockingReasonCodes: string[];
+    componentVersions: Record<string, unknown>;
+    createdAt?: string;
+  },
+) {
+  const row = {
+    turnId: validId(input.turnId, 'turn_id'),
+    runtimeSha: input.runtimeSha,
+    rawStatus: input.rawStatus,
+    repairApplied: input.repairApplied ? 1 : 0,
+    finalStatus: input.finalStatus,
+    blockingReasonCodesJson: stableJson(input.blockingReasonCodes),
+    componentVersionsJson: stableJson(input.componentVersions),
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+  if (!/^[a-f0-9]{40}$/.test(row.runtimeSha)) {
+    throw new Error('INVALID_RUNTIME_SHA');
+  }
+  const evidenceHash = hash(row);
+  db.prepare(`
+    INSERT INTO owner_ai_canary_runtime_telemetry (
+      turn_id, runtime_sha, raw_status, repair_applied,
+      final_status, blocking_reason_codes_json,
+      component_versions_json, evidence_hash, created_at
+    ) VALUES (
+      @turnId, @runtimeSha, @rawStatus, @repairApplied,
+      @finalStatus, @blockingReasonCodesJson,
+      @componentVersionsJson, @evidenceHash, @createdAt
+    )
+  `).run({ ...row, evidenceHash });
+  return { evidenceHash };
 }

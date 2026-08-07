@@ -1,0 +1,67 @@
+{
+  "schema": "rospark-owner-ai-canary-release-candidate-v1",
+  "created_at": "2026-08-07T00:00:00Z",
+  "activation_authorized": false,
+  "owner_canary_default_enabled": false,
+  "site_foundation_sha": "2f5560909d31aa9df732cab74f269c0259c15529",
+  "site_integration_target_resolution": "full Git commit containing this manifest; supplied and rechecked by checksum-verified activation handoff",
+  "gateway_a_sha": "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
+  "gateway_a_behavior": "unchanged",
+  "runtime_sha": "5713258de76d4aa689baf30eae016df54cd8d579",
+  "runtime_version": "1.1.4",
+  "runtime_tree_sha": "0d45d6ecf67f5bb3d0e249bbf1b367fbf5fe8a36",
+  "contract_sha": "8834367e7412656b5a83d0c01b05dbffae6d3dee",
+  "contract_version": "1.0",
+  "executor": {
+    "planned": "qwen",
+    "model": "qwen3.6:27b",
+    "allowed": ["qwen"],
+    "fallbacks": 0
+  },
+  "artifacts": {
+    "runtime_archive": {
+      "path": "release/owner-ai-canary-v114/ai-core-runtime-5713258de76d4aa689baf30eae016df54cd8d579.tar.gz",
+      "sha256": "89b2bd8bd9dadc0f85a27af8adbc04dcd56245d4c6e1fbc70bf6fbd05590db93"
+    },
+    "migration_source": {
+      "path": "app/lib/owner-ai-canary-state.ts",
+      "schema_version": 2,
+      "sha256": "d28780257fd40fe7d7a3785a427c050f5c8a267c374972f259c9a050afda6755"
+    },
+    "config_template": {
+      "path": "release/owner-ai-canary-v114/owner-canary.env.example",
+      "sha256": "ed5c7aeba3cff688e761990a8b03431c45bb4ac65e67be93c185989c34db5140"
+    },
+    "activation_script": {
+      "path": "scripts/activate_owner_ai_canary_for_owner_live_test.sh",
+      "sha256": "79f0e8d8eff89330b4fb7ed56f19ff753986bd1cc41c0dc2eb649e496510ddb8"
+    },
+    "deactivation_script": {
+      "path": "scripts/deactivate_owner_ai_canary.sh",
+      "sha256": "a687f6617b061430f38fddad3ca8fc3a5fc697e17acdeb69e293ae01715db36f"
+    },
+    "gateway_bridge": {
+      "path": "scripts/ai_core_owner_runtime_bridge.py",
+      "sha256": "9fa8f792b8682b11da56276452c2246520d10778ffa6fd626817c607cc9265c9"
+    },
+    "site_contract_adapter": {
+      "path": "app/lib/owner-ai-canary-adapter.ts",
+      "sha256": "8deb365e7dbfd8b6af40666058d9e7d46f8c8c6e099fd3a8c73d2b8d2cb9984b"
+    },
+    "site_owner_route": {
+      "path": "app/lib/ai-widget-api.ts",
+      "sha256": "9f2695f551b566ac66f21bec81768c3d4ec4cf2de55bde49aab3959fd3b98621"
+    },
+    "gateway_entrypoint": {
+      "path": "scripts/run_ai_widget_pilot_gateway.py",
+      "sha256": "1aceca1866491cfc9bb4d1b98945de4dcab7b5f451b539f08fb4d20041325e9f"
+    }
+  },
+  "production_evidence": {
+    "model_requests": 0,
+    "public_behavior_changes": 0,
+    "owner_canary_enabled": false,
+    "lead_max_crm_mutations": 0
+  },
+  "next_owner_gate": "activate_owner_canary_for_owner_live_test"
+}
