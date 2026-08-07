@@ -368,6 +368,50 @@ export function runAiWidgetLogMigrations(db: Database.Database) {
       `).run(new Date().toISOString());
     })();
   }
+
+  if (!applied.has(3)) {
+    db.transaction(() => {
+      db.exec(`
+        CREATE TABLE ai_widget_server_events (
+          id TEXT PRIMARY KEY,
+          turn_id TEXT NOT NULL,
+          session_id TEXT NOT NULL,
+          request_id TEXT NOT NULL,
+          source_page TEXT NOT NULL,
+          event_name TEXT NOT NULL
+            CHECK (
+              event_name IN (
+                'turn_accepted',
+                'answer_completed',
+                'answer_error'
+              )
+            ),
+          route TEXT,
+          template_id TEXT,
+          error_code TEXT,
+          elapsed_ms INTEGER
+            CHECK (elapsed_ms IS NULL OR elapsed_ms >= 0),
+          created_at TEXT NOT NULL,
+          created_at_ms INTEGER NOT NULL,
+          FOREIGN KEY (turn_id)
+            REFERENCES ai_widget_turns(id) ON DELETE CASCADE,
+          UNIQUE (turn_id, event_name)
+        );
+
+        CREATE UNIQUE INDEX idx_ai_widget_server_events_terminal
+          ON ai_widget_server_events(turn_id)
+          WHERE event_name IN ('answer_completed', 'answer_error');
+
+        CREATE INDEX idx_ai_widget_server_events_created
+          ON ai_widget_server_events(created_at_ms DESC);
+      `);
+      db.prepare(`
+        INSERT INTO ai_widget_log_migrations (
+          version, name, applied_at
+        ) VALUES (3, 'server_confirmed_foundation_events', ?)
+      `).run(new Date().toISOString());
+    })();
+  }
 }
 
 function touchSession(

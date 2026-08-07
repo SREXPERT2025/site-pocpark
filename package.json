@@ -16,6 +16,7 @@
     "test:lead-cli": "node scripts/test_lead_cli_runtime.mjs",
     "test:ai-widget-pilot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_widget_pilot.mjs",
     "test:ai-widget-log": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_widget_log.mjs",
+    "test:ai-widget-server-events": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_widget_server_events.mjs",
     "test:ai-widget-gateway": "python3 scripts/test_ai_widget_pilot_gateway.py",
     "test:ai-widget-env": "node scripts/test_configure_ai_widget_pilot_env.mjs",
     "test:ai-widget-production-env": "node scripts/test_configure_ai_widget_production_env.mjs",

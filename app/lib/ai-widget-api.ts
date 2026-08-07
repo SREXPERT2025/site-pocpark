@@ -23,8 +23,13 @@ import {
 } from './ai-widget-log-core';
 import {
   aiWidgetLoggingEnabled,
+  aiWidgetServerEventsEnabled,
   getAiWidgetLogDatabase,
 } from './ai-widget-log-database';
+import {
+  tryRecordAiWidgetServerEvent,
+  type AiWidgetServerEventName,
+} from './ai-widget-server-events-core';
 import { LeadRegistryError } from './lead-registry-core';
 import {
   leadRegistryEnabled,
@@ -199,6 +204,7 @@ export async function handleAiWidgetStatus() {
       runtimeMode,
       handoffMode: aiWidgetHandoffMode(),
       loggingEnabled: aiWidgetLoggingEnabled(),
+      serverEventsEnabled: aiWidgetServerEventsEnabled(),
     },
     {
       headers: {
@@ -261,6 +267,25 @@ export async function handleAiWidgetChat(request: Request) {
   const requestId = randomUUID();
   const lastUserMessage = parsed.payload.messages.at(-1)?.content ?? '';
   let loggingStarted = false;
+  const recordServerEvent = (
+    eventName: AiWidgetServerEventName,
+    details: {
+      route?: string | null;
+      templateId?: string | null;
+      errorCode?: string | null;
+      elapsedMs?: number | null;
+    } = {},
+  ) => {
+    tryRecordAiWidgetServerEvent({
+      enabled: aiWidgetServerEventsEnabled(),
+      database: getAiWidgetLogDatabase,
+      event: {
+        turnId: parsed.payload.turnId,
+        eventName,
+        ...details,
+      },
+    });
+  };
   if (aiWidgetLoggingEnabled()) {
     try {
       const existing = beginAiWidgetTurn(getAiWidgetLogDatabase(), {
@@ -271,10 +296,16 @@ export async function handleAiWidgetChat(request: Request) {
         userContent: lastUserMessage,
         runtimeMode,
       });
+      recordServerEvent('turn_accepted');
       if (
         existing.status === 'answered'
         && existing.assistantContent
       ) {
+        recordServerEvent('answer_completed', {
+          route: existing.route,
+          templateId: existing.templateId,
+          elapsedMs: existing.elapsedMs,
+        });
         return textResponse(existing.assistantContent, {
           route: existing.route ?? 'cached',
           requestId: existing.requestId,
@@ -283,6 +314,10 @@ export async function handleAiWidgetChat(request: Request) {
         });
       }
       if (existing.status !== 'pending') {
+        recordServerEvent('answer_error', {
+          errorCode: existing.errorCode,
+          elapsedMs: existing.elapsedMs,
+        });
         return jsonError(
           409,
           'TURN_ALREADY_FAILED',
@@ -302,10 +337,15 @@ export async function handleAiWidgetChat(request: Request) {
   const failLoggedTurn = (code: string) => {
     if (!loggingStarted) return;
     try {
+      const elapsedMs = Date.now() - startedAt;
       failAiWidgetTurn(getAiWidgetLogDatabase(), {
         turnId: parsed.payload.turnId,
         errorCode: code,
-        elapsedMs: Date.now() - startedAt,
+        elapsedMs,
+      });
+      recordServerEvent('answer_error', {
+        errorCode: code,
+        elapsedMs,
       });
     } catch {
       // The original safe error remains the client response.
@@ -319,12 +359,18 @@ export async function handleAiWidgetChat(request: Request) {
   ) => {
     if (!loggingStarted) return true;
     try {
+      const elapsedMs = Date.now() - startedAt;
       completeAiWidgetTurn(getAiWidgetLogDatabase(), {
         turnId: parsed.payload.turnId,
         assistantContent: answer,
         route,
         templateId,
-        elapsedMs: Date.now() - startedAt,
+        elapsedMs,
+      });
+      recordServerEvent('answer_completed', {
+        route,
+        templateId,
+        elapsedMs,
       });
       return true;
     } catch {

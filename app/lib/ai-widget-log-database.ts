@@ -24,6 +24,12 @@ export function aiWidgetLoggingEnabled(
   return env.AI_WIDGET_LOGGING_ENABLED === 'true';
 }
 
+export function aiWidgetServerEventsEnabled(
+  env: NodeJS.ProcessEnv = process.env,
+) {
+  return env.AI_WIDGET_SERVER_EVENTS_ENABLED === 'true';
+}
+
 export function aiWidgetLogDatabasePath(
   env: NodeJS.ProcessEnv = process.env,
 ) {
