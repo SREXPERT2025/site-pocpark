@@ -18,24 +18,25 @@ export function generateStaticParams() {
   return getAllContentMeta('keysy').map((m) => ({ slug: m.slug }));
 }
 
-export function generateMetadata({
+export async function generateMetadata({
   params,
 }: {
-  params: { slug: string };
-}): Metadata {
-  const data = getContentBySlug('keysy', params.slug);
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const data = getContentBySlug('keysy', slug);
   if (!data) return { title: 'Проект не найден' };
 
   return {
     title: `${data.title} — Проекты`,
     description: data.description,
     alternates: {
-      canonical: canonicalUrl(`/keysy/${params.slug}`),
+      canonical: canonicalUrl(`/keysy/${slug}`),
     },
     openGraph: {
       title: data.title,
       description: data.description,
-      url: canonicalUrl(`/keysy/${params.slug}`),
+      url: canonicalUrl(`/keysy/${slug}`),
       images: data.coverImage ? [canonicalUrl(data.coverImage)] : undefined,
     },
   };
@@ -56,14 +57,15 @@ function scoreSimilar(
   return score;
 }
 
-export default function KeysyPage({ params }: { params: { slug: string } }) {
-  const data = getContentBySlug('keysy', params.slug);
+export default async function KeysyPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const data = getContentBySlug('keysy', slug);
   if (!data) return notFound();
 
   const all = getAllContentMeta('keysy');
 
   const related = all
-    .filter((m) => m.slug !== params.slug)
+    .filter((m) => m.slug !== slug)
     .map((m) => {
       const score = scoreSimilar(
         data.tags ?? [],

@@ -14,8 +14,9 @@ export const runtime = 'nodejs';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const auth = requireLeadAdmin(
     request,
     'delete',
@@ -31,7 +32,7 @@ export async function DELETE(
   const body = (await request.json().catch(() => null)) as {
     confirmation?: unknown;
   } | null;
-  if (body?.confirmation !== params.id) {
+  if (body?.confirmation !== id) {
     return leadAdminJson(
       { error: 'Удаление не подтверждено.', code: 'CONFIRMATION_REQUIRED' },
       { status: 400 },
@@ -39,7 +40,7 @@ export async function DELETE(
   }
   const deleted = deleteAiWidgetSession(
     getAiWidgetLogDatabase(),
-    params.id,
+    id,
   );
   return deleted
     ? leadAdminJson({ ok: true })

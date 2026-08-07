@@ -30,29 +30,31 @@ export function generateStaticParams() {
   return getAllContentMeta('vozmozhnosti').map((m) => ({ slug: m.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const data = getContentBySlug('vozmozhnosti', params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const data = getContentBySlug('vozmozhnosti', slug);
   if (!data) return {};
   return {
     title: data.title,
     description: data.description,
     alternates: {
-      canonical: canonicalUrl(`/vozmozhnosti/${params.slug}`),
+      canonical: canonicalUrl(`/vozmozhnosti/${slug}`),
     },
     openGraph: {
       title: data.title,
       description: data.description,
-      url: canonicalUrl(`/vozmozhnosti/${params.slug}`),
+      url: canonicalUrl(`/vozmozhnosti/${slug}`),
       type: 'website',
       images: data.coverImage ? [canonicalUrl(data.coverImage)] : undefined,
     },
   };
 }
 
-export default function VozmozhnostiPage({ params }: { params: { slug: string } }) {
-  const data = getContentBySlug('vozmozhnosti', params.slug);
+export default async function VozmozhnostiPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const data = getContentBySlug('vozmozhnosti', slug);
   if (!data) notFound();
-  const visual = featureVisuals[params.slug];
+  const visual = featureVisuals[slug];
 
   return (
     <div>
@@ -76,7 +78,7 @@ export default function VozmozhnostiPage({ params }: { params: { slug: string } 
         <TrustConversionBlocks variant="features" />
       </div>
 
-      {demoRelevantFeatures.has(params.slug) ? <DemoCommercialCallout /> : null}
+      {demoRelevantFeatures.has(slug) ? <DemoCommercialCallout /> : null}
 
       {data.ctas?.length ? (
         <div className="mt-8">

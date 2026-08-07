@@ -24,20 +24,21 @@ export function generateStaticParams() {
 }
 
 // Генерируем метаданные страницы
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const data = getContentBySlug('resheniya', params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const data = getContentBySlug('resheniya', slug);
   if (!data) return { title: 'Страница не найдена' };
   
   return {
     title: data.title,
     description: data.description,
     alternates: {
-      canonical: canonicalUrl(`/resheniya/${params.slug}`),
+      canonical: canonicalUrl(`/resheniya/${slug}`),
     },
     openGraph: {
       title: data.title,
       description: data.description,
-      url: canonicalUrl(`/resheniya/${params.slug}`),
+      url: canonicalUrl(`/resheniya/${slug}`),
       type: 'website',
       images: data.coverImage ? [canonicalUrl(data.coverImage)] : undefined,
     },
@@ -45,14 +46,15 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 // Рендер страницы
-export default function ResheniePage({ params }: { params: { slug: string } }) {
-  const data = getContentBySlug('resheniya', params.slug);
+export default async function ResheniePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const data = getContentBySlug('resheniya', slug);
 
   if (!data) {
     notFound();
   }
 
-  const isCostPage = params.slug === 'stoimost-avtomatizacii-parkovki';
+  const isCostPage = slug === 'stoimost-avtomatizacii-parkovki';
 
   const coverAspectClass =
     data.coverImageAspect === '1896/829'
@@ -67,7 +69,7 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
         items={[
           { name: 'Главная', url: '/' },
           { name: 'Решения', url: '/resheniya' },
-          { name: data.title, url: `/resheniya/${params.slug}` },
+          { name: data.title, url: `/resheniya/${slug}` },
         ]}
       />
 
@@ -92,9 +94,9 @@ export default function ResheniePage({ params }: { params: { slug: string } }) {
                 sizes="(min-width: 1024px) 960px, calc(100vw - 32px)"
                 className="object-contain"
                 priority={
-                  params.slug === 'kak-my-rabotaem' ||
-                  params.slug === 'stoimost-avtomatizacii-parkovki' ||
-                  params.slug === 'integracii-i-api'
+                  slug === 'kak-my-rabotaem' ||
+                  slug === 'stoimost-avtomatizacii-parkovki' ||
+                  slug === 'integracii-i-api'
                 }
               />
             </div>

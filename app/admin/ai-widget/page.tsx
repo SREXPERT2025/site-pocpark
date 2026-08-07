@@ -9,11 +9,11 @@ import AiWidgetAdminDashboard from './AiWidgetAdminDashboard';
 
 export const dynamic = 'force-dynamic';
 
-export default function AiWidgetAdminPage() {
+export default async function AiWidgetAdminPage() {
   if (!leadAdminEnabled()) notFound();
   let session: ReturnType<typeof verifyConfiguredLeadAdminSession>;
   try {
-    const token = cookies().get(LEAD_ADMIN_COOKIE_NAME)?.value;
+    const token = (await cookies()).get(LEAD_ADMIN_COOKIE_NAME)?.value;
     session = verifyConfiguredLeadAdminSession(token);
   } catch {
     redirect('/admin/leads/login');

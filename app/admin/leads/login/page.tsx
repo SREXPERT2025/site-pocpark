@@ -9,11 +9,11 @@ import LeadAdminLogin from './LeadAdminLogin';
 
 export const dynamic = 'force-dynamic';
 
-export default function LeadAdminLoginPage() {
+export default async function LeadAdminLoginPage() {
   if (!leadAdminEnabled()) notFound();
   let session = null;
   try {
-    const token = cookies().get(LEAD_ADMIN_COOKIE_NAME)?.value;
+    const token = (await cookies()).get(LEAD_ADMIN_COOKIE_NAME)?.value;
     session = verifyConfiguredLeadAdminSession(token);
   } catch {
     // The login form will show the safe configuration error returned by API.

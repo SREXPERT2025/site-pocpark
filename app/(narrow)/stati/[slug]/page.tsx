@@ -30,20 +30,21 @@ export function generateStaticParams() {
   return getAllContentMeta('stati').map((article) => ({ slug: article.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const article = getContentBySlug('stati', params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const article = getContentBySlug('stati', slug);
   if (!article) return {};
 
   return {
     title: article.title,
     description: article.description,
     alternates: {
-      canonical: canonicalUrl(`/stati/${params.slug}`),
+      canonical: canonicalUrl(`/stati/${slug}`),
     },
     openGraph: {
       title: article.title,
       description: article.description,
-      url: canonicalUrl(`/stati/${params.slug}`),
+      url: canonicalUrl(`/stati/${slug}`),
       type: 'article',
       publishedTime: article.datePublished,
       modifiedTime: article.lastModified,
@@ -53,8 +54,9 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
-export default function ArticlePage({ params }: { params: { slug: string } }) {
-  const article = getContentBySlug('stati', params.slug);
+export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const article = getContentBySlug('stati', slug);
   if (!article) notFound();
   if (!article.datePublished) {
     throw new Error(`Article ${article.slug} is missing a source-backed datePublished`);

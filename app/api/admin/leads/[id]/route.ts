@@ -17,15 +17,16 @@ function validLeadId(value: string) {
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const auth = requireLeadAdmin(
     request,
     'process',
     { requireSameOrigin: true },
   );
   if ('response' in auth) return auth.response;
-  if (!validLeadId(params.id)) {
+  if (!validLeadId(id)) {
     return leadAdminJson(
       { error: 'Лид не найден.', code: 'LEAD_NOT_FOUND' },
       { status: 404 },
@@ -64,7 +65,7 @@ export async function PATCH(
         userId: auth.session.userId,
         role: auth.session.role,
       },
-      leadId: params.id,
+      leadId: id,
       toStatus: action === 'assign'
         ? 'assigned'
         : action === 'contact'
@@ -91,15 +92,16 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
+  const { id } = await params;
   const auth = requireLeadAdmin(
     request,
     'delete',
     { requireSameOrigin: true },
   );
   if ('response' in auth) return auth.response;
-  if (!validLeadId(params.id)) {
+  if (!validLeadId(id)) {
     return leadAdminJson(
       { error: 'Лид не найден.', code: 'LEAD_NOT_FOUND' },
       { status: 404 },
@@ -110,7 +112,7 @@ export async function DELETE(
     confirmation?: unknown;
     reason?: unknown;
   } | null;
-  const expectedConfirmation = `RSP-${params.id.slice(0, 8).toUpperCase()}`;
+  const expectedConfirmation = `RSP-${id.slice(0, 8).toUpperCase()}`;
   const reason = payload?.reason;
   if (
     payload?.confirmation !== expectedConfirmation ||
@@ -129,7 +131,7 @@ export async function DELETE(
       userId: auth.session.userId,
       role: auth.session.role,
     },
-    leadId: params.id,
+    leadId: id,
     reason: reason as 'privacy_request' | 'test' | 'director_decision',
   });
   return deleted

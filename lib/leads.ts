@@ -153,6 +153,8 @@ function getMailTransport(): Transporter {
     port,
     secure,
     auth: user && pass ? { user, pass } : undefined,
+    disableFileAccess: true,
+    disableUrlAccess: true,
   });
 
   return cachedTransport;

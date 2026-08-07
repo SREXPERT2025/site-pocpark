@@ -53,7 +53,9 @@ export function getAiWidgetLogDatabase() {
   chmodSync(filePath, 0o600);
   db.pragma('journal_mode = WAL');
   for (const sidecarPath of [`${filePath}-wal`, `${filePath}-shm`]) {
-    if (existsSync(sidecarPath)) chmodSync(sidecarPath, 0o600);
+    if (existsSync(/* turbopackIgnore: true */ sidecarPath)) {
+      chmodSync(sidecarPath, 0o600);
+    }
   }
   db.pragma('foreign_keys = ON');
   db.pragma('busy_timeout = 5000');

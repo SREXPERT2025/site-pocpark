@@ -32,8 +32,9 @@ export function generateStaticParams() {
     .map((file) => ({ slug: file.replace(/\.md$/, '') }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
-  const product = getProduct(params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const product = getProduct(slug);
 
   if (!product) {
     return {
@@ -42,9 +43,9 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   }
 
   const { data } = product;
-  const title = String(data.title || params.slug);
+  const title = String(data.title || slug);
   const description = String(data.description || '');
-  const pageUrl = canonicalUrl(`/oborudovanie/${params.slug}`);
+  const pageUrl = canonicalUrl(`/oborudovanie/${slug}`);
   const coverImage = typeof data.coverImage === 'string' ? data.coverImage : undefined;
 
   return {
@@ -63,12 +64,13 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
-  const product = getProduct(params.slug);
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const product = getProduct(slug);
   if (!product) return notFound();
 
   const { data, content } = product;
-  const title = String(data.title || params.slug);
+  const title = String(data.title || slug);
   const images = [data.coverImage, ...(Array.isArray(data.gallery) ? data.gallery : [])]
     .map((image) => (typeof image === 'string' ? image.trim() : ''))
     .filter(Boolean);
@@ -79,7 +81,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         items={[
           { name: 'Главная', url: '/' },
           { name: 'Оборудование', url: '/oborudovanie' },
-          { name: title, url: `/oborudovanie/${params.slug}` },
+          { name: title, url: `/oborudovanie/${slug}` },
         ]}
       />
       {faq.length > 0 ? <FaqJsonLd items={faq} /> : null}
@@ -93,7 +95,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         sku={typeof data.sku === 'string' ? data.sku : undefined}
         mpn={typeof data.mpn === 'string' ? data.mpn : undefined}
         gtin={typeof data.gtin === 'string' ? data.gtin : undefined}
-        url={`/oborudovanie/${params.slug}`}
+        url={`/oborudovanie/${slug}`}
       />
       <ProductView data={data} content={content} />
     </>

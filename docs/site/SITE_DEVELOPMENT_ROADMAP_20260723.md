@@ -927,6 +927,16 @@ production-зависимостей уровня high, включая прямы
 Критерий готовности: нет неисследованных high/critical production findings,
 все функциональные и визуальные проверки пройдены на Node.js 22.
 
+Статус на 2026-08-07: `LOCAL_CANDIDATE_VERIFIED`. В отдельной ветке поверх
+production SHA `3177187` подготовлен переход на Next.js `16.3.0`, React
+`19.2.8`, Nodemailer `9.0.4` и Sharp `0.35.3`. Повторные production и full
+dependency audit возвращают 0 vulnerabilities; TypeScript, ESLint,
+production build, Stage B/C, функциональные и адаптивные проверки пройдены.
+SMTP-транспорт дополнительно закрыт от чтения локальных файлов и URL.
+Production не изменён. Публикация остаётся отдельным Release 2 с обязательным
+backup, hot rollback и HTTPS acceptance по
+`docs/deployment/SECURITY_RELEASE_2_20260807.md`.
+
 ## 9. Порядок следующих блоков
 
 1. `DOCS-RECONCILE-20260804` — зафиксированы два лендинга, AI-аналитика,

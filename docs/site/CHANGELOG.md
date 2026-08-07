@@ -7,6 +7,24 @@
 
 Этот файл фиксирует крупные изменения сайта человеческим языком. Он не заменяет git, но помогает быстро понять историю развития проекта.
 
+## 2026-08-07 — локальный кандидат Security Release 2
+
+- кандидат собран в отдельной ветке поверх production SHA `3177187`;
+- Next.js обновлён до `16.3.0`, React — до `19.2.8`, Nodemailer — до `9.0.4`,
+  Sharp — до `0.35.3`;
+- устранены пять исходных production findings уровня high; повторные
+  production и full `npm audit` показывают 0 vulnerabilities;
+- Next.js API переведены на асинхронные `params`, `searchParams` и `cookies()`;
+- SMTP-транспорту запрещено читать локальные файлы и URL, добавлен
+  регрессионный тест;
+- TypeScript, ESLint, production build, Stage B/C, ключевые серверные и
+  интерфейсные тесты пройдены;
+- `/`, `/parkovka`, `/parkovka-pod-klyuch` и `/demo` проверены на
+  320/375/390/1440 px без горизонтального переполнения и сломанных изображений;
+- production, VPS, Mac Studio gateway, лиды и MAX не изменялись;
+- release gate и rollback-порядок описаны в
+  `docs/deployment/SECURITY_RELEASE_2_20260807.md`.
+
 ## 2026-08-06 — technical SEO и лёгкая мобильная доставка Hero
 
 - добавлен versioned poster главного видео размером менее 150 КБ;

@@ -9,23 +9,24 @@ import LeadAdminDashboard from './LeadAdminDashboard';
 
 export const dynamic = 'force-dynamic';
 
-export default function LeadAdminPage({
+export default async function LeadAdminPage({
   searchParams,
 }: {
-  searchParams?: { search?: string | string[] };
+  searchParams?: Promise<{ search?: string | string[] }>;
 }) {
   if (!leadAdminEnabled()) notFound();
   let session: ReturnType<typeof verifyConfiguredLeadAdminSession>;
   try {
-    const token = cookies().get(LEAD_ADMIN_COOKIE_NAME)?.value;
+    const token = (await cookies()).get(LEAD_ADMIN_COOKIE_NAME)?.value;
     session = verifyConfiguredLeadAdminSession(token);
   } catch {
     redirect('/admin/leads/login');
   }
   if (!session) redirect('/admin/leads/login');
-  const requestedSearch = Array.isArray(searchParams?.search)
-    ? searchParams?.search[0]
-    : searchParams?.search;
+  const resolvedSearchParams = await searchParams;
+  const requestedSearch = Array.isArray(resolvedSearchParams?.search)
+    ? resolvedSearchParams?.search[0]
+    : resolvedSearchParams?.search;
   const initialSearch = (requestedSearch || '').trim().slice(0, 160);
   return (
     <LeadAdminDashboard

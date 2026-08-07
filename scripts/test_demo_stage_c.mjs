@@ -44,6 +44,7 @@ const historyOne = generateDemoHistoricalDataset(julyPeriod);
 const historyTwo = generateDemoHistoricalDataset(julyPeriod);
 const otherMonth = generateDemoHistoricalDataset(januaryPeriod);
 const historyAfterOtherMonth = generateDemoHistoricalDataset(julyPeriod);
+const runtimePreviousMonthPeriod = getDemoOwnerPeriod('previous-month', new Date());
 assert.deepEqual(historyOne, historyTwo);
 assert.deepEqual(historyOne, historyAfterOtherMonth);
 assert.notDeepEqual(historyOne.guestRequests[0], otherMonth.guestRequests[0]);
@@ -141,10 +142,10 @@ const [summaryA, summaryB] = await Promise.all([
 assert.equal(summaryA.status, 200);
 assert.deepEqual(summaryA.payload, summaryB.payload);
 assert.deepEqual(summaryA.payload.period, {
-  from: julyPeriod.from,
-  toExclusive: julyPeriod.toExclusive,
+  from: runtimePreviousMonthPeriod.from,
+  toExclusive: runtimePreviousMonthPeriod.toExclusive,
   timezone: 'Europe/Moscow',
-  label: 'Июнь 2026',
+  label: runtimePreviousMonthPeriod.label,
 });
 assert.equal(summaryA.payload.tenantCount, 32);
 assert.equal(summaryA.payload.guestRequestCount, 760);

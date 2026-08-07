@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit --incremental false",
-    "lint": "next lint --max-warnings=0",
+    "lint": "eslint . --max-warnings=0",
     "test:lead-registry": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_lead_registry_foundation.mjs",
     "test:lead-admin": "node scripts/test_lead_admin.mjs",
     "test:lead-cli": "node scripts/test_lead_cli_runtime.mjs",
@@ -32,6 +32,7 @@
     "test:seo-content-priority": "node scripts/test_seo_content_priority.mjs",
     "test:technical-seo-delivery": "node scripts/test_technical_seo_delivery.mjs",
     "test:home-hero-media": "node scripts/test_home_hero_media.mjs",
+    "test:mail-transport-security": "node scripts/test_mail_transport_security.mjs",
     "lead-admin:hash-password": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/hash_lead_admin_password.mjs",
     "lead-outbox:process": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/process_lead_outbox.mjs",
     "lead-registry:cleanup": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/cleanup_lead_registry.mjs",
@@ -49,13 +50,13 @@
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.561.0",
     "marked": "^17.0.1",
-    "next": "^14.2.16",
-    "nodemailer": "^6.10.1",
+    "next": "16.3.0",
+    "nodemailer": "9.0.4",
     "qrcode": "^1.5.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "react-markdown": "^10.1.0",
-    "sharp": "^0.34.5",
+    "sharp": "0.35.3",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
@@ -63,13 +64,18 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20.17.6",
     "@types/qrcode": "^1.5.5",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
     "autoprefixer": "^10.4.20",
-    "eslint": "^8.57.1",
-    "eslint-config-next": "^14.2.16",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.6.3"
+  },
+  "overrides": {
+    "gray-matter": {
+      "js-yaml": "3.15.1"
+    }
   }
 }

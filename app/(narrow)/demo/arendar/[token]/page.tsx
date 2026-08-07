@@ -46,8 +46,9 @@ const statusClasses = {
   cancelled: 'border-rose-200 bg-rose-50 text-rose-800',
 } as const;
 
-export default async function PublicDemoRequestPage({ params }: { params: { token: string } }) {
-  const request = getPublicDemoRequest(params.token);
+export default async function PublicDemoRequestPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params;
+  const request = getPublicDemoRequest(token);
   if (!request) notFound();
   const publicUrl = absoluteUrl(`/demo/arendar/${request.publicToken}`);
   const qrCode = await QRCode.toDataURL(publicUrl, {
