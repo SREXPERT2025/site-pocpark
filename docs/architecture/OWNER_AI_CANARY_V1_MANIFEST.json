@@ -1,0 +1,83 @@
+{
+  "schemaVersion": 1,
+  "candidate": "OWNER_AI_CANARY_V1",
+  "branch": "feature/site-20260807-owner-ai-canary-v1",
+  "siteFoundationB": "ec4172a10451c23b6e862e332d61217425261f9d",
+  "gatewayFoundationA": "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
+  "aiCoreSiteContractDependency": "8834367e7412656b5a83d0c01b05dbffae6d3dee",
+  "approvedFutureRuntimeReference": "a9066e",
+  "featureFlagDefault": false,
+  "productionMigrationApplied": false,
+  "runtimeConnected": false,
+  "files": [
+    {
+      "path": "app/lib/owner-ai-canary-core.ts",
+      "sha256": "78ae7a12317a0d45e7cbb0127a65b64c16d7a03aced507dc500fafa35aac0620"
+    },
+    {
+      "path": "app/lib/owner-ai-canary-adapter.ts",
+      "sha256": "bfa7914081a85d1d5d22b3abc4fcb99a134f6b5d8f2a7519cc672aa03620493b"
+    },
+    {
+      "path": "app/lib/owner-ai-canary-state.ts",
+      "sha256": "bdaf900e24b46117ec780c44b21703fa226a1c3481e8e5658397702b7e1eca5c"
+    },
+    {
+      "path": "app/lib/ai-widget-api.ts",
+      "sha256": "9cecdd3dbde263c2e48cb4fd9c9316b9bc79a93326e9d29c83c80a7ae572338d"
+    },
+    {
+      "path": "app/components/ai-widget/AiWidgetPilot.tsx",
+      "sha256": "4afdb8a08e97f8f335c5fc251ed86fddbcdbe2798dde7248270c20d9ac45f4df"
+    },
+    {
+      "path": "app/api/ai-widget/owner-canary/login/route.ts",
+      "sha256": "11ae5d67dbf11598d93abb994fe1df1c6b73745a28fc4532410f094c11c93cf2"
+    },
+    {
+      "path": "app/api/ai-widget/owner-canary/logout/route.ts",
+      "sha256": "05efc93359927b8aab2e5046014d1dd09e7a5bdcecf57f297c93b9ee69c0747f"
+    },
+    {
+      "path": "scripts/run_ai_widget_pilot_gateway.py",
+      "sha256": "12d4d4d7d7257b571e5d0aba11bd937fc93daf54bfa9d727b3689945a528310a"
+    },
+    {
+      "path": "scripts/test_ai_widget_pilot_gateway.py",
+      "sha256": "76aa40d52a566396bbf70bf7c11367ac2d8d02335dd71f2bc26554e6f580adc2"
+    },
+    {
+      "path": "scripts/test_owner_ai_canary_v1.mjs",
+      "sha256": "d524f0a44a8986b83508cf68d3d8e36327739bbdc36ee4bcd84d53e6be04f238"
+    },
+    {
+      "path": "docs/architecture/OWNER_AI_CANARY_V1_ARCHITECTURE.md",
+      "sha256": "36a193ea52d55bc3fc4b2c39daa7cb324608678ecd55540e21760b05ab78eab9"
+    },
+    {
+      "path": "docs/architecture/OWNER_AI_CANARY_V1_IDENTITY_CONTRACT.md",
+      "sha256": "6ffc1e43d6fe6d262965ffc62b16c1ad4dc22844f8b16a0e3415e1741fa4f935"
+    },
+    {
+      "path": "docs/architecture/OWNER_AI_CANARY_V1_STATE_CONTRACT.md",
+      "sha256": "e3cf5bb3ee205571829035498a81e8543673d85fbccd3cfb54e2be8de2f066e8"
+    },
+    {
+      "path": "docs/architecture/OWNER_AI_CANARY_V1_SECURITY.md",
+      "sha256": "1fc4c81380343dde5669688717eef6cdaaab066024e4262010a71f93345805d8"
+    },
+    {
+      "path": "docs/architecture/OWNER_AI_CANARY_V1_TEST_RESULTS.json",
+      "sha256": "318d4d7625a54f3f259f3d3e917576a78019a76a642ad1f8071b8c9956154e23"
+    }
+  ],
+  "prohibitedActionsObserved": {
+    "productionSwitch": false,
+    "gatewayRestart": false,
+    "previewChange": false,
+    "modelRequest": false,
+    "leadMaxCrmMutation": false,
+    "push": false,
+    "deploy": false
+  }
+}

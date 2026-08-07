@@ -194,6 +194,7 @@ export default function AiWidgetPilot() {
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
+  const [ownerCanaryMarker, setOwnerCanaryMarker] = useState('');
   const [leadStep, setLeadStep] = useState<LeadStep>('idle');
   const [leadDraft, setLeadDraft] = useState<LeadDraft>(emptyLeadDraft);
   const [leadConsent, setLeadConsent] = useState(false);
@@ -666,6 +667,9 @@ export default function AiWidgetPilot() {
         }),
         signal: controller.signal,
       });
+      setOwnerCanaryMarker(
+        response.headers.get('x-ai-core-owner-marker') || '',
+      );
       if (!response.ok || !response.body) {
         const body = await response.json().catch(() => null);
         throw new Error(body?.message || 'Не удалось получить ответ.');
@@ -809,6 +813,11 @@ export default function AiWidgetPilot() {
                 <h2 id="rospark-ai-widget-title" className="mt-1 text-base font-bold">
                   AI-консультант РОСПАРК
                 </h2>
+                {ownerCanaryMarker ? (
+                  <p className="mt-1 text-xs font-semibold text-amber-300">
+                    {ownerCanaryMarker}
+                  </p>
+                ) : null}
               </div>
             </div>
             <div className="flex items-center gap-1">

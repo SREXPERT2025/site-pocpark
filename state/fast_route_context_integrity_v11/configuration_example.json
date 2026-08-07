@@ -1,0 +1,30 @@
+{
+  "schema_version": "ROSPARK_FAST_ROUTE_CONTEXT_GATE_V1_1",
+  "fast_routes": {
+    "boundary": {
+      "mode": "shadow_only"
+    },
+    "faq": {
+      "mode": "context_gated"
+    },
+    "contextual_link": {
+      "mode": "context_gated"
+    },
+    "arithmetic": {
+      "mode": "context_gated"
+    },
+    "direct_handoff": {
+      "mode": "context_gated"
+    }
+  },
+  "allowed_modes": [
+    "off",
+    "shadow_only",
+    "context_gated",
+    "visible_legacy"
+  ],
+  "environment_example": {
+    "AI_WIDGET_FAST_ROUTE_BOUNDARY_MODE": "shadow_only"
+  },
+  "production_applied": false
+}

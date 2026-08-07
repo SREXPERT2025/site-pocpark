@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "completedAt": "2026-08-07T15:56:34Z",
+  "nodeVersion": "22.23.1",
+  "results": [
+    {
+      "name": "owner_ai_canary_contract",
+      "status": "pass"
+    },
+    {
+      "name": "site_ai_widget_payload_and_lifecycle",
+      "status": "pass"
+    },
+    {
+      "name": "site_ai_widget_transcript_log",
+      "status": "pass"
+    },
+    {
+      "name": "site_b_server_events",
+      "status": "pass"
+    },
+    {
+      "name": "gateway_contract_and_deterministic_routes",
+      "status": "pass",
+      "tests": 47
+    },
+    {
+      "name": "fast_route_context_gate_regression",
+      "status": "pass",
+      "tests": 66
+    },
+    {
+      "name": "typescript",
+      "status": "pass"
+    },
+    {
+      "name": "eslint",
+      "status": "pass",
+      "warnings": 0
+    },
+    {
+      "name": "production_build",
+      "status": "pass",
+      "staticPages": 112,
+      "note": "standard Next.js 16.3.0 Turbopack build passed; existing middleware and browser-data warnings remain"
+    },
+    {
+      "name": "git_diff_check",
+      "status": "pass"
+    }
+  ],
+  "negativeEvidence": {
+    "productionChanged": false,
+    "gateway8788Changed": false,
+    "preview8787Changed": false,
+    "modelsCalled": 0,
+    "leadsCreated": 0,
+    "maxMessagesSent": 0,
+    "crmMutations": 0,
+    "pushPerformed": false,
+    "deployPerformed": false
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": "ROSPARK_FAST_ROUTE_CONTEXT_GATE_V1_1",
+  "conversation_id": "eb989fd9-2f0b-4f51-a4b5-db68e62fead4",
+  "message_id": "incident-turn-source-unavailable",
+  "parent_message_id": null,
+  "request_id": "b2459c37-bf82-45fc-b681-57327f3eb73b",
+  "current_turn_id": "turn-71459f79256fed50",
+  "turn_ingested": true,
+  "message_persisted": true,
+  "open_question_resolved": true,
+  "state_updated": true,
+  "relation_to_context": "answer_to_previous_question",
+  "relation_validator": "cabling_answer_validator",
+  "intent": "provide_project_information",
+  "action_type": "remember_fact_and_continue",
+  "current_turn_is_question": false,
+  "open_question": {
+    "question_id": "question-bc9085d60dcbe353",
+    "question_goal": "existing_system_and_cabling",
+    "question_text": "Для точного расчёта состава оборудования и стоимости нужно уточнить, есть ли уже проложены кабели для подключения нового оборудования или потребуется монтаж с нуля?",
+    "status": "answered",
+    "answered_by_turn_id": "turn-71459f79256fed50"
+  },
+  "answered_question_ids": [
+    "question-bc9085d60dcbe353"
+  ],
+  "facts_before": {},
+  "facts_after": {
+    "existing_automation": false,
+    "existing_barriers": true,
+    "barrier_power_cabling": true,
+    "modernization_or_new_build": "automation_from_scratch_with_existing_barriers"
+  },
+  "fact_mutations": [
+    {
+      "field": "existing_automation",
+      "previous": null,
+      "value": false,
+      "source_turn_id": "turn-71459f79256fed50",
+      "confidence": "explicit"
+    },
+    {
+      "field": "existing_barriers",
+      "previous": null,
+      "value": true,
+      "source_turn_id": "turn-71459f79256fed50",
+      "confidence": "explicit"
+    },
+    {
+      "field": "barrier_power_cabling",
+      "previous": null,
+      "value": true,
+      "source_turn_id": "turn-71459f79256fed50",
+      "confidence": "explicit"
+    },
+    {
+      "field": "modernization_or_new_build",
+      "previous": null,
+      "value": "automation_from_scratch_with_existing_barriers",
+      "source_turn_id": "turn-71459f79256fed50",
+      "confidence": "explicit"
+    }
+  ],
+  "boundary_semantics": {
+    "subject_match": true,
+    "failure_predicate_match": false,
+    "question_frame_match": false,
+    "project_fact_frame_match": true,
+    "explicit_intent_match": false
+  },
+  "explicit_command": null
+}

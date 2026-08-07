@@ -24,6 +24,11 @@ from pathlib import Path
 from typing import Any
 
 import ai_widget_cascade_v3_adapter as adapter
+from ai_widget_fast_route_context_gate import (
+    FastRouteContextGate,
+    FastRouteDecision,
+    require_mode as require_fast_route_mode,
+)
 
 
 MAX_BODY_BYTES = 32_000
@@ -710,6 +715,7 @@ class GatewayResult:
     route: str
     template_id: str | None
     model_metrics: dict[str, int] | None = None
+    route_telemetry: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -1048,6 +1054,17 @@ def validate_request(value: Any) -> dict[str, Any]:
     source_page = clean_text(value.get("sourcePage"), 240)
     if not source_page or not source_page.startswith("/") or source_page.startswith("//"):
         raise ValueError("INVALID_SOURCE_PAGE")
+    session_id = clean_text(value.get("sessionId"), 128)
+    turn_id = clean_text(value.get("turnId"), 128)
+    identifier_pattern = re.compile(r"^[a-z0-9][a-z0-9._:-]{15,127}$", re.I)
+    if value.get("sessionId") is not None and (
+        not session_id or not identifier_pattern.fullmatch(session_id)
+    ):
+        raise ValueError("INVALID_SESSION_ID")
+    if value.get("turnId") is not None and (
+        not turn_id or not identifier_pattern.fullmatch(turn_id)
+    ):
+        raise ValueError("INVALID_TURN_ID")
     page_context = validate_page_context(value.get("pageContext"), source_page)
     raw_messages = value.get("messages")
     if (
@@ -1069,7 +1086,12 @@ def validate_request(value: Any) -> dict[str, Any]:
         messages.append({"role": item["role"], "content": content})
     if messages[-1]["role"] != "user":
         raise ValueError("LAST_MESSAGE_MUST_BE_USER")
-    payload = {"sourcePage": source_page, "messages": messages}
+    payload = {
+        "sourcePage": source_page,
+        "messages": messages,
+        **({"sessionId": session_id} if session_id else {}),
+        **({"turnId": turn_id} if turn_id else {}),
+    }
     if page_context:
         payload["pageContext"] = page_context
     return payload
@@ -1128,6 +1150,7 @@ class PilotEngine:
         max_tokens: int,
         keep_alive: str = DEFAULT_KEEP_ALIVE,
         runtime_mode: str = "preview",
+        boundary_mode: str = "visible_legacy",
     ) -> None:
         if model != adapter.ALLOWED_MODEL:
             raise ValueError(f"Only {adapter.ALLOWED_MODEL} is allowed")
@@ -1137,6 +1160,11 @@ class PilotEngine:
         self.max_tokens = max_tokens
         self.keep_alive = require_keep_alive(keep_alive)
         self.runtime_mode = require_runtime_mode(runtime_mode)
+        self.boundary_mode = require_fast_route_mode(boundary_mode)
+        self.runtime_release = adapter.SITE_ROOT.name
+        self.fast_route_gate = FastRouteContextGate(
+            mode_by_route={"boundary": self.boundary_mode}
+        )
 
         v2_script, _ = adapter.verify_legacy_engine(ai_root)
         module = adapter.load_legacy_module(ai_root, v2_script)
@@ -1259,7 +1287,13 @@ class PilotEngine:
             self.module.update_state(state, message["content"], turn)
         return state
 
-    def answer(self, payload: dict[str, Any]) -> GatewayResult:
+    def answer(
+        self,
+        payload: dict[str, Any],
+        *,
+        request_id: str | None = None,
+        message_persisted: bool = True,
+    ) -> GatewayResult:
         messages = [
             {
                 **message,
@@ -1272,75 +1306,152 @@ class PilotEngine:
             for message in payload["messages"]
         ]
         question = messages[-1]["content"]
+        conversation_id = clean_text(payload.get("sessionId"), 120) or "request-local"
+        message_id = clean_text(payload.get("turnId"), 120) or "message-local"
+        context = self.fast_route_gate.ingest(
+            messages,
+            conversation_id=conversation_id,
+            message_id=message_id,
+            request_id=request_id,
+            message_persisted=message_persisted,
+        )
+        # The legacy state update is intentionally performed before every route,
+        # including deterministic and boundary routes.  It is request-local and
+        # has no external side effects.
+        state = self._state_for(messages)
+        fast_decisions: list[FastRouteDecision] = []
+
+        def finalize(
+            result: GatewayResult,
+            decision: FastRouteDecision | None = None,
+        ) -> GatewayResult:
+            selected = decision or (fast_decisions[-1] if fast_decisions else None)
+            telemetry = self.fast_route_gate.telemetry(
+                runtime_release=self.runtime_release,
+                route=result.route,
+                template_id=result.template_id,
+                decision=selected,
+                visible_response_source=result.route,
+            )
+            telemetry["legacy_state_updated_before_routing"] = True
+            telemetry["gateway_pid"] = os.getpid()
+            telemetry["fast_route_decisions"] = [item.to_dict() for item in fast_decisions]
+            return GatewayResult(
+                result.answer,
+                result.route,
+                result.template_id,
+                result.model_metrics,
+                telemetry,
+            )
+
+        def visible_fast_result(
+            result: GatewayResult,
+            candidate_route: str,
+        ) -> GatewayResult | None:
+            decision = self.fast_route_gate.decide(
+                candidate_route,
+                result.template_id,
+                context,
+            )
+            fast_decisions.append(decision)
+            return finalize(result, decision) if decision.visible else None
+
         route, template_id, _ = self.module.route_case(question, self.faq)
 
         if route == "security":
             answer = self.module.SECURITY_ANSWERS[template_id or "SEC-001"]
-            return GatewayResult(answer, route, template_id)
+            candidate = GatewayResult(answer, route, template_id)
+            allowed = visible_fast_result(candidate, "security")
+            if allowed:
+                return allowed
 
         direct_handoff = direct_handoff_answer_for(question, self.runtime_mode)
         if direct_handoff:
-            return direct_handoff
+            allowed = visible_fast_result(direct_handoff, "direct_handoff")
+            if allowed:
+                return allowed
 
         contextual_link = contextual_link_answer_for(messages)
         if contextual_link:
-            return contextual_link
+            allowed = visible_fast_result(contextual_link, "contextual_link")
+            if allowed:
+                return allowed
 
         arithmetic = simple_arithmetic_answer_for(messages)
         if arithmetic:
-            return arithmetic
+            allowed = visible_fast_result(arithmetic, "arithmetic")
+            if allowed:
+                return allowed
 
         conversational = conversation_answer(question, self.runtime_mode)
         if conversational:
-            return conversational
+            return finalize(conversational)
 
         if adapter.is_employee_timed_access_request(question):
             answer = self.faq["FAQ-008"]["answer"]
-            return GatewayResult(
+            candidate = GatewayResult(
                 append_approved_links(question, answer),
                 "faq",
                 "FAQ-008",
             )
+            allowed = visible_fast_result(candidate, "faq")
+            if allowed:
+                return allowed
 
         if route == "crm":
-            return GatewayResult(LEAD_OFFERS[self.runtime_mode], route, None)
+            candidate = GatewayResult(LEAD_OFFERS[self.runtime_mode], route, None)
+            allowed = visible_fast_result(candidate, "direct_handoff")
+            if allowed:
+                return allowed
 
         own_identifier = own_identifier_answer_for(messages)
         if own_identifier:
-            return own_identifier
+            allowed = visible_fast_result(own_identifier, "product_recommendation")
+            if allowed:
+                return allowed
 
         boundary_id, boundary_answer = self.module.boundary_for(
             question, self.boundaries
         )
         if boundary_answer:
-            return GatewayResult(
+            candidate = GatewayResult(
                 append_approved_links(question, boundary_answer),
                 "boundary",
                 boundary_id,
             )
+            allowed = visible_fast_result(candidate, "boundary")
+            if allowed:
+                return allowed
 
         solution = solution_answer_for(question)
         if solution:
-            return solution
+            allowed = visible_fast_result(solution, "solution")
+            if allowed:
+                return allowed
 
         fast_template_id = fast_faq_for(question)
         if fast_template_id:
             answer = self.faq[fast_template_id]["answer"]
-            return GatewayResult(
+            candidate = GatewayResult(
                 append_approved_links(question, answer),
                 "faq",
                 fast_template_id,
             )
+            allowed = visible_fast_result(candidate, "faq")
+            if allowed:
+                return allowed
 
         if route == "faq":
             answer = self.faq[template_id or ""]["answer"]
-            return GatewayResult(
+            candidate = GatewayResult(
                 append_approved_links(question, answer),
                 route,
                 template_id,
             )
+            allowed = visible_fast_result(candidate, "faq")
+            if allowed:
+                return allowed
 
-        state = self._state_for(messages)
         history = [
             {
                 "role": message["role"],
@@ -1397,12 +1508,12 @@ class PilotEngine:
             route = "safe_fallback"
         else:
             route = "qwen36"
-        return GatewayResult(
+        return finalize(GatewayResult(
             append_approved_links(question, answer),
             route,
             template_id,
             model_metrics,
-        )
+        ))
 
 
 class GatewayServer(ThreadingHTTPServer):
@@ -1470,6 +1581,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
         route = "rejected"
         status = HTTPStatus.INTERNAL_SERVER_ERROR
         model_metrics: dict[str, int] | None = None
+        route_telemetry: dict[str, Any] | None = None
         try:
             if self.path != "/v1/chat":
                 status = HTTPStatus.NOT_FOUND
@@ -1497,7 +1609,14 @@ class GatewayHandler(BaseHTTPRequestHandler):
                 return
 
             try:
-                result = self.server.engine.answer(payload)
+                persisted_header = clean_text(
+                    self.headers.get("X-AI-Widget-Turn-Persisted"), 16
+                )
+                result = self.server.engine.answer(
+                    payload,
+                    request_id=request_id,
+                    message_persisted=(persisted_header == "true"),
+                )
             except ModelUnavailable:
                 route = "model_error"
                 status = HTTPStatus.SERVICE_UNAVAILABLE
@@ -1505,6 +1624,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
                 return
             route = result.route
             model_metrics = result.model_metrics
+            route_telemetry = result.route_telemetry
             body = result.answer.encode("utf-8")
             status = HTTPStatus.OK
             self.send_response(status)
@@ -1530,6 +1650,7 @@ class GatewayHandler(BaseHTTPRequestHandler):
                         "route": route,
                         "status": int(status),
                         "elapsed_ms": elapsed_ms,
+                        **(route_telemetry or {}),
                         **(model_metrics or {}),
                     },
                     ensure_ascii=False,
@@ -1551,6 +1672,9 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--skip-warmup", action="store_true")
     result.add_argument("--env-file", type=Path)
     result.add_argument("--runtime-mode", choices=sorted(RUNTIME_MODES))
+    result.add_argument("--boundary-mode", choices=sorted(
+        {"off", "shadow_only", "context_gated", "visible_legacy"}
+    ))
     return result
 
 
@@ -1569,6 +1693,12 @@ def main() -> int:
             or os.environ.get("AI_WIDGET_GATEWAY_MODE")
             or read_env_value(args.env_file, "AI_WIDGET_GATEWAY_MODE")
         )
+        boundary_mode = require_fast_route_mode(
+            args.boundary_mode
+            or os.environ.get("AI_WIDGET_FAST_ROUTE_BOUNDARY_MODE")
+            or read_env_value(args.env_file, "AI_WIDGET_FAST_ROUTE_BOUNDARY_MODE")
+            or "visible_legacy"
+        )
         engine = PilotEngine(
             ai_root=args.ai_root.expanduser().resolve(),
             endpoint=args.endpoint,
@@ -1577,6 +1707,7 @@ def main() -> int:
             max_tokens=args.max_tokens,
             keep_alive=args.keep_alive,
             runtime_mode=runtime_mode,
+            boundary_mode=boundary_mode,
         )
         if not args.skip_warmup:
             engine.warmup()

@@ -1,0 +1,55 @@
+[
+  {
+    "conversation_id": "f8508a41dcce46750872f8a990062db6e1f0be09e3d2a60b9c073b722ab556df",
+    "message_id": "85117ec214c464b119ccd2733379f5ca8315bfd05201c06caf7ff84c3c910bcc",
+    "turn_index": 18,
+    "source_page": "/",
+    "source_route": "faq",
+    "candidate_route": "faq",
+    "candidate_template_id": "FAQ-019",
+    "turn_ingested": true,
+    "message_persisted": true,
+    "open_question_resolved": true,
+    "state_updated": true,
+    "relation_to_context": "answer_to_previous_question",
+    "open_question_id": "question-35e7f5833287e5c1",
+    "intent": "provide_project_information",
+    "fact_mutation_count": 0,
+    "fast_route_decision": {
+      "schema_version": "ROSPARK_FAST_ROUTE_CONTEXT_GATE_V1_1",
+      "candidate_route": "faq",
+      "candidate_template_id": "FAQ-019",
+      "category": "context_dependent",
+      "mode": "context_gated",
+      "eligible": false,
+      "visible": false,
+      "next_route": "primary_conversation_path",
+      "current_turn_id": "turn-bf68965a9340ed3a",
+      "turn_ingested": true,
+      "message_persisted": true,
+      "open_question_resolved": true,
+      "state_updated": true,
+      "relation_to_context": "answer_to_previous_question",
+      "open_question": {
+        "question_id": "question-35e7f5833287e5c1",
+        "question_goal": "unknown",
+        "question_text": "Какой способ оплаты наиболее удобен для ваших гостей: сканирование QR-кода на месте или оплата через сайт/приложение до выезда?",
+        "status": "answered",
+        "answered_by_turn_id": "turn-bf68965a9340ed3a"
+      },
+      "intent": "provide_project_information",
+      "action_type": "remember_fact_and_continue",
+      "explicit_intent_match": false,
+      "failure_predicate_match": false,
+      "topic_match": true,
+      "command_match": true,
+      "reason_codes": [
+        "open_question_answer_has_priority",
+        "fast_route_blocked_by_open_question",
+        "open_question_hijacked_by_fast_route"
+      ]
+    },
+    "new_model_request": false,
+    "visible_response_generated": false
+  }
+]

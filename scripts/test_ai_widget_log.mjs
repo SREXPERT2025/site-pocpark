@@ -31,6 +31,8 @@ assert.deepEqual(
   ],
 );
 
+// Keep the fixture inside the active retention window. Fixed calendar dates
+// make this test start failing once the real clock passes the retention limit.
 const nowMs = Date.now();
 const sessionId = 'session-20260728-test-0001';
 const turnId = 'turn-20260728-test-0000001';

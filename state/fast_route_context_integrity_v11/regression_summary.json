@@ -1,0 +1,21 @@
+{
+  "schema_version": "ROSPARK_FAST_ROUTE_REGRESSION_SUMMARY_V1_1",
+  "new_context_gate_tests": {
+    "count": 66,
+    "passed": 66,
+    "failed": 0,
+    "return_code": 0,
+    "result": "pass"
+  },
+  "existing_gateway_tests": {
+    "count": 46,
+    "passed": 46,
+    "failed": 0,
+    "return_code": 0,
+    "result": "pass"
+  },
+  "total_tests": 112,
+  "offline_historical_messages": 85,
+  "new_qwen_requests": 0,
+  "codex_customer_answer_generations": 0
+}

@@ -1,0 +1,85 @@
+{
+  "schema_version": "ROSPARK_PRODUCTION_RUNTIME_INVENTORY_V1_1",
+  "observed_at": "2026-08-07T09:00:59.448661+00:00",
+  "production_runtime": {
+    "service": "com.pocpark.rospark-ai-widget-gateway-production",
+    "state": "running",
+    "pid": 39849,
+    "started_at": "2026-08-07T08:06:57+03:00",
+    "host": "127.0.0.1",
+    "port": 8788,
+    "runtime_release": "279d919820938e4ea87dcdd7a6138774df55f8c1",
+    "runtime_path": "/Users/pocpark_ai/Library/Application Support/ROSPARK/ai-widget/releases/279d919820938e4ea87dcdd7a6138774df55f8c1",
+    "gateway_path": "/Users/pocpark_ai/Library/Application Support/ROSPARK/ai-widget/releases/279d919820938e4ea87dcdd7a6138774df55f8c1/scripts/run_ai_widget_pilot_gateway.py",
+    "gateway_sha256": "9def444270c551a55a2f1a7079a15a7eb35fff4d38d3db7c63981cc6b762924c",
+    "adapter_path": "/Users/pocpark_ai/Library/Application Support/ROSPARK/ai-widget/releases/279d919820938e4ea87dcdd7a6138774df55f8c1/scripts/ai_widget_cascade_v3_adapter.py",
+    "adapter_sha256": "df30ba0141d75167ab96300ed57afb4c8e64da8e810f4eb8cdb6689d2c9b5136",
+    "site_api_source_path": "/Users/pocpark_ai/Library/Application Support/ROSPARK/ai-widget/releases/279d919820938e4ea87dcdd7a6138774df55f8c1/app/lib/ai-widget-api.ts",
+    "site_api_source_sha256": "6fad9e6a2e76aa2caffd8889f3d1d562ed6800ab077c144665735658b275cfca",
+    "site_log_source_path": "/Users/pocpark_ai/Library/Application Support/ROSPARK/ai-widget/releases/279d919820938e4ea87dcdd7a6138774df55f8c1/app/lib/ai-widget-log-core.ts",
+    "site_log_source_sha256": "8f1b550cb297b08135702c2edcce48af023132c8813be26e5ca482c7a7574597",
+    "legacy_v2_path": "/Volumes/POCPARK_AI_DATA/POCPARK_AI/scripts/run_ai_widget_cascade_v2_eval.py",
+    "legacy_v2_sha256": "a8d8fcfdd1a2e33fa0273df254664af1941730063a6c48a4f7a7c24a359eca5f",
+    "legacy_base_path": "/Volumes/POCPARK_AI_DATA/POCPARK_AI/scripts/run_ai_widget_cascade_eval.py",
+    "legacy_base_sha256": "02ec922e2e7de532e21bf6a00e5d18ee4b7a31ab4f26d4e23f7ffa2ad4a3fbc1",
+    "new_model_requests": 0,
+    "production_restarted": false
+  },
+  "components": {
+    "turn_ingestion": {
+      "status": "gateway_semantic_ingestion_deferred",
+      "implementation": "legacy DialogueState/update_state",
+      "invocation": "only after all early fast routes, immediately before qwen36",
+      "active_for_fast_routes": false,
+      "version": "a8d8fcfdd1a2e33fa0273df254664af1941730063a6c48a4f7a7c24a359eca5f"
+    },
+    "message_persistence": {
+      "status": "implemented_upstream_in_site_api_source",
+      "implementation": "beginAiWidgetTurn before gateway fetch",
+      "runtime_invocation": "not_exposed_in_gateway_trace",
+      "version": "8f1b550cb297b08135702c2edcce48af023132c8813be26e5ca482c7a7574597"
+    },
+    "context_integrity": {
+      "status": "not_present_in_production_call_chain",
+      "version": null
+    },
+    "sales_conversation_controller": {
+      "status": "not_invoked_by_production_gateway",
+      "version": null
+    },
+    "engineering_decision_laboratory": {
+      "status": "not_invoked_by_production_gateway",
+      "version": null
+    },
+    "response_repair": {
+      "status": "named_layer_not_invoked",
+      "version": null,
+      "note": "qwen branch has inline sanitation and generic-padding removal only"
+    },
+    "evaluation_integrity": {
+      "status": "named_layer_not_invoked",
+      "version": null,
+      "note": "qwen branch calls legacy fact_gate only after generation"
+    },
+    "fast_route_gate": {
+      "status": "absent",
+      "version": null
+    },
+    "faq_router": {
+      "status": "active_before_state_update",
+      "version": "9def444270c551a55a2f1a7079a15a7eb35fff4d38d3db7c63981cc6b762924c"
+    },
+    "boundary_router": {
+      "status": "active_keyword_regex_before_state_update",
+      "version": "df30ba0141d75167ab96300ed57afb4c8e64da8e810f4eb8cdb6689d2c9b5136",
+      "boundary_pattern": "BND-003: internet|electricity|power|server.*loss/connection"
+    }
+  },
+  "evidence": {
+    "launchd_wrapper_read_only": true,
+    "active_process_command_read_only": true,
+    "source_call_order_read_only": true,
+    "repository_file_presence_not_used_as_runtime_proof": true,
+    "upstream_site_source_is_not_claimed_as_remote_process_proof": true
+  }
+}

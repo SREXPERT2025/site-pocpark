@@ -39,6 +39,22 @@ class GatewayContractTests(unittest.TestCase):
             }
         )
         self.assertEqual(parsed["sourcePage"], "/demo")
+        identified = gateway.validate_request(
+            {
+                "sourcePage": "/demo",
+                "sessionId": "c846e840-abcc-40b4-bd26-c0fdec276da9",
+                "turnId": "11111111-aaaa-4111-8111-111111111111",
+                "messages": [{"role": "user", "content": "Вопрос"}],
+            }
+        )
+        self.assertEqual(
+            identified["sessionId"],
+            "c846e840-abcc-40b4-bd26-c0fdec276da9",
+        )
+        self.assertEqual(
+            identified["turnId"],
+            "11111111-aaaa-4111-8111-111111111111",
+        )
         parsed_with_context = gateway.validate_request(
             {
                 "sourcePage": "/parkovka-pod-klyuch",
@@ -63,6 +79,17 @@ class GatewayContractTests(unittest.TestCase):
                     "messages": [{"role": "user", "content": "Вопрос"}],
                 }
             )
+        for field in ("sessionId", "turnId"):
+            with self.assertRaises(ValueError):
+                gateway.validate_request(
+                    {
+                        "sourcePage": "/demo",
+                        field: "short",
+                        "messages": [
+                            {"role": "user", "content": "Вопрос"}
+                        ],
+                    }
+                )
         with self.assertRaises(ValueError):
             gateway.validate_request(
                 {
@@ -326,6 +353,26 @@ class DeterministicEngineTests(unittest.TestCase):
         self.assertEqual(result.route, "faq")
         self.assertEqual(result.template_id, template_id)
         self.assertEqual(result.answer, item["answer"])
+
+    def test_transport_ids_do_not_change_legacy_answer_or_route(self) -> None:
+        template_id, item = next(iter(self.engine.faq.items()))
+        baseline = self.engine.answer(
+            {
+                "sourcePage": "/demo",
+                "messages": [{"role": "user", "content": item["title"]}],
+            }
+        )
+        identified = self.engine.answer(
+            {
+                "sourcePage": "/demo",
+                "sessionId": "c846e840-abcc-40b4-bd26-c0fdec276da9",
+                "turnId": "11111111-aaaa-4111-8111-111111111111",
+                "messages": [{"role": "user", "content": item["title"]}],
+            }
+        )
+        self.assertEqual(identified.route, baseline.route)
+        self.assertEqual(identified.template_id, template_id)
+        self.assertEqual(identified.answer, baseline.answer)
 
     def test_price_boundary_without_model_call(self) -> None:
         result = self.engine.answer(

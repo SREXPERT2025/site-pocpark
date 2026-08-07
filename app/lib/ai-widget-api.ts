@@ -30,6 +30,23 @@ import {
   tryRecordAiWidgetServerEvent,
   type AiWidgetServerEventName,
 } from './ai-widget-server-events-core';
+import {
+  cookieValue,
+  mapSiteIdentity,
+  OWNER_AI_CANARY_COOKIE,
+  OWNER_AI_CANARY_CONTRACT_VERSION,
+  OWNER_AI_CANARY_MARKER,
+  ownerAiCanaryEnabled,
+  ownerCanaryPlaceholderDecision,
+  selectOwnerCanaryAudience,
+} from './owner-ai-canary-core';
+import {
+  ensureOwnerCanaryThread,
+  ownerCanaryRequestId,
+  ownerCanarySessionRevoked,
+  registerOwnerCanaryMessage,
+  runOwnerAiCanaryMigrations,
+} from './owner-ai-canary-state';
 import { LeadRegistryError } from './lead-registry-core';
 import {
   leadRegistryEnabled,
@@ -54,6 +71,7 @@ function jsonError(
   status: number,
   code: string,
   message: string,
+  extraHeaders: Record<string, string> = {},
 ) {
   return NextResponse.json(
     { success: false, code, message },
@@ -62,6 +80,7 @@ function jsonError(
       headers: {
         'Cache-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff',
+        ...extraHeaders,
       },
     },
   );
@@ -266,6 +285,50 @@ export async function handleAiWidgetChat(request: Request) {
 
   const requestId = randomUUID();
   const lastUserMessage = parsed.payload.messages.at(-1)?.content ?? '';
+  let ownerAudience: 'legacy' | 'owner_canary' = 'legacy';
+  let ownerIdentity: ReturnType<typeof mapSiteIdentity> | null = null;
+  if (ownerAiCanaryEnabled()) {
+    const token = cookieValue(
+      request.headers.get('cookie'),
+      OWNER_AI_CANARY_COOKIE,
+    );
+    if (token) {
+      try {
+        if (!aiWidgetLoggingEnabled()) {
+          throw new Error('OWNER_CANARY_STATE_UNAVAILABLE');
+        }
+        const db = getAiWidgetLogDatabase();
+        runOwnerAiCanaryMigrations(db);
+        const selection = selectOwnerCanaryAudience({
+          cookieToken: token,
+          isRevoked: (jti) => ownerCanarySessionRevoked(db, jti),
+        });
+        ownerAudience = selection.audience;
+        if (ownerAudience === 'owner_canary') {
+          ownerIdentity = mapSiteIdentity({
+            sessionId: parsed.payload.sessionId,
+            turnId: parsed.payload.turnId,
+          });
+          ensureOwnerCanaryThread(db, {
+            conversationThreadId: ownerIdentity.conversationThreadId,
+            siteSessionId: ownerIdentity.siteSessionId,
+          });
+          registerOwnerCanaryMessage(db, {
+            conversationThreadId: ownerIdentity.conversationThreadId,
+            messageId: ownerIdentity.messageId,
+            siteTurnId: ownerIdentity.siteTurnId,
+            requestPayload: parsed.payload,
+          });
+        }
+      } catch {
+        return jsonError(
+          503,
+          'OWNER_CANARY_STATE_UNAVAILABLE',
+          'Owner AI Core test временно недоступен.',
+        );
+      }
+    }
+  }
   let loggingStarted = false;
   const recordServerEvent = (
     eventName: AiWidgetServerEventName,
@@ -301,6 +364,17 @@ export async function handleAiWidgetChat(request: Request) {
         existing.status === 'answered'
         && existing.assistantContent
       ) {
+        if (ownerAudience === 'owner_canary') {
+          recordServerEvent('answer_error', {
+            errorCode: 'OWNER_CANARY_TURN_ALREADY_FINALIZED',
+            elapsedMs: existing.elapsedMs,
+          });
+          return jsonError(
+            409,
+            'OWNER_CANARY_TURN_ALREADY_FINALIZED',
+            'Этот тестовый turn уже завершён в другом контуре.',
+          );
+        }
         recordServerEvent('answer_completed', {
           route: existing.route,
           templateId: existing.templateId,
@@ -399,6 +473,25 @@ export async function handleAiWidgetChat(request: Request) {
     });
   };
 
+  if (ownerAudience === 'owner_canary' && ownerIdentity) {
+    const placeholder = ownerCanaryPlaceholderDecision();
+    failLoggedTurn(placeholder.errorCode);
+    return jsonError(
+      503,
+      placeholder.errorCode,
+      'AI Core Owner Test подготовлен, но Runtime пока не подключён.',
+      {
+        'X-AI-Widget-Audience': 'owner_canary',
+        'X-AI-Core-Contract-Version': OWNER_AI_CANARY_CONTRACT_VERSION,
+        'X-AI-Core-Conversation-Thread-Id':
+          ownerIdentity.conversationThreadId,
+        'X-AI-Core-Message-Id': ownerIdentity.messageId,
+        'X-AI-Core-Request-Id': ownerCanaryRequestId(),
+        'X-AI-Core-Owner-Marker': `${OWNER_AI_CANARY_MARKER} · not_connected`,
+      },
+    );
+  }
+
   let gateway: ReturnType<typeof configuredGateway>;
   try {
     gateway = configuredGateway(runtimeMode);
@@ -418,6 +511,7 @@ export async function handleAiWidgetChat(request: Request) {
         Authorization: `Bearer ${gateway.secret}`,
         'Content-Type': 'application/json',
         'X-Request-Id': requestId,
+        'X-AI-Widget-Turn-Persisted': loggingStarted ? 'true' : 'false',
       },
       body: JSON.stringify(parsed.payload),
       cache: 'no-store',
