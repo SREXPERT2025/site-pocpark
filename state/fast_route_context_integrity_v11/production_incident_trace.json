@@ -1,0 +1,147 @@
+{
+  "schema_version": "ROSPARK_PRODUCTION_INCIDENT_TRACE_V1_1",
+  "conversation_id": "eb989fd9-2f0b-4f51-a4b5-db68e62fead4",
+  "previous_question": "Для точного расчёта состава оборудования и стоимости нужно уточнить, есть ли уже проложены кабели для подключения нового оборудования или потребуется монтаж с нуля?",
+  "client_reply": "с нуля, к проездам пока протянуты кабели питания силовые к ним шлагбаумы подключены.",
+  "production_observation": {
+    "route": "boundary",
+    "template_id": "BND-003",
+    "latency_ms": 41,
+    "answer": "Поведение при отключении интернета, сервера, связи или электропитания зависит от архитектуры и резервирования объекта. Конкретный сценарий должен подтвердить технический специалист."
+  },
+  "offline_reproduction": {
+    "route": "boundary",
+    "template_id": "BND-003",
+    "answer": "Поведение при отключении интернета, сервера, связи или электропитания зависит от архитектуры и резервирования объекта. Конкретный сценарий должен подтвердить технический специалист.",
+    "exact_answer_match": true,
+    "new_model_request": false
+  },
+  "root_cause": {
+    "exact": true,
+    "finding": "BND-003 keyword regex matched the project fact word 'питания' before state construction",
+    "raw_message_persistence_before_gateway": "source_proven_runtime_trace_unavailable",
+    "boundary_before_state_update": true,
+    "boundary_before_gateway_semantic_ingestion": true,
+    "previous_assistant_question_considered": false
+  },
+  "candidate_context_gate": {
+    "schema_version": "ROSPARK_FAST_ROUTE_CONTEXT_GATE_V1_1",
+    "conversation_id": "eb989fd9-2f0b-4f51-a4b5-db68e62fead4",
+    "message_id": "incident-turn-source-unavailable",
+    "parent_message_id": null,
+    "request_id": "b2459c37-bf82-45fc-b681-57327f3eb73b",
+    "current_turn_id": "turn-71459f79256fed50",
+    "turn_ingested": true,
+    "message_persisted": true,
+    "open_question_resolved": true,
+    "state_updated": true,
+    "relation_to_context": "answer_to_previous_question",
+    "relation_validator": "cabling_answer_validator",
+    "intent": "provide_project_information",
+    "action_type": "remember_fact_and_continue",
+    "current_turn_is_question": false,
+    "open_question": {
+      "question_id": "question-bc9085d60dcbe353",
+      "question_goal": "existing_system_and_cabling",
+      "question_text": "Для точного расчёта состава оборудования и стоимости нужно уточнить, есть ли уже проложены кабели для подключения нового оборудования или потребуется монтаж с нуля?",
+      "status": "answered",
+      "answered_by_turn_id": "turn-71459f79256fed50"
+    },
+    "answered_question_ids": [
+      "question-bc9085d60dcbe353"
+    ],
+    "facts_before": {},
+    "facts_after": {
+      "existing_automation": false,
+      "existing_barriers": true,
+      "barrier_power_cabling": true,
+      "modernization_or_new_build": "automation_from_scratch_with_existing_barriers"
+    },
+    "fact_mutations": [
+      {
+        "field": "existing_automation",
+        "previous": null,
+        "value": false,
+        "source_turn_id": "turn-71459f79256fed50",
+        "confidence": "explicit"
+      },
+      {
+        "field": "existing_barriers",
+        "previous": null,
+        "value": true,
+        "source_turn_id": "turn-71459f79256fed50",
+        "confidence": "explicit"
+      },
+      {
+        "field": "barrier_power_cabling",
+        "previous": null,
+        "value": true,
+        "source_turn_id": "turn-71459f79256fed50",
+        "confidence": "explicit"
+      },
+      {
+        "field": "modernization_or_new_build",
+        "previous": null,
+        "value": "automation_from_scratch_with_existing_barriers",
+        "source_turn_id": "turn-71459f79256fed50",
+        "confidence": "explicit"
+      }
+    ],
+    "boundary_semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "explicit_command": null
+  },
+  "expected_facts": {
+    "existing_automation": false,
+    "existing_barriers": true,
+    "barrier_power_cabling": true,
+    "control_cabling": null,
+    "network_cabling": null,
+    "modernization_or_new_build": "automation_from_scratch_with_existing_barriers"
+  },
+  "candidate_decision": {
+    "schema_version": "ROSPARK_FAST_ROUTE_CONTEXT_GATE_V1_1",
+    "candidate_route": "boundary",
+    "candidate_template_id": "BND-003",
+    "category": "context_dependent",
+    "mode": "context_gated",
+    "eligible": false,
+    "visible": false,
+    "next_route": "primary_conversation_path",
+    "current_turn_id": "turn-71459f79256fed50",
+    "turn_ingested": true,
+    "message_persisted": true,
+    "open_question_resolved": true,
+    "state_updated": true,
+    "relation_to_context": "answer_to_previous_question",
+    "open_question": {
+      "question_id": "question-bc9085d60dcbe353",
+      "question_goal": "existing_system_and_cabling",
+      "question_text": "Для точного расчёта состава оборудования и стоимости нужно уточнить, есть ли уже проложены кабели для подключения нового оборудования или потребуется монтаж с нуля?",
+      "status": "answered",
+      "answered_by_turn_id": "turn-71459f79256fed50"
+    },
+    "intent": "provide_project_information",
+    "action_type": "remember_fact_and_continue",
+    "explicit_intent_match": false,
+    "failure_predicate_match": false,
+    "topic_match": false,
+    "command_match": false,
+    "reason_codes": [
+      "open_question_answer_has_priority",
+      "fast_route_blocked_by_open_question",
+      "open_question_hijacked_by_fast_route",
+      "project_fact_not_boundary_request",
+      "keyword_only_boundary_match",
+      "boundary_intent_not_present",
+      "project_fact_misclassified_as_boundary_request",
+      "fast_route_topic_mismatch",
+      "fast_route_command_mismatch"
+    ]
+  }
+}

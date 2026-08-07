@@ -372,6 +372,7 @@ export async function handleAiWidgetChat(request: Request) {
         Authorization: `Bearer ${gateway.secret}`,
         'Content-Type': 'application/json',
         'X-Request-Id': requestId,
+        'X-AI-Widget-Turn-Persisted': loggingStarted ? 'true' : 'false',
       },
       body: JSON.stringify(parsed.payload),
       cache: 'no-store',

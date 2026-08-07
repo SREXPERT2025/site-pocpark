@@ -1,0 +1,14 @@
+{
+  "schema_version": "ROSPARK_FAST_ROUTE_GATE_DECISION_V1_1",
+  "fast_route_context_gate_ready": true,
+  "boundary_shadow_ready": true,
+  "production_switch_allowed": false,
+  "shadow_visible_primary_path": "legacy_qwen36_not_sales_controller",
+  "next_step": "owner approval for boundary shadow mode",
+  "production_unchanged": true,
+  "production_pid_observed": 39849,
+  "new_qwen_requests": 0,
+  "commit_created": false,
+  "push_performed": false,
+  "deploy_performed": false
+}

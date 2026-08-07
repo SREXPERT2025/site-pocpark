@@ -1,0 +1,167 @@
+[
+  {
+    "text": "Будет ли система работать без интернета?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Как выехать при потере связи?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Что произойдёт при отказе сервера?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Как работает парковка при отключении питания?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Что будет, если отключат электричество?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Можно ли выехать, когда интернет недоступен?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Что делать при аварийном отключении электропитания?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Будет ли работать шлагбаум при отказе сервера?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Как заехать, если пропала связь с сервером?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Что будет с оборудованием, если питание отключено?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Можно ли открыть проезд при потере интернета?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Как быть, когда сервер недоступен?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Что произойдёт, если оборудование перестанет работать?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Как выехать при аварии электропитания?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  },
+  {
+    "text": "Будет ли доступ при пропавшем интернете?",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": true,
+      "question_frame_match": true,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": true
+    },
+    "expected": true
+  }
+]

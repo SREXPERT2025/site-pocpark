@@ -1,0 +1,26 @@
+{
+  "schema_version": "ROSPARK_ROUTE_ORDER_AFTER_V1_1",
+  "candidate_branch": "fix/site-20260807-fast-route-context-gate-v11",
+  "sequence": [
+    "normalize_messages",
+    "turn_ingestion",
+    "message_persistence_attestation",
+    "open_question_resolution",
+    "project_fact_update",
+    "legacy_state_update",
+    "intent_and_command_detection",
+    "fast_route_candidate",
+    "context_gate",
+    "final_context_consistency",
+    "visible_fast_response_or_primary_conversation_path"
+  ],
+  "invariants": {
+    "turn_ingestion_precedes_every_route": true,
+    "message_persistence_precedes_every_visible_fast_route": true,
+    "state_update_precedes_every_route": true,
+    "answer_to_previous_question_precedes_context_dependent_fast_routes": true,
+    "boundary_requires_explicit_failure_intent": true,
+    "unknown_context_fails_closed": true
+  },
+  "production_switch_allowed": false
+}

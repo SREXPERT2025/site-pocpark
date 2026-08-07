@@ -1,0 +1,40 @@
+{
+  "schema_version": "ROSPARK_FAST_ROUTE_CONTEXT_GATE_V1_1",
+  "candidate_route": "boundary",
+  "candidate_template_id": "BND-003",
+  "category": "context_dependent",
+  "mode": "context_gated",
+  "eligible": false,
+  "visible": false,
+  "next_route": "primary_conversation_path",
+  "current_turn_id": "turn-71459f79256fed50",
+  "turn_ingested": true,
+  "message_persisted": true,
+  "open_question_resolved": true,
+  "state_updated": true,
+  "relation_to_context": "answer_to_previous_question",
+  "open_question": {
+    "question_id": "question-bc9085d60dcbe353",
+    "question_goal": "existing_system_and_cabling",
+    "question_text": "Для точного расчёта состава оборудования и стоимости нужно уточнить, есть ли уже проложены кабели для подключения нового оборудования или потребуется монтаж с нуля?",
+    "status": "answered",
+    "answered_by_turn_id": "turn-71459f79256fed50"
+  },
+  "intent": "provide_project_information",
+  "action_type": "remember_fact_and_continue",
+  "explicit_intent_match": false,
+  "failure_predicate_match": false,
+  "topic_match": false,
+  "command_match": false,
+  "reason_codes": [
+    "open_question_answer_has_priority",
+    "fast_route_blocked_by_open_question",
+    "open_question_hijacked_by_fast_route",
+    "project_fact_not_boundary_request",
+    "keyword_only_boundary_match",
+    "boundary_intent_not_present",
+    "project_fact_misclassified_as_boundary_request",
+    "fast_route_topic_mismatch",
+    "fast_route_command_mismatch"
+  ]
+}

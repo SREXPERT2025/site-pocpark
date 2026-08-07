@@ -1,0 +1,41 @@
+{
+  "conversation_id": "eb989fd9-2f0b-4f51-a4b5-db68e62fead4",
+  "facts": {
+    "existing_automation": false,
+    "existing_barriers": true,
+    "barrier_power_cabling": true,
+    "control_cabling": null,
+    "network_cabling": null,
+    "modernization_or_new_build": "automation_from_scratch_with_existing_barriers"
+  },
+  "mutations": [
+    {
+      "field": "existing_automation",
+      "previous": null,
+      "value": false,
+      "source_turn_id": "turn-71459f79256fed50",
+      "confidence": "explicit"
+    },
+    {
+      "field": "existing_barriers",
+      "previous": null,
+      "value": true,
+      "source_turn_id": "turn-71459f79256fed50",
+      "confidence": "explicit"
+    },
+    {
+      "field": "barrier_power_cabling",
+      "previous": null,
+      "value": true,
+      "source_turn_id": "turn-71459f79256fed50",
+      "confidence": "explicit"
+    },
+    {
+      "field": "modernization_or_new_build",
+      "previous": null,
+      "value": "automation_from_scratch_with_existing_barriers",
+      "source_turn_id": "turn-71459f79256fed50",
+      "confidence": "explicit"
+    }
+  ]
+}

@@ -1,0 +1,277 @@
+[
+  {
+    "text": "К шлагбауму подведено питание.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Силовые кабели уже протянуты.",
+    "semantics": {
+      "subject_match": false,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Интернет у нас есть.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Сервер будет находиться в помещении охраны.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Пока подключены только шлагбаумы.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Кабели будем прокладывать с нуля.",
+    "semantics": {
+      "subject_match": false,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Питание заведено на оба проезда.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Связь между зданиями по оптике.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Шлагбаумы уже стоят.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Сервер установим в диспетчерской.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Интернет подключён по двум каналам.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Нужен кабель питания.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Электричество на объекте есть.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Камеры и шлагбаумы подключены.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Подготовили место под сервер.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Слаботочные кабели ещё не проложены.",
+    "semantics": {
+      "subject_match": false,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Питание силовое, автоматизации нет.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Связь планируем по локальной сети.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Есть резервный сервер.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Шлагбаум питается от существующей линии.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Кабель связи заведён в охрану.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Интернет будет от провайдера заказчика.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Электропитание уже подготовлено.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "Сервер и сеть размещены в стойке.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": false,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  },
+  {
+    "text": "К проезду протянуто питание для шлагбаума.",
+    "semantics": {
+      "subject_match": true,
+      "failure_predicate_match": false,
+      "question_frame_match": false,
+      "project_fact_frame_match": true,
+      "explicit_intent_match": false
+    },
+    "expected": false
+  }
+]
