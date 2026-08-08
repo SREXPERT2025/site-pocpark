@@ -1,0 +1,318 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+
+BASE_SITE_SHA="283841cfafbb71133fff8347d2f5e8f724bfcaac"
+TARGET_SITE_SHA="c74049bc7c54780b735d134168ddd67fe4fc8ecd"
+DELIVERY_BRANCH="fix/site-20260808-owner-canary-v4-hardening"
+RUNTIME_SHA="5713258de76d4aa689baf30eae016df54cd8d579"
+CONTRACT_SHA="8834367e7412656b5a83d0c01b05dbffae6d3dee"
+GATEWAY_A_SHA="e0b4edd34d5fecaf8850e64aa03a33c2661b51f9"
+ACTIVATION_SCRIPT_SHA256="a221fa2dcbae4bf6f47606a4d05d341e72a6bef1778520fc5382252d15251238"
+DEACTIVATION_SCRIPT_SHA256="f11a6efffdcc82367b49309b97d4b630bf769f945d26e581427caf8d7bb4c7f2"
+LIB_SHA256="5cc5cc0840a8e8419387d7184b731e74e05c9ed3d300723725fdec290c004831"
+
+APP_DIR="/var/www/rospark-site"
+ENV_FILE="$APP_DIR/.env.production"
+BACKUP_ROOT="/root/rospark-backups"
+RELEASE_BUILDS="/var/www/rospark-release-builds"
+LOCK_DIR="/run/lock/rospark-owner-ai-canary-v4"
+PUBLIC_HOST="www.xn--80aukedde.xn--p1ai"
+LOCAL_STATUS_URL="http://127.0.0.1:3000/api/ai-widget/status"
+PUBLIC_STATUS_URL="https://${PUBLIC_HOST}/api/ai-widget/status"
+OWNER_STATUS_URL="https://${PUBLIC_HOST}/api/ai-widget/owner-canary/status"
+AI_DB="/var/lib/rospark-ai-widget/dialogs.sqlite"
+LEAD_DB="/var/lib/rospark-leads/lead-registry.sqlite"
+ACTIVATION_ID="owner-canary-v4-1-release-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+EXPECTED_SELF_SHA256="${3:-}"
+STAGE_DIR="/var/www/rospark-site-stage-owner-v4-1-${ACTIVATION_ID}"
+BACKUP_DIR="$BACKUP_ROOT/owner-canary-v4-1-${ACTIVATION_ID}"
+HOT_BASE_NEXT="$RELEASE_BUILDS/next-hot-${BASE_SITE_SHA:0:7}-${ACTIVATION_ID}"
+HOT_BASE_MODULES="$RELEASE_BUILDS/node-modules-hot-${BASE_SITE_SHA:0:7}-${ACTIVATION_ID}"
+TMP_DIR=""
+LIB=""
+LOCK_ACQUIRED=0
+MUTATION_STARTED=0
+FINALIZED=0
+ROLLBACK_STARTED=0
+GATEWAY_HEALTH_BEFORE_SHA256=""
+
+if test "${1:-}" != "--execute-owner-approved" \
+  || test "${2:-}" != "$TARGET_SITE_SHA" \
+  || ! printf '%s' "$EXPECTED_SELF_SHA256" | grep -Eq '^[a-f0-9]{64}$'; then
+  echo "OWNER_APPROVAL_ARGUMENTS_REQUIRED" >&2
+  exit 64
+fi
+
+portable_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    shasum -a 256 "$1" | awk '{print $1}'
+  fi
+}
+
+test "$(portable_sha256 "$0")" = "$EXPECTED_SELF_SHA256" || {
+  echo "WRAPPER_CHECKSUM_MISMATCH" >&2
+  exit 65
+}
+
+cleanup_stage() {
+  if test -n "$STAGE_DIR" && test -d "$STAGE_DIR"; then
+    git -C "$APP_DIR" worktree remove --force "$STAGE_DIR" >/dev/null 2>&1 || true
+  fi
+  if test -n "$TMP_DIR" && test -d "$TMP_DIR"; then
+    rm -rf "$TMP_DIR"
+  fi
+}
+
+release_lock() {
+  if test "$LOCK_ACQUIRED" -eq 1; then
+    owner_v4_release_lock "$LOCK_DIR" "$ACTIVATION_ID"
+    LOCK_ACQUIRED=0
+  fi
+}
+
+canonical_readiness() {
+  local expected_sha="$1"
+  owner_v4_wait_readiness \
+    "$APP_DIR" "$expected_sha" "$LOCAL_STATUS_URL" \
+    "$PUBLIC_STATUS_URL" "$PUBLIC_HOST" 120000 1
+}
+
+verify_baseline_legacy_invariant() {
+  local output="$1" code
+  test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_ENABLED)" = false
+  code="$(curl -sS --max-time 20 --resolve "${PUBLIC_HOST}:443:127.0.0.1" \
+    -o "$output" -w '%{http_code}' "$PUBLIC_STATUS_URL" || true)"
+  test "$code" = 200
+  node -e '
+const fs=require("fs"); const v=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
+if(v.runtimeMode!=="production"||v.serverEventsEnabled!==true)process.exit(1);
+' "$output"
+}
+
+verify_target_owner_status_off() {
+  local output="$1" code
+  test "$(git -C "$APP_DIR" rev-parse HEAD)" = "$TARGET_SITE_SHA"
+  test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_ENABLED)" = false
+  code="$(curl -sS --max-time 20 --resolve "${PUBLIC_HOST}:443:127.0.0.1" \
+    -H "Origin: https://${PUBLIC_HOST}" -o "$output" -w '%{http_code}' \
+    "$OWNER_STATUS_URL" || true)"
+  test "$code" = 200
+  node -e '
+const fs=require("fs"); const v=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
+if(v.enabled!==false||v.audience!=="legacy"||v.route!=="legacy")process.exit(1);
+' "$output"
+}
+
+verify_gateway_exact() {
+  local output="$1" gateway_url gateway_secret
+  gateway_url="$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_URL)"
+  gateway_secret="$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_SECRET)"
+  test "${gateway_url#https://}" != "$gateway_url"
+  test "${#gateway_secret}" -ge 32
+  curl -fsS --max-time 20 -H "Authorization: Bearer ${gateway_secret}" \
+    "${gateway_url%/}/health" -o "$output"
+  node -e '
+const fs=require("fs"); const [path,runtime,contract]=process.argv.slice(1);
+const v=JSON.parse(fs.readFileSync(path,"utf8"));
+if(v.status!=="ok"||v.runtime_mode!=="production"||v.owner_ai_core_ready!==true||v.owner_ai_core_runtime_sha!==runtime||v.owner_ai_core_contract_sha!==contract)process.exit(1);
+' "$output" "$RUNTIME_SHA" "$CONTRACT_SHA"
+}
+
+rollback_site_and_canary() {
+  local rollback_ok=1 site_restore_needed=0 rollback_gateway_sha=""
+  test "$ROLLBACK_STARTED" -eq 0 || return 0
+  ROLLBACK_STARTED=1
+  trap - ERR HUP INT TERM
+  echo "[OWNER CANARY V4.1 SCOPED ROLLBACK]"
+
+  if test -x "$APP_DIR/scripts/deactivate_owner_ai_canary.sh" \
+    && test -x "$APP_DIR/scripts/owner_canary_v4_lib.sh" \
+    && test "$(git -C "$APP_DIR" rev-parse HEAD 2>/dev/null || true)" = "$TARGET_SITE_SHA"; then
+    if test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_ENABLED 2>/dev/null || true)" != false; then
+      OWNER_V4_EXISTING_LOCK_ID="$ACTIVATION_ID" \
+        "$APP_DIR/scripts/deactivate_owner_ai_canary.sh" \
+        "$APP_DIR" "$TARGET_SITE_SHA" "$ENV_FILE" || rollback_ok=0
+    fi
+  fi
+
+  if test -f "$BACKUP_DIR/env.before"; then
+    cp -a "$BACKUP_DIR/env.before" "$ENV_FILE" || rollback_ok=0
+  fi
+
+  if test -d "$HOT_BASE_NEXT" || test -d "$HOT_BASE_MODULES" \
+    || test "$(git -C "$APP_DIR" rev-parse HEAD 2>/dev/null || true)" != "$BASE_SITE_SHA"; then
+    site_restore_needed=1
+    if test -d "$APP_DIR/.next"; then
+      mv "$APP_DIR/.next" "$BACKUP_DIR/failed-target.next" || rollback_ok=0
+    fi
+    if test -d "$APP_DIR/node_modules"; then
+      mv "$APP_DIR/node_modules" "$BACKUP_DIR/failed-target.node_modules" || rollback_ok=0
+    fi
+    git -C "$APP_DIR" reset --hard "$BASE_SITE_SHA" >/dev/null || rollback_ok=0
+    if test -d "$HOT_BASE_NEXT"; then
+      mv "$HOT_BASE_NEXT" "$APP_DIR/.next" || rollback_ok=0
+    fi
+    if test -d "$HOT_BASE_MODULES"; then
+      mv "$HOT_BASE_MODULES" "$APP_DIR/node_modules" || rollback_ok=0
+    fi
+  fi
+  if test "$site_restore_needed" -eq 1; then
+    echo "pm2_action phase=site_rollback action=restart count=1"
+    pm2 restart rospark-site --update-env >/dev/null || rollback_ok=0
+  fi
+
+  if test "$rollback_ok" -eq 1; then
+    canonical_readiness "$BASE_SITE_SHA" || rollback_ok=0
+  fi
+  if test "$rollback_ok" -eq 1; then
+    test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_ENABLED)" = false || rollback_ok=0
+  fi
+  if test "$rollback_ok" -eq 1; then
+    verify_baseline_legacy_invariant "$BACKUP_DIR/rollback-baseline-legacy.json" || rollback_ok=0
+  fi
+  if test "$rollback_ok" -eq 1; then
+    verify_gateway_exact "$BACKUP_DIR/rollback-gateway-health.json" || rollback_ok=0
+    rollback_gateway_sha="$(portable_sha256 "$BACKUP_DIR/rollback-gateway-health.json" 2>/dev/null || true)"
+    test -n "$GATEWAY_HEALTH_BEFORE_SHA256" \
+      && test "$rollback_gateway_sha" = "$GATEWAY_HEALTH_BEFORE_SHA256" || rollback_ok=0
+  fi
+
+  if test "$rollback_ok" -eq 1; then
+    echo "ROLLBACK_READINESS=pass"
+    echo "OWNER_CANARY_ENABLED=false"
+    echo "NORMAL_VISITOR_ROUTE=legacy"
+  else
+    echo "ROLLBACK_READINESS=fail" >&2
+  fi
+  return "$((1 - rollback_ok))"
+}
+
+on_failure() {
+  local code="$1" final_code="$1"
+  trap - ERR HUP INT TERM
+  if test "$MUTATION_STARTED" -eq 1 && test "$FINALIZED" -eq 0; then
+    rollback_site_and_canary || final_code=90
+  fi
+  cleanup_stage
+  release_lock || final_code=90
+  exit "$final_code"
+}
+trap 'on_failure "$?"' ERR HUP INT TERM
+
+echo "[FETCH AND VERIFY EXACT TARGET — NO PRODUCTION MUTATION]"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/owner-canary-v4-1-release.XXXXXX")"
+git -C "$APP_DIR" fetch origin "+refs/heads/${DELIVERY_BRANCH}:refs/remotes/origin/${DELIVERY_BRANCH}"
+git -C "$APP_DIR" cat-file -e "${TARGET_SITE_SHA}^{commit}"
+git -C "$APP_DIR" merge-base --is-ancestor \
+  "$TARGET_SITE_SHA" "refs/remotes/origin/${DELIVERY_BRANCH}^{commit}"
+git -C "$APP_DIR" merge-base --is-ancestor "$BASE_SITE_SHA" "$TARGET_SITE_SHA"
+
+git -C "$APP_DIR" show "$TARGET_SITE_SHA:scripts/owner_canary_v4_lib.sh" > "$TMP_DIR/owner_canary_v4_lib.sh"
+test "$(portable_sha256 "$TMP_DIR/owner_canary_v4_lib.sh")" = "$LIB_SHA256"
+LIB="$TMP_DIR/owner_canary_v4_lib.sh"
+# shellcheck source=/dev/null
+source "$LIB"
+
+OWNER_V4_COMMAND_FILE="$0" owner_v4_acquire_lock \
+  "$LOCK_DIR" "$ACTIVATION_ID" "$TARGET_SITE_SHA" site-owner-canary-v4-1-release
+LOCK_ACQUIRED=1
+
+echo "[READ-ONLY RELEASE GATE]"
+test "$(git -C "$APP_DIR" rev-parse HEAD)" = "$BASE_SITE_SHA"
+test -z "$(git -C "$APP_DIR" status --porcelain)"
+test -f "$ENV_FILE"
+owner_v4_assert_file_mode "$ENV_FILE" 600
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_ENABLED)" = false
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_RUNTIME_SHA)" = "$RUNTIME_SHA"
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_CONTRACT_SHA)" = "$CONTRACT_SHA"
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_GATEWAY_SHA)" = "$GATEWAY_A_SHA"
+nginx -t
+canonical_readiness "$BASE_SITE_SHA"
+verify_baseline_legacy_invariant "$TMP_DIR/baseline-legacy.before.json"
+verify_gateway_exact "$TMP_DIR/gateway-health.before.json"
+GATEWAY_HEALTH_BEFORE_SHA256="$(portable_sha256 "$TMP_DIR/gateway-health.before.json")"
+
+LEADS_BEFORE="$(sqlite3 -readonly "$LEAD_DB" 'SELECT COUNT(*) FROM lead_records;')"
+OUTBOX_BEFORE="$(sqlite3 -readonly "$LEAD_DB" 'SELECT COUNT(*) FROM lead_notification_outbox;')"
+AI_LEADS_BEFORE="$(sqlite3 -readonly "$AI_DB" 'SELECT COUNT(*) FROM ai_widget_production_leads;')"
+
+echo "[BACKUP AFTER SINGLE-FLIGHT LOCK]"
+install -d -m 700 "$BACKUP_DIR" "$RELEASE_BUILDS"
+cp -a "$ENV_FILE" "$BACKUP_DIR/env.before"
+cp -a /etc/nginx/sites-available/rospark-site "$BACKUP_DIR/nginx.before"
+git -C "$APP_DIR" rev-parse HEAD > "$BACKUP_DIR/site-sha.before"
+pm2 jlist > "$BACKUP_DIR/pm2.before.json"
+printf '%s\n' "$(portable_sha256 "$ENV_FILE")" > "$BACKUP_DIR/env.before.sha256"
+sqlite3 -readonly "$AI_DB" ".backup '$BACKUP_DIR/dialogs.before.sqlite'"
+sqlite3 -readonly "$LEAD_DB" ".backup '$BACKUP_DIR/leads.before.sqlite'"
+
+echo "[STAGE EXACT TARGET WITH CANARY OFF]"
+git -C "$APP_DIR" worktree add --detach "$STAGE_DIR" "$TARGET_SITE_SHA"
+cp -a "$ENV_FILE" "$STAGE_DIR/.env.production"
+node "$STAGE_DIR/scripts/configure_owner_ai_canary_env.mjs" "$STAGE_DIR/.env.production" false
+owner_v4_assert_file_mode "$STAGE_DIR/.env.production" 600
+test "$(portable_sha256 "$STAGE_DIR/scripts/owner_canary_v4_lib.sh")" = "$LIB_SHA256"
+test "$(portable_sha256 "$STAGE_DIR/scripts/activate_owner_ai_canary_for_owner_live_test.sh")" = "$ACTIVATION_SCRIPT_SHA256"
+test "$(portable_sha256 "$STAGE_DIR/scripts/deactivate_owner_ai_canary.sh")" = "$DEACTIVATION_SCRIPT_SHA256"
+
+cd "$STAGE_DIR"
+npm ci
+npm run test:owner-ai-canary
+npm run test:owner-ai-canary-env
+npm run test:owner-ai-canary-v4-production
+npm run test:ai-widget-server-events
+npm run test:ai-widget-gateway
+npm run typecheck
+npm run lint
+NODE_OPTIONS=--max-old-space-size=3072 ./node_modules/.bin/next build --webpack
+
+echo "[PHASE A — SITE TARGET CUTOVER WITH CANARY OFF]"
+MUTATION_STARTED=1
+mv "$APP_DIR/.next" "$HOT_BASE_NEXT"
+mv "$APP_DIR/node_modules" "$HOT_BASE_MODULES"
+git -C "$APP_DIR" merge --ff-only "$TARGET_SITE_SHA"
+mv "$STAGE_DIR/.next" "$APP_DIR/.next"
+mv "$STAGE_DIR/node_modules" "$APP_DIR/node_modules"
+cp -a "$STAGE_DIR/.env.production" "$ENV_FILE"
+echo "pm2_action phase=site_target_off action=restart count=1"
+pm2 restart rospark-site --update-env >/dev/null
+canonical_readiness "$TARGET_SITE_SHA"
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_ENABLED)" = false
+echo "[TARGET-ONLY ENDPOINT CAPABILITY — CANARY STILL OFF]"
+verify_target_owner_status_off "$TMP_DIR/target-owner-status.off.json"
+
+echo "[PHASE B — CONTRACT CHECK, CANARY ON, OWNER ROUTING]"
+OWNER_V4_EXISTING_LOCK_ID="$ACTIVATION_ID" \
+  "$APP_DIR/scripts/activate_owner_ai_canary_for_owner_live_test.sh" \
+  "$APP_DIR" "$TARGET_SITE_SHA" "$ENV_FILE"
+
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_ENABLED)" = true
+test "$LEADS_BEFORE" = "$(sqlite3 -readonly "$LEAD_DB" 'SELECT COUNT(*) FROM lead_records;')"
+test "$OUTBOX_BEFORE" = "$(sqlite3 -readonly "$LEAD_DB" 'SELECT COUNT(*) FROM lead_notification_outbox;')"
+test "$AI_LEADS_BEFORE" = "$(sqlite3 -readonly "$AI_DB" 'SELECT COUNT(*) FROM ai_widget_production_leads;')"
+test "$(git -C "$APP_DIR" rev-parse HEAD)" = "$TARGET_SITE_SHA"
+test -z "$(git -C "$APP_DIR" status --porcelain)"
+verify_gateway_exact "$TMP_DIR/gateway-health.after.json"
+test "$(portable_sha256 "$TMP_DIR/gateway-health.after.json")" = "$GATEWAY_HEALTH_BEFORE_SHA256"
+nginx -t
+
+FINALIZED=1
+cleanup_stage
+release_lock
+trap - ERR HUP INT TERM
+echo "OWNER_CANARY_V4_1_RELEASE=complete"
+echo "SITE_SHA=$TARGET_SITE_SHA"
+echo "OWNER_CANARY_ENABLED=true"
+echo "RUNTIME_SHA=$RUNTIME_SHA"
+echo "CONTRACT_SHA=$CONTRACT_SHA"
+echo "GATEWAY_A_SHA=$GATEWAY_A_SHA"
+echo "NORMAL_VISITOR_ROUTE=legacy"
+echo "MODEL_REQUESTS=0"
+echo "CODEX_REQUESTS=0"
+echo "LEADS_CREATED=0"
+echo "MAX_MESSAGES_SENT=0"
+echo "BACKUP_RETAINED=$BACKUP_DIR"
+echo "HOT_ROLLBACK_RETAINED=$HOT_BASE_NEXT"

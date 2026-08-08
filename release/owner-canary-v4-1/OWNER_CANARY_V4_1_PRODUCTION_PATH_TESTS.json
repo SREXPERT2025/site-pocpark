@@ -1,0 +1,53 @@
+{
+  "schema": "rospark-owner-canary-v4-1-production-path-tests-v1",
+  "site_target_changed": false,
+  "site_target_sha": "c74049bc7c54780b735d134168ddd67fe4fc8ecd",
+  "exact_v4_failure_reproduced": true,
+  "baseline_404": {
+    "site_sha": "283841cfafbb71133fff8347d2f5e8f724bfcaac",
+    "owner_canary_status_endpoint": 404,
+    "endpoint_called_by_wrapper": false,
+    "baseline_preflight": "pass"
+  },
+  "target_endpoint": {
+    "site_sha": "c74049bc7c54780b735d134168ddd67fe4fc8ecd",
+    "owner_canary_status_endpoint": 200,
+    "probe_position": "after_full_target_readiness",
+    "acceptance": "pass"
+  },
+  "missing_target_endpoint": {
+    "owner_canary_status_endpoint": 404,
+    "activation_result": "fail_before_canary_on",
+    "automatic_rollbacks": 1,
+    "rollback_readiness": "pass"
+  },
+  "preserved_v4_regressions": {
+    "transient_502": "pass",
+    "permanent_502": "automatic_rollback_pass",
+    "pm2_online_before_app_ready": "pass",
+    "portable_stat_activation_gnu": "pass",
+    "portable_stat_activation_bsd": "pass",
+    "portable_stat_rollback_gnu": "pass",
+    "portable_stat_rollback_bsd": "pass",
+    "single_flight": "pass",
+    "stale_corrupt_live_unrelated_lock": "fail_closed",
+    "forged_cookie": "rejected",
+    "normal_visitor": "legacy",
+    "owner_failure_silent_legacy_fallback": 0,
+    "runtime_exact_pin": "pass",
+    "contract_exact_pin": "pass",
+    "site_foundation_b_compatibility": "pass",
+    "gateway_unchanged_contract": "pass"
+  },
+  "wrapper": {
+    "bash_syntax": "pass",
+    "missing_owner_gate": "fail_closed_exit_64",
+    "checksum_mismatch": "fail_closed_exit_65",
+    "unapproved_direct_stat_invocations": 0,
+    "target_endpoint_calls_before_target_readiness": 0,
+    "target_endpoint_calls_during_baseline_rollback": 0
+  },
+  "model_requests": 0,
+  "production_changes": 0,
+  "result": "pass"
+}

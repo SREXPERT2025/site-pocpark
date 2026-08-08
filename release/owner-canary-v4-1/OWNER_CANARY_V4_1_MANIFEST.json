@@ -1,0 +1,61 @@
+{
+  "schema": "rospark-owner-canary-v4-1-wrapper-release-candidate-v1",
+  "created_at": "2026-08-08T13:20:14Z",
+  "scope": "wrapper_ordering_fix_only",
+  "production_activation_allowed_technically": true,
+  "production_execution_authorized": false,
+  "production_execution_performed": false,
+  "push_performed": false,
+  "production_baseline_site_sha": "283841cfafbb71133fff8347d2f5e8f724bfcaac",
+  "site_target_changed": false,
+  "site_target_sha": "c74049bc7c54780b735d134168ddd67fe4fc8ecd",
+  "runtime_sha": "5713258de76d4aa689baf30eae016df54cd8d579",
+  "contract_sha": "8834367e7412656b5a83d0c01b05dbffae6d3dee",
+  "gateway_a_sha": "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
+  "site_foundation_b": "unchanged",
+  "owner_canary_default": "off",
+  "identifiers": {
+    "new_v4_1_wrapper_sha256": "9152f8b3eca06a6b5b75371429a63385d016610248bebc7b037307c80906410e",
+    "new_v4_1_activation_script_sha256": "a221fa2dcbae4bf6f47606a4d05d341e72a6bef1778520fc5382252d15251238",
+    "new_v4_1_manifest_sha256": "computed_externally_in_checksums"
+  },
+  "artifacts": {
+    "v4_1_wrapper": {
+      "path": "release/owner-canary-v4-1/OWNER_CANARY_V4_1_ACTIVATION_SCRIPT",
+      "sha256": "9152f8b3eca06a6b5b75371429a63385d016610248bebc7b037307c80906410e"
+    },
+    "unchanged_target_activation_script": {
+      "path": "scripts/activate_owner_ai_canary_for_owner_live_test.sh",
+      "sha256": "a221fa2dcbae4bf6f47606a4d05d341e72a6bef1778520fc5382252d15251238",
+      "reason_hash_unchanged": "target activation logic is unchanged; V4.1 fixes only outer wrapper ordering"
+    },
+    "endpoint_capability_matrix": {
+      "path": "docs/deployment/OWNER_CANARY_V4_1_ENDPOINT_CAPABILITY_MATRIX.md",
+      "sha256": "245c806b5da5412e2743190a10ea236bca11b9a996fdabf3e0a5022bfdce905d"
+    },
+    "ordering_regression_test": {
+      "path": "scripts/test_owner_canary_v4_1_wrapper.py",
+      "sha256": "1aa664aae316d0c44fc1822240b5d6f49a2f6fc187d231a1fa3ae7357a99f317"
+    },
+    "v4_production_path_test": {
+      "path": "scripts/test_owner_canary_v4_production_path.py",
+      "sha256": "04c22ed792e30dea39810d56a92b627e6655e4cb4f46ccc1a17669ea88044e11"
+    }
+  },
+  "ordering_contract": {
+    "baseline_owner_status_required": false,
+    "baseline_owner_status_expected_if_observed": 404,
+    "target_owner_status_first_probe": "after_target_cutover_and_full_readiness",
+    "target_owner_status_required_before_canary_on": true,
+    "baseline_rollback_owner_status_probe": false
+  },
+  "offline_gate": {
+    "baseline_without_owner_status": "pass",
+    "target_owner_status_present": "pass",
+    "target_owner_status_missing": "automatic_rollback_pass",
+    "preserved_v4_protections": "pass",
+    "model_requests": 0,
+    "production_changes": 0
+  },
+  "next_gate": "owner_approval_to_publish_and_execute_exact_v4_1_wrapper"
+}
