@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type Database from 'better-sqlite3';
 
-export const OWNER_AI_CANARY_STATE_SCHEMA_VERSION = 2;
+export const OWNER_AI_CANARY_STATE_SCHEMA_VERSION = 3;
 
 export type OwnerCanaryThreadState = {
   conversationThreadId: string;
@@ -177,8 +177,7 @@ export function runOwnerAiCanaryMigrations(db: Database.Database) {
   const v2 = db.prepare(`
     SELECT version FROM owner_ai_canary_migrations WHERE version = 2
   `).get();
-  if (v2) return;
-  db.transaction(() => {
+  if (!v2) db.transaction(() => {
     db.exec(`
       CREATE TABLE owner_ai_canary_history (
         message_id TEXT PRIMARY KEY,
@@ -245,6 +244,39 @@ export function runOwnerAiCanaryMigrations(db: Database.Database) {
     db.prepare(`
       INSERT INTO owner_ai_canary_migrations(version, name, applied_at)
       VALUES (2, 'owner_ai_canary_runtime_v114', ?)
+    `).run(new Date().toISOString());
+  })();
+  const v3 = db.prepare(`
+    SELECT version FROM owner_ai_canary_migrations WHERE version = 3
+  `).get();
+  if (v3) return;
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE ai_core_public_route_telemetry (
+        turn_id TEXT PRIMARY KEY,
+        conversation_thread_id TEXT NOT NULL,
+        message_id TEXT NOT NULL,
+        ai_core_request_id TEXT NOT NULL,
+        runtime_sha TEXT NOT NULL,
+        contract_sha TEXT NOT NULL,
+        planned_route TEXT NOT NULL CHECK (planned_route = 'ai_core'),
+        actual_route TEXT NOT NULL CHECK (
+          actual_route IN ('ai_core', 'legacy', 'fallback')
+        ),
+        fallback_reason TEXT,
+        mutation_started INTEGER NOT NULL CHECK (mutation_started IN (0, 1)),
+        state_version_before INTEGER,
+        state_version_after INTEGER,
+        response_hash TEXT,
+        component_versions_json TEXT NOT NULL DEFAULT '{}',
+        evidence_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (turn_id) REFERENCES ai_widget_turns(id) ON DELETE CASCADE
+      );
+    `);
+    db.prepare(`
+      INSERT INTO owner_ai_canary_migrations(version, name, applied_at)
+      VALUES (3, 'ai_core_public_route_telemetry_v1', ?)
     `).run(new Date().toISOString());
   })();
 }
@@ -1079,4 +1111,84 @@ export function recordOwnerCanaryRuntimeTelemetry(
     )
   `).run({ ...row, evidenceHash });
   return { evidenceHash };
+}
+
+export function recordPublicAiCoreRouteTelemetry(
+  db: Database.Database,
+  input: {
+    turnId: string;
+    conversationThreadId: string;
+    messageId: string;
+    aiCoreRequestId: string;
+    runtimeSha: string;
+    contractSha: string;
+    actualRoute: 'ai_core' | 'legacy' | 'fallback';
+    fallbackReason?: string | null;
+    mutationStarted: boolean;
+    stateVersionBefore?: number | null;
+    stateVersionAfter?: number | null;
+    response?: unknown;
+    componentVersions?: Record<string, unknown>;
+    createdAt?: string;
+  },
+) {
+  const row = {
+    turnId: validId(input.turnId, 'turn_id'),
+    conversationThreadId: validId(
+      input.conversationThreadId,
+      'conversation_thread_id',
+    ),
+    messageId: validId(input.messageId, 'message_id'),
+    aiCoreRequestId: validId(input.aiCoreRequestId, 'ai_core_request_id'),
+    runtimeSha: input.runtimeSha,
+    contractSha: input.contractSha,
+    plannedRoute: 'ai_core',
+    actualRoute: input.actualRoute,
+    fallbackReason: input.fallbackReason ?? null,
+    mutationStarted: input.mutationStarted ? 1 : 0,
+    stateVersionBefore: input.stateVersionBefore ?? null,
+    stateVersionAfter: input.stateVersionAfter ?? null,
+    responseHash: input.response === undefined ? null : hash(input.response),
+    componentVersionsJson: stableJson(input.componentVersions ?? {}),
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+  if (!/^[a-f0-9]{40}$/.test(row.runtimeSha)
+    || !/^[a-f0-9]{40}$/.test(row.contractSha)
+    || (row.actualRoute === 'ai_core' && row.fallbackReason !== null)
+    || (row.actualRoute !== 'ai_core' && !row.fallbackReason)
+    || (row.mutationStarted === 1 && row.actualRoute !== 'ai_core')) {
+    throw new Error('INVALID_PUBLIC_AI_CORE_TELEMETRY');
+  }
+  for (const value of [row.stateVersionBefore, row.stateVersionAfter]) {
+    if (value !== null && (!Number.isSafeInteger(value) || value < 0)) {
+      throw new Error('INVALID_PUBLIC_AI_CORE_STATE_VERSION');
+    }
+  }
+  const evidenceHash = hash(row);
+  const existing = db.prepare(`
+    SELECT evidence_hash FROM ai_core_public_route_telemetry
+    WHERE turn_id = ?
+  `).get(row.turnId) as { evidence_hash: string } | undefined;
+  if (existing) {
+    if (existing.evidence_hash !== evidenceHash) {
+      throw new Error('PUBLIC_AI_CORE_TELEMETRY_IDEMPOTENCY_CONFLICT');
+    }
+    return { created: false, evidenceHash };
+  }
+  db.prepare(`
+    INSERT INTO ai_core_public_route_telemetry (
+      turn_id, conversation_thread_id, message_id,
+      ai_core_request_id, runtime_sha, contract_sha,
+      planned_route, actual_route, fallback_reason,
+      mutation_started, state_version_before, state_version_after,
+      response_hash, component_versions_json, evidence_hash, created_at
+    ) VALUES (
+      @turnId, @conversationThreadId, @messageId,
+      @aiCoreRequestId, @runtimeSha, @contractSha,
+      @plannedRoute, @actualRoute, @fallbackReason,
+      @mutationStarted, @stateVersionBefore, @stateVersionAfter,
+      @responseHash, @componentVersionsJson, @evidenceHash, @createdAt
+    )
+  `).run({ ...row, evidenceHash });
+  return { created: true, evidenceHash };
 }

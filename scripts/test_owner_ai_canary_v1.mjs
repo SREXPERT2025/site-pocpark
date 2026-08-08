@@ -133,7 +133,7 @@ runOwnerAiCanaryMigrations(db);
 assert.deepEqual(
   db.prepare('SELECT version FROM owner_ai_canary_migrations ORDER BY version')
     .all().map((row) => row.version),
-  [1, 2],
+  [1, 2, 3],
 );
 let state = ensureOwnerCanaryThread(db, {
   conversationThreadId: first.conversationThreadId,
@@ -539,8 +539,8 @@ assert.match(statusSource, /contractSha: AI_CORE_CONTRACT_SHA/);
 assert.match(apiSource, /callOwnerCanaryRuntime/);
 assert.match(apiSource, /Legacy-маршрут не использован/);
 assert.match(apiSource, /OWNER_AI_CANARY_MARKER/);
-assert.match(apiSource, /ownerAudience === 'owner_canary'/);
-assert.ok(apiSource.indexOf("if (ownerAudience === 'owner_canary'")
+assert.match(apiSource, /aiCoreAudience === 'owner_canary'/);
+assert.ok(apiSource.indexOf("if (aiCoreAudience !== 'legacy'")
   < apiSource.indexOf('`${gateway.url}/v1/chat`'));
 assert.doesNotMatch(apiSource, /codex.*owner_ai_core/i);
 

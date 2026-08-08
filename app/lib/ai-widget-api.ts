@@ -44,8 +44,11 @@ import {
   AI_CORE_CONTRACT_VERSION,
   AI_CORE_OWNER_MODEL,
   AI_CORE_RUNTIME_SHA,
+  acknowledgePublicAiCoreMutations,
   acknowledgeOwnerCanaryMutations,
+  buildPublicAiCoreRequest,
   buildOwnerCanaryCoreRequest,
+  callPublicAiCoreRuntime,
   callOwnerCanaryRuntime,
   ownerCanaryIdempotencyKey,
 } from './owner-ai-canary-adapter';
@@ -59,10 +62,18 @@ import {
   ownerCanarySessionRevoked,
   recordOwnerCanaryRuntimeTelemetry,
   recordOwnerCanaryTelemetry,
+  recordPublicAiCoreRouteTelemetry,
   registerOwnerCanaryMessage,
   runOwnerAiCanaryMigrations,
   saveOwnerCanaryRuntimeResponse,
 } from './owner-ai-canary-state';
+import {
+  publicAiCoreEnabled,
+  publicAiCoreFallbackReason,
+  publicAiCoreRouteHeaders,
+  requirePublicAiCoreReleasePins,
+  selectAiCoreSiteAudience,
+} from './public-ai-core';
 import { LeadRegistryError } from './lead-registry-core';
 import {
   leadRegistryEnabled,
@@ -242,6 +253,7 @@ export async function handleAiWidgetStatus() {
       handoffMode: aiWidgetHandoffMode(),
       loggingEnabled: aiWidgetLoggingEnabled(),
       serverEventsEnabled: aiWidgetServerEventsEnabled(),
+      publicAiCoreEnabled: publicAiCoreEnabled(),
     },
     {
       headers: {
@@ -322,22 +334,6 @@ export async function handleAiWidgetChat(request: Request) {
           isRevoked: (jti) => ownerCanarySessionRevoked(db, jti),
         });
         ownerAudience = selection.audience;
-        if (ownerAudience === 'owner_canary') {
-          ownerIdentity = mapSiteIdentity({
-            sessionId: parsed.payload.sessionId,
-            turnId: parsed.payload.turnId,
-          });
-          ensureOwnerCanaryThread(db, {
-            conversationThreadId: ownerIdentity.conversationThreadId,
-            siteSessionId: ownerIdentity.siteSessionId,
-          });
-          registerOwnerCanaryMessage(db, {
-            conversationThreadId: ownerIdentity.conversationThreadId,
-            messageId: ownerIdentity.messageId,
-            siteTurnId: ownerIdentity.siteTurnId,
-            requestPayload: parsed.payload,
-          });
-        }
       } catch {
         return jsonError(
           503,
@@ -347,6 +343,54 @@ export async function handleAiWidgetChat(request: Request) {
       }
     }
   }
+  const aiCoreAudience = selectAiCoreSiteAudience({
+    publicEnabled: publicAiCoreEnabled(),
+    ownerAudience,
+  });
+  if (aiCoreAudience !== 'legacy') {
+    try {
+      if (!aiWidgetLoggingEnabled() || !aiWidgetServerEventsEnabled()) {
+        throw new Error('AI_CORE_STATE_UNAVAILABLE');
+      }
+      const db = getAiWidgetLogDatabase();
+      runOwnerAiCanaryMigrations(db);
+      ownerIdentity = mapSiteIdentity({
+        sessionId: parsed.payload.sessionId,
+        turnId: parsed.payload.turnId,
+      });
+      ensureOwnerCanaryThread(db, {
+        conversationThreadId: ownerIdentity.conversationThreadId,
+        siteSessionId: ownerIdentity.siteSessionId,
+      });
+      registerOwnerCanaryMessage(db, {
+        conversationThreadId: ownerIdentity.conversationThreadId,
+        messageId: ownerIdentity.messageId,
+        siteTurnId: ownerIdentity.siteTurnId,
+        requestPayload: parsed.payload,
+      });
+    } catch {
+      const isPublic = aiCoreAudience === 'public_ai_core';
+      return jsonError(
+        503,
+        isPublic ? 'AI_CORE_PUBLIC_STATE_UNAVAILABLE' : 'OWNER_CANARY_STATE_UNAVAILABLE',
+        isPublic
+          ? 'AI-консультант временно недоступен.'
+          : 'Owner AI Core test временно недоступен.',
+      );
+    }
+  }
+  const aiCoreBaseHeaders = ownerIdentity ? {
+    'X-AI-Widget-Audience': aiCoreAudience,
+    'X-AI-Core-Contract-Version': AI_CORE_CONTRACT_VERSION,
+    'X-AI-Core-Contract-SHA': AI_CORE_CONTRACT_SHA,
+    'X-AI-Core-Runtime-SHA': AI_CORE_RUNTIME_SHA,
+    'X-AI-Core-Conversation-Thread-Id': ownerIdentity.conversationThreadId,
+    'X-AI-Core-Message-Id': ownerIdentity.messageId,
+    ...(aiCoreAudience === 'owner_canary' ? {
+      'X-AI-Core-Owner-Marker':
+        `${OWNER_AI_CANARY_MARKER} · Qwen · Runtime ${AI_CORE_RUNTIME_SHA.slice(0, 7)}`,
+    } : {}),
+  } : {};
   let loggingStarted = false;
   const recordServerEvent = (
     eventName: AiWidgetServerEventName,
@@ -382,12 +426,12 @@ export async function handleAiWidgetChat(request: Request) {
         existing.status === 'answered'
         && existing.assistantContent
       ) {
-        if (ownerAudience === 'owner_canary') {
+        if (aiCoreAudience !== 'legacy') {
           if (!ownerIdentity) {
             return jsonError(
               503,
-              'OWNER_CANARY_IDENTITY_MISSING',
-              'Owner AI Core test временно недоступен.',
+              'AI_CORE_IDENTITY_MISSING',
+              'AI-консультант временно недоступен.',
             );
           }
           const cached = getOwnerCanaryRuntimeResponse(
@@ -404,24 +448,21 @@ export async function handleAiWidgetChat(request: Request) {
           if (!cached || cached.visibleAnswer !== existing.assistantContent) {
             return jsonError(
               409,
-              'OWNER_CANARY_IDEMPOTENCY_EVIDENCE_MISSING',
-              'Этот owner turn уже завершён, но его evidence недоступен.',
+              'AI_CORE_IDEMPOTENCY_EVIDENCE_MISSING',
+              'Этот запрос уже завершён, но его evidence недоступен.',
             );
           }
           return textResponse(cached.visibleAnswer, {
-            route: 'owner_ai_core_cached',
+            route: aiCoreAudience === 'public_ai_core'
+              ? 'public_ai_core_cached'
+              : 'owner_ai_core_cached',
             requestId: existing.requestId,
             handoffMode,
             extraHeaders: {
-              'X-AI-Widget-Audience': 'owner_canary',
-              'X-AI-Core-Contract-Version': AI_CORE_CONTRACT_VERSION,
-              'X-AI-Core-Contract-SHA': AI_CORE_CONTRACT_SHA,
-              'X-AI-Core-Runtime-SHA': AI_CORE_RUNTIME_SHA,
-              'X-AI-Core-Conversation-Thread-Id':
-                ownerIdentity.conversationThreadId,
-              'X-AI-Core-Message-Id': ownerIdentity.messageId,
-              'X-AI-Core-Owner-Marker':
-                `${OWNER_AI_CANARY_MARKER} · Qwen · Runtime ${AI_CORE_RUNTIME_SHA.slice(0, 7)}`,
+              ...aiCoreBaseHeaders,
+              ...(aiCoreAudience === 'public_ai_core'
+                ? publicAiCoreRouteHeaders({ actualRoute: 'ai_core' })
+                : {}),
             },
           });
         }
@@ -503,6 +544,32 @@ export async function handleAiWidgetChat(request: Request) {
     }
   };
 
+  let publicFallbackContext: {
+    reason: string;
+    aiCoreRequestId: string;
+  } | null = null;
+  const recordPublicFallback = (
+    actualRoute: 'legacy' | 'fallback',
+    suffix?: string,
+  ) => {
+    if (!publicFallbackContext || !ownerIdentity) return;
+    const fallbackReason = suffix
+      ? `${publicFallbackContext.reason}_${suffix}`
+      : publicFallbackContext.reason;
+    recordPublicAiCoreRouteTelemetry(getAiWidgetLogDatabase(), {
+      turnId: parsed.payload.turnId,
+      conversationThreadId: ownerIdentity.conversationThreadId,
+      messageId: ownerIdentity.messageId,
+      aiCoreRequestId: publicFallbackContext.aiCoreRequestId,
+      runtimeSha: AI_CORE_RUNTIME_SHA,
+      contractSha: AI_CORE_CONTRACT_SHA,
+      actualRoute,
+      fallbackReason,
+      mutationStarted: false,
+    });
+    publicFallbackContext = null;
+  };
+
   const fallback = (failureCode: string) => {
     if (runtimeMode !== 'production') {
       failLoggedTurn(failureCode);
@@ -515,33 +582,42 @@ export async function handleAiWidgetChat(request: Request) {
         'Журнал диалога временно недоступен.',
       );
     }
+    const publicHeaders = publicFallbackContext
+      ? publicAiCoreRouteHeaders({
+        actualRoute: 'fallback',
+        fallbackReason: `${publicFallbackContext.reason}_${failureCode}`,
+      })
+      : undefined;
+    recordPublicFallback('fallback', failureCode);
     return textResponse(PRODUCTION_FALLBACK_ANSWER, {
       route: 'fallback',
       requestId,
       handoffMode,
       fallback: true,
+      extraHeaders: publicHeaders,
     });
   };
 
-  if (ownerAudience === 'owner_canary' && ownerIdentity) {
+  if (aiCoreAudience !== 'legacy' && ownerIdentity) {
     const aiCoreRequestId = ownerCanaryRequestId();
+    let aiCoreMutationStarted = false;
     const ownerHeaders = {
-      'X-AI-Widget-Audience': 'owner_canary',
-      'X-AI-Core-Contract-Version': AI_CORE_CONTRACT_VERSION,
-      'X-AI-Core-Contract-SHA': AI_CORE_CONTRACT_SHA,
-      'X-AI-Core-Runtime-SHA': AI_CORE_RUNTIME_SHA,
-      'X-AI-Core-Conversation-Thread-Id': ownerIdentity.conversationThreadId,
-      'X-AI-Core-Message-Id': ownerIdentity.messageId,
+      ...aiCoreBaseHeaders,
       'X-AI-Core-Request-Id': aiCoreRequestId,
-      'X-AI-Core-Owner-Marker': `${OWNER_AI_CANARY_MARKER} · Qwen · Runtime ${AI_CORE_RUNTIME_SHA.slice(0, 7)}`,
+      ...(aiCoreAudience === 'public_ai_core'
+        ? publicAiCoreRouteHeaders({ actualRoute: 'ai_core' })
+        : {}),
     };
     try {
-      const siteRelease = process.env.AI_CORE_OWNER_CANARY_SITE_SHA ?? '';
-      const gatewayRelease =
-        process.env.AI_CORE_OWNER_CANARY_GATEWAY_SHA ?? '';
+      const { siteRelease, gatewayRelease } = aiCoreAudience === 'public_ai_core'
+        ? requirePublicAiCoreReleasePins()
+        : {
+          siteRelease: process.env.AI_CORE_OWNER_CANARY_SITE_SHA ?? '',
+          gatewayRelease: process.env.AI_CORE_OWNER_CANARY_GATEWAY_SHA ?? '',
+        };
       if (!/^[a-f0-9]{40}$/.test(siteRelease)
         || !/^[a-f0-9]{40}$/.test(gatewayRelease)) {
-        throw new Error('OWNER_CANARY_RELEASE_PIN_INVALID');
+        throw new Error('AI_CORE_RELEASE_PIN_INVALID');
       }
       const db = getAiWidgetLogDatabase();
       const state = ensureOwnerCanaryThread(db, {
@@ -552,7 +628,9 @@ export async function handleAiWidgetChat(request: Request) {
         db,
         ownerIdentity.conversationThreadId,
       );
-      const coreRequest = buildOwnerCanaryCoreRequest({
+      const coreRequest = (aiCoreAudience === 'public_ai_core'
+        ? buildPublicAiCoreRequest
+        : buildOwnerCanaryCoreRequest)({
         aiCoreRequestId,
         conversationThreadId: ownerIdentity.conversationThreadId,
         messageId: ownerIdentity.messageId,
@@ -587,12 +665,15 @@ export async function handleAiWidgetChat(request: Request) {
         role: 'user',
         content: lastUserMessage,
       });
-      const envelope = await callOwnerCanaryRuntime(coreRequest);
+      const envelope = aiCoreAudience === 'public_ai_core'
+        ? await callPublicAiCoreRuntime(coreRequest)
+        : await callOwnerCanaryRuntime(coreRequest);
       const response = envelope.response;
       const responseId = String(response.response_id);
       const mutations = response.state_mutations as Parameters<
         typeof applyOwnerCanaryMutationBatch
       >[1]['mutations'];
+      aiCoreMutationStarted = mutations.length > 0;
       const applied = applyOwnerCanaryMutationBatch(db, {
         conversationThreadId: ownerIdentity.conversationThreadId,
         messageId: ownerIdentity.messageId,
@@ -601,7 +682,11 @@ export async function handleAiWidgetChat(request: Request) {
         mutations,
       });
       if (mutations.length > 0) {
-        await acknowledgeOwnerCanaryMutations(applied.acknowledgement);
+        if (aiCoreAudience === 'public_ai_core') {
+          await acknowledgePublicAiCoreMutations(applied.acknowledgement);
+        } else {
+          await acknowledgeOwnerCanaryMutations(applied.acknowledgement);
+        }
       }
       if (!applied.accepted) {
         throw new Error('OWNER_CANARY_STATE_VERSION_CONFLICT');
@@ -615,46 +700,66 @@ export async function handleAiWidgetChat(request: Request) {
       const evaluationTelemetry = telemetry.evaluation as
         | Record<string, unknown> | undefined;
       const elapsedMs = Date.now() - startedAt;
+      const responseRoute = aiCoreAudience === 'public_ai_core'
+        ? 'public_ai_core'
+        : 'owner_ai_core';
       db.transaction(() => {
         completeAiWidgetTurn(db, {
           turnId: parsed.payload.turnId,
           assistantContent: answer,
-          route: 'owner_ai_core',
+          route: responseRoute,
           elapsedMs,
         });
         const terminalEvent = recordAiWidgetServerEvent(db, {
           turnId: parsed.payload.turnId,
           eventName: 'answer_completed',
-          route: 'owner_ai_core',
+          route: responseRoute,
           elapsedMs,
         });
-        recordOwnerCanaryTelemetry(db, {
-          turnId: parsed.payload.turnId,
-          conversationThreadId: ownerIdentity.conversationThreadId,
-          messageId: ownerIdentity.messageId,
-          aiCoreRequestId,
-          contractVersion: AI_CORE_CONTRACT_VERSION,
-          runtimeSha: AI_CORE_RUNTIME_SHA,
-          decisionPackageHash: String(response.decision_package_hash),
-          plannedExecutor: String(executorTrace.planned_executor),
-          finalExecutor: String(executorTrace.final_executor),
-          evaluationStatus: String(evaluation.status),
-          repairStatus: repair.applied ? 'applied' : 'not_applied',
-          stateVersionBefore: Number(response.state_version_before),
-          stateVersionAfter: applied.state.stateVersion,
-          latencyMs: Number(latency?.total_ms ?? elapsedMs),
-          siteTerminalEventId: terminalEvent.id,
-        });
-        recordOwnerCanaryRuntimeTelemetry(db, {
-          turnId: parsed.payload.turnId,
-          runtimeSha: AI_CORE_RUNTIME_SHA,
-          rawStatus: String(evaluationTelemetry?.raw_status),
-          repairApplied: Boolean(repair.applied),
-          finalStatus: String(evaluationTelemetry?.final_status),
-          blockingReasonCodes: Array.isArray(evaluation.reason_codes)
-            ? evaluation.reason_codes.map(String) : [],
-          componentVersions: response.component_versions as Record<string, unknown>,
-        });
+        if (aiCoreAudience === 'public_ai_core') {
+          recordPublicAiCoreRouteTelemetry(db, {
+            turnId: parsed.payload.turnId,
+            conversationThreadId: ownerIdentity.conversationThreadId,
+            messageId: ownerIdentity.messageId,
+            aiCoreRequestId,
+            runtimeSha: AI_CORE_RUNTIME_SHA,
+            contractSha: AI_CORE_CONTRACT_SHA,
+            actualRoute: 'ai_core',
+            mutationStarted: aiCoreMutationStarted,
+            stateVersionBefore: Number(response.state_version_before),
+            stateVersionAfter: applied.state.stateVersion,
+            response: envelope,
+            componentVersions: response.component_versions as Record<string, unknown>,
+          });
+        } else {
+          recordOwnerCanaryTelemetry(db, {
+            turnId: parsed.payload.turnId,
+            conversationThreadId: ownerIdentity.conversationThreadId,
+            messageId: ownerIdentity.messageId,
+            aiCoreRequestId,
+            contractVersion: AI_CORE_CONTRACT_VERSION,
+            runtimeSha: AI_CORE_RUNTIME_SHA,
+            decisionPackageHash: String(response.decision_package_hash),
+            plannedExecutor: String(executorTrace.planned_executor),
+            finalExecutor: String(executorTrace.final_executor),
+            evaluationStatus: String(evaluation.status),
+            repairStatus: repair.applied ? 'applied' : 'not_applied',
+            stateVersionBefore: Number(response.state_version_before),
+            stateVersionAfter: applied.state.stateVersion,
+            latencyMs: Number(latency?.total_ms ?? elapsedMs),
+            siteTerminalEventId: terminalEvent.id,
+          });
+          recordOwnerCanaryRuntimeTelemetry(db, {
+            turnId: parsed.payload.turnId,
+            runtimeSha: AI_CORE_RUNTIME_SHA,
+            rawStatus: String(evaluationTelemetry?.raw_status),
+            repairApplied: Boolean(repair.applied),
+            finalStatus: String(evaluationTelemetry?.final_status),
+            blockingReasonCodes: Array.isArray(evaluation.reason_codes)
+              ? evaluation.reason_codes.map(String) : [],
+            componentVersions: response.component_versions as Record<string, unknown>,
+          });
+        }
         appendOwnerCanaryHistory(db, {
           conversationThreadId: ownerIdentity.conversationThreadId,
           messageId: responseId,
@@ -671,7 +776,7 @@ export async function handleAiWidgetChat(request: Request) {
         });
       })();
       return textResponse(answer, {
-        route: 'owner_ai_core',
+        route: responseRoute,
         requestId,
         handoffMode,
         extraHeaders: {
@@ -684,6 +789,26 @@ export async function handleAiWidgetChat(request: Request) {
         },
       });
     } catch (error) {
+      if (aiCoreAudience === 'public_ai_core') {
+        const reason = publicAiCoreFallbackReason(
+          error,
+          aiCoreMutationStarted,
+        );
+        if (reason) {
+          publicFallbackContext = { reason, aiCoreRequestId };
+        } else {
+          const code = error instanceof Error
+            ? error.message.replace(/[^A-Z0-9_]/gi, '_').toUpperCase().slice(0, 100)
+            : 'PUBLIC_AI_CORE_ERROR';
+          failLoggedTurn(code || 'PUBLIC_AI_CORE_ERROR');
+          return jsonError(
+            503,
+            code || 'PUBLIC_AI_CORE_ERROR',
+            'AI-консультант завершился безопасной ошибкой.',
+            ownerHeaders,
+          );
+        }
+      } else {
       const code = error instanceof Error
         ? error.message.replace(/[^A-Z0-9_]/gi, '_').toUpperCase().slice(0, 100)
         : 'OWNER_AI_CORE_ERROR';
@@ -694,6 +819,7 @@ export async function handleAiWidgetChat(request: Request) {
         'Owner AI Core test завершился безопасной ошибкой. Legacy-маршрут не использован.',
         ownerHeaders,
       );
+      }
     }
   }
 
@@ -748,11 +874,19 @@ export async function handleAiWidgetChat(request: Request) {
         'Журнал диалога временно недоступен.',
       );
     }
+    const publicHeaders = publicFallbackContext
+      ? publicAiCoreRouteHeaders({
+        actualRoute: 'legacy',
+        fallbackReason: publicFallbackContext.reason,
+      })
+      : undefined;
+    recordPublicFallback('legacy');
     return textResponse(answer, {
       route,
       requestId,
       handoffMode,
       templateId,
+      extraHeaders: publicHeaders,
     });
   } catch {
     return fallback('GATEWAY_TIMEOUT') ?? jsonError(

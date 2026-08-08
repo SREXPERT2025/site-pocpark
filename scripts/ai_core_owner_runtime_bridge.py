@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
+import os
 import sys
 import time
 import urllib.request
@@ -16,6 +17,26 @@ CONTRACT_SHA = "8834367e7412656b5a83d0c01b05dbffae6d3dee"
 RUNTIME_VERSION = "1.1.4"
 MODEL = "qwen3.6:27b"
 MANIFEST_NAME = "AI_CORE_RUNTIME_RELEASE_MANIFEST.json"
+SITE_ROOT = Path(__file__).resolve().parents[1]
+
+
+def configure_schema_validator_node_path(
+    site_root: Path = SITE_ROOT,
+) -> Path:
+    """Make the immutable Runtime's Ajv subprocess portable across hosts."""
+    node_modules = site_root.expanduser().resolve(strict=True) / "node_modules"
+    ajv_package = node_modules / "ajv" / "package.json"
+    if not ajv_package.is_file() or ajv_package.is_symlink():
+        raise ValueError("AI_CORE_SCHEMA_VALIDATOR_DEPENDENCY_MISSING")
+    current = [
+        item for item in os.environ.get("NODE_PATH", "").split(os.pathsep)
+        if item
+    ]
+    resolved = str(node_modules)
+    os.environ["NODE_PATH"] = os.pathsep.join(
+        [resolved, *(item for item in current if item != resolved)]
+    )
+    return node_modules
 
 
 def _sha256(path: Path) -> str:
@@ -130,6 +151,7 @@ class OwnerRuntimeBridge:
         keep_alive: str,
         executor: Any | None = None,
     ) -> None:
+        self.validator_node_modules = configure_schema_validator_node_path()
         self.runtime_dir = runtime_dir.expanduser().resolve(strict=True)
         self.manifest = verify_runtime_release(self.runtime_dir)
         sys.path.insert(0, str(self.runtime_dir))
