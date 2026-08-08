@@ -7,8 +7,9 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 
 const ROOT = process.cwd();
-const RUNTIME_SHA = '5713258de76d4aa689baf30eae016df54cd8d579';
-const CONTRACT_SHA = '8834367e7412656b5a83d0c01b05dbffae6d3dee';
+const RUNTIME_SHA = 'b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763';
+const CONTRACT_SHA = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
+const CANONICALIZATION_VERSION = 'CANONICAL_JSON_HASH_V1';
 const SITE_SHA = 'a'.repeat(40);
 const GATEWAY_SHA = 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9';
 const SECRET = 'deterministic-gateway-secret-at-least-32-bytes';
@@ -47,6 +48,7 @@ const gateway = https.createServer({
       response.writeHead(200, { 'Content-Type': 'application/json' });
       response.end(JSON.stringify({
         accepted: true, runtime_sha: RUNTIME_SHA, contract_sha: CONTRACT_SHA,
+        canonicalization_version: CANONICALIZATION_VERSION,
       }));
       return;
     }

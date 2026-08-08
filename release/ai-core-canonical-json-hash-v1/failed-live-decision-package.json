@@ -1,0 +1,666 @@
+{
+  "canonicalization_version": "CANONICAL_JSON_HASH_V1",
+  "decision_package": {
+    "assumptions": [
+      "Наличие считывателей карт, RFID, QR и билетов не считается подтверждённым без отдельного факта.",
+      "Числовые оценки используются только для внутреннего ранжирования и не показываются клиенту."
+    ],
+    "candidate_credentials_requiring_confirmation": [],
+    "confidence": 0.4,
+    "confidence_trace": {
+      "components": {
+        "absence_of_unresolved_conflicts": 1.0,
+        "confirmed_infrastructure": 0.0,
+        "evidence_coverage": 1.0,
+        "fact_completeness": 0.0
+      },
+      "formula": "weighted_sum_independent_from_option_score",
+      "weights": {
+        "absence_of_unresolved_conflicts": 0.1,
+        "confirmed_infrastructure": 0.3,
+        "evidence_coverage": 0.3,
+        "fact_completeness": 0.3
+      }
+    },
+    "decision_type": "access_identifier_selection",
+    "evidence_refs": [
+      "knowledge_base/engineering/parking_solution_decision_framework.md#варианты-идентификации",
+      "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md"
+    ],
+    "missing_critical_facts": [
+      "existing_system",
+      "modernization_or_new_build",
+      "security_priority",
+      "payment_scenario",
+      "peak_traffic",
+      "fallback_reader_infrastructure"
+    ],
+    "next_question": "Парковочная система уже установлена или проектируется с нуля?",
+    "next_step": null,
+    "primitive_option_assessments": [
+      {
+        "criterion_trace": [
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 1.0,
+            "criterion": "speed",
+            "evidence": [
+              "knowledge_base/engineering/parking_solution_decision_framework.md#варианты-идентификации",
+              "qualitative_criterion:speed"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 1.0,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.65,
+            "criterion": "reliability",
+            "evidence": [
+              "knowledge_base/engineering/parking_solution_decision_framework.md#варианты-идентификации",
+              "qualitative_criterion:reliability"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.65,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.7,
+            "criterion": "staff_load",
+            "evidence": [
+              "knowledge_base/engineering/parking_solution_decision_framework.md#варианты-идентификации",
+              "qualitative_criterion:staff_load"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.7,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 1.0,
+            "criterion": "consumables",
+            "evidence": [
+              "knowledge_base/engineering/parking_solution_decision_framework.md#варианты-идентификации",
+              "qualitative_criterion:consumables"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 1.0,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.7,
+            "criterion": "security",
+            "evidence": [
+              "knowledge_base/engineering/parking_solution_decision_framework.md#варианты-идентификации",
+              "qualitative_criterion:security"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.7,
+            "weight": 1.0
+          }
+        ],
+        "evidence_refs": [
+          "knowledge_base/engineering/parking_solution_decision_framework.md#варианты-идентификации"
+        ],
+        "internal_ranking_only": true,
+        "missing_data": [],
+        "normalized_score": 0.81,
+        "option": "license_plate_recognition",
+        "ordinal_rating": "strong_candidate",
+        "review_status": "supported_rule"
+      },
+      {
+        "criterion_trace": [
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.55,
+            "criterion": "speed",
+            "evidence": [
+              "knowledge_base/engineering/rospark_engineering_experience.md#parking_card_operational_properties",
+              "qualitative_criterion:speed"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.55,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.8,
+            "criterion": "reliability",
+            "evidence": [
+              "knowledge_base/engineering/rospark_engineering_experience.md#parking_card_operational_properties",
+              "qualitative_criterion:reliability"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.05,
+            "raw_value": 0.8,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.35,
+            "criterion": "staff_load",
+            "evidence": [
+              "knowledge_base/engineering/rospark_engineering_experience.md#parking_card_operational_properties",
+              "qualitative_criterion:staff_load"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.35,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.7,
+            "criterion": "consumables",
+            "evidence": [
+              "knowledge_base/engineering/rospark_engineering_experience.md#parking_card_operational_properties",
+              "qualitative_criterion:consumables"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.7,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.8,
+            "criterion": "security",
+            "evidence": [
+              "knowledge_base/engineering/rospark_engineering_experience.md#parking_card_operational_properties",
+              "qualitative_criterion:security"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.8,
+            "weight": 1.0
+          }
+        ],
+        "evidence_refs": [
+          "knowledge_base/engineering/rospark_engineering_experience.md#parking_card_operational_properties",
+          "knowledge_base/engineering/rospark_engineering_experience.md#parking_card_dispenser_typical_capacity"
+        ],
+        "internal_ranking_only": true,
+        "missing_data": [
+          "card_reader_present"
+        ],
+        "normalized_score": 0.59,
+        "option": "parking_card",
+        "ordinal_rating": "conditional_candidate",
+        "review_status": "candidate_rule_missing_evidence"
+      },
+      {
+        "criterion_trace": [
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.4,
+            "criterion": "speed",
+            "evidence": [
+              "knowledge_base/engineering/rospark_engineering_experience.md#ticket_roll_typical_capacity",
+              "qualitative_criterion:speed"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.4,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.75,
+            "criterion": "reliability",
+            "evidence": [
+              "knowledge_base/engineering/rospark_engineering_experience.md#ticket_roll_typical_capacity",
+              "qualitative_criterion:reliability"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.05,
+            "raw_value": 0.75,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.55,
+            "criterion": "staff_load",
+            "evidence": [
+              "knowledge_base/engineering/rospark_engineering_experience.md#ticket_roll_typical_capacity",
+              "qualitative_criterion:staff_load"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.55,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.25,
+            "criterion": "consumables",
+            "evidence": [
+              "knowledge_base/engineering/rospark_engineering_experience.md#ticket_roll_typical_capacity",
+              "qualitative_criterion:consumables"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.25,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.65,
+            "criterion": "security",
+            "evidence": [
+              "knowledge_base/engineering/rospark_engineering_experience.md#ticket_roll_typical_capacity",
+              "qualitative_criterion:security"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.65,
+            "weight": 1.0
+          }
+        ],
+        "evidence_refs": [
+          "knowledge_base/engineering/rospark_engineering_experience.md#ticket_roll_typical_capacity"
+        ],
+        "internal_ranking_only": true,
+        "missing_data": [
+          "ticket_reader_present"
+        ],
+        "normalized_score": 0.47,
+        "option": "parking_ticket",
+        "ordinal_rating": "weak_candidate",
+        "review_status": "candidate_rule_missing_evidence"
+      },
+      {
+        "criterion_trace": [
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.65,
+            "criterion": "speed",
+            "evidence": [
+              "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md",
+              "qualitative_criterion:speed"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.65,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.55,
+            "criterion": "reliability",
+            "evidence": [
+              "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md",
+              "qualitative_criterion:reliability"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.05,
+            "raw_value": 0.55,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.9,
+            "criterion": "staff_load",
+            "evidence": [
+              "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md",
+              "qualitative_criterion:staff_load"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.9,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 1.0,
+            "criterion": "consumables",
+            "evidence": [
+              "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md",
+              "qualitative_criterion:consumables"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 1.0,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.6,
+            "criterion": "security",
+            "evidence": [
+              "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md",
+              "qualitative_criterion:security"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.6,
+            "weight": 1.0
+          }
+        ],
+        "evidence_refs": [
+          "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md"
+        ],
+        "internal_ranking_only": true,
+        "missing_data": [
+          "qr_reader_present",
+          "guest_qr_workflow"
+        ],
+        "normalized_score": 0.69,
+        "option": "guest_qr",
+        "ordinal_rating": "conditional_candidate",
+        "review_status": "candidate_rule_missing_evidence"
+      },
+      {
+        "criterion_trace": [
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.9,
+            "criterion": "speed",
+            "evidence": [
+              "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md",
+              "qualitative_criterion:speed"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.9,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.8,
+            "criterion": "reliability",
+            "evidence": [
+              "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md",
+              "qualitative_criterion:reliability"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.05,
+            "raw_value": 0.8,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.75,
+            "criterion": "staff_load",
+            "evidence": [
+              "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md",
+              "qualitative_criterion:staff_load"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.75,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.9,
+            "criterion": "consumables",
+            "evidence": [
+              "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md",
+              "qualitative_criterion:consumables"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.9,
+            "weight": 1.0
+          },
+          {
+            "calibration_status": "qualitative_heuristic",
+            "contribution": 0.75,
+            "criterion": "security",
+            "evidence": [
+              "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md",
+              "qualitative_criterion:security"
+            ],
+            "missing_data": [
+              "quantitative_calibration_dataset"
+            ],
+            "normalization": "weighted_sum_divided_by_total_weight",
+            "penalty": 0.0,
+            "raw_value": 0.75,
+            "weight": 1.0
+          }
+        ],
+        "evidence_refs": [
+          "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md"
+        ],
+        "internal_ranking_only": true,
+        "missing_data": [
+          "rfid_reader_present"
+        ],
+        "normalized_score": 0.77,
+        "option": "radio_tag",
+        "ordinal_rating": "conditional_candidate",
+        "review_status": "candidate_rule_missing_evidence"
+      }
+    ],
+    "question_ranking": [
+      {
+        "already_asked": false,
+        "applicable": true,
+        "fields": [
+          "existing_system",
+          "modernization_or_new_build"
+        ],
+        "question": "Парковочная система уже установлена или проектируется с нуля?",
+        "question_dependency_graph": [],
+        "question_id": "existing_system_or_new_build",
+        "question_information_gain": 1.0,
+        "question_not_yet_applicable": false,
+        "question_prerequisite": null
+      },
+      {
+        "already_asked": false,
+        "applicable": false,
+        "fields": [
+          "card_reader_present",
+          "rfid_reader_present",
+          "qr_reader_present",
+          "ticket_reader_present"
+        ],
+        "question": "Какие идентификаторы и считыватели уже используются?",
+        "question_dependency_graph": [
+          "existing_system_confirmed"
+        ],
+        "question_id": "installed_identifiers_and_readers",
+        "question_information_gain": 0.9,
+        "question_not_yet_applicable": true,
+        "question_prerequisite": "existing_system_confirmed"
+      },
+      {
+        "already_asked": false,
+        "applicable": false,
+        "fields": [
+          "mandatory_fallback"
+        ],
+        "question": "Какие автоматические резервные сценарии вы считаете допустимыми?",
+        "question_dependency_graph": [
+          "new_build_confirmed"
+        ],
+        "question_id": "acceptable_automatic_fallbacks",
+        "question_information_gain": 0.75,
+        "question_not_yet_applicable": true,
+        "question_prerequisite": "new_build_confirmed"
+      }
+    ],
+    "reason_codes": [
+      "lane_credential_missing"
+    ],
+    "recommended_architecture": {
+      "architecture_type": "single_primary",
+      "components": [],
+      "emergency_override": {
+        "allowed": "according_to_site_security_policy",
+        "method": null
+      },
+      "segments": {
+        "unknown_segment": {
+          "assisted_recovery": null,
+          "authorization": {
+            "status": "required",
+            "type": "other_confirmed_authorization"
+          },
+          "automated_fallback_credentials": [],
+          "evidence_refs": [
+            "knowledge_base/engineering/parking_solution_decision_framework.md#варианты-идентификации",
+            "knowledge_base/engineering/automated_fallback_vs_assisted_recovery.md"
+          ],
+          "failure_policy": "collect_segment_requirements_before_recommendation",
+          "infrastructure_requirements": [],
+          "primary_identifier": null
+        }
+      }
+    },
+    "schema_version": "1.2",
+    "sensitivity_analysis": [
+      {
+        "ranking": [
+          "license_plate_recognition",
+          "radio_tag",
+          "guest_qr",
+          "parking_card",
+          "parking_ticket"
+        ],
+        "scenario": "speed_priority",
+        "scores_internal_only": {
+          "guest_qr": 0.6643,
+          "license_plate_recognition": 0.8643,
+          "parking_card": 0.5643,
+          "parking_ticket": 0.4357,
+          "radio_tag": 0.7929
+        }
+      },
+      {
+        "ranking": [
+          "guest_qr",
+          "license_plate_recognition",
+          "radio_tag",
+          "parking_ticket",
+          "parking_card"
+        ],
+        "scenario": "staff_load_priority",
+        "scores_internal_only": {
+          "guest_qr": 0.8,
+          "license_plate_recognition": 0.7344,
+          "parking_card": 0.3906,
+          "parking_ticket": 0.4906,
+          "radio_tag": 0.7219
+        }
+      },
+      {
+        "ranking": [
+          "license_plate_recognition",
+          "radio_tag",
+          "guest_qr",
+          "parking_card",
+          "parking_ticket"
+        ],
+        "scenario": "consumables_priority",
+        "scores_internal_only": {
+          "guest_qr": 0.7643,
+          "license_plate_recognition": 0.8643,
+          "parking_card": 0.6071,
+          "parking_ticket": 0.3929,
+          "radio_tag": 0.7929
+        }
+      }
+    ],
+    "tradeoffs": [
+      "Карты создают нагрузку по выдаче, возврату, переносу и контролю состояния.",
+      "Билеты создают нагрузку по расходу ленты и обслуживанию механизма выдачи.",
+      "Значимость этих факторов зависит от потока, бесплатного периода и организации эксплуатации."
+    ],
+    "why": [
+      "Предварительная архитектура разделяет право доступа, идентификацию на полосе и обработку исключений.",
+      "Распознавание номеров соответствует приоритету скорости, но окончательный резерв зависит от подтверждённой инфраструктуры."
+    ]
+  },
+  "expected_canonical_sha256": "692c85cf9cf5c4252037e6f0546375e5e3b579c554890c2699a301197241fe70",
+  "expected_canonical_utf8_length": 19587,
+  "integral_float_count": 57,
+  "old_runtime_sha256": "007616579dba3063eb2e741ef6c9796bd328a0ca40cfb53e445106a3dc4d96af",
+  "old_site_sha256": "7ca5b36f50a53fd4ac6d3ea294a6952be846570f33c9755ce126143de4464fd0",
+  "sanitization": "decision_package_only_no_user_text_no_raw_answer_no_identifiers",
+  "schema": "FAILED_LIVE_DECISION_PACKAGE_CANONICAL_HASH_REGRESSION_V1",
+  "source_observation": "first_public_ai_core_live_turn_2026-08-08"
+}

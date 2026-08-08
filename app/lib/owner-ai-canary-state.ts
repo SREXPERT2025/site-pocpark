@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type Database from 'better-sqlite3';
+import { CANONICALIZATION_VERSION } from './canonical-json-hash-v1.ts';
 
 export const OWNER_AI_CANARY_STATE_SCHEMA_VERSION = 3;
 
@@ -678,7 +679,8 @@ export type OwnerCanaryRuntimeMutation = {
 };
 
 export type OwnerCanaryMutationAcknowledgement = {
-  contract_version: '1.0';
+  contract_version: '1.1';
+  canonicalization_version: typeof CANONICALIZATION_VERSION;
   request_id: string;
   response_id: string;
   acknowledged_at: string;
@@ -944,7 +946,8 @@ export function applyOwnerCanaryMutationBatch(
       ).slice(0, 32)}`,
     }));
     const acknowledgement: OwnerCanaryMutationAcknowledgement = {
-      contract_version: '1.0',
+      contract_version: '1.1',
+      canonicalization_version: CANONICALIZATION_VERSION,
       request_id: input.requestId,
       response_id: input.responseId,
       acknowledged_at: acknowledgedAt,

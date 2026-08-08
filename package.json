@@ -18,6 +18,7 @@
     "test:ai-widget-log": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_widget_log.mjs",
     "test:ai-widget-server-events": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_widget_server_events.mjs",
     "test:owner-ai-canary": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_owner_ai_canary_v1.mjs",
+    "test:canonical-json-hash-v1": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_canonical_json_hash_v1.mjs",
     "test:owner-ai-canary-env": "node scripts/test_configure_owner_ai_canary_env.mjs",
     "test:owner-ai-canary-release": "python3 scripts/test_owner_ai_canary_release_manifest.py",
     "test:owner-ai-canary-v4-production": "python3 scripts/test_owner_canary_v4_production_path.py",

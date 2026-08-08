@@ -1,0 +1,38 @@
+{
+  "schema": "ROSPARK_SITE_AI_CORE_CANONICAL_HASH_RELEASE_CANDIDATE_V1",
+  "created_at": "2026-08-08",
+  "base_site_sha": "cdf244d034e4a76a9de3cd43cc5f61a3a7dce9f9",
+  "site_target_sha_recording": "use_the_git_commit_containing_this_manifest",
+  "runtime_sha": "b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763",
+  "runtime_version": "1.2.0",
+  "contract_sha": "6cd71a5596346925ecdd2ffeb9d45262d881ee93",
+  "contract_version": "1.1",
+  "canonicalization_version": "CANONICAL_JSON_HASH_V1",
+  "runtime_archive": {
+    "path": "release/ai-core-canonical-json-hash-v1/ai-core-runtime-b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763.tar.gz",
+    "sha256": "80c7394babf8ae203dc965cacd987d799f92ba9407c67a75f90b97cabe6b6253"
+  },
+  "shared_golden_corpus": {
+    "path": "release/ai-core-canonical-json-hash-v1/canonical-json-hash-v1-golden.json",
+    "sha256": "c9e57835e0c0c02b7b2b2c106e2fa3932b4e7221efe9b112ea1c8d8427d1f073",
+    "vectors": 22,
+    "rejections": 5
+  },
+  "incident_regression": {
+    "path": "release/ai-core-canonical-json-hash-v1/failed-live-decision-package.json",
+    "sha256": "6550e3f25e399c0db129b65c725ca82c82ea2ed52bb03811b9234f79ad2e5bbe",
+    "old_runtime_hash": "007616579dba3063eb2e741ef6c9796bd328a0ca40cfb53e445106a3dc4d96af",
+    "old_site_hash": "7ca5b36f50a53fd4ac6d3ea294a6952be846570f33c9755ce126143de4464fd0",
+    "canonical_hash_v1": "692c85cf9cf5c4252037e6f0546375e5e3b579c554890c2699a301197241fe70"
+  },
+  "gates": {
+    "owner_canary_enabled": false,
+    "public_ai_core_enabled": false,
+    "production_activation_allowed": false,
+    "owner_canary_required_before_public": true,
+    "model_requests": 0,
+    "production_mutations": 0,
+    "push": 0,
+    "deploy": 0
+  }
+}

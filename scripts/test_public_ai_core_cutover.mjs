@@ -4,7 +4,9 @@ import { readFileSync } from 'node:fs';
 import Database from 'better-sqlite3';
 import {
   AI_CORE_CONTRACT_SHA,
+  AI_CORE_CONTRACT_VERSION,
   AI_CORE_RUNTIME_SHA,
+  CANONICALIZATION_VERSION,
   acknowledgePublicAiCoreMutations,
   buildPublicAiCoreRequest,
   callPublicAiCoreRuntime,
@@ -142,7 +144,8 @@ await assert.rejects(
 );
 
 const acknowledgement = {
-  contract_version: '1.0',
+  contract_version: AI_CORE_CONTRACT_VERSION,
+  canonicalization_version: CANONICALIZATION_VERSION,
   request_id: request.request_id,
   response_id: deterministicEnvelope.response.response_id,
   acknowledged_at: '2026-08-08T12:00:01.000Z',
@@ -154,6 +157,7 @@ assert.equal((await acknowledgePublicAiCoreMutations(acknowledgement, {
     accepted: true,
     runtime_sha: AI_CORE_RUNTIME_SHA,
     contract_sha: AI_CORE_CONTRACT_SHA,
+    canonicalization_version: CANONICALIZATION_VERSION,
   }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
 })).accepted, true);
 

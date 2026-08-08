@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import copy
-import hashlib
 import json
 import os
 import subprocess
@@ -15,29 +14,21 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from ai_core_owner_runtime_bridge import (  # noqa: E402
+    CANONICALIZATION_VERSION,
     CONTRACT_SHA,
+    CONTRACT_VERSION,
     RUNTIME_SHA,
     OwnerRuntimeBridge,
 )
 
 
-def canonical(value: object) -> str:
-    return json.dumps(
-        value, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-    )
-
-
-def digest(value: object) -> str:
-    return hashlib.sha256(canonical(value).encode("utf-8")).hexdigest()
-
-
 def request(runtime: Path) -> dict:
-    fixture = runtime / "generated/contracts/AI_CORE_SITE_CONTRACT_V1/fixtures/valid/request-qwen.json"
+    fixture = runtime / "generated/contracts/AI_CORE_SITE_CONTRACT_V1_1/fixtures/valid/request-qwen.json"
     return json.loads(fixture.read_text(encoding="utf-8"))
 
 
 def main() -> int:
-    artifact = ROOT / "release/owner-ai-canary-v114" / (
+    artifact = ROOT / "release/ai-core-canonical-json-hash-v1" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="ai-core-ubuntu-stage-") as raw:
@@ -50,6 +41,9 @@ def main() -> int:
             QwenStub,
             StubExecutorUnavailable,
         )
+        from sales_conversation_controller.site_contract_runtime_v1.canonical import (  # noqa: E402
+            sha256 as runtime_sha256,
+        )
 
         class Unavailable:
             executor = "qwen"
@@ -59,7 +53,8 @@ def main() -> int:
 
         valid_request = request(runtime)
         exact_safe_error = {
-            "contract_version": "1.0",
+            "contract_version": CONTRACT_VERSION,
+            "canonicalization_version": CANONICALIZATION_VERSION,
             "success": False,
             "request_id": valid_request["request_id"],
             "error": {
@@ -157,7 +152,7 @@ def main() -> int:
         engineering["payload"]["current_message"] = (
             "Как организовать проезд сотрудников, арендаторов и гостей?"
         )
-        engineering["request_payload_hash"] = digest(engineering["payload"])
+        engineering["request_payload_hash"] = runtime_sha256(engineering["payload"])
         engineering_response = bridge.process(engineering)["response"]
         assert engineering_response["success"] is True
         assert engineering_response["executor_trace"]["planned_executor"] == "qwen"
@@ -167,7 +162,8 @@ def main() -> int:
         mutations = valid["response"]["state_mutations"]
         assert mutations
         acknowledgement = {
-            "contract_version": "1.0",
+            "contract_version": CONTRACT_VERSION,
+            "canonicalization_version": CANONICALIZATION_VERSION,
             "request_id": valid_request["request_id"],
             "response_id": valid["response"]["response_id"],
             "acknowledged_at": "2026-08-08T12:00:00Z",

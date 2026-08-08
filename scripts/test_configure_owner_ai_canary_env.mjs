@@ -12,8 +12,8 @@ const base = [
 ].join('\n');
 const enabled = updateOwnerCanaryEnv(base, true);
 assert.match(enabled, /AI_CORE_OWNER_CANARY_ENABLED=true/);
-assert.match(enabled, /AI_CORE_OWNER_CANARY_RUNTIME_SHA=5713258de76d4aa689baf30eae016df54cd8d579/);
-assert.match(enabled, /AI_CORE_OWNER_CANARY_CONTRACT_SHA=8834367e7412656b5a83d0c01b05dbffae6d3dee/);
+assert.match(enabled, /AI_CORE_OWNER_CANARY_RUNTIME_SHA=b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763/);
+assert.match(enabled, /AI_CORE_OWNER_CANARY_CONTRACT_SHA=6cd71a5596346925ecdd2ffeb9d45262d881ee93/);
 assert.match(enabled, /UNCHANGED=value/);
 const disabled = updateOwnerCanaryEnv(enabled, false);
 assert.match(disabled, /AI_CORE_OWNER_CANARY_ENABLED=false/);

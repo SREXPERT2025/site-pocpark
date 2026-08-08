@@ -8,6 +8,7 @@ import {
   AI_CORE_OWNER_MODEL,
   AI_CORE_RUNTIME_SHA,
   AI_CORE_RUNTIME_VERSION,
+  CANONICALIZATION_VERSION,
   acknowledgeOwnerCanaryMutations,
   buildOwnerCanaryCoreRequest,
   callOwnerCanaryRuntime,
@@ -197,6 +198,7 @@ const coreRequest = buildOwnerCanaryCoreRequest({
   sentAt: '2026-08-07T12:00:00.000Z',
 });
 assert.equal(coreRequest.contract_version, AI_CORE_CONTRACT_VERSION);
+assert.equal(coreRequest.canonicalization_version, CANONICALIZATION_VERSION);
 assert.equal(coreRequest.dry_run, false);
 assert.equal(coreRequest.payload.executor_policy.planned_executor, 'qwen');
 assert.deepEqual(coreRequest.payload.executor_policy.allowed_executors, ['qwen']);
@@ -253,7 +255,8 @@ const decisionPackage = {
   schema_version: '1.2', decision_type: 'not_required', next_question: null,
 };
 const runtimeResponse = {
-  contract_version: '1.0',
+  contract_version: AI_CORE_CONTRACT_VERSION,
+  canonicalization_version: CANONICALIZATION_VERSION,
   success: true,
   request_id: coreRequest.request_id,
   response_id: 'response:1234567890abcdef',
@@ -304,6 +307,7 @@ const runtimeResponse = {
   component_versions: { context_integrity: '2.2' },
   telemetry: {
     trace_id: 'trace:owner:1', request_id: coreRequest.request_id,
+    canonicalization_version: CANONICALIZATION_VERSION,
     route: 'ai_core', component_versions: { context_integrity: '2.2' },
     latency: { total_ms: 11, executor_ms: 4 },
     executor: {
@@ -319,6 +323,7 @@ const envelope = {
   runtime_sha: AI_CORE_RUNTIME_SHA,
   runtime_version: AI_CORE_RUNTIME_VERSION,
   contract_sha: AI_CORE_CONTRACT_SHA,
+  canonicalization_version: CANONICALIZATION_VERSION,
   model: AI_CORE_OWNER_MODEL,
   response: runtimeResponse,
 };
@@ -346,6 +351,7 @@ const fakeFetch = async (url, options) => {
       accepted: true,
       runtime_sha: AI_CORE_RUNTIME_SHA,
       contract_sha: AI_CORE_CONTRACT_SHA,
+      canonicalization_version: CANONICALIZATION_VERSION,
     });
   }
   return Response.json(envelope);
@@ -545,7 +551,7 @@ assert.ok(apiSource.indexOf("if (aiCoreAudience !== 'legacy'")
 assert.doesNotMatch(apiSource, /codex.*owner_ai_core/i);
 
 console.log([
-  'owner ai canary runtime v1.1.4 tests: ok',
+  'owner ai canary runtime canonical hash v1 tests: ok',
   'stable_ids=pass',
   'composite_idempotency=pass',
   'durable_state=pass',

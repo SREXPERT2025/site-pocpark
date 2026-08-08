@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import hashlib
 import json
 import shutil
 import sys
@@ -13,7 +12,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from ai_core_owner_runtime_bridge import (  # noqa: E402
+    CANONICALIZATION_VERSION,
     CONTRACT_SHA,
+    CONTRACT_VERSION,
     MODEL,
     RUNTIME_SHA,
     OwnerRuntimeBridge,
@@ -21,16 +22,7 @@ from ai_core_owner_runtime_bridge import (  # noqa: E402
 )
 
 
-def canonical(value):
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-
-
-def sha(value):
-    source = value if isinstance(value, str) else canonical(value)
-    return hashlib.sha256(source.encode()).hexdigest()
-
-
-def request_for(suffix: str = "owner001"):
+def request_for(hash_value, suffix: str = "owner001"):
     payload = {
         "potential_project_id": None,
         "conversation_thread_id": f"thread_owner_{suffix}",
@@ -62,10 +54,11 @@ def request_for(suffix: str = "owner001"):
         },
     }
     return {
-        "contract_version": "1.0",
+        "contract_version": CONTRACT_VERSION,
+        "canonicalization_version": CANONICALIZATION_VERSION,
         "request_id": f"request_owner_{suffix}",
         "idempotency_key": f"idem:owner:{suffix}",
-        "request_payload_hash": sha(payload),
+        "request_payload_hash": hash_value(payload),
         "site_release": "2f5560909d31aa9df732cab74f269c0259c15529",
         "gateway_release": "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
         "sent_at": "2026-08-07T12:00:00Z",
@@ -80,7 +73,7 @@ def request_for(suffix: str = "owner001"):
 
 
 def main() -> int:
-    artifact = ROOT / "release/owner-ai-canary-v114" / (
+    artifact = ROOT / "release/ai-core-canonical-json-hash-v1" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="owner-core-test-") as raw:
@@ -97,6 +90,9 @@ def main() -> int:
         from sales_conversation_controller.site_contract_runtime_v1.executors import (  # noqa: E402
             QwenStub,
         )
+        from sales_conversation_controller.site_contract_runtime_v1.canonical import (  # noqa: E402
+            sha256 as runtime_sha256,
+        )
         bridge = OwnerRuntimeBridge(
             runtime_dir=runtime,
             endpoint="http://127.0.0.1:11434",
@@ -104,7 +100,7 @@ def main() -> int:
             keep_alive="2h",
             executor=QwenStub(),
         )
-        request = request_for()
+        request = request_for(runtime_sha256)
         envelope = bridge.process(request)
         response = envelope["response"]
         assert response["success"] is True
@@ -120,7 +116,7 @@ def main() -> int:
 
         mutated = json.loads(json.dumps(request))
         mutated["payload"]["current_message"] = "Сколько будет 3+3?"
-        mutated["request_payload_hash"] = sha(mutated["payload"])
+        mutated["request_payload_hash"] = runtime_sha256(mutated["payload"])
         conflict = bridge.process(mutated)["response"]
         assert conflict["success"] is False
         assert conflict["error"]["code"] == "IDEMPOTENCY_CONFLICT"

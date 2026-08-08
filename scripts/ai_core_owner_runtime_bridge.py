@@ -12,9 +12,11 @@ from pathlib import Path
 from typing import Any
 
 
-RUNTIME_SHA = "5713258de76d4aa689baf30eae016df54cd8d579"
-CONTRACT_SHA = "8834367e7412656b5a83d0c01b05dbffae6d3dee"
-RUNTIME_VERSION = "1.1.4"
+RUNTIME_SHA = "b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763"
+CONTRACT_SHA = "6cd71a5596346925ecdd2ffeb9d45262d881ee93"
+CONTRACT_VERSION = "1.1"
+CANONICALIZATION_VERSION = "CANONICAL_JSON_HASH_V1"
+RUNTIME_VERSION = "1.2.0"
 MODEL = "qwen3.6:27b"
 MANIFEST_NAME = "AI_CORE_RUNTIME_RELEASE_MANIFEST.json"
 SITE_ROOT = Path(__file__).resolve().parents[1]
@@ -58,6 +60,9 @@ def verify_runtime_release(runtime_dir: Path) -> dict[str, Any]:
     if (
         manifest.get("runtime_sha") != RUNTIME_SHA
         or manifest.get("contract_sha") != CONTRACT_SHA
+        or manifest.get("contract_version") != CONTRACT_VERSION
+        or manifest.get("canonicalization_version")
+        != CANONICALIZATION_VERSION
         or manifest.get("runtime_version") != RUNTIME_VERSION
         or manifest.get("model") != MODEL
     ):
@@ -174,8 +179,14 @@ class OwnerRuntimeBridge:
             raise ValueError("AI_CORE_RUNTIME_IMPORT_PATH_MISMATCH")
         if (
             adapter_module.OfflineRuntimeAdapterV1.contract_target_sha != CONTRACT_SHA
+            or adapter_module.OfflineRuntimeAdapterV1.contract_version != CONTRACT_VERSION
+            or adapter_module.OfflineRuntimeAdapterV1.canonicalization_version
+            != CANONICALIZATION_VERSION
             or adapter_module.OfflineRuntimeAdapterV1.runtime_version != RUNTIME_VERSION
             or constants_module.CONTRACT_TARGET_SHA != CONTRACT_SHA
+            or constants_module.CONTRACT_VERSION != CONTRACT_VERSION
+            or constants_module.CANONICALIZATION_VERSION
+            != CANONICALIZATION_VERSION
         ):
             raise ValueError("AI_CORE_RUNTIME_CONTRACT_MISMATCH")
         self.adapter = adapter_module.OfflineRuntimeAdapterV1(
@@ -195,6 +206,7 @@ class OwnerRuntimeBridge:
                 "runtime_sha": RUNTIME_SHA,
                 "runtime_version": RUNTIME_VERSION,
                 "contract_sha": CONTRACT_SHA,
+                "canonicalization_version": CANONICALIZATION_VERSION,
                 "model": MODEL,
                 "response": response,
             }
@@ -203,6 +215,7 @@ class OwnerRuntimeBridge:
             "runtime_sha": RUNTIME_SHA,
             "runtime_version": RUNTIME_VERSION,
             "contract_sha": CONTRACT_SHA,
+            "canonicalization_version": CANONICALIZATION_VERSION,
             "model": MODEL,
             "response": response,
         }
@@ -228,5 +241,6 @@ class OwnerRuntimeBridge:
             "accepted": True,
             "runtime_sha": RUNTIME_SHA,
             "contract_sha": CONTRACT_SHA,
+            "canonicalization_version": CANONICALIZATION_VERSION,
             "response_id": response["response_id"],
         }

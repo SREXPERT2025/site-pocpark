@@ -1,7 +1,7 @@
 export const PUBLIC_AI_CORE_RUNTIME_SHA =
-  '5713258de76d4aa689baf30eae016df54cd8d579';
+  'b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763';
 export const PUBLIC_AI_CORE_CONTRACT_SHA =
-  '8834367e7412656b5a83d0c01b05dbffae6d3dee';
+  '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
 
 export type AiCoreSiteAudience =
   | 'legacy'

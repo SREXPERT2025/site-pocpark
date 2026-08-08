@@ -1,31 +1,17 @@
-import { createHash } from 'node:crypto';
+import {
+  CANONICALIZATION_VERSION,
+  canonicalJson,
+  sha256,
+} from './canonical-json-hash-v1.ts';
 
 export const AI_CORE_RUNTIME_SHA =
-  '5713258de76d4aa689baf30eae016df54cd8d579';
+  'b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763';
 export const AI_CORE_CONTRACT_SHA =
-  '8834367e7412656b5a83d0c01b05dbffae6d3dee';
-export const AI_CORE_CONTRACT_VERSION = '1.0';
-export const AI_CORE_RUNTIME_VERSION = '1.1.4';
+  '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
+export const AI_CORE_CONTRACT_VERSION = '1.1';
+export const AI_CORE_RUNTIME_VERSION = '1.2.0';
 export const AI_CORE_OWNER_MODEL = 'qwen3.6:27b';
-
-export function canonicalJson(value: unknown): string {
-  if (Array.isArray(value)) {
-    return `[${value.map(canonicalJson).join(',')}]`;
-  }
-  if (value && typeof value === 'object') {
-    const source = value as Record<string, unknown>;
-    return `{${Object.keys(source)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${canonicalJson(source[key])}`)
-      .join(',')}}`;
-  }
-  return JSON.stringify(value);
-}
-
-export function sha256(value: unknown) {
-  const source = typeof value === 'string' ? value : canonicalJson(value);
-  return createHash('sha256').update(source, 'utf8').digest('hex');
-}
+export { CANONICALIZATION_VERSION, canonicalJson, sha256 };
 
 export const decisionPackageHash = sha256;
 
@@ -50,6 +36,7 @@ export type OwnerCanaryThreadState = {
 
 export type OwnerCanaryCoreRequest = Readonly<{
   contract_version: typeof AI_CORE_CONTRACT_VERSION;
+  canonicalization_version: typeof CANONICALIZATION_VERSION;
   request_id: string;
   idempotency_key: string;
   request_payload_hash: string;
@@ -171,6 +158,7 @@ export function buildOwnerCanaryCoreRequest(input: {
   };
   return Object.freeze({
     contract_version: AI_CORE_CONTRACT_VERSION,
+    canonicalization_version: CANONICALIZATION_VERSION,
     request_id: input.aiCoreRequestId,
     idempotency_key: idempotencyKey,
     request_payload_hash: sha256(payload),
@@ -200,6 +188,7 @@ export type OwnerCanaryRuntimeEnvelope = Readonly<{
   runtime_sha: typeof AI_CORE_RUNTIME_SHA;
   runtime_version: typeof AI_CORE_RUNTIME_VERSION;
   contract_sha: typeof AI_CORE_CONTRACT_SHA;
+  canonicalization_version: typeof CANONICALIZATION_VERSION;
   model: typeof AI_CORE_OWNER_MODEL;
   response: Record<string, unknown>;
 }>;
@@ -209,6 +198,21 @@ function record(value: unknown, code: string) {
     throw new Error(code);
   }
   return value as Record<string, unknown>;
+}
+
+export function validateDecisionPackageHash(value: unknown) {
+  const response = record(value, 'INVALID_AI_CORE_RESPONSE_BODY');
+  if (response.canonicalization_version !== CANONICALIZATION_VERSION) {
+    throw new Error('AI_CORE_CANONICALIZATION_VERSION_UNSUPPORTED');
+  }
+  const decisionPackage = record(
+    response.decision_package,
+    'INVALID_DECISION_PACKAGE',
+  );
+  if (response.decision_package_hash !== sha256(decisionPackage)) {
+    throw new Error('DECISION_PACKAGE_HASH_MISMATCH');
+  }
+  return decisionPackage;
 }
 
 export function validateOwnerCanaryCoreResponse(
@@ -225,11 +229,15 @@ export function validateOwnerCanaryCoreResponse(
   if (envelope.contract_sha !== AI_CORE_CONTRACT_SHA) {
     throw new Error('AI_CORE_CONTRACT_SHA_MISMATCH');
   }
+  if (envelope.canonicalization_version !== CANONICALIZATION_VERSION) {
+    throw new Error('AI_CORE_CANONICALIZATION_VERSION_UNSUPPORTED');
+  }
   if (envelope.model !== AI_CORE_OWNER_MODEL) {
     throw new Error('AI_CORE_MODEL_MISMATCH');
   }
   const response = record(envelope.response, 'INVALID_AI_CORE_RESPONSE_BODY');
   if (response.contract_version !== AI_CORE_CONTRACT_VERSION
+    || response.canonicalization_version !== CANONICALIZATION_VERSION
     || response.success !== true) {
     throw new Error('AI_CORE_CONTRACT_RESPONSE_REJECTED');
   }
@@ -243,13 +251,7 @@ export function validateOwnerCanaryCoreResponse(
       throw new Error('AI_CORE_STATE_VERSION_MISMATCH');
     }
   }
-  const decisionPackage = record(
-    response.decision_package,
-    'INVALID_DECISION_PACKAGE',
-  );
-  if (response.decision_package_hash !== sha256(decisionPackage)) {
-    throw new Error('DECISION_PACKAGE_HASH_MISMATCH');
-  }
+  validateDecisionPackageHash(response);
   const executorTrace = record(response.executor_trace, 'INVALID_EXECUTOR_TRACE');
   if (executorTrace.planned_executor !== 'qwen'
     || executorTrace.final_executor !== 'qwen'
@@ -262,6 +264,9 @@ export function validateOwnerCanaryCoreResponse(
     throw new Error('AI_CORE_EXECUTOR_ATTEMPTS_VIOLATION');
   }
   const telemetry = record(response.telemetry, 'INVALID_AI_CORE_TELEMETRY');
+  if (telemetry.canonicalization_version !== CANONICALIZATION_VERSION) {
+    throw new Error('AI_CORE_TELEMETRY_CANONICALIZATION_MISMATCH');
+  }
   const evaluation = record(
     response.evaluation_result,
     'INVALID_AI_CORE_EVALUATION',
@@ -298,6 +303,7 @@ export function validateOwnerCanaryCoreResponse(
     runtime_sha: AI_CORE_RUNTIME_SHA,
     runtime_version: AI_CORE_RUNTIME_VERSION,
     contract_sha: AI_CORE_CONTRACT_SHA,
+    canonicalization_version: CANONICALIZATION_VERSION,
     model: AI_CORE_OWNER_MODEL,
     response: Object.freeze({ ...response }),
   });
@@ -456,7 +462,8 @@ export async function callPublicAiCoreRuntime(
 }
 
 type MutationAcknowledgement = {
-  contract_version: '1.0';
+  contract_version: typeof AI_CORE_CONTRACT_VERSION;
+  canonicalization_version: typeof CANONICALIZATION_VERSION;
   request_id: string;
   response_id: string;
   acknowledged_at: string;
@@ -471,7 +478,8 @@ export async function acknowledgeOwnerCanaryMutations(
     timeoutMs?: number;
   } = {},
 ) {
-  if (acknowledgement.contract_version !== '1.0') {
+  if (acknowledgement.contract_version !== AI_CORE_CONTRACT_VERSION
+    || acknowledgement.canonicalization_version !== CANONICALIZATION_VERSION) {
     throw new Error('AI_CORE_MUTATION_ACK_CONTRACT_MISMATCH');
   }
   const config = ownerCanaryRuntimeConfig(input.env);
@@ -494,7 +502,8 @@ export async function acknowledgeOwnerCanaryMutations(
   const body = await readTransportJson(response) as Record<string, unknown>;
   if (body.accepted !== true
     || body.runtime_sha !== AI_CORE_RUNTIME_SHA
-    || body.contract_sha !== AI_CORE_CONTRACT_SHA) {
+    || body.contract_sha !== AI_CORE_CONTRACT_SHA
+    || body.canonicalization_version !== CANONICALIZATION_VERSION) {
     throw new Error('AI_CORE_MUTATION_ACK_REJECTED');
   }
   return body;
@@ -508,7 +517,8 @@ export async function acknowledgePublicAiCoreMutations(
     timeoutMs?: number;
   } = {},
 ) {
-  if (acknowledgement.contract_version !== '1.0') {
+  if (acknowledgement.contract_version !== AI_CORE_CONTRACT_VERSION
+    || acknowledgement.canonicalization_version !== CANONICALIZATION_VERSION) {
     throw new Error('AI_CORE_MUTATION_ACK_CONTRACT_MISMATCH');
   }
   const config = publicAiCoreRuntimeConfig(input.env);
@@ -531,7 +541,8 @@ export async function acknowledgePublicAiCoreMutations(
   const body = await readTransportJson(response) as Record<string, unknown>;
   if (body.accepted !== true
     || body.runtime_sha !== AI_CORE_RUNTIME_SHA
-    || body.contract_sha !== AI_CORE_CONTRACT_SHA) {
+    || body.contract_sha !== AI_CORE_CONTRACT_SHA
+    || body.canonicalization_version !== CANONICALIZATION_VERSION) {
     throw new Error('AI_CORE_MUTATION_ACK_REJECTED');
   }
   return body;
