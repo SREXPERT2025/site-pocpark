@@ -521,8 +521,21 @@ const logoutSource = readFileSync(
   ),
   'utf8',
 );
+const statusSource = readFileSync(
+  new URL(
+    '../app/api/ai-widget/owner-canary/status/route.ts',
+    import.meta.url,
+  ),
+  'utf8',
+);
 assert.match(logoutSource, /revokeOwnerCanarySession/);
 assert.match(logoutSource, /clearOwnerCanaryCookieHeader/);
+assert.match(statusSource, /selectOwnerCanaryAudience/);
+assert.match(statusSource, /OWNER_AUTH_DENIED/);
+assert.match(statusSource, /audience: 'owner_canary'/);
+assert.match(statusSource, /route: 'ai_core'/);
+assert.match(statusSource, /runtimeSha: AI_CORE_RUNTIME_SHA/);
+assert.match(statusSource, /contractSha: AI_CORE_CONTRACT_SHA/);
 assert.match(apiSource, /callOwnerCanaryRuntime/);
 assert.match(apiSource, /Legacy-маршрут не использован/);
 assert.match(apiSource, /OWNER_AI_CANARY_MARKER/);

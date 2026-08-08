@@ -34,11 +34,23 @@
     },
     "activation_script": {
       "path": "scripts/activate_owner_ai_canary_for_owner_live_test.sh",
-      "sha256": "79f0e8d8eff89330b4fb7ed56f19ff753986bd1cc41c0dc2eb649e496510ddb8"
+      "sha256": "a221fa2dcbae4bf6f47606a4d05d341e72a6bef1778520fc5382252d15251238"
     },
     "deactivation_script": {
       "path": "scripts/deactivate_owner_ai_canary.sh",
-      "sha256": "a687f6617b061430f38fddad3ca8fc3a5fc697e17acdeb69e293ae01715db36f"
+      "sha256": "f11a6efffdcc82367b49309b97d4b630bf769f945d26e581427caf8d7bb4c7f2"
+    },
+    "production_path_library": {
+      "path": "scripts/owner_canary_v4_lib.sh",
+      "sha256": "5cc5cc0840a8e8419387d7184b731e74e05c9ed3d300723725fdec290c004831"
+    },
+    "owner_route_status": {
+      "path": "app/api/ai-widget/owner-canary/status/route.ts",
+      "sha256": "a19848098416f1b1cd4ca61b2b566d493f83b55f967b3f2667a73b21bdcd1733"
+    },
+    "production_path_test": {
+      "path": "scripts/test_owner_canary_v4_production_path.py",
+      "sha256": "04c22ed792e30dea39810d56a92b627e6655e4cb4f46ccc1a17669ea88044e11"
     },
     "gateway_bridge": {
       "path": "scripts/ai_core_owner_runtime_bridge.py",

@@ -1,0 +1,17 @@
+{
+  "schema": "rospark-owner-canary-v4-transient-502-test-v1",
+  "pm2_online_before_application_ready": true,
+  "startup_sequence": [502, 502, 200, 200, 200],
+  "minimum_stable_observations": 3,
+  "minimum_stable_span_ms": 2000,
+  "premature_rollback": 0,
+  "activation_mutations": 1,
+  "eventual_readiness": "pass",
+  "permanent_502": {
+    "activation_result": "fail_after_monotonic_deadline",
+    "automatic_rollbacks": 1,
+    "rollback_readiness": "pass"
+  },
+  "result": "pass"
+}
+

@@ -1,0 +1,19 @@
+{
+  "schema": "rospark-owner-canary-v4-production-path-tests-v1",
+  "model_requests": 0,
+  "production_changes": 0,
+  "static_contract": {
+    "production_scripts_direct_stat": [],
+    "production_scripts_direct_pm2_restart": [],
+    "activation_mutation_sequence_count": 1,
+    "automatic_rollback_sequence_count": 1
+  },
+  "single_flight": {
+    "exclusive": "pass",
+    "live_owner": "blocked_before_mutation",
+    "corrupt": "fail_closed",
+    "stale": "fail_closed",
+    "live_unrelated": "fail_closed"
+  },
+  "result": "pass"
+}

@@ -1,0 +1,9 @@
+{
+  "schema": "rospark-owner-canary-v4-portable-stat-test-v1",
+  "gnu_stat": "pass",
+  "bsd_stat": "pass",
+  "activation_uses_helper": true,
+  "rollback_uses_helper": true,
+  "unapproved_direct_stat_invocations": [],
+  "result": "pass"
+}

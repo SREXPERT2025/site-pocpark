@@ -20,6 +20,7 @@
     "test:owner-ai-canary": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_owner_ai_canary_v1.mjs",
     "test:owner-ai-canary-env": "node scripts/test_configure_owner_ai_canary_env.mjs",
     "test:owner-ai-canary-release": "python3 scripts/test_owner_ai_canary_release_manifest.py",
+    "test:owner-ai-canary-v4-production": "python3 scripts/test_owner_canary_v4_production_path.py",
     "test:ai-widget-gateway": "python3 scripts/test_ai_widget_pilot_gateway.py",
     "test:ai-widget-env": "node scripts/test_configure_ai_widget_pilot_env.mjs",
     "test:ai-widget-production-env": "node scripts/test_configure_ai_widget_production_env.mjs",
