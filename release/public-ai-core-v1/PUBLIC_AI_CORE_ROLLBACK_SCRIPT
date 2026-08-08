@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+
+TARGET_SITE_SHA="cdf244d034e4a76a9de3cd43cc5f61a3a7dce9f9"
+RUNTIME_SHA="5713258de76d4aa689baf30eae016df54cd8d579"
+CONTRACT_SHA="8834367e7412656b5a83d0c01b05dbffae6d3dee"
+APP_DIR="/var/www/rospark-site"
+ENV_FILE="$APP_DIR/.env.production"
+LOCK_DIR="/run/lock/rospark-public-ai-core-cutover-v1"
+PUBLIC_HOST="www.xn--80aukedde.xn--p1ai"
+LOCAL_STATUS_URL="http://127.0.0.1:3000/api/ai-widget/status"
+PUBLIC_STATUS_URL="https://${PUBLIC_HOST}/api/ai-widget/status"
+ACTIVATION_ID="public-ai-core-rollback-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+EXPECTED_SELF_SHA256="${3:-}"
+LOCK_ACQUIRED=0
+
+if test "${1:-}" != "--execute-owner-approved-rollback" \
+  || test "${2:-}" != "$TARGET_SITE_SHA" \
+  || ! printf '%s' "$EXPECTED_SELF_SHA256" | grep -Eq '^[a-f0-9]{64}$'; then
+  echo "OWNER_ROLLBACK_APPROVAL_ARGUMENTS_REQUIRED" >&2
+  exit 64
+fi
+
+portable_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}';
+  else shasum -a 256 "$1" | awk '{print $1}'; fi
+}
+test "$(portable_sha256 "$0")" = "$EXPECTED_SELF_SHA256"
+
+# shellcheck source=/dev/null
+source "$APP_DIR/scripts/owner_canary_v4_lib.sh"
+trap 'test "$LOCK_ACQUIRED" -ne 1 || owner_v4_release_lock "$LOCK_DIR" "$ACTIVATION_ID"' EXIT
+OWNER_V4_COMMAND_FILE="$0" owner_v4_acquire_lock \
+  "$LOCK_DIR" "$ACTIVATION_ID" "$TARGET_SITE_SHA" public-ai-core-rollback-v1
+LOCK_ACQUIRED=1
+
+test "$(git -C "$APP_DIR" rev-parse HEAD)" = "$TARGET_SITE_SHA"
+test -z "$(git -C "$APP_DIR" status --porcelain)"
+owner_v4_assert_file_mode "$ENV_FILE" 600
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_ENABLED)" = false
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_PUBLIC_RUNTIME_SHA)" = "$RUNTIME_SHA"
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_PUBLIC_CONTRACT_SHA)" = "$CONTRACT_SHA"
+
+node "$APP_DIR/scripts/configure_public_ai_core_env.mjs" "$ENV_FILE" false
+echo "pm2_action phase=public_rollback_off action=restart count=1"
+pm2 restart rospark-site --update-env >/dev/null
+owner_v4_wait_readiness \
+  "$APP_DIR" "$TARGET_SITE_SHA" "$LOCAL_STATUS_URL" \
+  "$PUBLIC_STATUS_URL" "$PUBLIC_HOST" 120000 1
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_PUBLIC_ENABLED)" = false
+
+STATUS="$(mktemp "${TMPDIR:-/tmp}/public-ai-core-rollback.XXXXXX")"
+trap 'rm -f "$STATUS"; test "$LOCK_ACQUIRED" -ne 1 || owner_v4_release_lock "$LOCK_DIR" "$ACTIVATION_ID"' EXIT
+code="$(curl -sS --max-time 20 --resolve "${PUBLIC_HOST}:443:127.0.0.1" \
+  -o "$STATUS" -w '%{http_code}' "$PUBLIC_STATUS_URL" || true)"
+test "$code" = 200
+node -e '
+const fs=require("fs"); const v=JSON.parse(fs.readFileSync(process.argv[1],"utf8"));
+if(v.publicAiCoreEnabled!==false||v.runtimeMode!=="production"||v.serverEventsEnabled!==true)process.exit(1);
+' "$STATUS"
+cd "$APP_DIR"
+NODE_PATH=/tmp/rospark-no-ajv npm run test:public-ai-core
+
+owner_v4_release_lock "$LOCK_DIR" "$ACTIVATION_ID"
+LOCK_ACQUIRED=0
+rm -f "$STATUS"
+trap - EXIT
+echo "AI_CORE_PUBLIC_ENABLED=false"
+echo "NORMAL_VISITOR_ROUTE=legacy"
+echo "GATEWAY_A_ROLLBACK=0"
+echo "SITE_FOUNDATION_B_ROLLBACK=0"
+echo "MODEL_REQUESTS=0"

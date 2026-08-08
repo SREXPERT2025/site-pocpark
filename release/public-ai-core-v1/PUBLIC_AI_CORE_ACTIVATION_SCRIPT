@@ -1,0 +1,319 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+
+BASE_SITE_SHA="283841cfafbb71133fff8347d2f5e8f724bfcaac"
+TARGET_SITE_SHA="cdf244d034e4a76a9de3cd43cc5f61a3a7dce9f9"
+DELIVERY_BRANCH="fix/site-20260808-public-ai-core-cutover-prep"
+RUNTIME_SHA="5713258de76d4aa689baf30eae016df54cd8d579"
+CONTRACT_SHA="8834367e7412656b5a83d0c01b05dbffae6d3dee"
+GATEWAY_A_SHA="e0b4edd34d5fecaf8850e64aa03a33c2661b51f9"
+LIB_SHA256="5cc5cc0840a8e8419387d7184b731e74e05c9ed3d300723725fdec290c004831"
+PUBLIC_CORE_SHA256="6d2e61face975e1d9a05e350f6f35b91150361c4f6241200f36a1d83f81bbef5"
+ENV_TOOL_SHA256="7cdd69229604d3ab97a1f96cb2f1f81fa915adc42ecc37a3c0f309451721ffd6"
+RUNTIME_BRIDGE_SHA256="7413983ba7d70455b0b9cab8a8701d0755c413b41be6480c5661cbaa65b8859c"
+
+APP_DIR="/var/www/rospark-site"
+ENV_FILE="$APP_DIR/.env.production"
+BACKUP_ROOT="/root/rospark-backups"
+RELEASE_BUILDS="/var/www/rospark-release-builds"
+LOCK_DIR="/run/lock/rospark-public-ai-core-cutover-v1"
+PUBLIC_HOST="www.xn--80aukedde.xn--p1ai"
+LOCAL_STATUS_URL="http://127.0.0.1:3000/api/ai-widget/status"
+PUBLIC_STATUS_URL="https://${PUBLIC_HOST}/api/ai-widget/status"
+AI_DB="/var/lib/rospark-ai-widget/dialogs.sqlite"
+LEAD_DB="/var/lib/rospark-leads/lead-registry.sqlite"
+ACTIVATION_ID="public-ai-core-v1-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+EXPECTED_SELF_SHA256="${3:-}"
+STAGE_DIR="/var/www/rospark-site-stage-${ACTIVATION_ID}"
+BACKUP_DIR="$BACKUP_ROOT/${ACTIVATION_ID}"
+HOT_BASE_NEXT="$RELEASE_BUILDS/next-hot-${BASE_SITE_SHA:0:7}-${ACTIVATION_ID}"
+HOT_BASE_MODULES="$RELEASE_BUILDS/node-modules-hot-${BASE_SITE_SHA:0:7}-${ACTIVATION_ID}"
+TMP_DIR=""
+LOCK_ACQUIRED=0
+MUTATION_STARTED=0
+FINALIZED=0
+ROLLBACK_STARTED=0
+GATEWAY_HEALTH_BEFORE_SHA256=""
+
+if test "${1:-}" != "--execute-owner-approved" \
+  || test "${2:-}" != "$TARGET_SITE_SHA" \
+  || ! printf '%s' "$EXPECTED_SELF_SHA256" | grep -Eq '^[a-f0-9]{64}$'; then
+  echo "OWNER_APPROVAL_ARGUMENTS_REQUIRED" >&2
+  exit 64
+fi
+
+portable_sha256() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$1" | awk '{print $1}'
+  else
+    shasum -a 256 "$1" | awk '{print $1}'
+  fi
+}
+
+test "$(portable_sha256 "$0")" = "$EXPECTED_SELF_SHA256" || {
+  echo "ACTIVATION_CHECKSUM_MISMATCH" >&2
+  exit 65
+}
+
+cleanup_stage() {
+  if test -d "$STAGE_DIR"; then
+    git -C "$APP_DIR" worktree remove --force "$STAGE_DIR" >/dev/null 2>&1 || true
+  fi
+  if test -n "$TMP_DIR" && test -d "$TMP_DIR"; then
+    rm -rf "$TMP_DIR"
+  fi
+}
+
+release_lock() {
+  if test "$LOCK_ACQUIRED" -eq 1; then
+    owner_v4_release_lock "$LOCK_DIR" "$ACTIVATION_ID"
+    LOCK_ACQUIRED=0
+  fi
+}
+
+canonical_readiness() {
+  owner_v4_wait_readiness \
+    "$APP_DIR" "$1" "$LOCAL_STATUS_URL" \
+    "$PUBLIC_STATUS_URL" "$PUBLIC_HOST" 120000 1
+}
+
+verify_public_status() {
+  local expected="$1" output="$2" code
+  code="$(curl -sS --max-time 20 --resolve "${PUBLIC_HOST}:443:127.0.0.1" \
+    -o "$output" -w '%{http_code}' "$PUBLIC_STATUS_URL" || true)"
+  test "$code" = 200
+  node -e '
+const fs=require("fs"); const [path,expected]=process.argv.slice(1);
+const v=JSON.parse(fs.readFileSync(path,"utf8"));
+if(v.runtimeMode!=="production"||v.serverEventsEnabled!==true||String(v.publicAiCoreEnabled)!==expected)process.exit(1);
+' "$output" "$expected"
+}
+
+verify_gateway_exact() {
+  local output="$1" gateway_url gateway_secret
+  gateway_url="$(owner_v4_env_value "$ENV_FILE" AI_CORE_PUBLIC_URL)"
+  gateway_secret="$(owner_v4_env_value "$ENV_FILE" AI_CORE_PUBLIC_SECRET)"
+  if test -z "$gateway_url"; then
+    gateway_url="$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_URL)"
+  fi
+  if test -z "$gateway_secret"; then
+    gateway_secret="$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_SECRET)"
+  fi
+  test "${gateway_url#https://}" != "$gateway_url"
+  test "${#gateway_secret}" -ge 32
+  curl -fsS --max-time 20 -H "Authorization: Bearer ${gateway_secret}" \
+    "${gateway_url%/}/health" -o "$output"
+  node -e '
+const fs=require("fs"); const [path,runtime,contract]=process.argv.slice(1);
+const v=JSON.parse(fs.readFileSync(path,"utf8"));
+if(v.status!=="ok"||v.runtime_mode!=="production"||v.owner_ai_core_ready!==true||v.owner_ai_core_runtime_sha!==runtime||v.owner_ai_core_contract_sha!==contract)process.exit(1);
+' "$output" "$RUNTIME_SHA" "$CONTRACT_SHA"
+}
+
+upsert_env() {
+  local path="$1" key="$2" value="$3"
+  node - "$path" "$key" "$value" <<'NODE'
+const fs=require('fs'); const [path,key,value]=process.argv.slice(2);
+const source=fs.readFileSync(path,'utf8'); const lines=source.split(/\r?\n/);
+let found=0; const next=lines.map(line=>{
+  if(!line.startsWith(`${key}=`)) return line;
+  found+=1; if(found>1) throw new Error(`DUPLICATE_${key}`);
+  return `${key}=${value}`;
+});
+if(!found) next.push(`${key}=${value}`);
+const temp=`${path}.public-ai-core-${process.pid}`;
+fs.writeFileSync(temp,`${next.join('\n').replace(/\n+$/,'')}\n`,{mode:0o600,flag:'wx'});
+fs.renameSync(temp,path);
+NODE
+}
+
+prepare_stage_env() {
+  local path="$1" url secret
+  url="$(owner_v4_env_value "$path" AI_CORE_PUBLIC_URL)"
+  secret="$(owner_v4_env_value "$path" AI_CORE_PUBLIC_SECRET)"
+  if test -z "$url"; then
+    url="$(owner_v4_env_value "$path" AI_CORE_OWNER_CANARY_URL)"
+  fi
+  if test -z "$secret"; then
+    secret="$(owner_v4_env_value "$path" AI_CORE_OWNER_CANARY_SECRET)"
+  fi
+  test "${url#https://}" != "$url"
+  test "${#secret}" -ge 32
+  upsert_env "$path" AI_CORE_PUBLIC_URL "$url"
+  upsert_env "$path" AI_CORE_PUBLIC_SECRET "$secret"
+  upsert_env "$path" AI_CORE_PUBLIC_SITE_SHA "$TARGET_SITE_SHA"
+  upsert_env "$path" AI_CORE_PUBLIC_GATEWAY_SHA "$GATEWAY_A_SHA"
+  upsert_env "$path" AI_CORE_OWNER_CANARY_ENABLED false
+  node "$STAGE_DIR/scripts/configure_public_ai_core_env.mjs" "$path" false
+}
+
+rollback_site_and_public() {
+  local ok=1 target_active=0
+  test "$ROLLBACK_STARTED" -eq 0 || return 0
+  ROLLBACK_STARTED=1
+  trap - ERR HUP INT TERM
+  echo "[PUBLIC AI CORE V1 AUTOMATIC ROLLBACK]"
+
+  if test "$(git -C "$APP_DIR" rev-parse HEAD 2>/dev/null || true)" = "$TARGET_SITE_SHA"; then
+    target_active=1
+    if test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_PUBLIC_ENABLED 2>/dev/null || true)" = true; then
+      node "$APP_DIR/scripts/configure_public_ai_core_env.mjs" "$ENV_FILE" false || ok=0
+      echo "pm2_action phase=public_off_first action=restart count=1"
+      pm2 restart rospark-site --update-env >/dev/null || ok=0
+      test "$ok" -ne 1 || canonical_readiness "$TARGET_SITE_SHA" || ok=0
+    fi
+  fi
+
+  if test -f "$BACKUP_DIR/env.before"; then
+    cp -a "$BACKUP_DIR/env.before" "$ENV_FILE" || ok=0
+  fi
+  if test "$target_active" -eq 1 || test -d "$HOT_BASE_NEXT" || test -d "$HOT_BASE_MODULES"; then
+    test ! -d "$APP_DIR/.next" || mv "$APP_DIR/.next" "$BACKUP_DIR/failed-target.next" || ok=0
+    test ! -d "$APP_DIR/node_modules" || mv "$APP_DIR/node_modules" "$BACKUP_DIR/failed-target.node_modules" || ok=0
+    git -C "$APP_DIR" reset --hard "$BASE_SITE_SHA" >/dev/null || ok=0
+    test ! -d "$HOT_BASE_NEXT" || mv "$HOT_BASE_NEXT" "$APP_DIR/.next" || ok=0
+    test ! -d "$HOT_BASE_MODULES" || mv "$HOT_BASE_MODULES" "$APP_DIR/node_modules" || ok=0
+    echo "pm2_action phase=site_rollback action=restart count=1"
+    pm2 restart rospark-site --update-env >/dev/null || ok=0
+  fi
+  test "$ok" -ne 1 || canonical_readiness "$BASE_SITE_SHA" || ok=0
+  if test "$ok" -eq 1; then
+    verify_gateway_exact "$BACKUP_DIR/gateway-health.rollback.json" || ok=0
+    test "$(portable_sha256 "$BACKUP_DIR/gateway-health.rollback.json")" = "$GATEWAY_HEALTH_BEFORE_SHA256" || ok=0
+  fi
+  if test "$ok" -eq 1; then
+    echo "ROLLBACK=automatic_success"
+  else
+    echo "ROLLBACK=automatic_fail" >&2
+  fi
+  return "$((1 - ok))"
+}
+
+on_failure() {
+  local code="$1" final="$1"
+  trap - ERR HUP INT TERM
+  if test "$MUTATION_STARTED" -eq 1 && test "$FINALIZED" -eq 0; then
+    rollback_site_and_public || final=90
+  fi
+  cleanup_stage
+  release_lock || final=90
+  exit "$final"
+}
+trap 'on_failure "$?"' ERR HUP INT TERM
+
+echo "[FETCH AND VERIFY EXACT TARGET — READ ONLY]"
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/public-ai-core-v1.XXXXXX")"
+git -C "$APP_DIR" fetch origin "+refs/heads/${DELIVERY_BRANCH}:refs/remotes/origin/${DELIVERY_BRANCH}"
+git -C "$APP_DIR" cat-file -e "${TARGET_SITE_SHA}^{commit}"
+git -C "$APP_DIR" merge-base --is-ancestor "$BASE_SITE_SHA" "$TARGET_SITE_SHA"
+git -C "$APP_DIR" merge-base --is-ancestor \
+  "$TARGET_SITE_SHA" "refs/remotes/origin/${DELIVERY_BRANCH}^{commit}"
+git -C "$APP_DIR" show "$TARGET_SITE_SHA:scripts/owner_canary_v4_lib.sh" > "$TMP_DIR/lib.sh"
+test "$(portable_sha256 "$TMP_DIR/lib.sh")" = "$LIB_SHA256"
+# shellcheck source=/dev/null
+source "$TMP_DIR/lib.sh"
+
+OWNER_V4_COMMAND_FILE="$0" owner_v4_acquire_lock \
+  "$LOCK_DIR" "$ACTIVATION_ID" "$TARGET_SITE_SHA" public-ai-core-cutover-v1
+LOCK_ACQUIRED=1
+
+echo "[BASELINE PREFLIGHT — NO MUTATION]"
+test "$(git -C "$APP_DIR" rev-parse HEAD)" = "$BASE_SITE_SHA"
+test -z "$(git -C "$APP_DIR" status --porcelain)"
+test -f "$ENV_FILE"
+owner_v4_assert_file_mode "$ENV_FILE" 600
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_ENABLED)" = false
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_PUBLIC_ENABLED)" != true
+nginx -t
+canonical_readiness "$BASE_SITE_SHA"
+verify_gateway_exact "$TMP_DIR/gateway-health.before.json"
+GATEWAY_HEALTH_BEFORE_SHA256="$(portable_sha256 "$TMP_DIR/gateway-health.before.json")"
+
+echo "[BACKUP AFTER SINGLE-FLIGHT LOCK]"
+install -d -m 700 "$BACKUP_DIR" "$RELEASE_BUILDS"
+cp -a "$ENV_FILE" "$BACKUP_DIR/env.before"
+cp -a /etc/nginx/sites-available/rospark-site "$BACKUP_DIR/nginx.before"
+git -C "$APP_DIR" rev-parse HEAD > "$BACKUP_DIR/site-sha.before"
+pm2 jlist > "$BACKUP_DIR/pm2.before.json"
+sqlite3 -readonly "$AI_DB" ".backup '$BACKUP_DIR/dialogs.before.sqlite'"
+sqlite3 -readonly "$LEAD_DB" ".backup '$BACKUP_DIR/leads.before.sqlite'"
+LEADS_BEFORE="$(sqlite3 -readonly "$LEAD_DB" 'SELECT COUNT(*) FROM lead_records;')"
+OUTBOX_BEFORE="$(sqlite3 -readonly "$LEAD_DB" 'SELECT COUNT(*) FROM lead_notification_outbox;')"
+AI_LEADS_BEFORE="$(sqlite3 -readonly "$AI_DB" 'SELECT COUNT(*) FROM ai_widget_production_leads;')"
+
+echo "[STAGE EXACT TARGET — PUBLIC FLAG OFF]"
+git -C "$APP_DIR" worktree add --detach "$STAGE_DIR" "$TARGET_SITE_SHA"
+cp -a "$ENV_FILE" "$STAGE_DIR/.env.production"
+prepare_stage_env "$STAGE_DIR/.env.production"
+owner_v4_assert_file_mode "$STAGE_DIR/.env.production" 600
+test "$(portable_sha256 "$STAGE_DIR/scripts/owner_canary_v4_lib.sh")" = "$LIB_SHA256"
+test "$(portable_sha256 "$STAGE_DIR/app/lib/public-ai-core.ts")" = "$PUBLIC_CORE_SHA256"
+test "$(portable_sha256 "$STAGE_DIR/scripts/configure_public_ai_core_env.mjs")" = "$ENV_TOOL_SHA256"
+test "$(portable_sha256 "$STAGE_DIR/scripts/ai_core_owner_runtime_bridge.py")" = "$RUNTIME_BRIDGE_SHA256"
+
+cd "$STAGE_DIR"
+npm ci --no-audit --no-fund
+NODE_PATH=/tmp/rospark-no-ajv npm run test:ai-core-ubuntu-staging
+npm run test:owner-ai-canary
+NODE_PATH=/tmp/rospark-no-ajv npm run test:public-ai-core
+npm run test:public-ai-core-env
+npm run test:ai-widget-server-events
+npm run test:ai-widget-gateway
+npm run typecheck
+npm run lint
+NODE_OPTIONS=--max-old-space-size=3072 ./node_modules/.bin/next build --webpack
+
+echo "[TARGET CUTOVER — PUBLIC FLAG OFF]"
+MUTATION_STARTED=1
+mv "$APP_DIR/.next" "$HOT_BASE_NEXT"
+mv "$APP_DIR/node_modules" "$HOT_BASE_MODULES"
+git -C "$APP_DIR" merge --ff-only "$TARGET_SITE_SHA"
+mv "$STAGE_DIR/.next" "$APP_DIR/.next"
+mv "$STAGE_DIR/node_modules" "$APP_DIR/node_modules"
+cp -a "$STAGE_DIR/.env.production" "$ENV_FILE"
+echo "pm2_action phase=target_public_off action=restart count=1"
+pm2 restart rospark-site --update-env >/dev/null
+canonical_readiness "$TARGET_SITE_SHA"
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_PUBLIC_ENABLED)" = false
+test "$(owner_v4_env_value "$ENV_FILE" AI_CORE_OWNER_CANARY_ENABLED)" = false
+verify_public_status false "$TMP_DIR/status.off.json"
+verify_gateway_exact "$TMP_DIR/gateway-health.target-off.json"
+test "$(portable_sha256 "$TMP_DIR/gateway-health.target-off.json")" = "$GATEWAY_HEALTH_BEFORE_SHA256"
+
+echo "[ENABLE PUBLIC AI CORE — NO SYNTHETIC MODEL REQUEST]"
+node "$APP_DIR/scripts/configure_public_ai_core_env.mjs" "$ENV_FILE" true
+echo "pm2_action phase=public_on action=restart count=1"
+pm2 restart rospark-site --update-env >/dev/null
+canonical_readiness "$TARGET_SITE_SHA"
+verify_public_status true "$TMP_DIR/status.on.json"
+cd "$APP_DIR"
+NODE_PATH=/tmp/rospark-no-ajv npm run test:public-ai-core
+npm run test:public-ai-core-env
+
+test "$LEADS_BEFORE" = "$(sqlite3 -readonly "$LEAD_DB" 'SELECT COUNT(*) FROM lead_records;')"
+test "$OUTBOX_BEFORE" = "$(sqlite3 -readonly "$LEAD_DB" 'SELECT COUNT(*) FROM lead_notification_outbox;')"
+test "$AI_LEADS_BEFORE" = "$(sqlite3 -readonly "$AI_DB" 'SELECT COUNT(*) FROM ai_widget_production_leads;')"
+verify_gateway_exact "$TMP_DIR/gateway-health.after.json"
+test "$(portable_sha256 "$TMP_DIR/gateway-health.after.json")" = "$GATEWAY_HEALTH_BEFORE_SHA256"
+test "$(git -C "$APP_DIR" rev-parse HEAD)" = "$TARGET_SITE_SHA"
+test -z "$(git -C "$APP_DIR" status --porcelain)"
+nginx -t
+
+FINALIZED=1
+cleanup_stage
+release_lock
+trap - ERR HUP INT TERM
+echo "PUBLIC_AI_CORE_CUTOVER=complete"
+echo "SITE_SHA=$TARGET_SITE_SHA"
+echo "AI_CORE_PUBLIC_ENABLED=true"
+echo "AI_CORE_OWNER_CANARY_ENABLED=false"
+echo "RUNTIME_SHA=$RUNTIME_SHA"
+echo "CONTRACT_SHA=$CONTRACT_SHA"
+echo "GATEWAY_A_SHA=$GATEWAY_A_SHA"
+echo "MODEL_REQUESTS=0"
+echo "CODEX_REQUESTS=0"
+echo "LEADS_CREATED=0"
+echo "MAX_MESSAGES_SENT=0"
+echo "BACKUP_RETAINED=$BACKUP_DIR"
+echo "HOT_ROLLBACK_RETAINED=$HOT_BASE_NEXT"

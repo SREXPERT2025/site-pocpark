@@ -1,0 +1,79 @@
+{
+  "schema": "rospark-public-ai-core-cutover-release-candidate-v1",
+  "created_at": "2026-08-08T00:00:00Z",
+  "activation_authorized": false,
+  "production_mutation": 0,
+  "site_target_sha": "cdf244d034e4a76a9de3cd43cc5f61a3a7dce9f9",
+  "expected_baseline_site_sha": "283841cfafbb71133fff8347d2f5e8f724bfcaac",
+  "delivery_branch": "fix/site-20260808-public-ai-core-cutover-prep",
+  "runtime_sha": "5713258de76d4aa689baf30eae016df54cd8d579",
+  "runtime_archive_sha256": "89b2bd8bd9dadc0f85a27af8adbc04dcd56245d4c6e1fbc70bf6fbd05590db93",
+  "contract_sha": "8834367e7412656b5a83d0c01b05dbffae6d3dee",
+  "gateway_a_sha": "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
+  "gateway_a_behavior": "unchanged_shadow_only",
+  "site_foundation_b": "unchanged_active_required",
+  "owner_canary_default": false,
+  "public_ai_core_default": false,
+  "executor": {
+    "planned": "qwen",
+    "model": "qwen3.6:27b",
+    "codex_enabled": false,
+    "additional_models": 0
+  },
+  "artifacts": {
+    "activation_script": {
+      "path": "release/public-ai-core-v1/PUBLIC_AI_CORE_ACTIVATION_SCRIPT",
+      "sha256": "540c56392a7ac8ee444e6a5ca310c294a334a22c77449523fdd51bfe14dc356f"
+    },
+    "rollback_script": {
+      "path": "release/public-ai-core-v1/PUBLIC_AI_CORE_ROLLBACK_SCRIPT",
+      "sha256": "ff9c200e1d4dc3795412f86cce4d6a0c390ecac632c2a63a410c645a757cbb8b"
+    },
+    "env_example": {
+      "path": "release/public-ai-core-v1/public-ai-core.env.example",
+      "sha256": "23353affffcbf6e0c10b0c3ae1412e1471af69233832e27d89cba4ee7671319d"
+    },
+    "runbook": {
+      "path": "docs/deployment/PUBLIC_AI_CORE_CUTOVER_PREPARATION_V1.md",
+      "sha256": "c5a8b93a65fb58be8123d57bec26e732753b40370e66773b60913c3133756259"
+    },
+    "public_route": {
+      "path": "app/lib/ai-widget-api.ts",
+      "sha256": "02b815439d2f9af575fb6b3b903917a5333a5298e7e15f548101cd00021302da"
+    },
+    "public_policy": {
+      "path": "app/lib/public-ai-core.ts",
+      "sha256": "6d2e61face975e1d9a05e350f6f35b91150361c4f6241200f36a1d83f81bbef5"
+    },
+    "runtime_bridge": {
+      "path": "scripts/ai_core_owner_runtime_bridge.py",
+      "sha256": "7413983ba7d70455b0b9cab8a8701d0755c413b41be6480c5661cbaa65b8859c"
+    },
+    "environment_tool": {
+      "path": "scripts/configure_public_ai_core_env.mjs",
+      "sha256": "7cdd69229604d3ab97a1f96cb2f1f81fa915adc42ecc37a3c0f309451721ffd6"
+    },
+    "production_dependency_lock": {
+      "path": "package-lock.json",
+      "sha256": "cd148ac538ebd59b5e61958883ae235887ad8d4be3ae55feb506407cf934d5e7"
+    }
+  },
+  "offline_acceptance": {
+    "ubuntu_24_04": "pass",
+    "node": "22.23.2",
+    "python": "3.12.3",
+    "valid_response": "pass",
+    "safe_error_envelope": "pass",
+    "malformed_request": "pass",
+    "runtime_unavailable": "pass",
+    "contract_validation": "pass",
+    "deterministic_engineering_request": "pass",
+    "mutation_acknowledgement": "pass",
+    "duplicate_idempotent_request": "pass",
+    "normal_visitor_http": "pass",
+    "duplicate_answers": 0,
+    "duplicate_mutations": 0,
+    "model_requests": 0
+  },
+  "next_owner_gate": "publish_exact_candidate_then_execute_checksum_verified_public_cutover"
+}

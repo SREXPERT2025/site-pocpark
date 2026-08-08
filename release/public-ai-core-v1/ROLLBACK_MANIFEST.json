@@ -1,0 +1,16 @@
+{
+  "schema": "rospark-public-ai-core-rollback-v1",
+  "site_target_sha": "cdf244d034e4a76a9de3cd43cc5f61a3a7dce9f9",
+  "rollback_action": "AI_CORE_PUBLIC_ENABLED=false",
+  "rollback_script": "release/public-ai-core-v1/PUBLIC_AI_CORE_ROLLBACK_SCRIPT",
+  "rollback_script_sha256": "ff9c200e1d4dc3795412f86cce4d6a0c390ecac632c2a63a410c645a757cbb8b",
+  "postconditions": {
+    "normal_visitor_route": "legacy",
+    "public_https": 200,
+    "gateway_a_rollback": 0,
+    "site_foundation_b_rollback": 0,
+    "qwen_model_change": 0,
+    "crm_mutation": 0
+  },
+  "diagnostic_evidence_retained": true
+}
