@@ -4,6 +4,7 @@
   "bsd_stat": "pass",
   "activation_uses_helper": true,
   "rollback_uses_helper": true,
+  "release_wrapper_uses_helper": true,
   "unapproved_direct_stat_invocations": [],
   "result": "pass"
 }

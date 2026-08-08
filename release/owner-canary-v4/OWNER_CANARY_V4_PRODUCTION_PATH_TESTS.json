@@ -4,7 +4,11 @@
   "production_changes": 0,
   "static_contract": {
     "production_scripts_direct_stat": [],
+    "release_wrapper_direct_stat": [],
     "production_scripts_direct_pm2_restart": [],
+    "release_wrapper_bash_syntax": "pass",
+    "release_wrapper_missing_owner_gate": "fail_closed_exit_64",
+    "release_wrapper_checksum_mismatch": "fail_closed_exit_65",
     "activation_mutation_sequence_count": 1,
     "automatic_rollback_sequence_count": 1
   },
@@ -15,5 +19,7 @@
     "stale": "fail_closed",
     "live_unrelated": "fail_closed"
   },
+  "canonical_site_candidate_sha": "c74049bc7c54780b735d134168ddd67fe4fc8ecd",
+  "production_execution_performed": false,
   "result": "pass"
 }

@@ -1,0 +1,97 @@
+{
+  "schema": "rospark-owner-canary-v4-release-candidate-v1",
+  "created_at": "2026-08-08T05:32:44Z",
+  "production_activation_allowed": true,
+  "production_execution_authorized": false,
+  "production_execution_performed": false,
+  "push_performed": false,
+  "production_baseline_site_sha": "283841cfafbb71133fff8347d2f5e8f724bfcaac",
+  "new_site_target_sha": "c74049bc7c54780b735d134168ddd67fe4fc8ecd",
+  "runtime_sha": "5713258de76d4aa689baf30eae016df54cd8d579",
+  "contract_sha": "8834367e7412656b5a83d0c01b05dbffae6d3dee",
+  "gateway_a_sha": "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
+  "gateway_behavior": "unchanged",
+  "site_foundation_b": "inherited_and_tested",
+  "owner_canary_default": "off",
+  "executor": {
+    "planned": "qwen",
+    "model": "qwen3.6:27b",
+    "fallback_models": 0,
+    "model_requests_during_preparation": 0
+  },
+  "readiness": {
+    "monotonic_timeout_ms": 120000,
+    "minimum_consecutive_successes": 3,
+    "minimum_stable_span_ms": 2000,
+    "startup_transients": [0, 502, 503],
+    "hard_http_failures": [401, 403],
+    "restart_during_polling": false
+  },
+  "activation_phases": [
+    "site_target_canary_off_and_ready",
+    "exact_runtime_contract_deterministic_acceptance",
+    "owner_canary_on_and_owner_only_routing_acceptance"
+  ],
+  "artifacts": {
+    "runtime_archive": {
+      "path": "release/owner-ai-canary-v114/ai-core-runtime-5713258de76d4aa689baf30eae016df54cd8d579.tar.gz",
+      "sha256": "89b2bd8bd9dadc0f85a27af8adbc04dcd56245d4c6e1fbc70bf6fbd05590db93"
+    },
+    "migration": {
+      "path": "app/lib/owner-ai-canary-state.ts",
+      "sha256": "d28780257fd40fe7d7a3785a427c050f5c8a267c374972f259c9a050afda6755"
+    },
+    "config_template": {
+      "path": "release/owner-ai-canary-v114/owner-canary.env.example",
+      "sha256": "ed5c7aeba3cff688e761990a8b03431c45bb4ac65e67be93c185989c34db5140"
+    },
+    "activation_script": {
+      "path": "scripts/activate_owner_ai_canary_for_owner_live_test.sh",
+      "sha256": "a221fa2dcbae4bf6f47606a4d05d341e72a6bef1778520fc5382252d15251238"
+    },
+    "deactivation_script": {
+      "path": "scripts/deactivate_owner_ai_canary.sh",
+      "sha256": "f11a6efffdcc82367b49309b97d4b630bf769f945d26e581427caf8d7bb4c7f2"
+    },
+    "portable_readiness_library": {
+      "path": "scripts/owner_canary_v4_lib.sh",
+      "sha256": "5cc5cc0840a8e8419387d7184b731e74e05c9ed3d300723725fdec290c004831"
+    },
+    "release_wrapper": {
+      "path": "release/owner-canary-v4/OWNER_CANARY_V4_ACTIVATION_SCRIPT",
+      "sha256": "700ba7a139bac0355b587ed0ddcdd28c1a728fa5eeb849e746bd502107ce7851"
+    },
+    "owner_route_status": {
+      "path": "app/api/ai-widget/owner-canary/status/route.ts",
+      "sha256": "a19848098416f1b1cd4ca61b2b566d493f83b55f967b3f2667a73b21bdcd1733"
+    },
+    "production_path_test": {
+      "path": "scripts/test_owner_canary_v4_production_path.py",
+      "sha256": "04c22ed792e30dea39810d56a92b627e6655e4cb4f46ccc1a17669ea88044e11"
+    }
+  },
+  "offline_acceptance": {
+    "portable_stat_activation": "pass",
+    "portable_stat_rollback": "pass",
+    "simulated_transient_502_recovery": "pass",
+    "permanent_502_timeout_rollback": "pass",
+    "pm2_online_before_app_ready": "pass",
+    "automatic_rollback": "pass",
+    "canary_only_rollback": "pass",
+    "normal_visitor_legacy_invariant": "pass",
+    "forged_cookie_rejected": "pass",
+    "expired_cookie_rejected": "pass",
+    "owner_failure_has_no_silent_legacy_fallback": "pass",
+    "runtime_exact_sha_pin": "pass",
+    "site_b_compatibility": "pass",
+    "gateway_unchanged_contract": "pass",
+    "single_flight": "pass",
+    "static_direct_stat_scan": "pass",
+    "webpack_production_build": "pass"
+  },
+  "next_gate": {
+    "owner_approval_required": true,
+    "push_required_before_execution": true,
+    "required_action": "publish exact candidate and execute checksum-verified V4 wrapper once"
+  }
+}
