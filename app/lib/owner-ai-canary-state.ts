@@ -1,8 +1,9 @@
 import { createHash, randomUUID } from 'node:crypto';
 import type Database from 'better-sqlite3';
 import { CANONICALIZATION_VERSION } from './canonical-json-hash-v1.ts';
+import type { OwnerCanaryPreGateTelemetry } from './owner-ai-canary-adapter.ts';
 
-export const OWNER_AI_CANARY_STATE_SCHEMA_VERSION = 3;
+export const OWNER_AI_CANARY_STATE_SCHEMA_VERSION = 4;
 
 export type OwnerCanaryThreadState = {
   conversationThreadId: string;
@@ -250,8 +251,7 @@ export function runOwnerAiCanaryMigrations(db: Database.Database) {
   const v3 = db.prepare(`
     SELECT version FROM owner_ai_canary_migrations WHERE version = 3
   `).get();
-  if (v3) return;
-  db.transaction(() => {
+  if (!v3) db.transaction(() => {
     db.exec(`
       CREATE TABLE ai_core_public_route_telemetry (
         turn_id TEXT PRIMARY KEY,
@@ -278,6 +278,58 @@ export function runOwnerAiCanaryMigrations(db: Database.Database) {
     db.prepare(`
       INSERT INTO owner_ai_canary_migrations(version, name, applied_at)
       VALUES (3, 'ai_core_public_route_telemetry_v1', ?)
+    `).run(new Date().toISOString());
+  })();
+  const v4 = db.prepare(`
+    SELECT version FROM owner_ai_canary_migrations WHERE version = 4
+  `).get();
+  if (v4) return;
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE owner_ai_canary_pre_gate_telemetry (
+        turn_id TEXT PRIMARY KEY,
+        conversation_thread_id TEXT NOT NULL,
+        message_id TEXT NOT NULL,
+        ai_core_request_id TEXT NOT NULL,
+        runtime_sha TEXT NOT NULL,
+        contract_sha TEXT NOT NULL,
+        canonicalization_version TEXT NOT NULL,
+        decision_package_sha TEXT NOT NULL,
+        projection_source_sha TEXT NOT NULL,
+        planned_executor TEXT NOT NULL,
+        final_executor TEXT NOT NULL,
+        executor_request_count INTEGER NOT NULL CHECK (
+          executor_request_count >= 0
+        ),
+        raw_evaluation_status TEXT NOT NULL,
+        final_evaluation_status TEXT NOT NULL,
+        evaluation_reason_codes_json TEXT NOT NULL,
+        repair_applied INTEGER NOT NULL CHECK (repair_applied IN (0, 1)),
+        repair_status TEXT NOT NULL,
+        repair_reason_codes_json TEXT NOT NULL,
+        publication_candidate_status TEXT NOT NULL,
+        state_mutation_proposed INTEGER NOT NULL CHECK (
+          state_mutation_proposed IN (0, 1)
+        ),
+        latency_stages_json TEXT NOT NULL,
+        telemetry_ref TEXT NOT NULL UNIQUE,
+        evidence_hash TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (turn_id) REFERENCES ai_widget_turns(id) ON DELETE CASCADE,
+        FOREIGN KEY (conversation_thread_id)
+          REFERENCES owner_ai_canary_threads(conversation_thread_id)
+          ON DELETE CASCADE,
+        FOREIGN KEY (message_id)
+          REFERENCES owner_ai_canary_messages(message_id)
+          ON DELETE CASCADE
+      );
+
+      CREATE INDEX owner_ai_canary_pre_gate_request
+        ON owner_ai_canary_pre_gate_telemetry(ai_core_request_id);
+    `);
+    db.prepare(`
+      INSERT INTO owner_ai_canary_migrations(version, name, applied_at)
+      VALUES (4, 'owner_ai_canary_pre_gate_telemetry_v1', ?)
     `).run(new Date().toISOString());
   })();
 }
@@ -1072,6 +1124,181 @@ export function getOwnerCanaryRuntimeResponse(
     responseHash: row.response_hash as string,
     response: parseJson(row.response_json as string),
     visibleAnswer: row.visible_answer as string,
+  };
+}
+
+function safeTelemetryText(value: string, field: string) {
+  if (!value
+    || value.length > 160
+    || /[\r\n\0]/.test(value)) {
+    throw new Error(`INVALID_${field.toUpperCase()}`);
+  }
+  return value;
+}
+
+export function recordOwnerCanaryPreGateTelemetry(
+  db: Database.Database,
+  input: {
+    turnId: string;
+    conversationThreadId: string;
+    messageId: string;
+    telemetry: OwnerCanaryPreGateTelemetry;
+    createdAt?: string;
+  },
+) {
+  const turnId = validId(input.turnId, 'turn_id');
+  const conversationThreadId = validId(
+    input.conversationThreadId,
+    'conversation_thread_id',
+  );
+  const messageId = validId(input.messageId, 'message_id');
+  const telemetry = input.telemetry;
+  const aiCoreRequestId = validId(
+    telemetry.aiCoreRequestId,
+    'ai_core_request_id',
+  );
+  for (const [value, field] of [
+    [telemetry.runtimeSha, 'runtime_sha'],
+    [telemetry.contractSha, 'contract_sha'],
+  ] as const) {
+    if (!/^[a-f0-9]{40}$/.test(value)) {
+      throw new Error(`INVALID_${field.toUpperCase()}`);
+    }
+  }
+  for (const [value, field] of [
+    [telemetry.decisionPackageSha, 'decision_package_sha'],
+    [telemetry.projectionSourceSha, 'projection_source_sha'],
+  ] as const) {
+    if (!/^[a-f0-9]{64}$/.test(value)) {
+      throw new Error(`INVALID_${field.toUpperCase()}`);
+    }
+  }
+  for (const [value, field] of [
+    [telemetry.canonicalizationVersion, 'canonicalization_version'],
+    [telemetry.plannedExecutor, 'planned_executor'],
+    [telemetry.finalExecutor, 'final_executor'],
+    [telemetry.rawEvaluationStatus, 'raw_evaluation_status'],
+    [telemetry.finalEvaluationStatus, 'final_evaluation_status'],
+    [telemetry.repairStatus, 'repair_status'],
+    [telemetry.publicationCandidateStatus, 'publication_candidate_status'],
+  ] as const) {
+    safeTelemetryText(value, field);
+  }
+  if (!Number.isSafeInteger(telemetry.executorRequestCount)
+    || telemetry.executorRequestCount < 0) {
+    throw new Error('INVALID_EXECUTOR_REQUEST_COUNT');
+  }
+  const telemetryRef = `owner-pre-gate:${turnId}`;
+  const evidence = {
+    turnId,
+    conversationThreadId,
+    messageId,
+    aiCoreRequestId,
+    runtimeSha: telemetry.runtimeSha,
+    contractSha: telemetry.contractSha,
+    canonicalizationVersion: telemetry.canonicalizationVersion,
+    decisionPackageSha: telemetry.decisionPackageSha,
+    projectionSourceSha: telemetry.projectionSourceSha,
+    plannedExecutor: telemetry.plannedExecutor,
+    finalExecutor: telemetry.finalExecutor,
+    executorRequestCount: telemetry.executorRequestCount,
+    rawEvaluationStatus: telemetry.rawEvaluationStatus,
+    finalEvaluationStatus: telemetry.finalEvaluationStatus,
+    evaluationReasonCodes: [...telemetry.evaluationReasonCodes],
+    repairApplied: telemetry.repairApplied,
+    repairStatus: telemetry.repairStatus,
+    repairReasonCodes: [...telemetry.repairReasonCodes],
+    publicationCandidateStatus: telemetry.publicationCandidateStatus,
+    stateMutationProposed: telemetry.stateMutationProposed,
+    latencyStages: telemetry.latencyStages,
+    telemetryRef,
+  };
+  const evidenceHash = hash(evidence);
+  const row = {
+    ...evidence,
+    evaluationReasonCodesJson: stableJson(evidence.evaluationReasonCodes),
+    repairApplied: evidence.repairApplied ? 1 : 0,
+    repairReasonCodesJson: stableJson(evidence.repairReasonCodes),
+    stateMutationProposed: evidence.stateMutationProposed ? 1 : 0,
+    latencyStagesJson: stableJson(evidence.latencyStages),
+    evidenceHash,
+    createdAt: input.createdAt ?? new Date().toISOString(),
+  };
+  const result = db.prepare(`
+    INSERT OR IGNORE INTO owner_ai_canary_pre_gate_telemetry (
+      turn_id, conversation_thread_id, message_id, ai_core_request_id,
+      runtime_sha, contract_sha, canonicalization_version,
+      decision_package_sha, projection_source_sha, planned_executor,
+      final_executor, executor_request_count, raw_evaluation_status,
+      final_evaluation_status, evaluation_reason_codes_json,
+      repair_applied, repair_status, repair_reason_codes_json,
+      publication_candidate_status, state_mutation_proposed,
+      latency_stages_json, telemetry_ref, evidence_hash, created_at
+    ) VALUES (
+      @turnId, @conversationThreadId, @messageId, @aiCoreRequestId,
+      @runtimeSha, @contractSha, @canonicalizationVersion,
+      @decisionPackageSha, @projectionSourceSha, @plannedExecutor,
+      @finalExecutor, @executorRequestCount, @rawEvaluationStatus,
+      @finalEvaluationStatus, @evaluationReasonCodesJson,
+      @repairApplied, @repairStatus, @repairReasonCodesJson,
+      @publicationCandidateStatus, @stateMutationProposed,
+      @latencyStagesJson, @telemetryRef, @evidenceHash, @createdAt
+    )
+  `).run(row);
+  const existing = db.prepare(`
+    SELECT evidence_hash, telemetry_ref
+    FROM owner_ai_canary_pre_gate_telemetry
+    WHERE turn_id = ?
+  `).get(turnId) as {
+    evidence_hash: string;
+    telemetry_ref: string;
+  } | undefined;
+  if (!existing || existing.evidence_hash !== evidenceHash) {
+    throw new Error('PRE_GATE_TELEMETRY_IDEMPOTENCY_CONFLICT');
+  }
+  return {
+    created: result.changes === 1,
+    evidenceHash,
+    telemetryRef: existing.telemetry_ref,
+  };
+}
+
+export function getOwnerCanaryPreGateTelemetry(
+  db: Database.Database,
+  turnId: string,
+) {
+  const row = db.prepare(`
+    SELECT * FROM owner_ai_canary_pre_gate_telemetry WHERE turn_id = ?
+  `).get(validId(turnId, 'turn_id')) as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return {
+    turnId: row.turn_id as string,
+    conversationThreadId: row.conversation_thread_id as string,
+    messageId: row.message_id as string,
+    aiCoreRequestId: row.ai_core_request_id as string,
+    runtimeSha: row.runtime_sha as string,
+    contractSha: row.contract_sha as string,
+    canonicalizationVersion: row.canonicalization_version as string,
+    decisionPackageSha: row.decision_package_sha as string,
+    projectionSourceSha: row.projection_source_sha as string,
+    plannedExecutor: row.planned_executor as string,
+    finalExecutor: row.final_executor as string,
+    executorRequestCount: row.executor_request_count as number,
+    rawEvaluationStatus: row.raw_evaluation_status as string,
+    finalEvaluationStatus: row.final_evaluation_status as string,
+    evaluationReasonCodes: parseJson<string[]>(
+      row.evaluation_reason_codes_json as string,
+    ),
+    repairApplied: row.repair_applied === 1,
+    repairStatus: row.repair_status as string,
+    repairReasonCodes: parseJson<string[]>(row.repair_reason_codes_json as string),
+    publicationCandidateStatus: row.publication_candidate_status as string,
+    stateMutationProposed: row.state_mutation_proposed === 1,
+    latencyStages: parseJson<Record<string, number>>(
+      row.latency_stages_json as string,
+    ),
+    telemetryRef: row.telemetry_ref as string,
+    evidenceHash: row.evidence_hash as string,
   };
 }
 

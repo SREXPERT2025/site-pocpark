@@ -191,13 +191,95 @@ export type OwnerCanaryRuntimeEnvelope = Readonly<{
   canonicalization_version: typeof CANONICALIZATION_VERSION;
   model: typeof AI_CORE_OWNER_MODEL;
   response: Record<string, unknown>;
+  preGateTelemetry: OwnerCanaryPreGateTelemetry;
 }>;
+
+export type OwnerCanaryPreGateTelemetry = Readonly<{
+  aiCoreRequestId: string;
+  runtimeSha: string;
+  contractSha: string;
+  canonicalizationVersion: string;
+  decisionPackageSha: string;
+  projectionSourceSha: string;
+  plannedExecutor: string;
+  finalExecutor: string;
+  executorRequestCount: number;
+  rawEvaluationStatus: string;
+  finalEvaluationStatus: string;
+  evaluationReasonCodes: readonly string[];
+  repairApplied: boolean;
+  repairStatus: string;
+  repairReasonCodes: readonly string[];
+  publicationCandidateStatus: string;
+  stateMutationProposed: boolean;
+  latencyStages: Readonly<Record<string, number>>;
+}>;
+
+export class AiCoreFinalGateBlockedError extends Error {
+  readonly preGateTelemetry: OwnerCanaryPreGateTelemetry;
+
+  constructor(telemetry: OwnerCanaryPreGateTelemetry) {
+    super('AI_CORE_FINAL_GATE_BLOCKED');
+    this.name = 'AiCoreFinalGateBlockedError';
+    this.preGateTelemetry = telemetry;
+  }
+}
+
+export function preGateTelemetryFromError(error: unknown) {
+  return error instanceof AiCoreFinalGateBlockedError
+    ? error.preGateTelemetry
+    : null;
+}
 
 function record(value: unknown, code: string) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(code);
   }
   return value as Record<string, unknown>;
+}
+
+function telemetryString(value: unknown, code: string) {
+  if (typeof value !== 'string'
+    || !value
+    || value.length > 160
+    || /[\r\n\0]/.test(value)) {
+    throw new Error(code);
+  }
+  return value;
+}
+
+function telemetryEnum(
+  value: unknown,
+  allowed: readonly string[],
+  code: string,
+) {
+  const normalized = telemetryString(value, code);
+  if (!allowed.includes(normalized)) throw new Error(code);
+  return normalized;
+}
+
+function telemetryReasonCodes(value: unknown, code: string) {
+  if (!Array.isArray(value)
+    || value.some((item) => typeof item !== 'string'
+      || !/^[a-z][a-z0-9_]{0,100}$/.test(item))) {
+    throw new Error(code);
+  }
+  return Object.freeze(value.map(String));
+}
+
+function telemetryLatencyStages(value: unknown) {
+  const latency = record(value, 'INVALID_AI_CORE_LATENCY_TELEMETRY');
+  const safe: Record<string, number> = {};
+  for (const [key, item] of Object.entries(latency)) {
+    if (!/^[a-z][a-z0-9_]{0,79}$/.test(key)
+      || typeof item !== 'number'
+      || !Number.isFinite(item)
+      || item < 0) {
+      throw new Error('INVALID_AI_CORE_LATENCY_TELEMETRY');
+    }
+    safe[key] = item;
+  }
+  return Object.freeze(safe);
 }
 
 export function validateDecisionPackageHash(value: unknown) {
@@ -275,14 +357,7 @@ export function validateOwnerCanaryCoreResponse(
     telemetry.publication,
     'INVALID_AI_CORE_PUBLICATION',
   );
-  if (evaluation.status !== 'pass'
-    || publication.candidate_status !== 'allowed'
-    || publication.published !== false) {
-    throw new Error('AI_CORE_FINAL_GATE_BLOCKED');
-  }
-  if (typeof response.answer !== 'string' || !response.answer.trim()) {
-    throw new Error('AI_CORE_EMPTY_ANSWER');
-  }
+  const repair = record(response.repair_result, 'INVALID_AI_CORE_REPAIR');
   if (!Array.isArray(response.state_mutations)) {
     throw new Error('INVALID_AI_CORE_MUTATIONS');
   }
@@ -299,6 +374,86 @@ export function validateOwnerCanaryCoreResponse(
       || (request && item.source_message_id !== request.payload.message_id))) {
     throw new Error('AI_CORE_MUTATION_VERSION_OR_AUTHORITY_VIOLATION');
   }
+  const decisionPackageSha = telemetryString(
+    response.decision_package_hash,
+    'INVALID_DECISION_PACKAGE_HASH',
+  );
+  const projectionSourceSha = telemetryString(
+    executorTrace.decision_package_hash,
+    'INVALID_PROJECTION_SOURCE_HASH',
+  );
+  if (!/^[a-f0-9]{64}$/.test(decisionPackageSha)
+    || projectionSourceSha !== decisionPackageSha
+    || repair.decision_package_hash !== decisionPackageSha) {
+    throw new Error('AI_CORE_PROJECTION_HASH_PROPAGATION_MISMATCH');
+  }
+  const evaluationTelemetry = record(
+    telemetry.evaluation,
+    'INVALID_AI_CORE_EVALUATION_TELEMETRY',
+  );
+  const repairTelemetry = record(
+    telemetry.repair,
+    'INVALID_AI_CORE_REPAIR_TELEMETRY',
+  );
+  const preGateTelemetry = Object.freeze({
+    aiCoreRequestId: telemetryString(
+      response.request_id,
+      'INVALID_AI_CORE_REQUEST_ID',
+    ),
+    runtimeSha: AI_CORE_RUNTIME_SHA,
+    contractSha: AI_CORE_CONTRACT_SHA,
+    canonicalizationVersion: CANONICALIZATION_VERSION,
+    decisionPackageSha,
+    projectionSourceSha,
+    plannedExecutor: telemetryString(
+      executorTrace.planned_executor,
+      'INVALID_EXECUTOR_TRACE',
+    ),
+    finalExecutor: telemetryString(
+      executorTrace.final_executor,
+      'INVALID_EXECUTOR_TRACE',
+    ),
+    executorRequestCount: attempts.length,
+    rawEvaluationStatus: telemetryEnum(
+      evaluationTelemetry.raw_status,
+      ['pass', 'review_required', 'fail', 'not_evaluable'],
+      'INVALID_AI_CORE_EVALUATION_TELEMETRY',
+    ),
+    finalEvaluationStatus: telemetryEnum(
+      evaluationTelemetry.final_status,
+      ['pass', 'review_required', 'fail', 'not_evaluable'],
+      'INVALID_AI_CORE_EVALUATION_TELEMETRY',
+    ),
+    evaluationReasonCodes: telemetryReasonCodes(
+      evaluation.reason_codes,
+      'INVALID_AI_CORE_EVALUATION_REASON_CODES',
+    ),
+    repairApplied: repair.applied === true,
+    repairStatus: telemetryEnum(
+      repair.method ?? repairTelemetry.method,
+      ['none', 'deterministic'],
+      'INVALID_AI_CORE_REPAIR_TELEMETRY',
+    ),
+    repairReasonCodes: telemetryReasonCodes(
+      repair.reason_codes ?? repairTelemetry.reason_codes ?? [],
+      'INVALID_AI_CORE_REPAIR_REASON_CODES',
+    ),
+    publicationCandidateStatus: telemetryEnum(
+      publication.candidate_status,
+      ['allowed', 'owner_review', 'blocked'],
+      'INVALID_AI_CORE_PUBLICATION',
+    ),
+    stateMutationProposed: mutations.length > 0,
+    latencyStages: telemetryLatencyStages(telemetry.latency),
+  } satisfies OwnerCanaryPreGateTelemetry);
+  if (evaluation.status !== 'pass'
+    || publication.candidate_status !== 'allowed'
+    || publication.published !== false) {
+    throw new AiCoreFinalGateBlockedError(preGateTelemetry);
+  }
+  if (typeof response.answer !== 'string' || !response.answer.trim()) {
+    throw new Error('AI_CORE_EMPTY_ANSWER');
+  }
   return Object.freeze({
     runtime_sha: AI_CORE_RUNTIME_SHA,
     runtime_version: AI_CORE_RUNTIME_VERSION,
@@ -306,6 +461,7 @@ export function validateOwnerCanaryCoreResponse(
     canonicalization_version: CANONICALIZATION_VERSION,
     model: AI_CORE_OWNER_MODEL,
     response: Object.freeze({ ...response }),
+    preGateTelemetry,
   });
 }
 

@@ -52,6 +52,7 @@ import {
   callPublicAiCoreRuntime,
   callOwnerCanaryRuntime,
   ownerCanaryIdempotencyKey,
+  preGateTelemetryFromError,
 } from './owner-ai-canary-adapter';
 import {
   appendOwnerCanaryHistory,
@@ -62,12 +63,14 @@ import {
   ownerCanaryRequestId,
   ownerCanarySessionRevoked,
   recordOwnerCanaryRuntimeTelemetry,
+  recordOwnerCanaryPreGateTelemetry,
   recordOwnerCanaryTelemetry,
   recordPublicAiCoreRouteTelemetry,
   registerOwnerCanaryMessage,
   runOwnerAiCanaryMigrations,
   saveOwnerCanaryRuntimeResponse,
 } from './owner-ai-canary-state';
+import { requireOwnerCanarySiteRelease } from './site-release-provenance';
 import {
   publicAiCoreEnabled,
   publicAiCoreFallbackReason,
@@ -401,6 +404,10 @@ export async function handleAiWidgetChat(request: Request) {
       templateId?: string | null;
       errorCode?: string | null;
       elapsedMs?: number | null;
+      conversationThreadId?: string | null;
+      messageId?: string | null;
+      aiCoreRequestId?: string | null;
+      runtimeTelemetryRef?: string | null;
     } = {},
   ) => {
     tryRecordAiWidgetServerEvent({
@@ -501,7 +508,15 @@ export async function handleAiWidgetChat(request: Request) {
     }
   }
 
-  const failLoggedTurn = (code: string) => {
+  const failLoggedTurn = (
+    code: string,
+    correlation: {
+      conversationThreadId?: string | null;
+      messageId?: string | null;
+      aiCoreRequestId?: string | null;
+      runtimeTelemetryRef?: string | null;
+    } = {},
+  ) => {
     if (!loggingStarted) return;
     try {
       const elapsedMs = Date.now() - startedAt;
@@ -513,6 +528,7 @@ export async function handleAiWidgetChat(request: Request) {
       recordServerEvent('answer_error', {
         errorCode: code,
         elapsedMs,
+        ...correlation,
       });
     } catch {
       // The original safe error remains the client response.
@@ -603,6 +619,7 @@ export async function handleAiWidgetChat(request: Request) {
   if (aiCoreAudience !== 'legacy' && ownerIdentity) {
     const aiCoreRequestId = ownerCanaryRequestId();
     let aiCoreMutationStarted = false;
+    let preGateTelemetryRef: string | null = null;
     const ownerHeaders = {
       ...aiCoreBaseHeaders,
       'X-AI-Core-Request-Id': aiCoreRequestId,
@@ -614,7 +631,7 @@ export async function handleAiWidgetChat(request: Request) {
       const { siteRelease, gatewayRelease } = aiCoreAudience === 'public_ai_core'
         ? requirePublicAiCoreReleasePins()
         : {
-          siteRelease: process.env.AI_CORE_OWNER_CANARY_SITE_SHA ?? '',
+          siteRelease: requireOwnerCanarySiteRelease(),
           gatewayRelease: process.env.AI_CORE_OWNER_CANARY_GATEWAY_SHA ?? '',
         };
       if (!/^[a-f0-9]{40}$/.test(siteRelease)
@@ -670,6 +687,14 @@ export async function handleAiWidgetChat(request: Request) {
       const envelope = aiCoreAudience === 'public_ai_core'
         ? await callPublicAiCoreRuntime(coreRequest)
         : await callOwnerCanaryRuntime(coreRequest);
+      if (aiCoreAudience === 'owner_canary') {
+        preGateTelemetryRef = recordOwnerCanaryPreGateTelemetry(db, {
+          turnId: parsed.payload.turnId,
+          conversationThreadId: ownerIdentity.conversationThreadId,
+          messageId: ownerIdentity.messageId,
+          telemetry: envelope.preGateTelemetry,
+        }).telemetryRef;
+      }
       const response = envelope.response;
       const responseId = String(response.response_id);
       const mutations = response.state_mutations as Parameters<
@@ -717,6 +742,12 @@ export async function handleAiWidgetChat(request: Request) {
           eventName: 'answer_completed',
           route: responseRoute,
           elapsedMs,
+          ...(aiCoreAudience === 'owner_canary' ? {
+            conversationThreadId: ownerIdentity.conversationThreadId,
+            messageId: ownerIdentity.messageId,
+            aiCoreRequestId,
+            runtimeTelemetryRef: preGateTelemetryRef,
+          } : {}),
         });
         if (aiCoreAudience === 'public_ai_core') {
           recordPublicAiCoreRouteTelemetry(db, {
@@ -791,6 +822,31 @@ export async function handleAiWidgetChat(request: Request) {
         },
       });
     } catch (error) {
+      let telemetryWriteFailed = false;
+      if (aiCoreAudience === 'owner_canary' && !preGateTelemetryRef) {
+        const telemetry = preGateTelemetryFromError(error);
+        if (telemetry) {
+          try {
+            preGateTelemetryRef = recordOwnerCanaryPreGateTelemetry(
+              getAiWidgetLogDatabase(),
+              {
+                turnId: parsed.payload.turnId,
+                conversationThreadId: ownerIdentity.conversationThreadId,
+                messageId: ownerIdentity.messageId,
+                telemetry,
+              },
+            ).telemetryRef;
+          } catch {
+            telemetryWriteFailed = true;
+          }
+        }
+      }
+      const errorCorrelation = {
+        conversationThreadId: ownerIdentity.conversationThreadId,
+        messageId: ownerIdentity.messageId,
+        aiCoreRequestId,
+        runtimeTelemetryRef: preGateTelemetryRef,
+      };
       if (aiCoreAudience === 'public_ai_core') {
         const reason = publicAiCoreFallbackReason(
           error,
@@ -802,7 +858,7 @@ export async function handleAiWidgetChat(request: Request) {
           const code = error instanceof Error
             ? error.message.replace(/[^A-Z0-9_]/gi, '_').toUpperCase().slice(0, 100)
             : 'PUBLIC_AI_CORE_ERROR';
-          failLoggedTurn(code || 'PUBLIC_AI_CORE_ERROR');
+          failLoggedTurn(code || 'PUBLIC_AI_CORE_ERROR', errorCorrelation);
           return jsonError(
             503,
             code || 'PUBLIC_AI_CORE_ERROR',
@@ -811,16 +867,19 @@ export async function handleAiWidgetChat(request: Request) {
           );
         }
       } else {
-      const code = error instanceof Error
-        ? error.message.replace(/[^A-Z0-9_]/gi, '_').toUpperCase().slice(0, 100)
-        : 'OWNER_AI_CORE_ERROR';
-      failLoggedTurn(code || 'OWNER_AI_CORE_ERROR');
-      return jsonError(
-        503,
-        code || 'OWNER_AI_CORE_ERROR',
-        'Owner AI Core test завершился безопасной ошибкой. Legacy-маршрут не использован.',
-        ownerHeaders,
-      );
+        const code = telemetryWriteFailed
+          ? 'OWNER_PRE_GATE_TELEMETRY_WRITE_FAILED'
+          : error instanceof Error
+            ? error.message.replace(/[^A-Z0-9_]/gi, '_')
+              .toUpperCase().slice(0, 100)
+            : 'OWNER_AI_CORE_ERROR';
+        failLoggedTurn(code || 'OWNER_AI_CORE_ERROR', errorCorrelation);
+        return jsonError(
+          503,
+          code || 'OWNER_AI_CORE_ERROR',
+          'Owner AI Core test завершился безопасной ошибкой. Legacy-маршрут не использован.',
+          ownerHeaders,
+        );
       }
     }
   }

@@ -6,6 +6,7 @@ import { randomUUID } from 'node:crypto';
 const RUNTIME_SHA = 'bdaaf16215b2066659c37ca6094e5e2f0a3c1bea';
 const CONTRACT_SHA = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
 const PUBLIC_ORIGIN = 'https://www.xn--80aukedde.xn--p1ai';
+const DEPRECATED_SITE_SHA_KEY = 'AI_CORE_OWNER_CANARY_SITE_SHA';
 
 export function updateOwnerCanaryEnv(source, enabled) {
   if (enabled !== true && enabled !== false) {
@@ -18,12 +19,13 @@ export function updateOwnerCanaryEnv(source, enabled) {
     ['OWNER_CANARY_PUBLIC_ORIGIN', PUBLIC_ORIGIN],
   ]);
   const seen = new Set();
-  const lines = source.split(/\r?\n/).map((line) => {
+  const lines = source.split(/\r?\n/).flatMap((line) => {
     const match = line.match(/^([A-Z][A-Z0-9_]*)=(.*)$/);
-    if (!match || !required.has(match[1])) return line;
+    if (match?.[1] === DEPRECATED_SITE_SHA_KEY) return [];
+    if (!match || !required.has(match[1])) return [line];
     if (seen.has(match[1])) throw new Error(`DUPLICATE_${match[1]}`);
     seen.add(match[1]);
-    return `${match[1]}=${required.get(match[1])}`;
+    return [`${match[1]}=${required.get(match[1])}`];
   });
   for (const [key, value] of required) {
     if (!seen.has(key)) lines.push(`${key}=${value}`);

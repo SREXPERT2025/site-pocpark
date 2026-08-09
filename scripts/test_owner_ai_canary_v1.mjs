@@ -14,6 +14,7 @@ import {
   callOwnerCanaryRuntime,
   canonicalJson,
   ownerCanaryRuntimeConfig,
+  preGateTelemetryFromError,
   sha256,
   validateOwnerCanaryCoreResponse,
 } from '../app/lib/owner-ai-canary-adapter.ts';
@@ -30,9 +31,11 @@ import {
   appendOwnerCanaryHistory,
   applyOwnerCanaryMutationBatch,
   ensureOwnerCanaryThread,
+  getOwnerCanaryPreGateTelemetry,
   getOwnerCanaryRuntimeResponse,
   listOwnerCanaryHistory,
   ownerCanarySessionRevoked,
+  recordOwnerCanaryPreGateTelemetry,
   recordOwnerCanaryRuntimeTelemetry,
   recordOwnerCanaryTelemetry,
   registerOwnerCanaryMessage,
@@ -134,7 +137,7 @@ runOwnerAiCanaryMigrations(db);
 assert.deepEqual(
   db.prepare('SELECT version FROM owner_ai_canary_migrations ORDER BY version')
     .all().map((row) => row.version),
-  [1, 2, 3],
+  [1, 2, 3, 4],
 );
 let state = ensureOwnerCanaryThread(db, {
   conversationThreadId: first.conversationThreadId,
@@ -331,6 +334,16 @@ assert.equal(
   validateOwnerCanaryCoreResponse(envelope, coreRequest).response.answer,
   runtimeResponse.answer,
 );
+const validatedEnvelope = validateOwnerCanaryCoreResponse(envelope, coreRequest);
+assert.equal(
+  validatedEnvelope.preGateTelemetry.decisionPackageSha,
+  runtimeResponse.decision_package_hash,
+);
+assert.equal(
+  validatedEnvelope.preGateTelemetry.projectionSourceSha,
+  runtimeResponse.decision_package_hash,
+);
+assert.equal(validatedEnvelope.preGateTelemetry.executorRequestCount, 1);
 assert.throws(() => validateOwnerCanaryCoreResponse({
   ...envelope,
   runtime_sha: 'b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763',
@@ -351,6 +364,33 @@ assert.throws(() => validateOwnerCanaryCoreResponse({
     executor_trace: { ...runtimeResponse.executor_trace, final_executor: 'codex' },
   },
 }, coreRequest), /EXECUTOR_POLICY_VIOLATION/);
+
+const blockedEnvelope = structuredClone(envelope);
+blockedEnvelope.response.evaluation_result.status = 'fail';
+blockedEnvelope.response.evaluation_result.reason_codes = [
+  'required_content_missing',
+];
+blockedEnvelope.response.telemetry.evaluation.raw_status = 'review_required';
+blockedEnvelope.response.telemetry.evaluation.final_status = 'fail';
+blockedEnvelope.response.telemetry.publication.candidate_status = 'blocked';
+let blockedError;
+try {
+  validateOwnerCanaryCoreResponse(blockedEnvelope, coreRequest);
+} catch (error) {
+  blockedError = error;
+}
+assert.match(blockedError.message, /AI_CORE_FINAL_GATE_BLOCKED/);
+const blockedTelemetry = preGateTelemetryFromError(blockedError);
+assert.ok(blockedTelemetry);
+assert.equal(blockedTelemetry.rawEvaluationStatus, 'review_required');
+assert.equal(blockedTelemetry.finalEvaluationStatus, 'fail');
+assert.deepEqual(blockedTelemetry.evaluationReasonCodes, [
+  'required_content_missing',
+]);
+assert.equal(blockedTelemetry.repairApplied, false);
+assert.equal(blockedTelemetry.repairStatus, 'none');
+assert.equal(blockedTelemetry.publicationCandidateStatus, 'blocked');
+assert.equal(blockedTelemetry.stateMutationProposed, true);
 
 // Real client transport is exercised with a hermetic fetch. No model call.
 const calls = [];
@@ -376,6 +416,21 @@ const called = await callOwnerCanaryRuntime(coreRequest, {
 assert.equal(called.runtime_sha, AI_CORE_RUNTIME_SHA);
 assert.match(calls[0].options.headers.Authorization, /^Bearer /);
 assert.doesNotMatch(JSON.stringify(calls), new RegExp(credential));
+await assert.rejects(
+  () => callOwnerCanaryRuntime(coreRequest, {
+    env,
+    fetchImpl: async () => Response.json(blockedEnvelope, { status: 200 }),
+  }),
+  (error) => {
+    const preserved = preGateTelemetryFromError(error);
+    assert.ok(preserved);
+    assert.equal(preserved.finalEvaluationStatus, 'fail');
+    assert.deepEqual(preserved.evaluationReasonCodes, [
+      'required_content_missing',
+    ]);
+    return true;
+  },
+);
 
 // Batch mutations are atomic and increment state exactly once.
 const applied = applyOwnerCanaryMutationBatch(db, {
@@ -500,6 +555,32 @@ recordAiWidgetServerEvent(db, {
   turnId: failedTurnId, eventName: 'turn_accepted', nowMs: nowMs + 20,
   idFactory: () => 'cccccccc-bbbb-4888-8888-888888888888',
 });
+const preGateEvidence = recordOwnerCanaryPreGateTelemetry(db, {
+  turnId: failedTurnId,
+  conversationThreadId: first.conversationThreadId,
+  messageId: first.messageId,
+  telemetry: blockedTelemetry,
+  createdAt: new Date(nowMs + 21).toISOString(),
+});
+assert.equal(preGateEvidence.created, true);
+assert.equal(recordOwnerCanaryPreGateTelemetry(db, {
+  turnId: failedTurnId,
+  conversationThreadId: first.conversationThreadId,
+  messageId: first.messageId,
+  telemetry: blockedTelemetry,
+  createdAt: new Date(nowMs + 22).toISOString(),
+}).created, false);
+const storedPreGate = getOwnerCanaryPreGateTelemetry(db, failedTurnId);
+assert.equal(storedPreGate.aiCoreRequestId, coreRequest.request_id);
+assert.equal(storedPreGate.decisionPackageSha, runtimeResponse.decision_package_hash);
+assert.equal(
+  storedPreGate.projectionSourceSha,
+  runtimeResponse.decision_package_hash,
+);
+assert.deepEqual(storedPreGate.evaluationReasonCodes, [
+  'required_content_missing',
+]);
+assert.equal(storedPreGate.repairStatus, 'none');
 failAiWidgetTurn(db, {
   turnId: failedTurnId,
   errorCode: 'OWNER_AI_CORE_ERROR',
@@ -509,12 +590,35 @@ failAiWidgetTurn(db, {
 recordAiWidgetServerEvent(db, {
   turnId: failedTurnId, eventName: 'answer_error',
   errorCode: 'OWNER_AI_CORE_ERROR', elapsedMs: 5, nowMs: nowMs + 25,
+  conversationThreadId: first.conversationThreadId,
+  messageId: first.messageId,
+  aiCoreRequestId: coreRequest.request_id,
+  runtimeTelemetryRef: preGateEvidence.telemetryRef,
   idFactory: () => 'dddddddd-cccc-4999-8999-999999999999',
 });
 assert.deepEqual(
   listAiWidgetServerEvents(db, failedTurnId).map((item) => item.eventName),
   ['turn_accepted', 'answer_error'],
 );
+const linkedError = listAiWidgetServerEvents(db, failedTurnId).at(-1);
+assert.equal(linkedError.conversationThreadId, first.conversationThreadId);
+assert.equal(linkedError.messageId, first.messageId);
+assert.equal(linkedError.aiCoreRequestId, coreRequest.request_id);
+assert.equal(linkedError.runtimeTelemetryRef, preGateEvidence.telemetryRef);
+const preGateColumns = db.prepare(`
+  SELECT name FROM pragma_table_info('owner_ai_canary_pre_gate_telemetry')
+`).all().map((row) => row.name);
+for (const forbidden of [
+  'user_content',
+  'current_message',
+  'answer',
+  'raw_answer',
+  'raw_answer_reference',
+  'credential',
+  'cookie',
+]) {
+  assert.equal(preGateColumns.includes(forbidden), false);
+}
 
 revokeOwnerCanarySession(db, {
   jti: issued.payload.jti,
@@ -552,7 +656,11 @@ assert.match(statusSource, /audience: 'owner_canary'/);
 assert.match(statusSource, /route: 'ai_core'/);
 assert.match(statusSource, /runtimeSha: AI_CORE_RUNTIME_SHA/);
 assert.match(statusSource, /contractSha: AI_CORE_CONTRACT_SHA/);
+assert.match(statusSource, /evaluateSiteReleaseProvenance/);
+assert.match(statusSource, /siteSha: provenance\.reportedSiteSha/);
 assert.match(apiSource, /callOwnerCanaryRuntime/);
+assert.match(apiSource, /recordOwnerCanaryPreGateTelemetry/);
+assert.match(apiSource, /preGateTelemetryFromError/);
 assert.match(apiSource, /Legacy-маршрут не использован/);
 assert.match(apiSource, /OWNER_AI_CANARY_MARKER/);
 assert.match(apiSource, /aiCoreAudience === 'owner_canary'/);

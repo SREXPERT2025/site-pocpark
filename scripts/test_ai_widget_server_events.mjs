@@ -33,6 +33,7 @@ assert.deepEqual(
     { version: 1, name: 'test_transcript_foundation' },
     { version: 2, name: 'production_runtime_and_lead_links' },
     { version: 3, name: 'server_confirmed_foundation_events' },
+    { version: 4, name: 'server_event_ai_core_correlation_v1' },
   ],
 );
 
@@ -127,11 +128,24 @@ recordAiWidgetServerEvent(db, {
   eventName: 'answer_error',
   errorCode: 'GATEWAY_TIMEOUT',
   elapsedMs: 90_000,
+  conversationThreadId: 'thread-correlation-000000000001',
+  messageId: 'message-correlation-00000000001',
+  aiCoreRequestId: 'aicore-correlation-000000000001',
+  runtimeTelemetryRef: 'owner-pre-gate:turn-foundation-event-failed-000001',
   nowMs: base + 92_000,
 });
 assert.deepEqual(
   listAiWidgetServerEvents(db, failedTurn).map((event) => event.eventName),
   ['turn_accepted', 'answer_error'],
+);
+const correlatedError = listAiWidgetServerEvents(db, failedTurn).at(-1);
+assert.equal(
+  correlatedError.conversationThreadId,
+  'thread-correlation-000000000001',
+);
+assert.equal(
+  correlatedError.runtimeTelemetryRef,
+  'owner-pre-gate:turn-foundation-event-failed-000001',
 );
 
 const eventColumns = db.prepare(`
@@ -184,7 +198,7 @@ try {
   runAiWidgetLogMigrations(legacyDb);
   legacyDb.exec(`
     DROP TABLE ai_widget_server_events;
-    DELETE FROM ai_widget_log_migrations WHERE version = 3;
+    DELETE FROM ai_widget_log_migrations WHERE version IN (3, 4);
   `);
   legacyDb.close();
   copyFileSync(migrationDatabasePath, migrationBackupPath);
@@ -196,7 +210,7 @@ try {
     upgradedDb.prepare(`
       SELECT COUNT(*) AS count
       FROM ai_widget_log_migrations
-      WHERE version = 3
+      WHERE version = 4
     `).get().count,
     1,
   );
@@ -210,7 +224,7 @@ try {
     rolledBackDb.prepare(`
       SELECT COUNT(*) AS count
       FROM ai_widget_log_migrations
-      WHERE version = 3
+      WHERE version = 4
     `).get().count,
     0,
   );

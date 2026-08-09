@@ -21,6 +21,10 @@ export type AiWidgetServerEventRow = {
   templateId: string | null;
   errorCode: string | null;
   elapsedMs: number | null;
+  conversationThreadId: string | null;
+  messageId: string | null;
+  aiCoreRequestId: string | null;
+  runtimeTelemetryRef: string | null;
   createdAt: string;
 };
 
@@ -68,6 +72,10 @@ function rowToEvent(row: {
   template_id: string | null;
   error_code: string | null;
   elapsed_ms: number | null;
+  conversation_thread_id: string | null;
+  message_id: string | null;
+  ai_core_request_id: string | null;
+  runtime_telemetry_ref: string | null;
   created_at: string;
 }): AiWidgetServerEventRow {
   return {
@@ -81,6 +89,10 @@ function rowToEvent(row: {
     templateId: row.template_id,
     errorCode: row.error_code,
     elapsedMs: row.elapsed_ms,
+    conversationThreadId: row.conversation_thread_id,
+    messageId: row.message_id,
+    aiCoreRequestId: row.ai_core_request_id,
+    runtimeTelemetryRef: row.runtime_telemetry_ref,
     createdAt: row.created_at,
   };
 }
@@ -94,6 +106,10 @@ export function recordAiWidgetServerEvent(
     templateId?: string | null;
     errorCode?: string | null;
     elapsedMs?: number | null;
+    conversationThreadId?: string | null;
+    messageId?: string | null;
+    aiCoreRequestId?: string | null;
+    runtimeTelemetryRef?: string | null;
     nowMs?: number;
     idFactory?: () => string;
   },
@@ -133,6 +149,18 @@ export function recordAiWidgetServerEvent(
   const route = optionalValue(input.route, 80);
   const templateId = optionalValue(input.templateId, 80);
   const errorCode = optionalValue(input.errorCode, 120);
+  const conversationThreadId = input.conversationThreadId
+    ? requiredIdentifier(input.conversationThreadId, 'conversation_thread_id')
+    : null;
+  const messageId = input.messageId
+    ? requiredIdentifier(input.messageId, 'message_id')
+    : null;
+  const aiCoreRequestId = input.aiCoreRequestId
+    ? requiredIdentifier(input.aiCoreRequestId, 'ai_core_request_id')
+    : null;
+  const runtimeTelemetryRef = input.runtimeTelemetryRef
+    ? requiredIdentifier(input.runtimeTelemetryRef, 'runtime_telemetry_ref')
+    : null;
   const elapsedMs = input.elapsedMs === null || input.elapsedMs === undefined
     ? null
     : Math.max(0, Math.trunc(input.elapsedMs));
@@ -143,8 +171,9 @@ export function recordAiWidgetServerEvent(
     INSERT OR IGNORE INTO ai_widget_server_events (
       id, turn_id, session_id, request_id, source_page,
       event_name, route, template_id, error_code, elapsed_ms,
-      created_at, created_at_ms
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      conversation_thread_id, message_id, ai_core_request_id,
+      runtime_telemetry_ref, created_at, created_at_ms
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     input.idFactory?.() ?? randomUUID(),
     turnId,
@@ -156,6 +185,10 @@ export function recordAiWidgetServerEvent(
     templateId,
     errorCode,
     elapsedMs,
+    conversationThreadId,
+    messageId,
+    aiCoreRequestId,
+    runtimeTelemetryRef,
     createdAt,
     nowMs,
   );
@@ -188,6 +221,10 @@ export function recordAiWidgetServerEvent(
       || existing.template_id !== templateId
       || existing.error_code !== errorCode
       || existing.elapsed_ms !== elapsedMs
+      || existing.conversation_thread_id !== conversationThreadId
+      || existing.message_id !== messageId
+      || existing.ai_core_request_id !== aiCoreRequestId
+      || existing.runtime_telemetry_ref !== runtimeTelemetryRef
     )
   ) {
     throw new Error('EVENT_IDEMPOTENCY_CONFLICT');

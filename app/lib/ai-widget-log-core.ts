@@ -412,6 +412,30 @@ export function runAiWidgetLogMigrations(db: Database.Database) {
       `).run(new Date().toISOString());
     })();
   }
+
+  if (!applied.has(4)) {
+    db.transaction(() => {
+      db.exec(`
+        ALTER TABLE ai_widget_server_events
+          ADD COLUMN conversation_thread_id TEXT;
+        ALTER TABLE ai_widget_server_events
+          ADD COLUMN message_id TEXT;
+        ALTER TABLE ai_widget_server_events
+          ADD COLUMN ai_core_request_id TEXT;
+        ALTER TABLE ai_widget_server_events
+          ADD COLUMN runtime_telemetry_ref TEXT;
+
+        CREATE INDEX idx_ai_widget_server_events_ai_core_request
+          ON ai_widget_server_events(ai_core_request_id)
+          WHERE ai_core_request_id IS NOT NULL;
+      `);
+      db.prepare(`
+        INSERT INTO ai_widget_log_migrations (
+          version, name, applied_at
+        ) VALUES (4, 'server_event_ai_core_correlation_v1', ?)
+      `).run(new Date().toISOString());
+    })();
+  }
 }
 
 function touchSession(

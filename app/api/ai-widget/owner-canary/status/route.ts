@@ -18,6 +18,7 @@ import {
   ownerCanaryOriginFailureStatus,
   validateOwnerCanaryOrigin,
 } from '@/app/lib/owner-canary-origin';
+import { evaluateSiteReleaseProvenance } from '@/app/lib/site-release-provenance';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -46,8 +47,26 @@ export async function GET(request: Request) {
     }, ownerCanaryOriginFailureStatus(originDecision.reason));
   }
 
+  const provenance = evaluateSiteReleaseProvenance();
+  if (!provenance.ready) {
+    return response({
+      enabled: ownerAiCanaryEnabled(),
+      ready: false,
+      audience: 'legacy',
+      route: 'legacy',
+      siteSha: provenance.reportedSiteSha || null,
+      code: provenance.reasonCode,
+    }, 503);
+  }
+
   if (!ownerAiCanaryEnabled()) {
-    return response({ enabled: false, audience: 'legacy', route: 'legacy' });
+    return response({
+      enabled: false,
+      ready: true,
+      audience: 'legacy',
+      route: 'legacy',
+      siteSha: provenance.reportedSiteSha,
+    });
   }
 
   const token = cookieValue(
@@ -55,7 +74,13 @@ export async function GET(request: Request) {
     OWNER_AI_CANARY_COOKIE,
   );
   if (!token) {
-    return response({ enabled: true, audience: 'legacy', route: 'legacy' });
+    return response({
+      enabled: true,
+      ready: true,
+      audience: 'legacy',
+      route: 'legacy',
+      siteSha: provenance.reportedSiteSha,
+    });
   }
 
   try {
@@ -68,15 +93,19 @@ export async function GET(request: Request) {
     if (selected.audience !== 'owner_canary') {
       return response({
         enabled: true,
+        ready: true,
         audience: 'legacy',
         route: 'legacy',
+        siteSha: provenance.reportedSiteSha,
         code: 'OWNER_AUTH_DENIED',
       }, 401);
     }
     return response({
       enabled: true,
+      ready: true,
       audience: 'owner_canary',
       route: 'ai_core',
+      siteSha: provenance.reportedSiteSha,
       runtimeSha: AI_CORE_RUNTIME_SHA,
       contractSha: AI_CORE_CONTRACT_SHA,
       marker: `${OWNER_AI_CANARY_MARKER} · Qwen · Runtime ${AI_CORE_RUNTIME_SHA.slice(0, 7)}`,
@@ -84,8 +113,10 @@ export async function GET(request: Request) {
   } catch {
     return response({
       enabled: true,
+      ready: false,
       audience: 'legacy',
       route: 'legacy',
+      siteSha: provenance.reportedSiteSha,
       code: 'OWNER_CANARY_STATE_UNAVAILABLE',
     }, 503);
   }

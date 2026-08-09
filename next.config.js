@@ -1,5 +1,32 @@
+const { execFileSync } = require('node:child_process');
+
+function immutableSiteReleaseSha() {
+  const sha = execFileSync(
+    'git',
+    ['rev-parse', '--verify', 'HEAD^{commit}'],
+    { encoding: 'utf8' },
+  ).trim();
+  if (!/^[a-f0-9]{40}$/.test(sha)) {
+    throw new Error('SITE_RELEASE_SHA_INVALID');
+  }
+  const trackedChanges = execFileSync(
+    'git',
+    ['status', '--porcelain', '--untracked-files=no'],
+    { encoding: 'utf8' },
+  ).trim();
+  if (trackedChanges) {
+    throw new Error('SITE_RELEASE_BUILD_NOT_IMMUTABLE');
+  }
+  return sha;
+}
+
+const deployedSiteSha = immutableSiteReleaseSha();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    ROSPARK_DEPLOYED_SITE_SHA: deployedSiteSha,
+  },
   serverExternalPackages: ['better-sqlite3'],
   images: {
     // Для MVP разрешаем локальные изображения из /public

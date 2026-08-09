@@ -28,6 +28,7 @@ assert.deepEqual(
     { version: 1, name: 'test_transcript_foundation' },
     { version: 2, name: 'production_runtime_and_lead_links' },
     { version: 3, name: 'server_confirmed_foundation_events' },
+    { version: 4, name: 'server_event_ai_core_correlation_v1' },
   ],
 );
 
