@@ -14,6 +14,10 @@ import {
   runOwnerAiCanaryMigrations,
 } from '@/app/lib/owner-ai-canary-state';
 import { getAiWidgetLogDatabase } from '@/app/lib/ai-widget-log-database';
+import {
+  ownerCanaryOriginFailureStatus,
+  validateOwnerCanaryOrigin,
+} from '@/app/lib/owner-canary-origin';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
@@ -30,14 +34,16 @@ function response(value: Record<string, unknown>, status = 200) {
 }
 
 export async function GET(request: Request) {
-  const origin = request.headers.get('origin');
-  if (!origin || origin !== new URL(request.url).origin) {
+  const originDecision = validateOwnerCanaryOrigin({
+    headers: request.headers,
+  });
+  if (!originDecision.allowed) {
     return response({
       enabled: ownerAiCanaryEnabled(),
       audience: 'legacy',
       route: 'legacy',
-      code: 'ORIGIN_DENIED',
-    }, 403);
+      code: originDecision.reason,
+    }, ownerCanaryOriginFailureStatus(originDecision.reason));
   }
 
   if (!ownerAiCanaryEnabled()) {

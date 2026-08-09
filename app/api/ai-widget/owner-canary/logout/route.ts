@@ -10,17 +10,26 @@ import {
   runOwnerAiCanaryMigrations,
 } from '@/app/lib/owner-ai-canary-state';
 import { getAiWidgetLogDatabase } from '@/app/lib/ai-widget-log-database';
+import {
+  ownerCanaryOriginFailureStatus,
+  validateOwnerCanaryOrigin,
+} from '@/app/lib/owner-canary-origin';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  const origin = request.headers.get('origin');
-  if (!origin || origin !== new URL(request.url).origin) {
+  const originDecision = validateOwnerCanaryOrigin({
+    headers: request.headers,
+  });
+  if (!originDecision.allowed) {
     return NextResponse.json(
-      { success: false, code: 'ORIGIN_DENIED' },
-      { status: 403, headers: { 'Cache-Control': 'no-store' } },
+      { success: false, code: originDecision.reason },
+      {
+        status: ownerCanaryOriginFailureStatus(originDecision.reason),
+        headers: { 'Cache-Control': 'no-store' },
+      },
     );
   }
   const token = cookieValue(

@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 
 const RUNTIME_SHA = 'bdaaf16215b2066659c37ca6094e5e2f0a3c1bea';
 const CONTRACT_SHA = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
+const PUBLIC_ORIGIN = 'https://www.xn--80aukedde.xn--p1ai';
 
 export function updateOwnerCanaryEnv(source, enabled) {
   if (enabled !== true && enabled !== false) {
@@ -14,6 +15,7 @@ export function updateOwnerCanaryEnv(source, enabled) {
     ['AI_CORE_OWNER_CANARY_ENABLED', enabled ? 'true' : 'false'],
     ['AI_CORE_OWNER_CANARY_RUNTIME_SHA', RUNTIME_SHA],
     ['AI_CORE_OWNER_CANARY_CONTRACT_SHA', CONTRACT_SHA],
+    ['OWNER_CANARY_PUBLIC_ORIGIN', PUBLIC_ORIGIN],
   ]);
   const seen = new Set();
   const lines = source.split(/\r?\n/).map((line) => {
@@ -32,7 +34,8 @@ export function updateOwnerCanaryEnv(source, enabled) {
       const match = line.match(/^([A-Z][A-Z0-9_]*)=(.*)$/);
       return match ? [[match[1], match[2]]] : [];
     }));
-    if (!values.AI_CORE_OWNER_CANARY_URL?.startsWith('https://')
+    if (values.OWNER_CANARY_PUBLIC_ORIGIN !== PUBLIC_ORIGIN
+      || !values.AI_CORE_OWNER_CANARY_URL?.startsWith('https://')
       || (values.AI_CORE_OWNER_CANARY_SECRET?.length ?? 0) < 32
       || (values.AI_CORE_OWNER_CANARY_COOKIE_KEY?.length ?? 0) < 32
       || (values.AI_CORE_IDENTITY_HMAC_KEY?.length ?? 0) < 32) {
