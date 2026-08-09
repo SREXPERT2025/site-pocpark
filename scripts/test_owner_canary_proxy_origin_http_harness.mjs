@@ -13,7 +13,7 @@ import {
 const ROOT = process.cwd();
 const PUBLIC_ORIGIN = 'https://www.xn--80aukedde.xn--p1ai';
 const PUBLIC_HOST = 'www.xn--80aukedde.xn--p1ai';
-const RUNTIME_SHA = 'bdaaf16215b2066659c37ca6094e5e2f0a3c1bea';
+const RUNTIME_SHA = '20afd06ba703338541cf65ab167f3b218af09699';
 const CONTRACT_SHA = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
 const CREDENTIAL = 'owner-http-harness-credential-000000000001';
 const COOKIE_KEY = 'owner-http-harness-cookie-key-000000000001';

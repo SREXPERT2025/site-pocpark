@@ -7,7 +7,7 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 
 const ROOT = process.cwd();
-const RUNTIME_SHA = 'bdaaf16215b2066659c37ca6094e5e2f0a3c1bea';
+const RUNTIME_SHA = '20afd06ba703338541cf65ab167f3b218af09699';
 const CONTRACT_SHA = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
 const CANONICALIZATION_VERSION = 'CANONICAL_JSON_HASH_V1';
 const SITE_SHA = 'a'.repeat(40);

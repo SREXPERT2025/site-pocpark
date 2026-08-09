@@ -13,7 +13,7 @@ const base = [
 ].join('\n');
 const enabled = updateOwnerCanaryEnv(base, true);
 assert.match(enabled, /AI_CORE_OWNER_CANARY_ENABLED=true/);
-assert.match(enabled, /AI_CORE_OWNER_CANARY_RUNTIME_SHA=bdaaf16215b2066659c37ca6094e5e2f0a3c1bea/);
+assert.match(enabled, /AI_CORE_OWNER_CANARY_RUNTIME_SHA=20afd06ba703338541cf65ab167f3b218af09699/);
 assert.match(enabled, /AI_CORE_OWNER_CANARY_CONTRACT_SHA=6cd71a5596346925ecdd2ffeb9d45262d881ee93/);
 assert.match(enabled, /OWNER_CANARY_PUBLIC_ORIGIN=https:\/\/www\.xn--80aukedde\.xn--p1ai/);
 assert.doesNotMatch(enabled, /AI_CORE_OWNER_CANARY_SITE_SHA=/);

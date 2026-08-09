@@ -1,16 +1,16 @@
 {
   "schema": "ROSPARK_SITE_AI_CORE_CANONICAL_HASH_RELEASE_CANDIDATE_V1",
   "created_at": "2026-08-08",
-  "base_site_sha": "cdf244d034e4a76a9de3cd43cc5f61a3a7dce9f9",
+  "base_site_sha": "0d1b5821392cd82392106b95e237cbc5b2d858b4",
   "site_target_sha_recording": "use_the_git_commit_containing_this_manifest",
-  "runtime_sha": "bdaaf16215b2066659c37ca6094e5e2f0a3c1bea",
-  "runtime_version": "1.2.1",
+  "runtime_sha": "20afd06ba703338541cf65ab167f3b218af09699",
+  "runtime_version": "1.2.2",
   "contract_sha": "6cd71a5596346925ecdd2ffeb9d45262d881ee93",
   "contract_version": "1.1",
   "canonicalization_version": "CANONICAL_JSON_HASH_V1",
   "runtime_archive": {
-    "path": "release/ai-core-canonical-json-hash-v1/ai-core-runtime-bdaaf16215b2066659c37ca6094e5e2f0a3c1bea.tar.gz",
-    "sha256": "e05c29c9e1cf1c0fc8203be19b9553d2627cee7667f04e4d0c9c7f18fac2d5d8"
+    "path": "release/ai-core-canonical-json-hash-v1/ai-core-runtime-20afd06ba703338541cf65ab167f3b218af09699.tar.gz",
+    "sha256": "ddb6ec16d2e3bfc618537518b6ee7d30eaf0001825535761560a8517f8b51b97"
   },
   "shared_golden_corpus": {
     "path": "release/ai-core-canonical-json-hash-v1/canonical-json-hash-v1-golden.json",

@@ -42,7 +42,7 @@ assert.equal(
   manifest.incident_regression.sha256,
 );
 assert.equal(
-  fileSha256('ai-core-runtime-bdaaf16215b2066659c37ca6094e5e2f0a3c1bea.tar.gz'),
+  fileSha256('ai-core-runtime-20afd06ba703338541cf65ab167f3b218af09699.tar.gz'),
   manifest.runtime_archive.sha256,
 );
 

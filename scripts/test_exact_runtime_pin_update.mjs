@@ -8,8 +8,8 @@ import {
   validateOwnerCanaryCoreResponse,
 } from '../app/lib/owner-ai-canary-adapter.ts';
 
-const APPROVED_RUNTIME = 'bdaaf16215b2066659c37ca6094e5e2f0a3c1bea';
-const OLD_RUNTIME = 'b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763';
+const APPROVED_RUNTIME = '20afd06ba703338541cf65ab167f3b218af09699';
+const OLD_RUNTIME = 'bdaaf16215b2066659c37ca6094e5e2f0a3c1bea';
 const CONTRACT = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
 const CANONICALIZATION = 'CANONICAL_JSON_HASH_V1';
 
@@ -52,6 +52,51 @@ assert.equal(
   APPROVED_RUNTIME,
 );
 
+const greetingRequest = buildOwnerCanaryCoreRequest({
+  aiCoreRequestId: 'aicore_greeting_pin_00000001',
+  conversationThreadId: 'thread_greeting_pin_00000001',
+  messageId: 'message_greeting_pin_00000001',
+  currentMessage: 'Привет!',
+  sourcePage: '/',
+  recentMessages: [],
+  state: {
+    conversationThreadId: 'thread_greeting_pin_00000001',
+    stateVersion: 0,
+    confirmedProjectFacts: [],
+    candidateFacts: [],
+    conflicts: [],
+    activeQuestion: null,
+    askedQuestions: [],
+    conversationPreferences: {},
+    lastMutationAcknowledgement: null,
+  },
+  siteRelease: '0d1b5821392cd82392106b95e237cbc5b2d858b4',
+  gatewayRelease: 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9',
+  sentAt: '2026-08-09T00:00:00.000Z',
+  dryRun: true,
+});
+const greetingRuntime = spawnSync(
+  'python3',
+  ['scripts/run_owner_ai_core_deterministic_contract_probe.py'],
+  { input: JSON.stringify(greetingRequest), encoding: 'utf8' },
+);
+assert.equal(greetingRuntime.status, 0, greetingRuntime.stderr);
+const greetingEnvelope = validateOwnerCanaryCoreResponse(
+  JSON.parse(greetingRuntime.stdout),
+  greetingRequest,
+);
+assert.equal(greetingEnvelope.runtime_sha, APPROVED_RUNTIME);
+assert.equal(greetingEnvelope.response.decision_package.decision_type, 'not_required');
+assert.equal(
+  greetingEnvelope.response.component_versions.engineering_lab,
+  'not_invoked',
+);
+assert.equal(greetingEnvelope.response.evaluation_result.status, 'pass');
+assert.equal(
+  greetingEnvelope.response.telemetry.publication.candidate_status,
+  'allowed',
+);
+
 assert.throws(() => validateOwnerCanaryCoreResponse({
   ...envelope, runtime_sha: OLD_RUNTIME,
 }, request), /AI_CORE_RUNTIME_SHA_MISMATCH/);
@@ -71,9 +116,10 @@ console.log(JSON.stringify({
   wrong_runtime_rejection: 'pass',
   contract_mismatch_rejection: 'pass',
   canonicalization_mismatch_rejection: 'pass',
+  greeting_deterministic_fixture: 'pass',
   runtime_sha: APPROVED_RUNTIME,
   contract_sha: CONTRACT,
   canonicalization_version: CANONICALIZATION,
   model_requests: 0,
-  result: '5/5',
+  result: '6/6',
 }));
