@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { chmod, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 
-const RUNTIME_SHA = 'b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763';
+const RUNTIME_SHA = 'bdaaf16215b2066659c37ca6094e5e2f0a3c1bea';
 const CONTRACT_SHA = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
 
 function valuesFrom(source) {

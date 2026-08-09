@@ -1,5 +1,5 @@
 export const PUBLIC_AI_CORE_RUNTIME_SHA =
-  'b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763';
+  'bdaaf16215b2066659c37ca6094e5e2f0a3c1bea';
 export const PUBLIC_AI_CORE_CONTRACT_SHA =
   '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
 

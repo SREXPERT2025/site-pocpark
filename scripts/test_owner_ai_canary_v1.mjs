@@ -332,8 +332,18 @@ assert.equal(
   runtimeResponse.answer,
 );
 assert.throws(() => validateOwnerCanaryCoreResponse({
+  ...envelope,
+  runtime_sha: 'b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763',
+}, coreRequest), /AI_CORE_RUNTIME_SHA_MISMATCH/);
+assert.throws(() => validateOwnerCanaryCoreResponse({
   ...envelope, runtime_sha: '0'.repeat(40),
-}, coreRequest), /RUNTIME_SHA_MISMATCH/);
+}, coreRequest), /AI_CORE_RUNTIME_SHA_MISMATCH/);
+assert.throws(() => validateOwnerCanaryCoreResponse({
+  ...envelope, contract_sha: '0'.repeat(40),
+}, coreRequest), /AI_CORE_CONTRACT_SHA_MISMATCH/);
+assert.throws(() => validateOwnerCanaryCoreResponse({
+  ...envelope, canonicalization_version: 'CANONICAL_JSON_HASH_V0',
+}, coreRequest), /AI_CORE_CANONICALIZATION_VERSION_UNSUPPORTED/);
 assert.throws(() => validateOwnerCanaryCoreResponse({
   ...envelope,
   response: {
