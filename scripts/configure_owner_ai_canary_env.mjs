@@ -2,11 +2,30 @@
 import { chmod, rename, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { isExecutedAsMain } from './esm-cli-entrypoint.mjs';
 
 const RUNTIME_SHA = '20afd06ba703338541cf65ab167f3b218af09699';
 const CONTRACT_SHA = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
 const PUBLIC_ORIGIN = 'https://www.xn--80aukedde.xn--p1ai';
 const DEPRECATED_SITE_SHA_KEY = 'AI_CORE_OWNER_CANARY_SITE_SHA';
+
+function valuesFrom(source) {
+  return Object.fromEntries(source.split(/\r?\n/).flatMap((line) => {
+    const match = line.match(/^([A-Z][A-Z0-9_]*)=(.*)$/);
+    return match ? [[match[1], match[2]]] : [];
+  }));
+}
+
+export function assertOwnerCanaryEnv(source, enabled) {
+  const values = valuesFrom(source);
+  if (values.AI_CORE_OWNER_CANARY_ENABLED !== (enabled ? 'true' : 'false')
+    || values.AI_CORE_OWNER_CANARY_RUNTIME_SHA !== RUNTIME_SHA
+    || values.AI_CORE_OWNER_CANARY_CONTRACT_SHA !== CONTRACT_SHA
+    || values.OWNER_CANARY_PUBLIC_ORIGIN !== PUBLIC_ORIGIN
+    || DEPRECATED_SITE_SHA_KEY in values) {
+    throw new Error('CONFIGURATOR_OUTPUT_MISSING');
+  }
+}
 
 export function updateOwnerCanaryEnv(source, enabled) {
   if (enabled !== true && enabled !== false) {
@@ -32,10 +51,7 @@ export function updateOwnerCanaryEnv(source, enabled) {
   }
   const result = `${lines.join('\n').replace(/\n+$/, '')}\n`;
   if (enabled) {
-    const values = Object.fromEntries(result.split(/\r?\n/).flatMap((line) => {
-      const match = line.match(/^([A-Z][A-Z0-9_]*)=(.*)$/);
-      return match ? [[match[1], match[2]]] : [];
-    }));
+    const values = valuesFrom(result);
     if (values.OWNER_CANARY_PUBLIC_ORIGIN !== PUBLIC_ORIGIN
       || !values.AI_CORE_OWNER_CANARY_URL?.startsWith('https://')
       || (values.AI_CORE_OWNER_CANARY_SECRET?.length ?? 0) < 32
@@ -64,10 +80,13 @@ async function main() {
   await writeFile(temporary, next, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
   await chmod(temporary, 0o600);
   await rename(temporary, path);
+  const written = await import('node:fs/promises').then(({ readFile }) =>
+    readFile(path, 'utf8'));
+  assertOwnerCanaryEnv(written, value === 'true');
   console.log(`OWNER_CANARY_ENABLED=${value}`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isExecutedAsMain(import.meta.url, process.argv[1])) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

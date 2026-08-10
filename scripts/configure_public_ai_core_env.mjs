@@ -2,6 +2,7 @@
 import { randomUUID } from 'node:crypto';
 import { chmod, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+import { isExecutedAsMain } from './esm-cli-entrypoint.mjs';
 
 const RUNTIME_SHA = '20afd06ba703338541cf65ab167f3b218af09699';
 const CONTRACT_SHA = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
@@ -11,6 +12,15 @@ function valuesFrom(source) {
     const match = line.match(/^([A-Z][A-Z0-9_]*)=(.*)$/);
     return match ? [[match[1], match[2]]] : [];
   }));
+}
+
+export function assertPublicAiCoreEnv(source, enabled) {
+  const values = valuesFrom(source);
+  if (values.AI_CORE_PUBLIC_ENABLED !== (enabled ? 'true' : 'false')
+    || values.AI_CORE_PUBLIC_RUNTIME_SHA !== RUNTIME_SHA
+    || values.AI_CORE_PUBLIC_CONTRACT_SHA !== CONTRACT_SHA) {
+    throw new Error('CONFIGURATOR_OUTPUT_MISSING');
+  }
 }
 
 export function updatePublicAiCoreEnv(source, enabled) {
@@ -70,10 +80,11 @@ async function main() {
   });
   await chmod(temporary, 0o600);
   await rename(temporary, path);
+  assertPublicAiCoreEnv(await readFile(path, 'utf8'), value === 'true');
   console.log(`AI_CORE_PUBLIC_ENABLED=${value}`);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isExecutedAsMain(import.meta.url, process.argv[1])) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;

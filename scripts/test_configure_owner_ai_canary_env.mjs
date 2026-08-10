@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
-import { updateOwnerCanaryEnv } from './configure_owner_ai_canary_env.mjs';
+import {
+  assertOwnerCanaryEnv,
+  updateOwnerCanaryEnv,
+} from './configure_owner_ai_canary_env.mjs';
 
 const base = [
   'AI_CORE_OWNER_CANARY_ENABLED=false',
@@ -19,6 +22,9 @@ assert.match(enabled, /OWNER_CANARY_PUBLIC_ORIGIN=https:\/\/www\.xn--80aukedde\.
 assert.doesNotMatch(enabled, /AI_CORE_OWNER_CANARY_SITE_SHA=/);
 assert.match(enabled, /UNCHANGED=value/);
 const disabled = updateOwnerCanaryEnv(enabled, false);
+assert.doesNotThrow(() => assertOwnerCanaryEnv(enabled, true));
+assert.doesNotThrow(() => assertOwnerCanaryEnv(disabled, false));
+assert.throws(() => assertOwnerCanaryEnv(base, false), /CONFIGURATOR_OUTPUT_MISSING/);
 assert.match(disabled, /AI_CORE_OWNER_CANARY_ENABLED=false/);
 assert.equal((disabled.match(/AI_CORE_OWNER_CANARY_ENABLED=/g) ?? []).length, 1);
 assert.equal((disabled.match(/OWNER_CANARY_PUBLIC_ORIGIN=/g) ?? []).length, 1);
