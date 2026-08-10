@@ -53,7 +53,12 @@ import {
   callOwnerCanaryRuntime,
   ownerCanaryIdempotencyKey,
   preGateTelemetryFromError,
+  restrictedForensicFromError,
 } from './owner-ai-canary-adapter';
+import { recordOwnerCanaryRestrictedForensic } from
+  './owner-canary-restricted-forensic-core';
+import { getOwnerCanaryRestrictedForensicDatabase } from
+  './owner-canary-restricted-forensic-database';
 import {
   appendOwnerCanaryHistory,
   applyOwnerCanaryMutationBatch,
@@ -823,8 +828,10 @@ export async function handleAiWidgetChat(request: Request) {
       });
     } catch (error) {
       let telemetryWriteFailed = false;
+      let restrictedForensicWriteFailed = false;
       if (aiCoreAudience === 'owner_canary' && !preGateTelemetryRef) {
         const telemetry = preGateTelemetryFromError(error);
+        const restrictedForensic = restrictedForensicFromError(error);
         if (telemetry) {
           try {
             preGateTelemetryRef = recordOwnerCanaryPreGateTelemetry(
@@ -838,6 +845,22 @@ export async function handleAiWidgetChat(request: Request) {
             ).telemetryRef;
           } catch {
             telemetryWriteFailed = true;
+          }
+        }
+        if (restrictedForensic) {
+          try {
+            recordOwnerCanaryRestrictedForensic(
+              getOwnerCanaryRestrictedForensicDatabase(),
+              {
+                turnId: parsed.payload.turnId,
+                conversationThreadId: ownerIdentity.conversationThreadId,
+                messageId: ownerIdentity.messageId,
+                aiCoreRequestId,
+                evidence: restrictedForensic,
+              },
+            );
+          } catch {
+            restrictedForensicWriteFailed = true;
           }
         }
       }
@@ -867,8 +890,10 @@ export async function handleAiWidgetChat(request: Request) {
           );
         }
       } else {
-        const code = telemetryWriteFailed
-          ? 'OWNER_PRE_GATE_TELEMETRY_WRITE_FAILED'
+        const code = restrictedForensicWriteFailed
+          ? 'OWNER_RESTRICTED_FORENSIC_WRITE_FAILED'
+          : telemetryWriteFailed
+            ? 'OWNER_PRE_GATE_TELEMETRY_WRITE_FAILED'
           : error instanceof Error
             ? error.message.replace(/[^A-Z0-9_]/gi, '_')
               .toUpperCase().slice(0, 100)

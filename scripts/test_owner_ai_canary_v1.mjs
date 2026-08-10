@@ -9,12 +9,14 @@ import {
   AI_CORE_RUNTIME_SHA,
   AI_CORE_RUNTIME_VERSION,
   CANONICALIZATION_VERSION,
+  OWNER_CANARY_BLOCKED_FORENSIC_VERSION,
   acknowledgeOwnerCanaryMutations,
   buildOwnerCanaryCoreRequest,
   callOwnerCanaryRuntime,
   canonicalJson,
   ownerCanaryRuntimeConfig,
   preGateTelemetryFromError,
+  restrictedForensicFromError,
   sha256,
   validateOwnerCanaryCoreResponse,
 } from '../app/lib/owner-ai-canary-adapter.ts';
@@ -373,6 +375,77 @@ blockedEnvelope.response.evaluation_result.reason_codes = [
 blockedEnvelope.response.telemetry.evaluation.raw_status = 'review_required';
 blockedEnvelope.response.telemetry.evaluation.final_status = 'fail';
 blockedEnvelope.response.telemetry.publication.candidate_status = 'blocked';
+const blockedForensicWithoutHash = {
+  schema_version: OWNER_CANARY_BLOCKED_FORENSIC_VERSION,
+  ai_core_request_id: coreRequest.request_id,
+  runtime: {
+    sha: AI_CORE_RUNTIME_SHA,
+    version: AI_CORE_RUNTIME_VERSION,
+    contract_sha: AI_CORE_CONTRACT_SHA,
+    canonicalization_version: CANONICALIZATION_VERSION,
+  },
+  resolved: {
+    intent: 'engineering_solution',
+    action: 'recommend_architecture',
+    current_turn_facts_summary: [{
+      field: 'entrances_count',
+      value_summary: 2,
+      source: 'current_turn_extraction',
+    }],
+  },
+  controller: {
+    action: 'answer_with_recommendation',
+    answer_required: true,
+    question_required: false,
+  },
+  lab: {
+    decision_package_summary: {
+      schema_version: '1.2',
+      decision_type: 'not_required',
+    },
+    decision_package_sha: runtimeResponse.decision_package_hash,
+  },
+  projection: { sha: sha256({ projection: 'blocked-fixture' }) },
+  semantic_coverage: {
+    raw: { status: 'missing', reason_codes: ['required_content_missing'] },
+    final: { status: 'missing', reason_codes: ['required_content_missing'] },
+  },
+  executor: {
+    name: 'qwen',
+    raw_answer: runtimeResponse.answer,
+    request_count: 1,
+  },
+  repair: {
+    applied: false,
+    method: 'none',
+    repaired_answer: runtimeResponse.answer,
+    reason_codes: [],
+  },
+  evaluation: {
+    raw: { status: 'review_required', reason_codes: ['required_content_missing'] },
+    final: { status: 'fail', reason_codes: ['required_content_missing'] },
+  },
+  mutation: {
+    proposed: true,
+    summary: [{
+      mutation_id: 'mutation:1234567890abcdef',
+      target: 'thread_state',
+      operation: 'set_confirmed_fact',
+      field: 'entrances_count',
+      value_kind: 'int',
+      expected_state_version: 0,
+      proposed_state_version: 1,
+    }],
+  },
+  publication: {
+    candidate_status: 'blocked',
+    blocking_predicate: 'final_evaluation_status_must_equal_pass',
+  },
+};
+blockedEnvelope.restricted_forensic = {
+  ...blockedForensicWithoutHash,
+  evidence_sha256: sha256(blockedForensicWithoutHash),
+};
 let blockedError;
 try {
   validateOwnerCanaryCoreResponse(blockedEnvelope, coreRequest);
@@ -391,6 +464,43 @@ assert.equal(blockedTelemetry.repairApplied, false);
 assert.equal(blockedTelemetry.repairStatus, 'none');
 assert.equal(blockedTelemetry.publicationCandidateStatus, 'blocked');
 assert.equal(blockedTelemetry.stateMutationProposed, true);
+const blockedForensic = restrictedForensicFromError(blockedError);
+assert.ok(blockedForensic);
+assert.equal(blockedForensic.ai_core_request_id, coreRequest.request_id);
+assert.equal(blockedForensic.executor.raw_answer, runtimeResponse.answer);
+assert.equal(blockedForensic.publication.candidate_status, 'blocked');
+assert.throws(() => validateOwnerCanaryCoreResponse({
+  ...blockedEnvelope,
+  restricted_forensic: undefined,
+}, coreRequest), /AI_CORE_RESTRICTED_FORENSIC_EVIDENCE_MISSING/);
+assert.throws(() => validateOwnerCanaryCoreResponse({
+  ...blockedEnvelope,
+  restricted_forensic: {
+    ...blockedEnvelope.restricted_forensic,
+    schema_version: 'OWNER_CANARY_BLOCKED_FORENSIC_V0',
+  },
+}, coreRequest), /AI_CORE_RESTRICTED_FORENSIC_VERSION_UNSUPPORTED/);
+assert.throws(() => validateOwnerCanaryCoreResponse({
+  ...blockedEnvelope,
+  restricted_forensic: {
+    ...blockedEnvelope.restricted_forensic,
+    evidence_sha256: '0'.repeat(64),
+  },
+}, coreRequest), /AI_CORE_RESTRICTED_FORENSIC_HASH_INVALID/);
+const secretForensicWithoutHash = {
+  ...blockedForensicWithoutHash,
+  semantic_coverage: {
+    raw: { note: 'Bearer forbidden-secret-material' },
+    final: {},
+  },
+};
+assert.throws(() => validateOwnerCanaryCoreResponse({
+  ...blockedEnvelope,
+  restricted_forensic: {
+    ...secretForensicWithoutHash,
+    evidence_sha256: sha256(secretForensicWithoutHash),
+  },
+}, coreRequest), /AI_CORE_RESTRICTED_FORENSIC_SECRET_OR_SIZE/);
 
 // Real client transport is exercised with a hermetic fetch. No model call.
 const calls = [];

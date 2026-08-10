@@ -11,6 +11,8 @@ export const AI_CORE_CONTRACT_SHA =
 export const AI_CORE_CONTRACT_VERSION = '1.1';
 export const AI_CORE_RUNTIME_VERSION = '1.2.2';
 export const AI_CORE_OWNER_MODEL = 'qwen3.6:27b';
+export const OWNER_CANARY_BLOCKED_FORENSIC_VERSION =
+  'OWNER_CANARY_BLOCKED_FORENSIC_V1';
 export { CANONICALIZATION_VERSION, canonicalJson, sha256 };
 
 export const decisionPackageHash = sha256;
@@ -192,6 +194,51 @@ export type OwnerCanaryRuntimeEnvelope = Readonly<{
   model: typeof AI_CORE_OWNER_MODEL;
   response: Record<string, unknown>;
   preGateTelemetry: OwnerCanaryPreGateTelemetry;
+  restrictedForensic: OwnerCanaryRestrictedForensicEvidence | null;
+}>;
+
+export type OwnerCanaryRestrictedForensicEvidence = Readonly<{
+  schema_version: typeof OWNER_CANARY_BLOCKED_FORENSIC_VERSION;
+  ai_core_request_id: string;
+  evidence_sha256: string;
+  runtime: Readonly<{
+    sha: string;
+    version: string;
+    contract_sha: string;
+    canonicalization_version: string;
+  }>;
+  resolved: Readonly<{
+    intent: string;
+    action: string;
+    current_turn_facts_summary: readonly Record<string, unknown>[];
+  }>;
+  controller: Readonly<Record<string, unknown>>;
+  lab: Readonly<{
+    decision_package_summary: Readonly<Record<string, unknown>>;
+    decision_package_sha: string;
+  }>;
+  projection: Readonly<{ sha: string }>;
+  semantic_coverage: Readonly<Record<string, unknown>>;
+  executor: Readonly<{
+    name: 'qwen';
+    raw_answer: string;
+    request_count: 1;
+  }>;
+  repair: Readonly<{
+    applied: boolean;
+    method: 'none' | 'deterministic';
+    repaired_answer: string;
+    reason_codes: readonly string[];
+  }>;
+  evaluation: Readonly<Record<string, unknown>>;
+  mutation: Readonly<{
+    proposed: boolean;
+    summary: readonly Record<string, unknown>[];
+  }>;
+  publication: Readonly<{
+    candidate_status: 'blocked' | 'owner_review';
+    blocking_predicate: string;
+  }>;
 }>;
 
 export type OwnerCanaryPreGateTelemetry = Readonly<{
@@ -217,17 +264,28 @@ export type OwnerCanaryPreGateTelemetry = Readonly<{
 
 export class AiCoreFinalGateBlockedError extends Error {
   readonly preGateTelemetry: OwnerCanaryPreGateTelemetry;
+  readonly restrictedForensic: OwnerCanaryRestrictedForensicEvidence;
 
-  constructor(telemetry: OwnerCanaryPreGateTelemetry) {
+  constructor(
+    telemetry: OwnerCanaryPreGateTelemetry,
+    restrictedForensic: OwnerCanaryRestrictedForensicEvidence,
+  ) {
     super('AI_CORE_FINAL_GATE_BLOCKED');
     this.name = 'AiCoreFinalGateBlockedError';
     this.preGateTelemetry = telemetry;
+    this.restrictedForensic = restrictedForensic;
   }
 }
 
 export function preGateTelemetryFromError(error: unknown) {
   return error instanceof AiCoreFinalGateBlockedError
     ? error.preGateTelemetry
+    : null;
+}
+
+export function restrictedForensicFromError(error: unknown) {
+  return error instanceof AiCoreFinalGateBlockedError
+    ? error.restrictedForensic
     : null;
 }
 
@@ -280,6 +338,328 @@ function telemetryLatencyStages(value: unknown) {
     safe[key] = item;
   }
   return Object.freeze(safe);
+}
+
+function exactKeys(
+  value: Record<string, unknown>,
+  expected: readonly string[],
+  code: string,
+) {
+  const actual = Object.keys(value).sort();
+  const wanted = [...expected].sort();
+  if (actual.length !== wanted.length
+    || actual.some((item, index) => item !== wanted[index])) {
+    throw new Error(code);
+  }
+}
+
+function forensicCode(value: unknown, code: string) {
+  if (typeof value !== 'string'
+    || !/^[a-z][a-z0-9_]{0,100}$/.test(value)) {
+    throw new Error(code);
+  }
+  return value;
+}
+
+const FORENSIC_SECRET_PATTERN =
+  /(?:\bBearer\s+[A-Za-z0-9._~+/=-]+|\bsk-[A-Za-z0-9_-]{12,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|\b(?:password|secret|token)\s*=)/i;
+
+function validateRestrictedValue(
+  value: unknown,
+  depth = 0,
+) {
+  if (depth > 12) throw new Error('AI_CORE_RESTRICTED_FORENSIC_TOO_DEEP');
+  if (value === null || typeof value === 'boolean'
+    || (typeof value === 'number' && Number.isFinite(value))) return;
+  if (typeof value === 'string') {
+    if (value.length > 8_000 || /[\0]/.test(value)
+      || FORENSIC_SECRET_PATTERN.test(value)) {
+      throw new Error('AI_CORE_RESTRICTED_FORENSIC_SECRET_OR_SIZE');
+    }
+    return;
+  }
+  if (Array.isArray(value)) {
+    if (value.length > 200) {
+      throw new Error('AI_CORE_RESTRICTED_FORENSIC_TOO_LARGE');
+    }
+    value.forEach((item) => validateRestrictedValue(item, depth + 1));
+    return;
+  }
+  const item = record(value, 'AI_CORE_RESTRICTED_FORENSIC_INVALID_VALUE');
+  for (const [key, nested] of Object.entries(item)) {
+    if (['cookie', 'credential', 'credentials', 'password', 'secret', 'token',
+      'user_message', 'current_message', 'raw_user_text'].includes(
+      key.toLowerCase(),
+    )) {
+      throw new Error('AI_CORE_RESTRICTED_FORENSIC_FORBIDDEN_KEY');
+    }
+    validateRestrictedValue(nested, depth + 1);
+  }
+}
+
+function validateRestrictedForensic(
+  value: unknown,
+  request: OwnerCanaryCoreRequest | undefined,
+  telemetry: OwnerCanaryPreGateTelemetry,
+) {
+  const evidence = record(
+    value,
+    'AI_CORE_RESTRICTED_FORENSIC_EVIDENCE_MISSING',
+  );
+  exactKeys(evidence, [
+    'schema_version', 'ai_core_request_id', 'evidence_sha256', 'runtime',
+    'resolved', 'controller', 'lab', 'projection', 'semantic_coverage',
+    'executor', 'repair', 'evaluation', 'mutation', 'publication',
+  ], 'AI_CORE_RESTRICTED_FORENSIC_SCHEMA_INVALID');
+  if (evidence.schema_version !== OWNER_CANARY_BLOCKED_FORENSIC_VERSION) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_VERSION_UNSUPPORTED');
+  }
+  if (evidence.ai_core_request_id !== telemetry.aiCoreRequestId
+    || (request && evidence.ai_core_request_id !== request.request_id)) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_CORRELATION_MISMATCH');
+  }
+  const runtime = record(
+    evidence.runtime,
+    'AI_CORE_RESTRICTED_FORENSIC_RUNTIME_INVALID',
+  );
+  exactKeys(runtime, [
+    'sha', 'version', 'contract_sha', 'canonicalization_version',
+  ], 'AI_CORE_RESTRICTED_FORENSIC_RUNTIME_INVALID');
+  if (runtime.sha !== AI_CORE_RUNTIME_SHA
+    || runtime.version !== AI_CORE_RUNTIME_VERSION
+    || runtime.contract_sha !== AI_CORE_CONTRACT_SHA
+    || runtime.canonicalization_version !== CANONICALIZATION_VERSION) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_RELEASE_MISMATCH');
+  }
+  const resolved = record(
+    evidence.resolved,
+    'AI_CORE_RESTRICTED_FORENSIC_RESOLUTION_INVALID',
+  );
+  exactKeys(resolved, [
+    'intent', 'action', 'current_turn_facts_summary',
+  ], 'AI_CORE_RESTRICTED_FORENSIC_RESOLUTION_INVALID');
+  forensicCode(
+    resolved.intent,
+    'AI_CORE_RESTRICTED_FORENSIC_RESOLUTION_INVALID',
+  );
+  forensicCode(
+    resolved.action,
+    'AI_CORE_RESTRICTED_FORENSIC_RESOLUTION_INVALID',
+  );
+  if (!Array.isArray(resolved.current_turn_facts_summary)
+    || resolved.current_turn_facts_summary.length > 100) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_FACTS_INVALID');
+  }
+  resolved.current_turn_facts_summary.forEach((item) => {
+    const fact = record(item, 'AI_CORE_RESTRICTED_FORENSIC_FACTS_INVALID');
+    exactKeys(fact, [
+      'field', 'value_summary', 'source',
+    ], 'AI_CORE_RESTRICTED_FORENSIC_FACTS_INVALID');
+    forensicCode(fact.field, 'AI_CORE_RESTRICTED_FORENSIC_FACTS_INVALID');
+    if (fact.source !== 'current_turn_extraction') {
+      throw new Error('AI_CORE_RESTRICTED_FORENSIC_FACTS_INVALID');
+    }
+  });
+  const controller = record(
+    evidence.controller,
+    'AI_CORE_RESTRICTED_FORENSIC_CONTROLLER_INVALID',
+  );
+  exactKeys(controller, [
+    'action', 'answer_required', 'question_required',
+  ], 'AI_CORE_RESTRICTED_FORENSIC_CONTROLLER_INVALID');
+  forensicCode(
+    controller.action,
+    'AI_CORE_RESTRICTED_FORENSIC_CONTROLLER_INVALID',
+  );
+  if (typeof controller.answer_required !== 'boolean'
+    || typeof controller.question_required !== 'boolean') {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_CONTROLLER_INVALID');
+  }
+  const lab = record(evidence.lab, 'AI_CORE_RESTRICTED_FORENSIC_LAB_INVALID');
+  exactKeys(lab, [
+    'decision_package_summary', 'decision_package_sha',
+  ], 'AI_CORE_RESTRICTED_FORENSIC_LAB_INVALID');
+  record(
+    lab.decision_package_summary,
+    'AI_CORE_RESTRICTED_FORENSIC_LAB_INVALID',
+  );
+  if (lab.decision_package_sha !== telemetry.decisionPackageSha) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_DECISION_HASH_MISMATCH');
+  }
+  const projection = record(
+    evidence.projection,
+    'AI_CORE_RESTRICTED_FORENSIC_PROJECTION_INVALID',
+  );
+  exactKeys(projection, ['sha'], 'AI_CORE_RESTRICTED_FORENSIC_PROJECTION_INVALID');
+  if (typeof projection.sha !== 'string'
+    || !/^[a-f0-9]{64}$/.test(projection.sha)) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_PROJECTION_INVALID');
+  }
+  const semanticCoverage = record(
+    evidence.semantic_coverage,
+    'AI_CORE_RESTRICTED_FORENSIC_COVERAGE_INVALID',
+  );
+  exactKeys(semanticCoverage, [
+    'raw', 'final',
+  ], 'AI_CORE_RESTRICTED_FORENSIC_COVERAGE_INVALID');
+  record(
+    semanticCoverage.raw,
+    'AI_CORE_RESTRICTED_FORENSIC_COVERAGE_INVALID',
+  );
+  record(
+    semanticCoverage.final,
+    'AI_CORE_RESTRICTED_FORENSIC_COVERAGE_INVALID',
+  );
+  const executor = record(
+    evidence.executor,
+    'AI_CORE_RESTRICTED_FORENSIC_EXECUTOR_INVALID',
+  );
+  exactKeys(executor, [
+    'name', 'raw_answer', 'request_count',
+  ], 'AI_CORE_RESTRICTED_FORENSIC_EXECUTOR_INVALID');
+  if (executor.name !== 'qwen'
+    || executor.request_count !== 1
+    || typeof executor.raw_answer !== 'string'
+    || !executor.raw_answer.trim()) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_EXECUTOR_INVALID');
+  }
+  const repair = record(
+    evidence.repair,
+    'AI_CORE_RESTRICTED_FORENSIC_REPAIR_INVALID',
+  );
+  exactKeys(repair, [
+    'applied', 'method', 'repaired_answer', 'reason_codes',
+  ], 'AI_CORE_RESTRICTED_FORENSIC_REPAIR_INVALID');
+  if (typeof repair.applied !== 'boolean'
+    || !['none', 'deterministic'].includes(String(repair.method))
+    || typeof repair.repaired_answer !== 'string'
+    || !repair.repaired_answer.trim()) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_REPAIR_INVALID');
+  }
+  if ((repair.applied && repair.method !== 'deterministic')
+    || (!repair.applied && repair.method !== 'none')
+    || repair.applied !== telemetry.repairApplied) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH');
+  }
+  const repairReasons = telemetryReasonCodes(
+    repair.reason_codes,
+    'AI_CORE_RESTRICTED_FORENSIC_REPAIR_INVALID',
+  );
+  if (canonicalJson(repairReasons)
+    !== canonicalJson(telemetry.repairReasonCodes)) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH');
+  }
+  const evaluationForensic = record(
+    evidence.evaluation,
+    'AI_CORE_RESTRICTED_FORENSIC_EVALUATION_INVALID',
+  );
+  exactKeys(evaluationForensic, [
+    'raw', 'final',
+  ], 'AI_CORE_RESTRICTED_FORENSIC_EVALUATION_INVALID');
+  const rawEvaluation = record(
+    evaluationForensic.raw,
+    'AI_CORE_RESTRICTED_FORENSIC_EVALUATION_INVALID',
+  );
+  const finalEvaluation = record(
+    evaluationForensic.final,
+    'AI_CORE_RESTRICTED_FORENSIC_EVALUATION_INVALID',
+  );
+  for (const item of [rawEvaluation, finalEvaluation]) {
+    exactKeys(item, [
+      'status', 'reason_codes',
+    ], 'AI_CORE_RESTRICTED_FORENSIC_EVALUATION_INVALID');
+    telemetryEnum(
+      item.status,
+      ['pass', 'review_required', 'fail', 'not_evaluable'],
+      'AI_CORE_RESTRICTED_FORENSIC_EVALUATION_INVALID',
+    );
+    telemetryReasonCodes(
+      item.reason_codes,
+      'AI_CORE_RESTRICTED_FORENSIC_EVALUATION_INVALID',
+    );
+  }
+  if (rawEvaluation.status !== telemetry.rawEvaluationStatus
+    || finalEvaluation.status !== telemetry.finalEvaluationStatus
+    || canonicalJson(finalEvaluation.reason_codes)
+      !== canonicalJson(telemetry.evaluationReasonCodes)) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_EVALUATION_MISMATCH');
+  }
+  const mutation = record(
+    evidence.mutation,
+    'AI_CORE_RESTRICTED_FORENSIC_MUTATION_INVALID',
+  );
+  exactKeys(mutation, [
+    'proposed', 'summary',
+  ], 'AI_CORE_RESTRICTED_FORENSIC_MUTATION_INVALID');
+  if (typeof mutation.proposed !== 'boolean'
+    || mutation.proposed !== telemetry.stateMutationProposed
+    || !Array.isArray(mutation.summary)
+    || mutation.summary.length > 100
+    || mutation.proposed !== (mutation.summary.length > 0)) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_MUTATION_INVALID');
+  }
+  mutation.summary.forEach((item) => {
+    const summary = record(
+      item,
+      'AI_CORE_RESTRICTED_FORENSIC_MUTATION_INVALID',
+    );
+    exactKeys(summary, [
+      'mutation_id', 'target', 'operation', 'field', 'value_kind',
+      'expected_state_version', 'proposed_state_version',
+    ], 'AI_CORE_RESTRICTED_FORENSIC_MUTATION_INVALID');
+    for (const field of ['target', 'operation', 'field', 'value_kind']) {
+      forensicCode(
+        summary[field],
+        'AI_CORE_RESTRICTED_FORENSIC_MUTATION_INVALID',
+      );
+    }
+    if (typeof summary.mutation_id !== 'string'
+      || !summary.mutation_id
+      || summary.mutation_id.length > 160
+      || !Number.isSafeInteger(summary.expected_state_version)
+      || Number(summary.expected_state_version) < 0
+      || !Number.isSafeInteger(summary.proposed_state_version)
+      || Number(summary.proposed_state_version) < 0) {
+      throw new Error('AI_CORE_RESTRICTED_FORENSIC_MUTATION_INVALID');
+    }
+  });
+  const publicationForensic = record(
+    evidence.publication,
+    'AI_CORE_RESTRICTED_FORENSIC_PUBLICATION_INVALID',
+  );
+  exactKeys(publicationForensic, [
+    'candidate_status', 'blocking_predicate',
+  ], 'AI_CORE_RESTRICTED_FORENSIC_PUBLICATION_INVALID');
+  if (!['blocked', 'owner_review'].includes(
+    String(publicationForensic.candidate_status),
+  ) || ![
+    'final_evaluation_status_must_equal_pass',
+    'publication_candidate_status_must_equal_allowed',
+  ].includes(String(publicationForensic.blocking_predicate))
+    || publicationForensic.candidate_status
+      !== telemetry.publicationCandidateStatus) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_PUBLICATION_INVALID');
+  }
+  validateRestrictedValue(evidence);
+  const evidenceSha = telemetryString(
+    evidence.evidence_sha256,
+    'AI_CORE_RESTRICTED_FORENSIC_HASH_INVALID',
+  );
+  const withoutHash = { ...evidence };
+  delete withoutHash.evidence_sha256;
+  if (!/^[a-f0-9]{64}$/.test(evidenceSha)
+    || sha256(withoutHash) !== evidenceSha) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_HASH_INVALID');
+  }
+  return Object.freeze({
+    ...evidence,
+    runtime: Object.freeze({ ...runtime }),
+    lab: Object.freeze({ ...lab }),
+    projection: Object.freeze({ ...projection }),
+    executor: Object.freeze({ ...executor }),
+    repair: Object.freeze({ ...repair }),
+    publication: Object.freeze({ ...publicationForensic }),
+  }) as OwnerCanaryRestrictedForensicEvidence;
 }
 
 export function validateDecisionPackageHash(value: unknown) {
@@ -449,7 +829,18 @@ export function validateOwnerCanaryCoreResponse(
   if (evaluation.status !== 'pass'
     || publication.candidate_status !== 'allowed'
     || publication.published !== false) {
-    throw new AiCoreFinalGateBlockedError(preGateTelemetry);
+    throw new AiCoreFinalGateBlockedError(
+      preGateTelemetry,
+      validateRestrictedForensic(
+        envelope.restricted_forensic,
+        request,
+        preGateTelemetry,
+      ),
+    );
+  }
+  if (envelope.restricted_forensic !== undefined
+    && envelope.restricted_forensic !== null) {
+    throw new Error('AI_CORE_RESTRICTED_FORENSIC_UNEXPECTED_FOR_ALLOWED');
   }
   if (typeof response.answer !== 'string' || !response.answer.trim()) {
     throw new Error('AI_CORE_EMPTY_ANSWER');
@@ -462,6 +853,7 @@ export function validateOwnerCanaryCoreResponse(
     model: AI_CORE_OWNER_MODEL,
     response: Object.freeze({ ...response }),
     preGateTelemetry,
+    restrictedForensic: null,
   });
 }
 
