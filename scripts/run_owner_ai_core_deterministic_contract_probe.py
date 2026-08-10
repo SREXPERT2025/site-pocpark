@@ -15,7 +15,7 @@ from ai_core_owner_runtime_bridge import RUNTIME_SHA, OwnerRuntimeBridge  # noqa
 
 def main() -> int:
     request = json.load(sys.stdin)
-    artifact = ROOT / "release/ai-core-canonical-json-hash-v1" / (
+    artifact = ROOT / "release/owner-canary-final-runtime-deec5a" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="canonical-hash-v1-probe-") as raw:

@@ -54,15 +54,12 @@ Site B не записываются.
 
 ## Release sequencing
 
-Этот Site descendant сохраняет действующие exact Runtime pins. Новый Runtime
-release, который реализует расширение, должен сначала получить отдельный
-immutable SHA и независимое принятие владельцем Runtime. Обновление Site
-Runtime pin и server-to-server bridge выполняется только отдельным integration
-заданием. Production activation этим документом не разрешается.
-
-Offline Runtime reference candidate для этого handoff:
-`ffebf19244617f6ae67625a99ef177212f61dfe5` (Runtime `1.2.3`). Он указан
-только как immutable provenance и этим Site commit не активируется.
+Offline Runtime reference candidate для handoff был зафиксирован как
+`ffebf19244617f6ae67625a99ef177212f61dfe5`. Финальный independently accepted
+merge semantic fix + forensic extension зафиксирован exact commit
+`deec5a4ce86af17c952d7d21761050ba717b8994` (Runtime `1.2.3`). Site принимает
+только этот exact Runtime SHA вместе с pinned Contract и canonicalization.
+Production activation этим документом не разрешается и требует отдельного gate.
 
 UI-артефакт `Â·` вместо `·` относится к presentation/encoding и не блокирует
 telemetry contract; исправление UI не входит в этот scope.

@@ -130,6 +130,7 @@ acceptedFixture.response.evaluation_result.status = 'pass';
 acceptedFixture.response.evaluation_result.reason_codes = [];
 acceptedFixture.response.telemetry.evaluation.final_status = 'pass';
 acceptedFixture.response.telemetry.publication.candidate_status = 'allowed';
+acceptedFixture.restricted_forensic = null;
 const accepted = validateOwnerCanaryCoreResponse(acceptedFixture, request);
 
 const db = new Database(':memory:');

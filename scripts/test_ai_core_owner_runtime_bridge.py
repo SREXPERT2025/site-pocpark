@@ -22,6 +22,21 @@ from ai_core_owner_runtime_bridge import (  # noqa: E402
 )
 
 
+ENGINEERING_MESSAGE = (
+    "У нас бизнес-центр: 2 въезда и 2 выезда, около 800 автомобилей в сутки. "
+    "Есть сотрудники, арендаторы и гости. Оператор есть, но хотим максимально "
+    "быстрый автоматический проезд и обязательно автоматический резервный способ "
+    "на случай, если основной идентификатор не сработает. Что лучше выбрать: "
+    "распознавание госномеров, карты или билеты?"
+)
+EXPECTED_DECISION_PACKAGE_SHA = (
+    "d6f6f3505a689790916c262cb1618670b05777a4084c4fa7cb45c625759a08cd"
+)
+EXPECTED_PROJECTION_SHA = (
+    "19f24a53536513169d97e14e0dc15e54adbe676b1c0aa12a0a980568eb55cfd2"
+)
+
+
 def request_for(hash_value, suffix: str = "owner001"):
     payload = {
         "potential_project_id": None,
@@ -73,7 +88,7 @@ def request_for(hash_value, suffix: str = "owner001"):
 
 
 def main() -> int:
-    artifact = ROOT / "release/ai-core-canonical-json-hash-v1" / (
+    artifact = ROOT / "release/owner-canary-final-runtime-deec5a" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="owner-core-test-") as raw:
@@ -89,6 +104,7 @@ def main() -> int:
         sys.path.insert(0, str(runtime))
         from sales_conversation_controller.site_contract_runtime_v1.executors import (  # noqa: E402
             QwenStub,
+            StubOutput,
         )
         from sales_conversation_controller.site_contract_runtime_v1.canonical import (  # noqa: E402
             sha256 as runtime_sha256,
@@ -121,6 +137,89 @@ def main() -> int:
         assert conflict["success"] is False
         assert conflict["error"]["code"] == "IDEMPOTENCY_CONFLICT"
 
+        engineering_request = request_for(runtime_sha256, "engineering_exact")
+        engineering_request["payload"]["current_message"] = ENGINEERING_MESSAGE
+        engineering_request["request_payload_hash"] = runtime_sha256(
+            engineering_request["payload"]
+        )
+        engineering_bridge = OwnerRuntimeBridge(
+            runtime_dir=runtime,
+            endpoint="http://127.0.0.1:11434",
+            timeout=1,
+            keep_alive="2h",
+            executor=QwenStub(),
+        )
+        engineering_envelope = engineering_bridge.process(engineering_request)
+        engineering = engineering_envelope["response"]
+        assert engineering["success"] is True
+        assert engineering["telemetry"]["publication"]["candidate_status"] == "allowed"
+        assert engineering["decision_package_hash"] == EXPECTED_DECISION_PACKAGE_SHA
+        assert (
+            engineering_bridge.adapter.last_trace["model_prompt_contract"]["projection_hash"]
+            == EXPECTED_PROJECTION_SHA
+        )
+        assert engineering["context_resolution"]["extracted_facts"] == {
+            "object_type": "business_center",
+            "entrances_count": 2,
+            "exits_count": 2,
+            "daily_traffic": 800,
+            "daily_traffic_certainty": "approximate",
+            "user_segments": ["employees", "tenants", "guests"],
+            "operator_present": True,
+            "speed_priority": "high",
+            "mandatory_automated_fallback": True,
+        }
+        assert engineering_envelope["restricted_forensic"] is None
+        assert engineering_bridge.adapter.last_trace["model_requests"] == 0
+
+        class BlockingEngineeringExecutor:
+            executor = "qwen"
+
+            def execute(self, context):
+                return StubOutput(
+                    "Оставьте телефон прямо сейчас?\n"
+                    "Сколько у вас въездов? Какая система установлена?",
+                    1,
+                    "local_low",
+                )
+
+        blocked_request = request_for(runtime_sha256, "engineering_blocked")
+        blocked_request["payload"]["current_message"] = ENGINEERING_MESSAGE
+        blocked_request["request_payload_hash"] = runtime_sha256(
+            blocked_request["payload"]
+        )
+        blocked_bridge = OwnerRuntimeBridge(
+            runtime_dir=runtime,
+            endpoint="http://127.0.0.1:11434",
+            timeout=1,
+            keep_alive="2h",
+            executor=BlockingEngineeringExecutor(),
+        )
+        blocked_envelope = blocked_bridge.process(blocked_request)
+        blocked = blocked_envelope["response"]
+        evidence = blocked_envelope["restricted_forensic"]
+        assert blocked["success"] is True
+        blocked_candidate_status = blocked["telemetry"]["publication"][
+            "candidate_status"
+        ]
+        assert blocked_candidate_status != "allowed"
+        assert evidence["schema_version"] == "OWNER_CANARY_BLOCKED_FORENSIC_V1"
+        assert evidence["runtime"]["sha"] == RUNTIME_SHA
+        assert evidence["runtime"]["version"] == "1.2.3"
+        assert evidence["lab"]["decision_package_sha"] == EXPECTED_DECISION_PACKAGE_SHA
+        assert evidence["projection"]["sha"] == EXPECTED_PROJECTION_SHA
+        assert evidence["executor"]["request_count"] == 1
+        assert evidence["publication"]["candidate_status"] == blocked_candidate_status
+        assert evidence["mutation"]["proposed"] is True
+        assert ENGINEERING_MESSAGE not in json.dumps(evidence, ensure_ascii=False)
+        assert blocked_request["payload"]["state_version"] == 0
+        assert blocked_request["payload"]["confirmed_project_facts"] == []
+        assert blocked_bridge.adapter.last_trace["external_side_effects"] == 0
+        assert blocked_bridge.adapter.last_trace["model_requests"] == 0
+        blocked_duplicate = blocked_bridge.process(blocked_request)
+        assert blocked_duplicate == blocked_envelope
+        assert blocked_bridge.adapter.last_trace["idempotent_cache_hit"] is True
+
         tampered = temp / f"{RUNTIME_SHA}-tampered"
         shutil.copytree(runtime, tampered)
         unsafe = temp / RUNTIME_SHA
@@ -135,7 +234,11 @@ def main() -> int:
         else:
             raise AssertionError("tampered runtime accepted")
 
-    print("ai core owner runtime bridge tests: ok; model_requests=0")
+    print(
+        "ai core owner runtime bridge tests: ok; "
+        "live_engineering=pass; blocked_forensic=pass; "
+        "idempotency=pass; model_requests=0"
+    )
     return 0
 
 

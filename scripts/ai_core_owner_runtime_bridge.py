@@ -12,11 +12,11 @@ from pathlib import Path
 from typing import Any
 
 
-RUNTIME_SHA = "20afd06ba703338541cf65ab167f3b218af09699"
+RUNTIME_SHA = "deec5a4ce86af17c952d7d21761050ba717b8994"
 CONTRACT_SHA = "6cd71a5596346925ecdd2ffeb9d45262d881ee93"
 CONTRACT_VERSION = "1.1"
 CANONICALIZATION_VERSION = "CANONICAL_JSON_HASH_V1"
-RUNTIME_VERSION = "1.2.2"
+RUNTIME_VERSION = "1.2.3"
 MODEL = "qwen3.6:27b"
 MANIFEST_NAME = "AI_CORE_RUNTIME_RELEASE_MANIFEST.json"
 SITE_ROOT = Path(__file__).resolve().parents[1]
@@ -167,14 +167,19 @@ class OwnerRuntimeBridge:
             constants_module = importlib.import_module(
                 "sales_conversation_controller.site_contract_runtime_v1.constants"
             )
+            forensic_module = importlib.import_module(
+                "sales_conversation_controller.site_contract_runtime_v1.restricted_forensic"
+            )
         finally:
             if sys.path[0] == str(self.runtime_dir):
                 sys.path.pop(0)
         adapter_path = Path(adapter_module.__file__).resolve(strict=True)
         constants_path = Path(constants_module.__file__).resolve(strict=True)
+        forensic_path = Path(forensic_module.__file__).resolve(strict=True)
         if (
             self.runtime_dir not in adapter_path.parents
             or self.runtime_dir not in constants_path.parents
+            or self.runtime_dir not in forensic_path.parents
         ):
             raise ValueError("AI_CORE_RUNTIME_IMPORT_PATH_MISMATCH")
         if (
@@ -187,8 +192,11 @@ class OwnerRuntimeBridge:
             or constants_module.CONTRACT_VERSION != CONTRACT_VERSION
             or constants_module.CANONICALIZATION_VERSION
             != CANONICALIZATION_VERSION
+            or forensic_module.RESTRICTED_FORENSIC_SCHEMA_VERSION
+            != "OWNER_CANARY_BLOCKED_FORENSIC_V1"
         ):
             raise ValueError("AI_CORE_RUNTIME_CONTRACT_MISMATCH")
+        self.bind_runtime_forensic = forensic_module.bind_runtime_release_identity
         self.adapter = adapter_module.OfflineRuntimeAdapterV1(
             qwen_executor=executor or QwenOwnerExecutor(
                 endpoint=endpoint,
@@ -211,6 +219,9 @@ class OwnerRuntimeBridge:
                 "response": response,
             }
         self.responses[response["response_id"]] = response
+        forensic = self.adapter.last_restricted_forensic_evidence
+        if forensic is not None:
+            forensic = self.bind_runtime_forensic(forensic, RUNTIME_SHA)
         return {
             "runtime_sha": RUNTIME_SHA,
             "runtime_version": RUNTIME_VERSION,
@@ -218,6 +229,7 @@ class OwnerRuntimeBridge:
             "canonicalization_version": CANONICALIZATION_VERSION,
             "model": MODEL,
             "response": response,
+            "restricted_forensic": forensic,
         }
 
     def acknowledge(self, acknowledgement: dict[str, Any]) -> dict[str, Any]:

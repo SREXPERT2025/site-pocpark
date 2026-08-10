@@ -28,7 +28,7 @@ def request(runtime: Path) -> dict:
 
 
 def main() -> int:
-    artifact = ROOT / "release/ai-core-canonical-json-hash-v1" / (
+    artifact = ROOT / "release/owner-canary-final-runtime-deec5a" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="ai-core-ubuntu-stage-") as raw:

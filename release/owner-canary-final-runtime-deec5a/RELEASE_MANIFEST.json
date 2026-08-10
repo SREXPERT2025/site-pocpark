@@ -1,0 +1,20 @@
+{
+  "schema": "rospark-owner-canary-final-runtime-release-v1",
+  "runtime_sha": "deec5a4ce86af17c952d7d21761050ba717b8994",
+  "runtime_tree_sha": "758760cc2b3146d741b2906cbdb80cf5444435eb",
+  "runtime_version": "1.2.3",
+  "runtime_semantic_base_sha": "8f4150999e60a7c11eb79c6ab4fcdd6750b60d77",
+  "runtime_forensic_reference_sha": "ffebf19244617f6ae67625a99ef177212f61dfe5",
+  "contract_sha": "6cd71a5596346925ecdd2ffeb9d45262d881ee93",
+  "contract_version": "1.1",
+  "canonicalization_version": "CANONICAL_JSON_HASH_V1",
+  "forensic_extension": "OWNER_CANARY_BLOCKED_FORENSIC_V1",
+  "forensic_schema_sha256": "37d3ac2a9dadb34790035a7ff52e4623f2753130fae1896a87f59310bb7c3149",
+  "model": "qwen3.6:27b",
+  "runtime_archive": {
+    "path": "release/owner-canary-final-runtime-deec5a/ai-core-runtime-deec5a4ce86af17c952d7d21761050ba717b8994.tar.gz",
+    "sha256": "e0ffc608ee5d7afa9a4133998038dcc2831067d73311827682bcede9d19d8697"
+  },
+  "production_activation_authorized": false,
+  "model_requests": 0
+}
