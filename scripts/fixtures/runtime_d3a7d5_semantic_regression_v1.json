@@ -1,0 +1,19 @@
+{
+  "fixture_id": "ROSPARK_RUNTIME_D3A7D5_SEMANTIC_REGRESSION_V1",
+  "incidents": {
+    "question_projection_leak": {
+      "user_message": "сколько будет 2+2= ?",
+      "captured_raw_answer": "4 Заверши ответ ровно этим вопросом:",
+      "expected_blocking_reason": "internal_instruction_leak"
+    },
+    "contaminated_followup": {
+      "user_message": "2+9=",
+      "contaminated_assistant_message": "4 Заверши ответ ровно этим вопросом:",
+      "expected_answer": "11"
+    }
+  },
+  "engineering_identity": {
+    "decision_package_sha256": "d6f6f3505a689790916c262cb1618670b05777a4084c4fa7cb45c625759a08cd",
+    "projection_sha256": "19f24a53536513169d97e14e0dc15e54adbe676b1c0aa12a0a980568eb55cfd2"
+  }
+}

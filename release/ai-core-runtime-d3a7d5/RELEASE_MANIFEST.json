@@ -1,0 +1,15 @@
+{
+  "schema": "ROSPARK_AI_CORE_RUNTIME_RELEASE_V1",
+  "runtime_sha": "d3a7d5dbe4af71a3ced2f03589a15cc9e7285f17",
+  "runtime_tree_sha": "cdecd4118184cf619d3c1d8d126fd961f3d30275",
+  "runtime_version": "1.2.3",
+  "contract_sha": "6cd71a5596346925ecdd2ffeb9d45262d881ee93",
+  "canonicalization_version": "CANONICAL_JSON_HASH_V1",
+  "artifact": "ai-core-runtime-d3a7d5dbe4af71a3ced2f03589a15cc9e7285f17.tar.gz",
+  "artifact_sha256": "8a24b60616fcd1cdf373c87f803268f2ed42af28bc1933a0cbf1126baeb1d5bc",
+  "decision_package_sha256": "d6f6f3505a689790916c262cb1618670b05777a4084c4fa7cb45c625759a08cd",
+  "projection_sha256": "19f24a53536513169d97e14e0dc15e54adbe676b1c0aa12a0a980568eb55cfd2",
+  "runtime_tests": "216/216",
+  "model_requests": 0,
+  "production_changes": 0
+}

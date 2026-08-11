@@ -16,7 +16,7 @@ const base = [
 
 const enabled = updatePublicAiCoreEnv(base, true);
 assert.match(enabled, /AI_CORE_PUBLIC_ENABLED=true/);
-assert.match(enabled, /AI_CORE_PUBLIC_RUNTIME_SHA=deec5a4ce86af17c952d7d21761050ba717b8994/);
+assert.match(enabled, /AI_CORE_PUBLIC_RUNTIME_SHA=d3a7d5dbe4af71a3ced2f03589a15cc9e7285f17/);
 assert.match(enabled, /AI_CORE_PUBLIC_CONTRACT_SHA=6cd71a5596346925ecdd2ffeb9d45262d881ee93/);
 const disabled = updatePublicAiCoreEnv(enabled, false);
 assert.doesNotThrow(() => assertPublicAiCoreEnv(enabled, true));
