@@ -26,9 +26,10 @@ import {
   publicAiCoreFallbackReason,
   publicAiCoreRouteHeaders,
   PUBLIC_AI_CORE_CONTRACT_SHA,
+  PUBLIC_AI_CORE_GATEWAY_SHA,
   PUBLIC_AI_CORE_RUNTIME_SHA,
-  requirePublicAiCoreReleasePins,
   selectAiCoreSiteAudience,
+  testOnlyRequirePublicAiCoreReleasePins,
 } from '../app/lib/public-ai-core.ts';
 import { updatePublicAiCoreEnv } from './configure_public_ai_core_env.mjs';
 
@@ -40,8 +41,7 @@ const publicEnv = {
   AI_CORE_PUBLIC_RUNTIME_SHA: AI_CORE_RUNTIME_SHA,
   AI_CORE_PUBLIC_CONTRACT_SHA: AI_CORE_CONTRACT_SHA,
   AI_CORE_PUBLIC_SITE_SHA: 'a'.repeat(40),
-  ROSPARK_DEPLOYED_SITE_SHA: 'a'.repeat(40),
-  AI_CORE_PUBLIC_GATEWAY_SHA: 'b'.repeat(40),
+  AI_CORE_PUBLIC_GATEWAY_SHA: PUBLIC_AI_CORE_GATEWAY_SHA,
   AI_CORE_IDENTITY_HMAC_KEY: 'identity-key-at-least-32-bytes-long',
 };
 
@@ -58,13 +58,43 @@ assert.equal(selectAiCoreSiteAudience({
 assert.equal(selectAiCoreSiteAudience({
   publicEnabled: false, ownerAudience: 'owner_canary',
 }), 'owner_canary');
-assert.deepEqual(requirePublicAiCoreReleasePins(publicEnv), {
-  siteRelease: 'a'.repeat(40), gatewayRelease: 'b'.repeat(40),
+assert.deepEqual(testOnlyRequirePublicAiCoreReleasePins({
+  env: publicEnv,
+  deployedSiteSha: 'a'.repeat(40),
+}), {
+  siteRelease: 'a'.repeat(40), gatewayRelease: PUBLIC_AI_CORE_GATEWAY_SHA,
 });
-assert.throws(() => requirePublicAiCoreReleasePins({
+const assertReleasePinReason = (env, deployedSiteSha, reasonCode) => {
+  assert.throws(
+    () => testOnlyRequirePublicAiCoreReleasePins({ env, deployedSiteSha }),
+    (error) => error instanceof Error && error.message === reasonCode,
+  );
+};
+assertReleasePinReason({
   ...publicEnv,
   AI_CORE_PUBLIC_SITE_SHA: 'c'.repeat(40),
-}), /AI_CORE_PUBLIC_RELEASE_PIN_INVALID/);
+}, 'a'.repeat(40), 'AI_CORE_PUBLIC_SITE_PIN_MISMATCH');
+assertReleasePinReason({
+  ...publicEnv,
+  AI_CORE_PUBLIC_SITE_SHA: undefined,
+}, 'a'.repeat(40), 'AI_CORE_PUBLIC_SITE_PIN_MISMATCH');
+assertReleasePinReason(
+  publicEnv,
+  'not-a-deployed-sha',
+  'AI_CORE_DEPLOYED_SITE_PIN_MISMATCH',
+);
+assertReleasePinReason({
+  ...publicEnv,
+  AI_CORE_PUBLIC_GATEWAY_SHA: 'b'.repeat(40),
+}, 'a'.repeat(40), 'AI_CORE_PUBLIC_GATEWAY_PIN_MISMATCH');
+assertReleasePinReason({
+  ...publicEnv,
+  AI_CORE_PUBLIC_RUNTIME_SHA: 'b'.repeat(40),
+}, 'a'.repeat(40), 'AI_CORE_PUBLIC_RUNTIME_PIN_MISMATCH');
+assertReleasePinReason({
+  ...publicEnv,
+  AI_CORE_PUBLIC_CONTRACT_SHA: 'b'.repeat(40),
+}, 'a'.repeat(40), 'AI_CORE_PUBLIC_CONTRACT_PIN_MISMATCH');
 assert.equal(publicAiCoreRuntimeConfig(publicEnv).runtimeSha, AI_CORE_RUNTIME_SHA);
 
 const identity = mapSiteIdentity({

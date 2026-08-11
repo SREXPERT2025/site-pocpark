@@ -924,7 +924,7 @@ export async function handleAiWidgetChat(request: Request) {
           failLoggedTurn(code || 'PUBLIC_AI_CORE_ERROR', errorCorrelation);
           return jsonError(
             503,
-            code || 'PUBLIC_AI_CORE_ERROR',
+            'PUBLIC_AI_CORE_ERROR',
             'AI-консультант завершился безопасной ошибкой.',
             ownerHeaders,
           );

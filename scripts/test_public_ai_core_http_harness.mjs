@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import https from 'node:https';
@@ -11,10 +11,24 @@ const ROOT = process.cwd();
 const RUNTIME_SHA = 'deec5a4ce86af17c952d7d21761050ba717b8994';
 const CONTRACT_SHA = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
 const CANONICALIZATION_VERSION = 'CANONICAL_JSON_HASH_V1';
-const SITE_SHA = 'a'.repeat(40);
 const GATEWAY_SHA = 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9';
 const SECRET = 'deterministic-gateway-secret-at-least-32-bytes';
 const ORIGIN = 'https://www.xn--80aukedde.xn--p1ai';
+const buildMetadata = JSON.parse(readFileSync(
+  path.join(ROOT, '.next', 'required-server-files.json'),
+  'utf8',
+));
+const SITE_SHA = String(
+  buildMetadata?.config?.env?.ROSPARK_DEPLOYED_SITE_SHA ?? '',
+);
+assert.match(SITE_SHA, /^[a-f0-9]{40}$/);
+assert.equal(
+  spawnSync('git', ['rev-parse', 'HEAD'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  }).stdout.trim(),
+  SITE_SHA,
+);
 const work = mkdtempSync(path.join(os.tmpdir(), 'public-ai-core-http-'));
 const keyPath = path.join(work, 'key.pem');
 const certPath = path.join(work, 'cert.pem');
@@ -194,44 +208,52 @@ async function stop(process) {
 }
 
 let runIndex = 0;
-async function withSite(publicEnabled, task) {
+async function withSite(publicEnabled, task, options = {}) {
   runIndex += 1;
   const port = 3300 + runIndex;
   const dbPath = path.join(work, `dialog-${runIndex}.sqlite`);
   const forensicDbPath = path.join(work, `public-forensic-${runIndex}.sqlite`);
+  const childEnv = {
+    ...process.env,
+    NODE_ENV: 'production',
+    NODE_TLS_REJECT_UNAUTHORIZED: '0',
+    NEXT_PUBLIC_SITE_URL: ORIGIN,
+    AI_WIDGET_ALLOWED_ORIGINS: ORIGIN,
+    AI_WIDGET_ENABLED: 'true',
+    AI_WIDGET_RUNTIME_MODE: 'production',
+    AI_WIDGET_HANDOFF_MODE: 'live',
+    AI_WIDGET_LOGGING_ENABLED: 'true',
+    AI_WIDGET_SERVER_EVENTS_ENABLED: 'true',
+    AI_WIDGET_LOG_DB_PATH: dbPath,
+    PUBLIC_BLOCKED_SAFE_FORENSIC_DB_PATH: forensicDbPath,
+    LEAD_REGISTRY_ENABLED: 'true',
+    AI_WIDGET_GATEWAY_URL: 'https://127.0.0.1:9443',
+    AI_WIDGET_GATEWAY_SECRET: SECRET,
+    AI_CORE_OWNER_CANARY_ENABLED: 'false',
+    AI_CORE_PUBLIC_ENABLED: publicEnabled ? 'true' : 'false',
+    AI_CORE_PUBLIC_URL: 'https://127.0.0.1:9443',
+    AI_CORE_PUBLIC_SECRET: SECRET,
+    AI_CORE_PUBLIC_RUNTIME_SHA: RUNTIME_SHA,
+    AI_CORE_PUBLIC_CONTRACT_SHA: CONTRACT_SHA,
+    AI_CORE_PUBLIC_SITE_SHA: SITE_SHA,
+    AI_CORE_PUBLIC_GATEWAY_SHA: GATEWAY_SHA,
+    AI_CORE_IDENTITY_HMAC_KEY:
+      'deterministic-identity-key-at-least-32-bytes',
+    ...options.env,
+  };
+  delete childEnv.ROSPARK_DEPLOYED_SITE_SHA;
+  if (options.runtimeDeployedSiteSha !== undefined) {
+    childEnv.ROSPARK_DEPLOYED_SITE_SHA = options.runtimeDeployedSiteSha;
+  }
+  for (const [key, value] of Object.entries(options.env ?? {})) {
+    if (value === undefined) delete childEnv[key];
+  }
   const child = spawn(
     process.execPath,
     ['node_modules/next/dist/bin/next', 'start', '-p', String(port)],
     {
       cwd: ROOT,
-      env: {
-        ...process.env,
-        NODE_ENV: 'production',
-        NODE_TLS_REJECT_UNAUTHORIZED: '0',
-        NEXT_PUBLIC_SITE_URL: ORIGIN,
-        AI_WIDGET_ALLOWED_ORIGINS: ORIGIN,
-        AI_WIDGET_ENABLED: 'true',
-        AI_WIDGET_RUNTIME_MODE: 'production',
-        AI_WIDGET_HANDOFF_MODE: 'live',
-        AI_WIDGET_LOGGING_ENABLED: 'true',
-        AI_WIDGET_SERVER_EVENTS_ENABLED: 'true',
-        AI_WIDGET_LOG_DB_PATH: dbPath,
-        PUBLIC_BLOCKED_SAFE_FORENSIC_DB_PATH: forensicDbPath,
-        LEAD_REGISTRY_ENABLED: 'true',
-        AI_WIDGET_GATEWAY_URL: 'https://127.0.0.1:9443',
-        AI_WIDGET_GATEWAY_SECRET: SECRET,
-        AI_CORE_OWNER_CANARY_ENABLED: 'false',
-        AI_CORE_PUBLIC_ENABLED: publicEnabled ? 'true' : 'false',
-        AI_CORE_PUBLIC_URL: 'https://127.0.0.1:9443',
-        AI_CORE_PUBLIC_SECRET: SECRET,
-        AI_CORE_PUBLIC_RUNTIME_SHA: RUNTIME_SHA,
-        AI_CORE_PUBLIC_CONTRACT_SHA: CONTRACT_SHA,
-        AI_CORE_PUBLIC_SITE_SHA: SITE_SHA,
-        ROSPARK_DEPLOYED_SITE_SHA: SITE_SHA,
-        AI_CORE_PUBLIC_GATEWAY_SHA: GATEWAY_SHA,
-        AI_CORE_IDENTITY_HMAC_KEY:
-          'deterministic-identity-key-at-least-32-bytes',
-      },
+      env: childEnv,
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
@@ -273,6 +295,29 @@ async function chat(port, sessionId, content = 'Сколько будет 2+2?')
     }),
   });
   return { response, answer: await response.text(), turnId };
+}
+
+async function assertCompiledReleasePinFailure(options, expectedReasonCode) {
+  await withSite(true, async ({ port, dbPath }) => {
+    const before = { ...counts };
+    const result = await chat(port, randomUUID());
+    assert.equal(result.response.status, 503);
+    assert.equal(JSON.parse(result.answer).code, 'PUBLIC_AI_CORE_ERROR');
+    assert.equal(counts.core, before.core);
+    assert.equal(counts.legacy, before.legacy);
+    const db = new Database(dbPath, { readonly: true });
+    const terminal = db.prepare(`
+      SELECT route, error_code, runtime_telemetry_ref
+      FROM ai_widget_server_events
+      WHERE turn_id = ? AND event_name = 'answer_error'
+    `).get(result.turnId);
+    assert.deepEqual(terminal, {
+      route: 'public_ai_core',
+      error_code: expectedReasonCode,
+      runtime_telemetry_ref: null,
+    });
+    db.close();
+  }, options);
 }
 
 // OFF: an ordinary visitor remains on the exact legacy route.
@@ -341,6 +386,39 @@ await withSite(true, async ({ port, dbPath }) => {
   assert.deepEqual(events, ['turn_accepted', 'answer_completed']);
   db.close();
 });
+
+// The compiled handler uses the immutable build identity when the runtime
+// process has no ROSPARK_DEPLOYED_SITE_SHA. The successful scenario above is
+// intentionally executed with that variable absent.
+
+// A false runtime ROSPARK_DEPLOYED_SITE_SHA cannot replace build provenance.
+coreMode = 'success';
+await withSite(true, async ({ port }) => {
+  const before = { ...counts };
+  const result = await chat(port, randomUUID());
+  assert.equal(result.response.status, 200);
+  assert.equal(result.response.headers.get('x-ai-widget-route'), 'public_ai_core');
+  assert.equal(result.answer, '2+2 = 4.');
+  assert.equal(counts.core, before.core + 1);
+}, { runtimeDeployedSiteSha: 'f'.repeat(40) });
+
+// Precise safe diagnostics stay in terminal telemetry and are not exposed in
+// the public JSON response.
+await assertCompiledReleasePinFailure({
+  env: { AI_CORE_PUBLIC_SITE_SHA: 'c'.repeat(40) },
+}, 'AI_CORE_PUBLIC_SITE_PIN_MISMATCH');
+await assertCompiledReleasePinFailure({
+  env: { AI_CORE_PUBLIC_GATEWAY_SHA: 'c'.repeat(40) },
+}, 'AI_CORE_PUBLIC_GATEWAY_PIN_MISMATCH');
+await assertCompiledReleasePinFailure({
+  env: { AI_CORE_PUBLIC_RUNTIME_SHA: 'c'.repeat(40) },
+}, 'AI_CORE_PUBLIC_RUNTIME_PIN_MISMATCH');
+await assertCompiledReleasePinFailure({
+  env: { AI_CORE_PUBLIC_CONTRACT_SHA: 'c'.repeat(40) },
+}, 'AI_CORE_PUBLIC_CONTRACT_PIN_MISMATCH');
+await assertCompiledReleasePinFailure({
+  env: { AI_CORE_PUBLIC_SITE_SHA: undefined },
+}, 'AI_CORE_PUBLIC_SITE_PIN_MISMATCH');
 
 // Hard transport failure before mutation falls back once and is traced.
 coreMode = 'unavailable';
@@ -443,6 +521,10 @@ console.log(JSON.stringify({
   fallback_trace: 'pass',
   public_blocked_safe_forensic: 'pass',
   terminal_public_route: 'pass',
+  compiled_handler_release_pin_gate: 'pass',
+  runtime_deployed_site_sha_absent: 'pass',
+  runtime_deployed_site_sha_wrong_ignored: 'pass',
+  precise_release_pin_reason_codes: 'pass',
   rollback_off: 'pass',
   site_b_lifecycle: 'pass',
   owner_canary_enabled: false,

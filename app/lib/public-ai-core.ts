@@ -1,7 +1,20 @@
+import { DEPLOYED_SITE_SHA } from './site-release-provenance.ts';
+
 export const PUBLIC_AI_CORE_RUNTIME_SHA =
   'deec5a4ce86af17c952d7d21761050ba717b8994';
 export const PUBLIC_AI_CORE_CONTRACT_SHA =
   '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
+export const PUBLIC_AI_CORE_GATEWAY_SHA =
+  'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9';
+
+const SHA_PATTERN = /^[a-f0-9]{40}$/;
+
+export type PublicAiCoreReleasePinReasonCode =
+  | 'AI_CORE_PUBLIC_SITE_PIN_MISMATCH'
+  | 'AI_CORE_DEPLOYED_SITE_PIN_MISMATCH'
+  | 'AI_CORE_PUBLIC_GATEWAY_PIN_MISMATCH'
+  | 'AI_CORE_PUBLIC_RUNTIME_PIN_MISMATCH'
+  | 'AI_CORE_PUBLIC_CONTRACT_PIN_MISMATCH';
 
 export type AiCoreSiteAudience =
   | 'legacy'
@@ -25,16 +38,47 @@ export function selectAiCoreSiteAudience(input: {
 export function requirePublicAiCoreReleasePins(
   env: NodeJS.ProcessEnv = process.env,
 ) {
+  return validatePublicAiCoreReleasePins({
+    env,
+    deployedSiteSha: DEPLOYED_SITE_SHA,
+  });
+}
+
+/**
+ * Test-only dependency injection for invalid immutable build provenance.
+ * Production callers must use requirePublicAiCoreReleasePins(), whose deployed
+ * Site identity is the build-time DEPLOYED_SITE_SHA constant.
+ */
+export function testOnlyRequirePublicAiCoreReleasePins(input: {
+  env: NodeJS.ProcessEnv;
+  deployedSiteSha: string;
+}) {
+  return validatePublicAiCoreReleasePins(input);
+}
+
+function validatePublicAiCoreReleasePins(input: {
+  env: NodeJS.ProcessEnv;
+  deployedSiteSha: string;
+}) {
+  const { env } = input;
   const siteRelease = env.AI_CORE_PUBLIC_SITE_SHA ?? '';
-  const actualDeployedSiteRelease = env.ROSPARK_DEPLOYED_SITE_SHA ?? '';
+  const actualDeployedSiteRelease = input.deployedSiteSha;
   const gatewayRelease = env.AI_CORE_PUBLIC_GATEWAY_SHA ?? '';
-  if (!/^[a-f0-9]{40}$/.test(siteRelease)
-    || !/^[a-f0-9]{40}$/.test(actualDeployedSiteRelease)
-    || siteRelease !== actualDeployedSiteRelease
-    || !/^[a-f0-9]{40}$/.test(gatewayRelease)
-    || env.AI_CORE_PUBLIC_RUNTIME_SHA !== PUBLIC_AI_CORE_RUNTIME_SHA
-    || env.AI_CORE_PUBLIC_CONTRACT_SHA !== PUBLIC_AI_CORE_CONTRACT_SHA) {
-    throw new Error('AI_CORE_PUBLIC_RELEASE_PIN_INVALID');
+  if (!SHA_PATTERN.test(actualDeployedSiteRelease)) {
+    throw new Error('AI_CORE_DEPLOYED_SITE_PIN_MISMATCH');
+  }
+  if (!SHA_PATTERN.test(siteRelease)
+    || siteRelease !== actualDeployedSiteRelease) {
+    throw new Error('AI_CORE_PUBLIC_SITE_PIN_MISMATCH');
+  }
+  if (gatewayRelease !== PUBLIC_AI_CORE_GATEWAY_SHA) {
+    throw new Error('AI_CORE_PUBLIC_GATEWAY_PIN_MISMATCH');
+  }
+  if (env.AI_CORE_PUBLIC_RUNTIME_SHA !== PUBLIC_AI_CORE_RUNTIME_SHA) {
+    throw new Error('AI_CORE_PUBLIC_RUNTIME_PIN_MISMATCH');
+  }
+  if (env.AI_CORE_PUBLIC_CONTRACT_SHA !== PUBLIC_AI_CORE_CONTRACT_SHA) {
+    throw new Error('AI_CORE_PUBLIC_CONTRACT_PIN_MISMATCH');
   }
   return { siteRelease, gatewayRelease };
 }
