@@ -53,12 +53,17 @@ import {
   callOwnerCanaryRuntime,
   ownerCanaryIdempotencyKey,
   preGateTelemetryFromError,
+  publicBlockedSafeForensicFromError,
   restrictedForensicFromError,
 } from './owner-ai-canary-adapter';
 import { recordOwnerCanaryRestrictedForensic } from
   './owner-canary-restricted-forensic-core';
 import { getOwnerCanaryRestrictedForensicDatabase } from
   './owner-canary-restricted-forensic-database';
+import { recordPublicBlockedSafeForensic } from
+  './public-blocked-safe-forensic-core';
+import { getPublicBlockedSafeForensicDatabase } from
+  './public-blocked-safe-forensic-database';
 import {
   appendOwnerCanaryHistory,
   applyOwnerCanaryMutationBatch,
@@ -516,6 +521,7 @@ export async function handleAiWidgetChat(request: Request) {
   const failLoggedTurn = (
     code: string,
     correlation: {
+      route?: 'public_ai_core' | 'owner_ai_core' | 'legacy';
       conversationThreadId?: string | null;
       messageId?: string | null;
       aiCoreRequestId?: string | null;
@@ -531,6 +537,7 @@ export async function handleAiWidgetChat(request: Request) {
         elapsedMs,
       });
       recordServerEvent('answer_error', {
+        route: correlation.route,
         errorCode: code,
         elapsedMs,
         ...correlation,
@@ -829,6 +836,8 @@ export async function handleAiWidgetChat(request: Request) {
     } catch (error) {
       let telemetryWriteFailed = false;
       let restrictedForensicWriteFailed = false;
+      let publicBlockedForensicWriteFailed = false;
+      let publicBlockedForensicRef: string | null = null;
       if (aiCoreAudience === 'owner_canary' && !preGateTelemetryRef) {
         const telemetry = preGateTelemetryFromError(error);
         const restrictedForensic = restrictedForensicFromError(error);
@@ -864,11 +873,39 @@ export async function handleAiWidgetChat(request: Request) {
           }
         }
       }
+      if (aiCoreAudience === 'public_ai_core') {
+        const publicSafeForensic = publicBlockedSafeForensicFromError(error);
+        if (publicSafeForensic) {
+          try {
+            publicBlockedForensicRef = recordPublicBlockedSafeForensic(
+              getPublicBlockedSafeForensicDatabase(),
+              {
+                turnId: parsed.payload.turnId,
+                aiCoreRequestId,
+                evidence: publicSafeForensic,
+              },
+            ).forensicRef;
+          } catch (forensicError) {
+            const storageFailureCode = forensicError instanceof Error
+              ? forensicError.message.replace(/[^A-Z0-9_]/gi, '_')
+                .toUpperCase().slice(0, 100)
+              : 'UNKNOWN';
+            console.error(
+              'PUBLIC_BLOCKED_SAFE_FORENSIC_WRITE_FAILED',
+              storageFailureCode,
+            );
+            publicBlockedForensicWriteFailed = true;
+          }
+        }
+      }
       const errorCorrelation = {
+        route: aiCoreAudience === 'public_ai_core'
+          ? 'public_ai_core' as const
+          : 'owner_ai_core' as const,
         conversationThreadId: ownerIdentity.conversationThreadId,
         messageId: ownerIdentity.messageId,
         aiCoreRequestId,
-        runtimeTelemetryRef: preGateTelemetryRef,
+        runtimeTelemetryRef: publicBlockedForensicRef ?? preGateTelemetryRef,
       };
       if (aiCoreAudience === 'public_ai_core') {
         const reason = publicAiCoreFallbackReason(
@@ -878,9 +915,12 @@ export async function handleAiWidgetChat(request: Request) {
         if (reason) {
           publicFallbackContext = { reason, aiCoreRequestId };
         } else {
-          const code = error instanceof Error
-            ? error.message.replace(/[^A-Z0-9_]/gi, '_').toUpperCase().slice(0, 100)
-            : 'PUBLIC_AI_CORE_ERROR';
+          const code = publicBlockedForensicWriteFailed
+            ? 'PUBLIC_BLOCKED_FORENSIC_WRITE_FAILED'
+            : error instanceof Error
+              ? error.message.replace(/[^A-Z0-9_]/gi, '_')
+                .toUpperCase().slice(0, 100)
+              : 'PUBLIC_AI_CORE_ERROR';
           failLoggedTurn(code || 'PUBLIC_AI_CORE_ERROR', errorCorrelation);
           return jsonError(
             503,

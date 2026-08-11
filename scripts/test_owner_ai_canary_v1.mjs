@@ -15,6 +15,7 @@ import {
   callOwnerCanaryRuntime,
   canonicalJson,
   ownerCanaryRuntimeConfig,
+  normalizeRepairReasonCodes,
   preGateTelemetryFromError,
   restrictedForensicFromError,
   sha256,
@@ -469,6 +470,73 @@ assert.ok(blockedForensic);
 assert.equal(blockedForensic.ai_core_request_id, coreRequest.request_id);
 assert.equal(blockedForensic.executor.raw_answer, runtimeResponse.answer);
 assert.equal(blockedForensic.publication.candidate_status, 'blocked');
+
+function blockedWithRepairCodes(telemetryCodes, forensicCodes) {
+  const candidate = structuredClone(blockedEnvelope);
+  candidate.response.repair_result.reason_codes = telemetryCodes;
+  const withoutHash = {
+    ...candidate.restricted_forensic,
+    repair: {
+      ...candidate.restricted_forensic.repair,
+      reason_codes: forensicCodes,
+    },
+  };
+  delete withoutHash.evidence_sha256;
+  candidate.restricted_forensic = {
+    ...withoutHash,
+    evidence_sha256: sha256(withoutHash),
+  };
+  return candidate;
+}
+
+// repair_reason_codes is an unordered unique semantic collection only.
+assert.deepEqual(normalizeRepairReasonCodes(['alpha_code', 'beta_code']), [
+  'alpha_code', 'beta_code',
+]);
+assert.deepEqual(normalizeRepairReasonCodes(['beta_code', 'alpha_code']), [
+  'alpha_code', 'beta_code',
+]);
+for (const candidate of [
+  blockedWithRepairCodes(
+    ['alpha_code', 'beta_code'],
+    ['alpha_code', 'beta_code'],
+  ),
+  blockedWithRepairCodes(
+    ['alpha_code', 'beta_code'],
+    ['beta_code', 'alpha_code'],
+  ),
+]) {
+  assert.throws(
+    () => validateOwnerCanaryCoreResponse(candidate, coreRequest),
+    /AI_CORE_FINAL_GATE_BLOCKED/,
+  );
+}
+for (const [telemetryCodes, forensicCodes] of [
+  [['alpha_code', 'beta_code'], ['alpha_code', 'gamma_code']],
+  [['alpha_code', 'beta_code'], ['alpha_code']],
+  [['alpha_code'], ['alpha_code', 'beta_code']],
+]) {
+  assert.throws(
+    () => validateOwnerCanaryCoreResponse(
+      blockedWithRepairCodes(telemetryCodes, forensicCodes),
+      coreRequest,
+    ),
+    /AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH/,
+  );
+}
+for (const malformed of [
+  ['alpha_code', 'alpha_code'],
+  ['alpha_code', 7],
+  { reason: 'alpha_code' },
+]) {
+  assert.throws(
+    () => validateOwnerCanaryCoreResponse(
+      blockedWithRepairCodes(['alpha_code'], malformed),
+      coreRequest,
+    ),
+    /AI_CORE_RESTRICTED_FORENSIC_REPAIR_INVALID/,
+  );
+}
 assert.throws(() => validateOwnerCanaryCoreResponse({
   ...blockedEnvelope,
   restricted_forensic: undefined,

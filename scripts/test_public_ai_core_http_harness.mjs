@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync } from 'node:fs';
 import https from 'node:https';
@@ -26,6 +27,15 @@ assert.equal(certificate.status, 0, certificate.stderr);
 
 let coreMode = 'success';
 const counts = { core: 0, ack: 0, legacy: 0 };
+function canonicalJson(value) {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  return `{${Object.keys(value).sort().map((key) =>
+    `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+}
+function sha256(value) {
+  return createHash('sha256').update(canonicalJson(value)).digest('hex');
+}
 const gateway = https.createServer({
   key: readFileSync(keyPath), cert: readFileSync(certPath),
 }, (request, response) => {
@@ -67,7 +77,90 @@ const gateway = https.createServer({
       );
       assert.equal(probe.status, 0, probe.stderr);
       response.writeHead(200, { 'Content-Type': 'application/json' });
-      response.end(probe.stdout);
+      if (coreMode !== 'blocked') {
+        response.end(probe.stdout);
+        return;
+      }
+      const envelope = JSON.parse(probe.stdout);
+      const runtimeResponse = envelope.response;
+      const repairCodes = ['operator_role_missing', 'required_content_missing'];
+      runtimeResponse.repair_result.reason_codes = [...repairCodes].sort();
+      runtimeResponse.evaluation_result.status = 'fail';
+      runtimeResponse.evaluation_result.reason_codes = ['required_content_missing'];
+      runtimeResponse.telemetry.evaluation.raw_status = 'review_required';
+      runtimeResponse.telemetry.evaluation.final_status = 'fail';
+      runtimeResponse.telemetry.publication.candidate_status = 'blocked';
+      const mutationSummary = runtimeResponse.state_mutations.map((item) => ({
+        target: item.target,
+        operation: item.operation,
+        field: item.field,
+        value_kind: Array.isArray(item.value) ? 'array'
+          : Number.isInteger(item.value) ? 'integer'
+            : item.value === null ? 'null' : typeof item.value,
+        expected_state_version: item.expected_state_version,
+        proposed_state_version: item.proposed_state_version,
+        mutation_id: item.mutation_id,
+      }));
+      const restrictedWithoutHash = {
+        schema_version: 'OWNER_CANARY_BLOCKED_FORENSIC_V1',
+        ai_core_request_id: runtimeResponse.request_id,
+        runtime: {
+          sha: RUNTIME_SHA,
+          version: '1.2.3',
+          contract_sha: CONTRACT_SHA,
+          canonicalization_version: CANONICALIZATION_VERSION,
+        },
+        resolved: {
+          intent: 'engineering_solution',
+          action: 'recommend_architecture',
+          current_turn_facts_summary: [{
+            field: 'daily_traffic', value_summary: 800,
+            source: 'current_turn_extraction',
+          }],
+        },
+        controller: {
+          action: 'answer_with_recommendation',
+          answer_required: true,
+          question_required: false,
+        },
+        lab: {
+          decision_package_summary: { decision_type: 'engineering_recommendation' },
+          decision_package_sha: runtimeResponse.decision_package_hash,
+        },
+        projection: { sha: sha256({ projection: 'public-blocked' }) },
+        semantic_coverage: {
+          raw: { status: 'partial', reason_codes: ['required_content_missing'] },
+          final: { status: 'partial', reason_codes: ['required_content_missing'] },
+        },
+        executor: {
+          name: 'qwen', raw_answer: runtimeResponse.answer, request_count: 1,
+        },
+        repair: {
+          applied: runtimeResponse.repair_result.applied,
+          method: runtimeResponse.repair_result.method,
+          repaired_answer: runtimeResponse.answer,
+          reason_codes: [...repairCodes].reverse(),
+        },
+        evaluation: {
+          raw: {
+            status: 'review_required', reason_codes: ['required_content_missing'],
+          },
+          final: { status: 'fail', reason_codes: ['required_content_missing'] },
+        },
+        mutation: {
+          proposed: mutationSummary.length > 0,
+          summary: mutationSummary,
+        },
+        publication: {
+          candidate_status: 'blocked',
+          blocking_predicate: 'final_evaluation_status_must_equal_pass',
+        },
+      };
+      envelope.restricted_forensic = {
+        ...restrictedWithoutHash,
+        evidence_sha256: sha256(restrictedWithoutHash),
+      };
+      response.end(JSON.stringify(envelope));
       return;
     }
     response.writeHead(404).end();
@@ -105,6 +198,7 @@ async function withSite(publicEnabled, task) {
   runIndex += 1;
   const port = 3300 + runIndex;
   const dbPath = path.join(work, `dialog-${runIndex}.sqlite`);
+  const forensicDbPath = path.join(work, `public-forensic-${runIndex}.sqlite`);
   const child = spawn(
     process.execPath,
     ['node_modules/next/dist/bin/next', 'start', '-p', String(port)],
@@ -122,6 +216,7 @@ async function withSite(publicEnabled, task) {
         AI_WIDGET_LOGGING_ENABLED: 'true',
         AI_WIDGET_SERVER_EVENTS_ENABLED: 'true',
         AI_WIDGET_LOG_DB_PATH: dbPath,
+        PUBLIC_BLOCKED_SAFE_FORENSIC_DB_PATH: forensicDbPath,
         LEAD_REGISTRY_ENABLED: 'true',
         AI_WIDGET_GATEWAY_URL: 'https://127.0.0.1:9443',
         AI_WIDGET_GATEWAY_SECRET: SECRET,
@@ -132,6 +227,7 @@ async function withSite(publicEnabled, task) {
         AI_CORE_PUBLIC_RUNTIME_SHA: RUNTIME_SHA,
         AI_CORE_PUBLIC_CONTRACT_SHA: CONTRACT_SHA,
         AI_CORE_PUBLIC_SITE_SHA: SITE_SHA,
+        ROSPARK_DEPLOYED_SITE_SHA: SITE_SHA,
         AI_CORE_PUBLIC_GATEWAY_SHA: GATEWAY_SHA,
         AI_CORE_IDENTITY_HMAC_KEY:
           'deterministic-identity-key-at-least-32-bytes',
@@ -144,7 +240,12 @@ async function withSite(publicEnabled, task) {
   child.stderr.on('data', (chunk) => { logs += chunk; });
   try {
     await waitForSite(port);
-    await task({ port, dbPath });
+    await task({
+      port,
+      dbPath,
+      forensicDbPath,
+      readSiteLogs: () => logs,
+    });
   } finally {
     assert.equal(child.exitCode, null, logs);
     await stop(child);
@@ -273,6 +374,55 @@ await withSite(true, async ({ port, dbPath }) => {
 });
 
 // Rollback action OFF returns the next ordinary visitor to legacy.
+coreMode = 'blocked';
+await withSite(true, async ({
+  port,
+  dbPath,
+  forensicDbPath,
+  readSiteLogs,
+}) => {
+  const before = { ...counts };
+  const userText = 'Инженерная проверка: 800 автомобилей, два въезда.';
+  const result = await chat(
+    port,
+    '66666666-6666-4666-8666-666666666666',
+    userText,
+  );
+  assert.equal(result.response.status, 503);
+  assert.equal(counts.core, before.core + 1);
+  assert.equal(counts.legacy, before.legacy);
+  const dialogDb = new Database(dbPath, { readonly: true });
+  const terminal = dialogDb.prepare(`
+    SELECT route, error_code, ai_core_request_id, runtime_telemetry_ref
+    FROM ai_widget_server_events
+    WHERE turn_id = ? AND event_name = 'answer_error'
+  `).get(result.turnId);
+  assert.equal(terminal.route, 'public_ai_core');
+  assert.equal(
+    terminal.error_code,
+    'AI_CORE_FINAL_GATE_BLOCKED',
+    readSiteLogs(),
+  );
+  assert.match(terminal.runtime_telemetry_ref, /^public-blocked:/);
+  dialogDb.close();
+  const forensicDb = new Database(forensicDbPath, { readonly: true });
+  const forensic = forensicDb.prepare(`
+    SELECT route, evidence_json FROM public_blocked_safe_forensics
+    WHERE ai_core_request_id = ?
+  `).get(terminal.ai_core_request_id);
+  assert.equal(forensic.route, 'public_ai_core');
+  const stored = JSON.parse(forensic.evidence_json);
+  assert.equal(stored.executor_request_count, 1);
+  assert.equal(stored.retries, 0);
+  assert.equal(stored.fallbacks, 0);
+  assert.equal(stored.projection_sha, sha256({ projection: 'public-blocked' }));
+  assert.doesNotMatch(forensic.evidence_json, new RegExp(userText));
+  assert.equal(Object.hasOwn(stored, 'raw_answer'), false);
+  assert.equal(Object.hasOwn(stored, 'repaired_answer'), false);
+  forensicDb.close();
+});
+
+// Rollback action OFF returns the next ordinary visitor to legacy.
 coreMode = 'success';
 await withSite(false, async ({ port }) => {
   const before = { ...counts };
@@ -291,6 +441,8 @@ console.log(JSON.stringify({
   duplicate_mutation_count: 0,
   transport_fallback_to_legacy: 'pass',
   fallback_trace: 'pass',
+  public_blocked_safe_forensic: 'pass',
+  terminal_public_route: 'pass',
   rollback_off: 'pass',
   site_b_lifecycle: 'pass',
   owner_canary_enabled: false,

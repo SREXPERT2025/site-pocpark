@@ -13,6 +13,8 @@ export const AI_CORE_RUNTIME_VERSION = '1.2.3';
 export const AI_CORE_OWNER_MODEL = 'qwen3.6:27b';
 export const OWNER_CANARY_BLOCKED_FORENSIC_VERSION =
   'OWNER_CANARY_BLOCKED_FORENSIC_V1';
+export const PUBLIC_BLOCKED_SAFE_FORENSIC_VERSION =
+  'PUBLIC_BLOCKED_SAFE_FORENSIC_V1';
 export { CANONICALIZATION_VERSION, canonicalJson, sha256 };
 
 export const decisionPackageHash = sha256;
@@ -262,23 +264,96 @@ export type OwnerCanaryPreGateTelemetry = Readonly<{
   latencyStages: Readonly<Record<string, number>>;
 }>;
 
+export type PublicBlockedSafeForensicEvidence = Readonly<{
+  schema_version: typeof PUBLIC_BLOCKED_SAFE_FORENSIC_VERSION;
+  ai_core_request_id: string;
+  route: 'public_ai_core';
+  site_sha: string;
+  runtime_sha: string;
+  runtime_version: string;
+  contract_sha: string;
+  canonicalization_version: string;
+  resolved_intent: string | null;
+  resolved_action: string | null;
+  extracted_facts: readonly Readonly<{
+    field: string;
+    value_kind: string;
+  }>[];
+  decision_package_sha: string;
+  projection_sha: string | null;
+  semantic_coverage: Readonly<{
+    raw_status: string | null;
+    raw_reason_codes: readonly string[];
+    final_status: string | null;
+    final_reason_codes: readonly string[];
+  }>;
+  executor: string;
+  executor_request_count: number;
+  retries: number;
+  fallbacks: number;
+  raw_evaluation_status: string;
+  raw_evaluation_reason_codes: readonly string[];
+  repair_applied: boolean;
+  repair_reason_codes: readonly string[];
+  final_evaluation_status: string;
+  final_evaluation_reason_codes: readonly string[];
+  runtime_publication_status: string;
+  site_blocking_predicate: string;
+  proposed_mutation: Readonly<{
+    proposed: boolean;
+    summary: readonly Readonly<{
+      target: string;
+      operation: string;
+      field: string;
+      value_kind: string;
+      expected_state_version: number;
+      proposed_state_version: number;
+    }>[];
+  }>;
+  durable_commit_count: 0;
+  duplicate_execution_count: number;
+  duplicate_mutation_count: 0;
+  latency_stages: Readonly<Record<string, number>>;
+}>;
+
+class AiCoreAdapterBlockedError extends Error {
+  readonly preGateTelemetry: OwnerCanaryPreGateTelemetry;
+  readonly publicSafeForensic: PublicBlockedSafeForensicEvidence;
+
+  constructor(
+    code: string,
+    telemetry: OwnerCanaryPreGateTelemetry,
+    publicSafeForensic: PublicBlockedSafeForensicEvidence,
+    cause: unknown,
+  ) {
+    super(code, { cause });
+    this.name = 'AiCoreAdapterBlockedError';
+    this.preGateTelemetry = telemetry;
+    this.publicSafeForensic = publicSafeForensic;
+  }
+}
+
 export class AiCoreFinalGateBlockedError extends Error {
   readonly preGateTelemetry: OwnerCanaryPreGateTelemetry;
   readonly restrictedForensic: OwnerCanaryRestrictedForensicEvidence;
+  readonly publicSafeForensic: PublicBlockedSafeForensicEvidence;
 
   constructor(
     telemetry: OwnerCanaryPreGateTelemetry,
     restrictedForensic: OwnerCanaryRestrictedForensicEvidence,
+    publicSafeForensic: PublicBlockedSafeForensicEvidence,
   ) {
     super('AI_CORE_FINAL_GATE_BLOCKED');
     this.name = 'AiCoreFinalGateBlockedError';
     this.preGateTelemetry = telemetry;
     this.restrictedForensic = restrictedForensic;
+    this.publicSafeForensic = publicSafeForensic;
   }
 }
 
 export function preGateTelemetryFromError(error: unknown) {
   return error instanceof AiCoreFinalGateBlockedError
+    || error instanceof AiCoreAdapterBlockedError
     ? error.preGateTelemetry
     : null;
 }
@@ -286,6 +361,13 @@ export function preGateTelemetryFromError(error: unknown) {
 export function restrictedForensicFromError(error: unknown) {
   return error instanceof AiCoreFinalGateBlockedError
     ? error.restrictedForensic
+    : null;
+}
+
+export function publicBlockedSafeForensicFromError(error: unknown) {
+  return error instanceof AiCoreFinalGateBlockedError
+    || error instanceof AiCoreAdapterBlockedError
+    ? error.publicSafeForensic
     : null;
 }
 
@@ -323,6 +405,16 @@ function telemetryReasonCodes(value: unknown, code: string) {
     throw new Error(code);
   }
   return Object.freeze(value.map(String));
+}
+
+export function normalizeRepairReasonCodes(
+  value: unknown,
+  code = 'INVALID_AI_CORE_REPAIR_REASON_CODES',
+) {
+  const codes = telemetryReasonCodes(value, code);
+  if (new Set(codes).size !== codes.length) throw new Error(code);
+  return Object.freeze([...codes].sort((left, right) =>
+    left < right ? -1 : left > right ? 1 : 0));
 }
 
 function telemetryLatencyStages(value: unknown) {
@@ -395,6 +487,162 @@ function validateRestrictedValue(
     }
     validateRestrictedValue(nested, depth + 1);
   }
+}
+
+function safeRecord(value: unknown) {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function safeForensicCode(value: unknown) {
+  return typeof value === 'string'
+    && /^[a-z][a-z0-9_]{0,100}$/.test(value)
+    ? value
+    : null;
+}
+
+function safeBlockingPredicate(value: unknown) {
+  return typeof value === 'string'
+    && /^[A-Z][A-Z0-9_]{0,127}$/.test(value)
+    ? value
+    : 'AI_CORE_ADAPTER_REJECTED';
+}
+
+function safeReasonCodes(value: unknown) {
+  try {
+    return normalizeRepairReasonCodes(value);
+  } catch {
+    return Object.freeze([] as string[]);
+  }
+}
+
+function safeFactValueKind(value: unknown) {
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return 'array';
+  if (Number.isInteger(value)) return 'integer';
+  if (typeof value === 'number') return 'number';
+  if (typeof value === 'string') return 'string';
+  if (typeof value === 'boolean') return 'boolean';
+  if (value && typeof value === 'object') return 'object';
+  return 'unknown';
+}
+
+function safeCoverage(value: unknown) {
+  const coverage = safeRecord(value);
+  return Object.freeze({
+    status: safeForensicCode(coverage?.status),
+    reasonCodes: safeReasonCodes(coverage?.reason_codes ?? []),
+  });
+}
+
+function buildPublicBlockedSafeForensic(
+  value: unknown,
+  request: OwnerCanaryCoreRequest | undefined,
+  telemetry: OwnerCanaryPreGateTelemetry,
+  siteBlockingPredicate: string,
+): PublicBlockedSafeForensicEvidence {
+  if (!request || !/^[a-f0-9]{40}$/.test(request.site_release)) {
+    throw new Error('AI_CORE_PUBLIC_SAFE_FORENSIC_SITE_SHA_INVALID');
+  }
+  const evidence = safeRecord(value);
+  const resolved = safeRecord(evidence?.resolved);
+  const facts = Array.isArray(resolved?.current_turn_facts_summary)
+    ? resolved.current_turn_facts_summary.flatMap((item) => {
+      const fact = safeRecord(item);
+      const field = safeForensicCode(fact?.field);
+      return field ? [{
+        field,
+        value_kind: safeFactValueKind(fact?.value_summary),
+      }] : [];
+    }).slice(0, 100)
+    : [];
+  const projection = safeRecord(evidence?.projection);
+  const projectionSha = typeof projection?.sha === 'string'
+    && /^[a-f0-9]{64}$/.test(projection.sha)
+    ? projection.sha
+    : null;
+  const semanticCoverage = safeRecord(evidence?.semantic_coverage);
+  const rawCoverage = safeCoverage(semanticCoverage?.raw);
+  const finalCoverage = safeCoverage(semanticCoverage?.final);
+  const evaluation = safeRecord(evidence?.evaluation);
+  const rawEvaluation = safeRecord(evaluation?.raw);
+  const finalEvaluation = safeRecord(evaluation?.final);
+  const repair = safeRecord(evidence?.repair);
+  const mutation = safeRecord(evidence?.mutation);
+  const mutationSummary = Array.isArray(mutation?.summary)
+    ? mutation.summary.flatMap((item) => {
+      const summary = safeRecord(item);
+      const target = safeForensicCode(summary?.target);
+      const operation = safeForensicCode(summary?.operation);
+      const field = safeForensicCode(summary?.field);
+      const valueKind = safeForensicCode(summary?.value_kind);
+      const before = summary?.expected_state_version;
+      const after = summary?.proposed_state_version;
+      return target && operation && field && valueKind
+        && Number.isSafeInteger(before) && Number(before) >= 0
+        && Number.isSafeInteger(after) && Number(after) >= 0
+        ? [{
+          target,
+          operation,
+          field,
+          value_kind: valueKind,
+          expected_state_version: Number(before),
+          proposed_state_version: Number(after),
+        }]
+        : [];
+    }).slice(0, 100)
+    : [];
+  const publication = safeRecord(evidence?.publication);
+  const runtimePublicationStatus = safeForensicCode(
+    publication?.candidate_status,
+  ) ?? telemetry.publicationCandidateStatus;
+  const executorRequestCount = telemetry.executorRequestCount;
+  return Object.freeze({
+    schema_version: PUBLIC_BLOCKED_SAFE_FORENSIC_VERSION,
+    ai_core_request_id: telemetry.aiCoreRequestId,
+    route: 'public_ai_core',
+    site_sha: request.site_release,
+    runtime_sha: telemetry.runtimeSha,
+    runtime_version: AI_CORE_RUNTIME_VERSION,
+    contract_sha: telemetry.contractSha,
+    canonicalization_version: telemetry.canonicalizationVersion,
+    resolved_intent: safeForensicCode(resolved?.intent),
+    resolved_action: safeForensicCode(resolved?.action),
+    extracted_facts: Object.freeze(facts),
+    decision_package_sha: telemetry.decisionPackageSha,
+    projection_sha: projectionSha,
+    semantic_coverage: Object.freeze({
+      raw_status: rawCoverage.status,
+      raw_reason_codes: rawCoverage.reasonCodes,
+      final_status: finalCoverage.status,
+      final_reason_codes: finalCoverage.reasonCodes,
+    }),
+    executor: telemetry.finalExecutor,
+    executor_request_count: executorRequestCount,
+    retries: Math.max(0, executorRequestCount - 1),
+    fallbacks: telemetry.plannedExecutor === telemetry.finalExecutor ? 0 : 1,
+    raw_evaluation_status: telemetry.rawEvaluationStatus,
+    raw_evaluation_reason_codes: safeReasonCodes(
+      rawEvaluation?.reason_codes ?? [],
+    ),
+    repair_applied: telemetry.repairApplied,
+    repair_reason_codes: safeReasonCodes(repair?.reason_codes ?? []),
+    final_evaluation_status: telemetry.finalEvaluationStatus,
+    final_evaluation_reason_codes: safeReasonCodes(
+      finalEvaluation?.reason_codes ?? telemetry.evaluationReasonCodes,
+    ),
+    runtime_publication_status: runtimePublicationStatus,
+    site_blocking_predicate: safeBlockingPredicate(siteBlockingPredicate),
+    proposed_mutation: Object.freeze({
+      proposed: telemetry.stateMutationProposed,
+      summary: Object.freeze(mutationSummary),
+    }),
+    durable_commit_count: 0,
+    duplicate_execution_count: Math.max(0, executorRequestCount - 1),
+    duplicate_mutation_count: 0,
+    latency_stages: telemetry.latencyStages,
+  });
 }
 
 function validateRestrictedForensic(
@@ -541,12 +789,15 @@ function validateRestrictedForensic(
     || repair.applied !== telemetry.repairApplied) {
     throw new Error('AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH');
   }
-  const repairReasons = telemetryReasonCodes(
+  const repairReasons = normalizeRepairReasonCodes(
     repair.reason_codes,
     'AI_CORE_RESTRICTED_FORENSIC_REPAIR_INVALID',
   );
-  if (canonicalJson(repairReasons)
-    !== canonicalJson(telemetry.repairReasonCodes)) {
+  const telemetryRepairReasons = normalizeRepairReasonCodes(
+    telemetry.repairReasonCodes,
+    'AI_CORE_RESTRICTED_FORENSIC_REPAIR_INVALID',
+  );
+  if (canonicalJson(repairReasons) !== canonicalJson(telemetryRepairReasons)) {
     throw new Error('AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH');
   }
   const evaluationForensic = record(
@@ -829,12 +1080,37 @@ export function validateOwnerCanaryCoreResponse(
   if (evaluation.status !== 'pass'
     || publication.candidate_status !== 'allowed'
     || publication.published !== false) {
-    throw new AiCoreFinalGateBlockedError(
-      preGateTelemetry,
-      validateRestrictedForensic(
+    let restrictedForensic: OwnerCanaryRestrictedForensicEvidence;
+    try {
+      restrictedForensic = validateRestrictedForensic(
         envelope.restricted_forensic,
         request,
         preGateTelemetry,
+      );
+    } catch (cause) {
+      const code = cause instanceof Error
+        ? cause.message
+        : 'AI_CORE_RESTRICTED_FORENSIC_VALIDATION_FAILED';
+      throw new AiCoreAdapterBlockedError(
+        code,
+        preGateTelemetry,
+        buildPublicBlockedSafeForensic(
+          envelope.restricted_forensic,
+          request,
+          preGateTelemetry,
+          code,
+        ),
+        cause,
+      );
+    }
+    throw new AiCoreFinalGateBlockedError(
+      preGateTelemetry,
+      restrictedForensic,
+      buildPublicBlockedSafeForensic(
+        restrictedForensic,
+        request,
+        preGateTelemetry,
+        'AI_CORE_FINAL_GATE_BLOCKED',
       ),
     );
   }

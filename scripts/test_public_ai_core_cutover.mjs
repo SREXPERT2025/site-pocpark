@@ -40,6 +40,7 @@ const publicEnv = {
   AI_CORE_PUBLIC_RUNTIME_SHA: AI_CORE_RUNTIME_SHA,
   AI_CORE_PUBLIC_CONTRACT_SHA: AI_CORE_CONTRACT_SHA,
   AI_CORE_PUBLIC_SITE_SHA: 'a'.repeat(40),
+  ROSPARK_DEPLOYED_SITE_SHA: 'a'.repeat(40),
   AI_CORE_PUBLIC_GATEWAY_SHA: 'b'.repeat(40),
   AI_CORE_IDENTITY_HMAC_KEY: 'identity-key-at-least-32-bytes-long',
 };
@@ -60,6 +61,10 @@ assert.equal(selectAiCoreSiteAudience({
 assert.deepEqual(requirePublicAiCoreReleasePins(publicEnv), {
   siteRelease: 'a'.repeat(40), gatewayRelease: 'b'.repeat(40),
 });
+assert.throws(() => requirePublicAiCoreReleasePins({
+  ...publicEnv,
+  AI_CORE_PUBLIC_SITE_SHA: 'c'.repeat(40),
+}), /AI_CORE_PUBLIC_RELEASE_PIN_INVALID/);
 assert.equal(publicAiCoreRuntimeConfig(publicEnv).runtimeSha, AI_CORE_RUNTIME_SHA);
 
 const identity = mapSiteIdentity({

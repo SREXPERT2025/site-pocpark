@@ -26,8 +26,11 @@ export function requirePublicAiCoreReleasePins(
   env: NodeJS.ProcessEnv = process.env,
 ) {
   const siteRelease = env.AI_CORE_PUBLIC_SITE_SHA ?? '';
+  const actualDeployedSiteRelease = env.ROSPARK_DEPLOYED_SITE_SHA ?? '';
   const gatewayRelease = env.AI_CORE_PUBLIC_GATEWAY_SHA ?? '';
   if (!/^[a-f0-9]{40}$/.test(siteRelease)
+    || !/^[a-f0-9]{40}$/.test(actualDeployedSiteRelease)
+    || siteRelease !== actualDeployedSiteRelease
     || !/^[a-f0-9]{40}$/.test(gatewayRelease)
     || env.AI_CORE_PUBLIC_RUNTIME_SHA !== PUBLIC_AI_CORE_RUNTIME_SHA
     || env.AI_CORE_PUBLIC_CONTRACT_SHA !== PUBLIC_AI_CORE_CONTRACT_SHA) {
