@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import https from 'node:https';
 import os from 'node:os';
 import path from 'node:path';
@@ -30,6 +38,51 @@ assert.equal(
   SITE_SHA,
 );
 const work = mkdtempSync(path.join(os.tmpdir(), 'public-ai-core-http-'));
+const nextCli = path.join(ROOT, 'node_modules', 'next', 'dist', 'bin', 'next');
+const deploymentEnvFiles = [
+  '.env',
+  '.env.local',
+  '.env.production',
+  '.env.production.local',
+];
+
+function createRuntimeRoot(name, options = {}) {
+  const runtimeRoot = path.join(work, name);
+  mkdirSync(runtimeRoot, { recursive: true });
+  symlinkSync(path.join(ROOT, '.next'), path.join(runtimeRoot, '.next'), 'dir');
+  symlinkSync(
+    path.join(ROOT, 'node_modules'),
+    path.join(runtimeRoot, 'node_modules'),
+    'dir',
+  );
+  if (existsSync(path.join(ROOT, 'public'))) {
+    symlinkSync(path.join(ROOT, 'public'), path.join(runtimeRoot, 'public'), 'dir');
+  }
+  if (options.envProduction !== undefined) {
+    writeFileSync(
+      path.join(runtimeRoot, '.env.production'),
+      options.envProduction,
+      { encoding: 'utf8', mode: 0o600 },
+    );
+  }
+  return runtimeRoot;
+}
+
+function assertIsolatedRuntimeRoot(runtimeRoot) {
+  for (const name of deploymentEnvFiles) {
+    assert.equal(
+      existsSync(path.join(runtimeRoot, name)),
+      false,
+      `ISOLATED_RUNTIME_ENV_FILE_VISIBLE:${name}`,
+    );
+  }
+}
+
+const isolatedRuntimeRoot = createRuntimeRoot('isolated-runtime');
+assertIsolatedRuntimeRoot(isolatedRuntimeRoot);
+const historicalEnvRuntimeRoot = createRuntimeRoot('historical-env-runtime', {
+  envProduction: `AI_CORE_PUBLIC_SITE_SHA=${SITE_SHA}\n`,
+});
 const keyPath = path.join(work, 'key.pem');
 const certPath = path.join(work, 'cert.pem');
 const certificate = spawnSync('openssl', [
@@ -213,8 +266,20 @@ async function withSite(publicEnabled, task, options = {}) {
   const port = 3300 + runIndex;
   const dbPath = path.join(work, `dialog-${runIndex}.sqlite`);
   const forensicDbPath = path.join(work, `public-forensic-${runIndex}.sqlite`);
+  const inheritedEnv = { ...process.env };
+  for (const key of Object.keys(inheritedEnv)) {
+    if (key.startsWith('AI_CORE_')
+      || key.startsWith('AI_WIDGET_')
+      || key === 'ROSPARK_DEPLOYED_SITE_SHA') {
+      delete inheritedEnv[key];
+    }
+  }
+  const runtimeRoot = options.runtimeRoot ?? isolatedRuntimeRoot;
+  if (runtimeRoot === isolatedRuntimeRoot) {
+    assertIsolatedRuntimeRoot(runtimeRoot);
+  }
   const childEnv = {
-    ...process.env,
+    ...inheritedEnv,
     NODE_ENV: 'production',
     NODE_TLS_REJECT_UNAUTHORIZED: '0',
     NEXT_PUBLIC_SITE_URL: ORIGIN,
@@ -248,11 +313,19 @@ async function withSite(publicEnabled, task, options = {}) {
   for (const [key, value] of Object.entries(options.env ?? {})) {
     if (value === undefined) delete childEnv[key];
   }
+  if (Object.hasOwn(options.env ?? {}, 'AI_CORE_PUBLIC_SITE_SHA')
+    && options.env.AI_CORE_PUBLIC_SITE_SHA === undefined) {
+    assert.equal(
+      Object.hasOwn(childEnv, 'AI_CORE_PUBLIC_SITE_SHA'),
+      false,
+      'CHILD_ENV_PUBLIC_SITE_PIN_MUST_BE_ABSENT',
+    );
+  }
   const child = spawn(
     process.execPath,
-    ['node_modules/next/dist/bin/next', 'start', '-p', String(port)],
+    [nextCli, 'start', '-p', String(port)],
     {
-      cwd: ROOT,
+      cwd: runtimeRoot,
       env: childEnv,
       stdio: ['ignore', 'pipe', 'pipe'],
     },
@@ -321,10 +394,10 @@ async function assertCompiledReleasePinFailure(options, expectedReasonCode) {
 }
 
 // OFF: an ordinary visitor remains on the exact legacy route.
-await withSite(false, async ({ port }) => {
+await withSite(false, async ({ port, readSiteLogs }) => {
   const before = { ...counts };
   const result = await chat(port, '11111111-1111-4111-8111-111111111111');
-  assert.equal(result.response.status, 200);
+  assert.equal(result.response.status, 200, `${result.answer}\n${readSiteLogs()}`);
   assert.equal(result.response.headers.get('x-ai-widget-route'), 'legacy_qwen');
   assert.equal(result.answer, 'Детерминированный legacy ответ.');
   assert.equal(counts.core, before.core);
@@ -416,6 +489,24 @@ await assertCompiledReleasePinFailure({
 await assertCompiledReleasePinFailure({
   env: { AI_CORE_PUBLIC_CONTRACT_SHA: 'c'.repeat(40) },
 }, 'AI_CORE_PUBLIC_CONTRACT_PIN_MISMATCH');
+
+// Historical incident evidence: deleting the child-process pin was not enough
+// while a visible .env.production supplied the valid value. Next.js loaded it
+// and the compiled production handler returned the false HTTP 200 observed in
+// the failed maintenance acceptance.
+await withSite(true, async ({ port }) => {
+  const before = { ...counts };
+  const result = await chat(port, randomUUID());
+  assert.equal(result.response.status, 200);
+  assert.equal(result.response.headers.get('x-ai-widget-route'), 'public_ai_core');
+  assert.equal(counts.core, before.core + 1);
+}, {
+  runtimeRoot: historicalEnvRuntimeRoot,
+  env: { AI_CORE_PUBLIC_SITE_SHA: undefined },
+});
+
+// The isolated runtime has no deployment env files. The exact same compiled
+// production handler now observes the genuinely missing pin and fails closed.
 await assertCompiledReleasePinFailure({
   env: { AI_CORE_PUBLIC_SITE_SHA: undefined },
 }, 'AI_CORE_PUBLIC_SITE_PIN_MISMATCH');
@@ -510,7 +601,9 @@ await withSite(false, async ({ port }) => {
   assert.equal(counts.legacy, before.legacy + 1);
 });
 
-gateway.close();
+await new Promise((resolve, reject) => {
+  gateway.close((error) => (error ? reject(error) : resolve()));
+});
 console.log(JSON.stringify({
   schema: 'rospark-public-ai-core-http-harness-v1',
   off_legacy_route: 'pass',
@@ -522,8 +615,13 @@ console.log(JSON.stringify({
   public_blocked_safe_forensic: 'pass',
   terminal_public_route: 'pass',
   compiled_handler_release_pin_gate: 'pass',
+  isolated_runtime_env_files_visible: false,
+  correct_public_site_pin: 'pass',
+  missing_public_site_pin: 'http_503_exact_reason',
+  wrong_public_site_pin: 'http_503_exact_reason',
   runtime_deployed_site_sha_absent: 'pass',
   runtime_deployed_site_sha_wrong_ignored: 'pass',
+  historical_env_file_false_200: 'pass',
   precise_release_pin_reason_codes: 'pass',
   rollback_off: 'pass',
   site_b_lifecycle: 'pass',
@@ -531,3 +629,4 @@ console.log(JSON.stringify({
   model_requests: 0,
   counts,
 }));
+rmSync(work, { recursive: true, force: true });
