@@ -6,6 +6,7 @@ import {
   CANONICALIZATION_VERSION,
   canonicalJson,
   sha256,
+  type AiCoreTransportEvidence,
   type AiCoreRuntimeObservabilityTrace,
 } from './owner-ai-canary-adapter.ts';
 
@@ -150,6 +151,8 @@ function tracePipeline(
   runtimeTrace: AiCoreRuntimeObservabilityTrace | null,
   input: Parameters<typeof composeAiCoreTurnTrace>[0],
 ): AiTraceStage[] {
+  const transportEvidence = input.transportEvidence ?? null;
+  const runtimeReached = typeof transportEvidence?.http_status === 'number';
   const stages: AiTraceStage[] = runtimeTrace?.pipeline.map((stage) => ({
     name: String(stage.name || 'unknown'),
     status: String(stage.status || 'warn') as AiTraceStage['status'],
@@ -160,7 +163,45 @@ function tracePipeline(
       ? stage.reason_codes.map(String) : [],
     latency_ms: typeof stage.latency_ms === 'number'
       ? stage.latency_ms : null,
-  })) ?? [
+  })) ?? (runtimeReached ? [
+    {
+      name: 'runtime_transport',
+      status: 'pass' as const,
+      summary: 'Runtime returned an HTTP response; internal stage trace is unavailable.',
+      input: transportEvidence,
+      output: {
+        http_status: transportEvidence?.http_status,
+        outcome: transportEvidence?.outcome,
+      },
+      reason_codes: [],
+      latency_ms: null,
+    },
+    ...[
+      'context_integrity', 'project_memory', 'sales_controller',
+      'engineering_lab', 'decision_package', 'knowledge_sources',
+      'verbalization_projection', 'executor', 'evaluator_raw', 'repair',
+      'evaluator_final', 'runtime_publication',
+    ].map((name) => ({
+      name,
+      status: 'warn' as const,
+      summary: 'Runtime was reached, but this stage is unobserved by Site.',
+      input: null,
+      output: null,
+      reason_codes: ['RUNTIME_STAGE_UNOBSERVED'],
+      latency_ms: null,
+    })),
+    ...(transportEvidence?.outcome === 'http_response_rejected' ? [{
+      name: 'site_response_validation',
+      status: 'error' as const,
+      summary: input.siteBlockingPredicate
+        || 'Site rejected the Runtime response envelope.',
+      input: transportEvidence,
+      output: null,
+      reason_codes: input.siteBlockingPredicate
+        ? [input.siteBlockingPredicate] : [],
+      latency_ms: null,
+    }] : []),
+  ] : [
     {
       name: input.preRuntimeFailureStage ?? 'runtime_transport',
       status: 'error' as const,
@@ -190,7 +231,7 @@ function tracePipeline(
       reason_codes: [] as string[],
       latency_ms: null,
     })),
-  ];
+  ]);
   stages.push({
     name: 'site_publication',
     status: input.publicationStatus === 'published'
@@ -240,9 +281,11 @@ export function composeAiCoreTurnTrace(input: {
   currentMessage: string;
   recentMessages: readonly Record<string, unknown>[];
   runtimeTrace?: AiCoreRuntimeObservabilityTrace | null;
+  transportEvidence?: AiCoreTransportEvidence | null;
   publicationStatus: AiTracePublicationStatus;
   visibleAnswer?: string | null;
   visibleSource?: string | null;
+  publicationProvenance?: Readonly<Record<string, unknown>> | null;
   siteBlockingPredicate?: string | null;
   publishedAt?: string | null;
   stateVersionAfter?: number | null;
@@ -296,8 +339,11 @@ export function composeAiCoreTurnTrace(input: {
     },
     routing: {
       route: input.route,
-      executor: runtimeRouting.executor ?? 'not_reached',
-      executor_request_count: runtimeRouting.executor_request_count ?? 0,
+      executor: runtimeRouting.executor
+        ?? (typeof input.transportEvidence?.http_status === 'number'
+          ? 'unobserved' : 'not_reached'),
+      executor_request_count: runtimeRouting.executor_request_count
+        ?? (typeof input.transportEvidence?.http_status === 'number' ? null : 0),
       retries: runtimeRouting.retries ?? 0,
       fallbacks: runtimeRouting.fallbacks ?? 0,
     },
@@ -323,6 +369,7 @@ export function composeAiCoreTurnTrace(input: {
       status: input.publicationStatus,
       visible_answer: input.visibleAnswer ?? null,
       visible_source: input.visibleSource ?? null,
+      candidate_provenance: input.publicationProvenance ?? null,
       site_blocking_predicate: input.siteBlockingPredicate ?? null,
       published_at: input.publishedAt ?? null,
       route: input.route,
@@ -340,7 +387,10 @@ export function composeAiCoreTurnTrace(input: {
       first_failure_stage: firstFailureStage,
       instruction_leak_warning: instructionLeakWarning,
       trace_capture_boundary: runtimeTrace
-        ? 'site_plus_runtime' : 'site_only_pre_runtime',
+        ? 'site_plus_runtime'
+        : typeof input.transportEvidence?.http_status === 'number'
+          ? 'site_after_runtime_without_runtime_trace'
+          : 'site_only_pre_runtime',
       chain_of_thought_captured: false,
     },
   }) as Omit<AiCoreTurnTrace, 'trace_sha256'>;

@@ -1,0 +1,200 @@
+{
+  "client_input": {
+    "page_context": null,
+    "raw_client_message": "Привет!",
+    "recent_conversation_supplied_to_core": [],
+    "source_page": "/vozmozhnosti/postoyannie-klienti"
+  },
+  "diagnostics": {
+    "chain_of_thought_captured": false,
+    "first_failure_stage": "runtime_transport",
+    "instruction_leak_warning": false,
+    "trace_capture_boundary": "site_only_pre_runtime"
+  },
+  "identity": {
+    "ai_core_request_id": "aicore_49de9787-c3a3-4b3f-a010-b6e18f6492a3",
+    "canonicalization_version": "CANONICAL_JSON_HASH_V1",
+    "contract_sha": "6cd71a5596346925ecdd2ffeb9d45262d881ee93",
+    "conversation_thread_id": "cth_v1__T8jFDksM6Btu1mKZNdY9ZmjZjEwko1pOh3kXlWUEnA",
+    "gateway_sha": "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
+    "message_id": "msg_v1_51ku34CKDXkBOUitGXY6X9JYVaKF-8EQJAt0PV6b7Iw",
+    "parent_message_id": null,
+    "route": "public_ai_core",
+    "runtime_sha": "b29fa052e278e04adefcc1e18788427ee83d5b8c",
+    "runtime_version": "1.2.3",
+    "site_request_id": "b759bf90-e3c3-4616-9adf-4ba7fdbae168",
+    "site_sha": "c96df0a27c88048a7c84d7c254a5b1cea3919a9e",
+    "timestamp": "2026-08-12T12:47:02.172Z",
+    "turn_id": "8cb34ae7-4190-4ee8-8163-a774357262a4"
+  },
+  "latency": {
+    "executor_ms": null,
+    "runtime_total_ms": null,
+    "site_overhead_ms": null,
+    "site_total_ms": 23590,
+    "timeline": []
+  },
+  "pipeline": [
+    {
+      "input": {
+        "contract_sha": "",
+        "runtime_sha": "",
+        "site_sha": "c96df0a27c88048a7c84d7c254a5b1cea3919a9e"
+      },
+      "latency_ms": null,
+      "name": "runtime_transport",
+      "output": null,
+      "reason_codes": [],
+      "status": "error",
+      "summary": "Runtime observability was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "context_integrity",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "project_memory",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "sales_controller",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "engineering_lab",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "decision_package",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "knowledge_sources",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "verbalization_projection",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "executor",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "evaluator_raw",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "repair",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "evaluator_final",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "runtime_publication",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": {
+        "runtime_candidate_status": null
+      },
+      "latency_ms": null,
+      "name": "site_publication",
+      "output": {
+        "blocking_predicate": "",
+        "published_at": "2026-08-12T12:47:25.749Z",
+        "visible_answer": "Привет! На данный момент решение по категориям уже принято и зафиксировано в проекте РОСПАРК. Обратите внимание: * Это финальное инженерное решение, новые варианты или резервные способы не рассматриваются. * Оператор участвует только в ручной обработке исключительных ситуаций и не является автоматическим резервом системы. * Мы не добавляем новое оборудование и не предполагаем наличие неподтверждённой инфраструктуры. Если у вас есть вопросы по реализации уже принятого решения, я готов помочь.",
+        "visible_source": "raw_qwen"
+      },
+      "reason_codes": [],
+      "status": "pass",
+      "summary": "Site published the accepted candidate to the client."
+    }
+  ],
+  "publication": {
+    "published_at": "2026-08-12T12:47:25.749Z",
+    "route": "public_ai_core",
+    "site_blocking_predicate": null,
+    "status": "published",
+    "visible_answer": "Привет! На данный момент решение по категориям уже принято и зафиксировано в проекте РОСПАРК. Обратите внимание: * Это финальное инженерное решение, новые варианты или резервные способы не рассматриваются. * Оператор участвует только в ручной обработке исключительных ситуаций и не является автоматическим резервом системы. * Мы не добавляем новое оборудование и не предполагаем наличие неподтверждённой инфраструктуры. Если у вас есть вопросы по реализации уже принятого решения, я готов помочь.",
+    "visible_source": "raw_qwen"
+  },
+  "routing": {
+    "executor": "not_reached",
+    "executor_request_count": 0,
+    "fallbacks": 0,
+    "retries": 0,
+    "route": "public_ai_core"
+  },
+  "schema_version": "AI_TRACE_VIEWER_V1",
+  "state": {
+    "committed_mutations": [],
+    "mutation_acknowledgement_count": 0,
+    "proposed_mutations": [],
+    "version_after": 0,
+    "version_before": null
+  },
+  "trace_sha256": "14ea785172513cba8085cad2590d1fb550643ff2f9c2cc1f362d0dc4d1471f7d"
+}

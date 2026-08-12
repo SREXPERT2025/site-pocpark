@@ -199,6 +199,20 @@ export type OwnerCanaryRuntimeEnvelope = Readonly<{
   preGateTelemetry: OwnerCanaryPreGateTelemetry;
   restrictedForensic: OwnerCanaryRestrictedForensicEvidence | null;
   observabilityTrace: AiCoreRuntimeObservabilityTrace | null;
+  transportEvidence?: AiCoreTransportEvidence;
+}>;
+
+export type AiCoreTransportEvidence = Readonly<{
+  endpoint: string;
+  request_id: string;
+  request_body_sha256: string;
+  expected_site_sha: string;
+  expected_runtime_sha: string;
+  expected_contract_sha: string;
+  outcome: 'http_response_accepted' | 'http_response_rejected'
+    | 'transport_timeout' | 'transport_unavailable';
+  http_status: number | null;
+  error_class: string | null;
 }>;
 
 export type AiCoreRuntimeObservabilityTrace = Readonly<{
@@ -396,6 +410,13 @@ export function observabilityTraceFromError(error: unknown) {
     || error instanceof AiCoreAdapterBlockedError
     ? error.observabilityTrace
     : null;
+}
+
+export function transportEvidenceFromError(error: unknown) {
+  if (!error || typeof error !== 'object') return null;
+  const evidence = (error as { transportEvidence?: unknown }).transportEvidence;
+  return evidence && typeof evidence === 'object'
+    ? evidence as AiCoreTransportEvidence : null;
 }
 
 function record(value: unknown, code: string) {
@@ -1021,6 +1042,7 @@ export function validateDecisionPackageHash(value: unknown) {
 export function validateOwnerCanaryCoreResponse(
   value: unknown,
   request?: OwnerCanaryCoreRequest,
+  options: { forensicScope?: 'owner' | 'public' } = {},
 ): OwnerCanaryRuntimeEnvelope {
   const envelope = record(value, 'INVALID_AI_CORE_RESPONSE');
   if (envelope.runtime_sha !== AI_CORE_RUNTIME_SHA) {
@@ -1173,6 +1195,20 @@ export function validateOwnerCanaryCoreResponse(
   if (evaluation.status !== 'pass'
     || publication.candidate_status !== 'allowed'
     || publication.published !== false) {
+    if (options.forensicScope === 'public') {
+      throw new AiCoreAdapterBlockedError(
+        'AI_CORE_FINAL_GATE_BLOCKED',
+        preGateTelemetry,
+        buildPublicBlockedSafeForensic(
+          envelope.restricted_forensic,
+          request,
+          preGateTelemetry,
+          'AI_CORE_FINAL_GATE_BLOCKED',
+        ),
+        null,
+        observabilityTrace,
+      );
+    }
     let restrictedForensic: OwnerCanaryRestrictedForensicEvidence;
     try {
       restrictedForensic = validateRestrictedForensic(
@@ -1226,6 +1262,53 @@ export function validateOwnerCanaryCoreResponse(
     preGateTelemetry,
     restrictedForensic: null,
     observabilityTrace,
+  });
+}
+
+export function assertPublicAiCorePublicationAllowed(input: {
+  envelope: OwnerCanaryRuntimeEnvelope;
+  request: OwnerCanaryCoreRequest;
+  conversationThreadId: string;
+  messageId: string;
+  turnId: string;
+}) {
+  const response = input.envelope.response;
+  const telemetry = record(response.telemetry, 'INVALID_AI_CORE_TELEMETRY');
+  const publication = record(
+    telemetry.publication,
+    'INVALID_AI_CORE_PUBLICATION',
+  );
+  const evaluation = record(
+    response.evaluation_result,
+    'INVALID_AI_CORE_EVALUATION',
+  );
+  if (input.request.payload.conversation_thread_id
+      !== input.conversationThreadId
+    || input.request.payload.message_id !== input.messageId
+    || !input.turnId.trim()
+    || response.request_id !== input.request.request_id
+    || response.idempotency_key !== input.request.idempotency_key
+    || response.request_payload_hash !== input.request.request_payload_hash
+    || input.envelope.runtime_sha !== AI_CORE_RUNTIME_SHA
+    || input.envelope.contract_sha !== AI_CORE_CONTRACT_SHA
+    || evaluation.status !== 'pass'
+    || publication.candidate_status !== 'allowed'
+    || publication.published !== false
+    || typeof response.answer !== 'string'
+    || !response.answer.trim()) {
+    throw new Error('AI_CORE_PUBLICATION_PROVENANCE_REJECTED');
+  }
+  return Object.freeze({
+    source: 'current_runtime_response' as const,
+    ai_core_request_id: input.request.request_id,
+    turn_id: input.turnId,
+    conversation_thread_id: input.conversationThreadId,
+    message_id: input.messageId,
+    idempotency_key: input.request.idempotency_key,
+    request_payload_hash: input.request.request_payload_hash,
+    runtime_sha: AI_CORE_RUNTIME_SHA,
+    contract_sha: AI_CORE_CONTRACT_SHA,
+    candidate_status: 'allowed' as const,
   });
 }
 
@@ -1309,12 +1392,23 @@ async function callRuntime(
     timeoutMs?: number;
     upstreamError: string;
     transportErrorPrefix: string;
+    forensicScope: 'owner' | 'public';
   },
 ) {
+  const endpoint = `${input.config.url}/v1/owner-ai-core`;
+  const requestBody = JSON.stringify(request);
+  const baseEvidence = {
+    endpoint,
+    request_id: request.request_id,
+    request_body_sha256: sha256(requestBody),
+    expected_site_sha: request.site_release,
+    expected_runtime_sha: input.config.runtimeSha,
+    expected_contract_sha: input.config.contractSha,
+  };
   let response: Response;
   try {
     response = await (input.fetchImpl ?? fetch)(
-      `${input.config.url}/v1/owner-ai-core`,
+      endpoint,
       {
         method: 'POST',
         headers: {
@@ -1324,7 +1418,7 @@ async function callRuntime(
           'X-AI-Core-Contract-SHA': input.config.contractSha,
           'X-Request-Id': request.request_id,
         },
-        body: JSON.stringify(request),
+        body: requestBody,
         cache: 'no-store',
         signal: AbortSignal.timeout(input.timeoutMs ?? 95_000),
       },
@@ -1336,15 +1430,50 @@ async function callRuntime(
       `${input.transportErrorPrefix}_TRANSPORT_${timeout ? 'TIMEOUT' : 'UNAVAILABLE'}`,
       { cause },
     );
+    Object.assign(error, { transportEvidence: Object.freeze({
+      ...baseEvidence,
+      outcome: timeout ? 'transport_timeout' : 'transport_unavailable',
+      http_status: null,
+      error_class: error.message,
+    } satisfies AiCoreTransportEvidence) });
     throw error;
   }
   const body = await response.json().catch(() => null);
   if (!response.ok) {
     const error = new Error(input.upstreamError);
-    Object.assign(error, { status: response.status, safeBody: body });
+    Object.assign(error, {
+      status: response.status,
+      safeBody: body,
+      transportEvidence: Object.freeze({
+        ...baseEvidence,
+        outcome: 'http_response_rejected',
+        http_status: response.status,
+        error_class: input.upstreamError,
+      } satisfies AiCoreTransportEvidence),
+    });
     throw error;
   }
-  return validateOwnerCanaryCoreResponse(body, request);
+  const acceptedEvidence = Object.freeze({
+    ...baseEvidence,
+    outcome: 'http_response_accepted',
+    http_status: response.status,
+    error_class: null,
+  } satisfies AiCoreTransportEvidence);
+  try {
+    const envelope = validateOwnerCanaryCoreResponse(body, request, {
+      forensicScope: input.forensicScope,
+    });
+    return Object.freeze({ ...envelope, transportEvidence: acceptedEvidence });
+  } catch (error) {
+    if (error && typeof error === 'object') {
+      Object.assign(error, { transportEvidence: Object.freeze({
+        ...acceptedEvidence,
+        outcome: 'http_response_rejected',
+        error_class: error instanceof Error ? error.message : 'UNKNOWN',
+      } satisfies AiCoreTransportEvidence) });
+    }
+    throw error;
+  }
 }
 
 export async function callOwnerCanaryRuntime(
@@ -1361,6 +1490,7 @@ export async function callOwnerCanaryRuntime(
     timeoutMs: input.timeoutMs,
     upstreamError: 'AI_CORE_OWNER_CANARY_UPSTREAM_ERROR',
     transportErrorPrefix: 'AI_CORE_OWNER_CANARY',
+    forensicScope: 'owner',
   });
 }
 
@@ -1378,6 +1508,7 @@ export async function callPublicAiCoreRuntime(
     timeoutMs: input.timeoutMs,
     upstreamError: 'AI_CORE_PUBLIC_UPSTREAM_ERROR',
     transportErrorPrefix: 'AI_CORE_PUBLIC',
+    forensicScope: 'public',
   });
 }
 

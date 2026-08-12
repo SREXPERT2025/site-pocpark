@@ -31,6 +31,7 @@
     "test:owner-ai-canary-release": "python3 scripts/test_owner_ai_canary_release_manifest.py",
     "test:owner-ai-canary-v4-production": "python3 scripts/test_owner_canary_v4_production_path.py",
     "test:public-ai-core": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_public_ai_core_cutover.mjs",
+    "test:public-ai-publication-path": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_public_ai_core_publication_path_v1.mjs",
     "test:public-ai-core-env": "node scripts/test_configure_public_ai_core_env.mjs",
     "test:ai-core-ubuntu-staging": "python3 scripts/test_ai_core_ubuntu_staging.py",
     "test:public-ai-core-http": "node scripts/test_public_ai_core_http_harness.mjs",

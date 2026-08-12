@@ -47,6 +47,7 @@ import {
   CANONICALIZATION_VERSION,
   acknowledgePublicAiCoreMutations,
   acknowledgeOwnerCanaryMutations,
+  assertPublicAiCorePublicationAllowed,
   buildPublicAiCoreRequest,
   buildOwnerCanaryCoreRequest,
   callPublicAiCoreRuntime,
@@ -56,6 +57,8 @@ import {
   preGateTelemetryFromError,
   publicBlockedSafeForensicFromError,
   restrictedForensicFromError,
+  transportEvidenceFromError,
+  validateOwnerCanaryCoreResponse,
 } from './owner-ai-canary-adapter';
 import { recordOwnerCanaryRestrictedForensic } from
   './owner-canary-restricted-forensic-core';
@@ -671,6 +674,7 @@ export async function handleAiWidgetChat(request: Request) {
           currentMessage: lastUserMessage,
           recentMessages: traceHistory,
           runtimeTrace,
+          transportEvidence: transportEvidenceFromError(error),
           publicationStatus,
           visibleAnswer: null,
           visibleSource: null,
@@ -745,8 +749,24 @@ export async function handleAiWidgetChat(request: Request) {
         if (cached.requestPayloadHash !== coreRequest.request_payload_hash) {
           throw new Error('OWNER_CANARY_CACHE_IDEMPOTENCY_CONFLICT');
         }
+        const cachedEnvelope = validateOwnerCanaryCoreResponse(
+          cached.response,
+          coreRequest,
+          { forensicScope: aiCoreAudience === 'public_ai_core'
+            ? 'public' : 'owner' },
+        );
+        if (aiCoreAudience === 'public_ai_core') {
+          assertPublicAiCorePublicationAllowed({
+            envelope: cachedEnvelope,
+            request: coreRequest,
+            conversationThreadId: ownerIdentity.conversationThreadId,
+            messageId: ownerIdentity.messageId,
+            turnId: parsed.payload.turnId,
+          });
+        }
         return textResponse(cached.visibleAnswer, {
-          route: 'owner_ai_core_cached',
+          route: aiCoreAudience === 'public_ai_core'
+            ? 'public_ai_core_cached' : 'owner_ai_core_cached',
           requestId,
           handoffMode,
           extraHeaders: ownerHeaders,
@@ -761,6 +781,15 @@ export async function handleAiWidgetChat(request: Request) {
       const envelope = aiCoreAudience === 'public_ai_core'
         ? await callPublicAiCoreRuntime(coreRequest)
         : await callOwnerCanaryRuntime(coreRequest);
+      const publicationProvenance = aiCoreAudience === 'public_ai_core'
+        ? assertPublicAiCorePublicationAllowed({
+          envelope,
+          request: coreRequest,
+          conversationThreadId: ownerIdentity.conversationThreadId,
+          messageId: ownerIdentity.messageId,
+          turnId: parsed.payload.turnId,
+        })
+        : null;
       if (aiCoreAudience === 'owner_canary') {
         preGateTelemetryRef = recordOwnerCanaryPreGateTelemetry(db, {
           turnId: parsed.payload.turnId,
@@ -900,9 +929,11 @@ export async function handleAiWidgetChat(request: Request) {
           currentMessage: lastUserMessage,
           recentMessages: traceHistory,
           runtimeTrace: envelope.observabilityTrace,
+          transportEvidence: envelope.transportEvidence ?? null,
           publicationStatus: 'published',
           visibleAnswer: answer,
           visibleSource: repair.applied ? 'repaired_answer' : 'raw_qwen',
+          publicationProvenance,
           publishedAt: completedAt,
           stateVersionAfter: applied.state.stateVersion,
           committedMutations: applied.accepted ? mutations : [],

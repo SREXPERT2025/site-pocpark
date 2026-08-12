@@ -1,0 +1,217 @@
+{
+  "client_input": {
+    "page_context": null,
+    "raw_client_message": "что ты написал? сам читал?",
+    "recent_conversation_supplied_to_core": [
+      {
+        "content": "Привет!",
+        "created_at": "2026-08-12T12:47:02.175Z",
+        "message_id": "msg_v1_51ku34CKDXkBOUitGXY6X9JYVaKF-8EQJAt0PV6b7Iw",
+        "role": "user"
+      },
+      {
+        "content": "Привет! На данный момент решение по категориям уже принято и зафиксировано в проекте РОСПАРК. Обратите внимание: * Это финальное инженерное решение, новые варианты или резервные способы не рассматриваются. * Оператор участвует только в ручной обработке исключительных ситуаций и не является автоматическим резервом системы. * Мы не добавляем новое оборудование и не предполагаем наличие неподтверждённой инфраструктуры. Если у вас есть вопросы по реализации уже принятого решения, я готов помочь.",
+        "created_at": "2026-08-12T12:47:25.744Z",
+        "message_id": "response:b84e596ca35f455a",
+        "role": "assistant"
+      }
+    ],
+    "source_page": "/vozmozhnosti/postoyannie-klienti"
+  },
+  "diagnostics": {
+    "chain_of_thought_captured": false,
+    "first_failure_stage": "site_pre_runtime_gate",
+    "instruction_leak_warning": false,
+    "trace_capture_boundary": "site_only_pre_runtime"
+  },
+  "identity": {
+    "ai_core_request_id": "aicore_1ec3fcdc-bc8d-4d3f-8904-c0294602b6fc",
+    "canonicalization_version": "CANONICAL_JSON_HASH_V1",
+    "contract_sha": "6cd71a5596346925ecdd2ffeb9d45262d881ee93",
+    "conversation_thread_id": "cth_v1__T8jFDksM6Btu1mKZNdY9ZmjZjEwko1pOh3kXlWUEnA",
+    "gateway_sha": "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
+    "message_id": "msg_v1_Yiote1ovWN9b2o4y8y9LPnIo7Sl8f_gXcbl3XZT_rtg",
+    "parent_message_id": "response:b84e596ca35f455a",
+    "route": "public_ai_core",
+    "runtime_sha": "b29fa052e278e04adefcc1e18788427ee83d5b8c",
+    "runtime_version": "1.2.3",
+    "site_request_id": "13444c2c-3aa0-4d00-8c3c-1752abe76e7e",
+    "site_sha": "c96df0a27c88048a7c84d7c254a5b1cea3919a9e",
+    "timestamp": "2026-08-12T12:51:39.674Z",
+    "turn_id": "348c04ca-8c96-4831-9bfb-551aceca72fb"
+  },
+  "latency": {
+    "executor_ms": null,
+    "runtime_total_ms": null,
+    "site_overhead_ms": null,
+    "site_total_ms": 12857,
+    "timeline": []
+  },
+  "pipeline": [
+    {
+      "input": {
+        "contract_sha": "",
+        "runtime_sha": "",
+        "site_sha": "c96df0a27c88048a7c84d7c254a5b1cea3919a9e"
+      },
+      "latency_ms": null,
+      "name": "site_pre_runtime_gate",
+      "output": null,
+      "reason_codes": [
+        "AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH"
+      ],
+      "status": "error",
+      "summary": "AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH"
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "context_integrity",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "project_memory",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "sales_controller",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "engineering_lab",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "decision_package",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "knowledge_sources",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "verbalization_projection",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "executor",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "evaluator_raw",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "repair",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "evaluator_final",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": null,
+      "latency_ms": null,
+      "name": "runtime_publication",
+      "output": null,
+      "reason_codes": [],
+      "status": "not_reached",
+      "summary": "Stage was not reached."
+    },
+    {
+      "input": {
+        "runtime_candidate_status": null
+      },
+      "latency_ms": null,
+      "name": "site_publication",
+      "output": {
+        "blocking_predicate": "AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH",
+        "published_at": "",
+        "visible_answer": null,
+        "visible_source": null
+      },
+      "reason_codes": [
+        "AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH"
+      ],
+      "status": "error",
+      "summary": "Site terminal publication status: error."
+    }
+  ],
+  "publication": {
+    "published_at": null,
+    "route": "public_ai_core",
+    "site_blocking_predicate": "AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH",
+    "status": "error",
+    "visible_answer": null,
+    "visible_source": null
+  },
+  "routing": {
+    "executor": "not_reached",
+    "executor_request_count": 0,
+    "fallbacks": 0,
+    "retries": 0,
+    "route": "public_ai_core"
+  },
+  "schema_version": "AI_TRACE_VIEWER_V1",
+  "state": {
+    "committed_mutations": [],
+    "mutation_acknowledgement_count": 0,
+    "proposed_mutations": [],
+    "version_after": null,
+    "version_before": null
+  },
+  "trace_sha256": "6d1c9ad2c3994171f130fa0d14f37511d7d31ae2ad7261f51ffb2dad394dddf6"
+}
