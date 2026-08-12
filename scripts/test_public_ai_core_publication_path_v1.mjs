@@ -8,6 +8,7 @@ import {
   assertPublicAiCorePublicationAllowed,
   buildPublicAiCoreRequest,
   callPublicAiCoreRuntime,
+  observabilityTraceFromError,
   publicBlockedSafeForensicFromError,
   transportEvidenceFromError,
 } from '../app/lib/owner-ai-canary-adapter.ts';
@@ -77,6 +78,9 @@ const provenance = assertPublicAiCorePublicationAllowed({
 assert.equal(provenance.ai_core_request_id, request.request_id);
 assert.equal(provenance.candidate_status, 'allowed');
 assert.equal(accepted.transportEvidence.http_status, 200);
+assert.ok(accepted.observabilityTrace);
+assert.equal(accepted.observabilityTrace.identity.runtime_sha,
+  AI_CORE_RUNTIME_SHA);
 
 // A response belonging to another message/thread can never be published.
 assert.throws(() => assertPublicAiCorePublicationAllowed({
@@ -155,12 +159,21 @@ db.close();
 
 // Public non-pass responses are blocked by the public gate, without applying
 // the owner-only restricted-forensic equality contract.
-const blockedBody = structuredClone(runtimeBody);
-blockedBody.response.evaluation_result.status = 'review_required';
-blockedBody.response.evaluation_result.reason_codes = ['review_required'];
-blockedBody.response.telemetry.evaluation.final_status = 'review_required';
-blockedBody.response.telemetry.publication.candidate_status = 'blocked';
-blockedBody.restricted_forensic = { repair: { applied: true, method: 'none' } };
+const blockedProbe = spawnSync(
+  'python3', [
+    'scripts/run_owner_ai_core_deterministic_contract_probe.py',
+    '--fixed-answer',
+    'Оставьте телефон прямо сейчас? Сколько у вас въездов?',
+  ],
+  { input: JSON.stringify(request), encoding: 'utf8' },
+);
+assert.equal(blockedProbe.status, 0, blockedProbe.stderr);
+const blockedBody = JSON.parse(blockedProbe.stdout);
+assert.equal(blockedBody.response.success, true);
+assert.notEqual(blockedBody.response.evaluation_result.status, 'pass');
+assert.equal(blockedBody.response.telemetry.publication.candidate_status,
+  'blocked');
+assert.ok(blockedBody.observability_trace);
 let blockedError;
 try {
   await callPublicAiCoreRuntime(request, {
@@ -174,14 +187,50 @@ try {
   blockedError = error;
 }
 assert.equal(blockedError.message, 'AI_CORE_FINAL_GATE_BLOCKED');
-assert.ok(publicBlockedSafeForensicFromError(blockedError));
+const blockedForensic = publicBlockedSafeForensicFromError(blockedError);
+const blockedRuntimeTrace = observabilityTraceFromError(blockedError);
+assert.ok(blockedForensic);
+assert.ok(blockedRuntimeTrace);
+assert.equal(blockedRuntimeTrace.identity.runtime_sha, AI_CORE_RUNTIME_SHA);
+assert.deepEqual(
+  blockedForensic.final_evaluation_reason_codes,
+  blockedBody.response.evaluation_result.reason_codes,
+);
+assert.deepEqual(
+  blockedRuntimeTrace.pipeline.find((item) =>
+    item.name === 'evaluator_final').reason_codes,
+  [...blockedBody.response.evaluation_result.reason_codes].sort(),
+);
 assert.equal(transportEvidenceFromError(blockedError).http_status, 200);
 assert.equal(transportEvidenceFromError(blockedError).outcome,
   'http_response_rejected');
 
+// The exact bridge trace must survive production Site validation and retain
+// Runtime block reasons in the composed Site trace.
+const preservedTrace = composeAiCoreTurnTrace({
+  turnId: '33333333-3333-4333-8333-333333333333',
+  siteRequestId: '44444444-4444-4444-8444-444444444444',
+  aiCoreRequestId: request.request_id,
+  conversationThreadId: thread, messageId: message,
+  timestamp: request.sent_at, route: 'public_ai_core',
+  siteSha: 'a'.repeat(40), gatewaySha: 'b'.repeat(40),
+  sourcePage: '/', currentMessage: 'Сколько будет 2+2?', recentMessages: [],
+  runtimeTrace: blockedRuntimeTrace,
+  transportEvidence: transportEvidenceFromError(blockedError),
+  publicationStatus: 'blocked', siteBlockingPredicate: blockedError.message,
+});
+assert.equal(preservedTrace.diagnostics.trace_capture_boundary,
+  'site_plus_runtime');
+assert.deepEqual(
+  preservedTrace.pipeline.find((item) =>
+    item.name === 'evaluator_final').reason_codes,
+  [...blockedBody.response.evaluation_result.reason_codes].sort(),
+);
+assert.equal(preservedTrace.publication.status, 'blocked');
+
 // A reached Runtime must never be rendered as "not reached" merely because
 // its optional detailed observability trace is absent or invalid.
-const trace = composeAiCoreTurnTrace({
+const unobservedTrace = composeAiCoreTurnTrace({
   turnId: '33333333-3333-4333-8333-333333333333',
   siteRequestId: '44444444-4444-4444-8444-444444444444',
   aiCoreRequestId: request.request_id,
@@ -193,19 +242,22 @@ const trace = composeAiCoreTurnTrace({
   transportEvidence: transportEvidenceFromError(blockedError),
   publicationStatus: 'blocked', siteBlockingPredicate: blockedError.message,
 });
-assert.equal(trace.pipeline[0].name, 'runtime_transport');
-assert.equal(trace.pipeline[0].status, 'pass');
-assert.equal(trace.diagnostics.trace_capture_boundary,
+assert.equal(unobservedTrace.pipeline[0].name, 'runtime_transport');
+assert.equal(unobservedTrace.pipeline[0].status, 'pass');
+assert.equal(unobservedTrace.diagnostics.trace_capture_boundary,
   'site_after_runtime_without_runtime_trace');
-assert.equal(trace.diagnostics.first_failure_stage, 'site_response_validation');
-assert.equal(trace.publication.visible_answer, null);
+assert.equal(unobservedTrace.diagnostics.first_failure_stage,
+  'site_response_validation');
+assert.equal(unobservedTrace.publication.visible_answer, null);
 
 console.log(JSON.stringify({
-  tests: 23,
+  tests: 30,
   current_publication: 'pass',
   identity_mismatch: 'blocked',
   missing_publication: 'blocked',
   stale_cache: 'not_selected',
   public_forensic_scope: 'pass',
   reached_runtime_trace: 'pass',
+  canonical_runtime_trace_preserved: 'pass',
+  blocked_reason_codes_preserved: 'pass',
 }, null, 2));

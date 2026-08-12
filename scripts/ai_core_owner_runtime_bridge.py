@@ -168,6 +168,9 @@ class OwnerRuntimeBridge:
             constants_module = importlib.import_module(
                 "sales_conversation_controller.site_contract_runtime_v1.constants"
             )
+            canonical_module = importlib.import_module(
+                "sales_conversation_controller.site_contract_runtime_v1.canonical"
+            )
             forensic_module = importlib.import_module(
                 "sales_conversation_controller.site_contract_runtime_v1.restricted_forensic"
             )
@@ -179,11 +182,13 @@ class OwnerRuntimeBridge:
                 sys.path.pop(0)
         adapter_path = Path(adapter_module.__file__).resolve(strict=True)
         constants_path = Path(constants_module.__file__).resolve(strict=True)
+        canonical_path = Path(canonical_module.__file__).resolve(strict=True)
         forensic_path = Path(forensic_module.__file__).resolve(strict=True)
         trace_path = Path(trace_module.__file__).resolve(strict=True)
         if (
             self.runtime_dir not in adapter_path.parents
             or self.runtime_dir not in constants_path.parents
+            or self.runtime_dir not in canonical_path.parents
             or self.runtime_dir not in forensic_path.parents
             or self.runtime_dir not in trace_path.parents
         ):
@@ -204,6 +209,7 @@ class OwnerRuntimeBridge:
         ):
             raise ValueError("AI_CORE_RUNTIME_CONTRACT_MISMATCH")
         self.bind_runtime_forensic = forensic_module.bind_runtime_release_identity
+        self.runtime_trace_sha256 = canonical_module.sha256
         self.runtime_trace_schema_version = trace_module.TRACE_SCHEMA_VERSION
         self.adapter = adapter_module.OfflineRuntimeAdapterV1(
             qwen_executor=executor or QwenOwnerExecutor(
@@ -245,8 +251,9 @@ class OwnerRuntimeBridge:
             "observability_trace": observability_trace,
         }
 
-    @staticmethod
-    def _bind_observability_trace(value: Any) -> dict[str, Any] | None:
+    def _bind_observability_trace(
+        self, value: Any,
+    ) -> dict[str, Any] | None:
         if not isinstance(value, dict):
             return None
         trace = copy.deepcopy(value)
@@ -255,11 +262,7 @@ class OwnerRuntimeBridge:
             return None
         identity["runtime_sha"] = RUNTIME_SHA
         trace.pop("trace_sha256", None)
-        encoded = json.dumps(
-            trace, ensure_ascii=False, sort_keys=True,
-            separators=(",", ":"), allow_nan=False,
-        ).encode("utf-8")
-        trace["trace_sha256"] = hashlib.sha256(encoded).hexdigest()
+        trace["trace_sha256"] = self.runtime_trace_sha256(trace)
         return trace
 
     def acknowledge(self, acknowledgement: dict[str, Any]) -> dict[str, Any]:

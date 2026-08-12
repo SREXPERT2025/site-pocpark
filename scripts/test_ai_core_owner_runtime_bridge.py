@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import copy
 import json
 import shutil
 import sys
@@ -119,6 +120,13 @@ def main() -> int:
         request = request_for(runtime_sha256)
         envelope = bridge.process(request)
         response = envelope["response"]
+        observability_trace = envelope["observability_trace"]
+        assert observability_trace is not None
+        unhashed_trace = copy.deepcopy(observability_trace)
+        unhashed_trace.pop("trace_sha256")
+        assert observability_trace["trace_sha256"] == runtime_sha256(
+            unhashed_trace
+        )
         assert response["success"] is True
         assert response["answer"] == "2+2 = 4."
         assert response["executor_trace"]["planned_executor"] == "qwen"
@@ -198,6 +206,16 @@ def main() -> int:
         blocked_envelope = blocked_bridge.process(blocked_request)
         blocked = blocked_envelope["response"]
         evidence = blocked_envelope["restricted_forensic"]
+        blocked_trace = blocked_envelope["observability_trace"]
+        assert blocked_trace is not None
+        unhashed_blocked_trace = copy.deepcopy(blocked_trace)
+        unhashed_blocked_trace.pop("trace_sha256")
+        assert blocked_trace["trace_sha256"] == runtime_sha256(
+            unhashed_blocked_trace
+        )
+        blocked_stages = {
+            stage["name"]: stage for stage in blocked_trace["pipeline"]
+        }
         assert blocked["success"] is True
         blocked_candidate_status = blocked["telemetry"]["publication"][
             "candidate_status"
@@ -210,6 +228,10 @@ def main() -> int:
         assert evidence["projection"]["sha"] == EXPECTED_PROJECTION_SHA
         assert evidence["executor"]["request_count"] == 1
         assert evidence["publication"]["candidate_status"] == blocked_candidate_status
+        assert blocked_stages["runtime_publication"]["status"] == "blocked"
+        assert blocked_stages["evaluator_final"]["reason_codes"] == sorted(
+            blocked["evaluation_result"]["reason_codes"]
+        )
         assert evidence["mutation"]["proposed"] is True
         assert ENGINEERING_MESSAGE not in json.dumps(evidence, ensure_ascii=False)
         assert blocked_request["payload"]["state_version"] == 0

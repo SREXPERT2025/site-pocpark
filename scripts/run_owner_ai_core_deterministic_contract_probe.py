@@ -14,6 +14,14 @@ from ai_core_owner_runtime_bridge import RUNTIME_SHA, OwnerRuntimeBridge  # noqa
 
 
 def main() -> int:
+    fixed_answer = None
+    if len(sys.argv) > 1:
+        if len(sys.argv) != 3 or sys.argv[1] != "--fixed-answer":
+            raise SystemExit(
+                "usage: run_owner_ai_core_deterministic_contract_probe.py "
+                "[--fixed-answer ANSWER]"
+            )
+        fixed_answer = sys.argv[2]
     request = json.load(sys.stdin)
     artifact = ROOT / "release/ai-core-runtime-77e4c478" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
@@ -26,13 +34,21 @@ def main() -> int:
         sys.path.insert(0, str(runtime))
         from sales_conversation_controller.site_contract_runtime_v1.executors import (  # noqa: E402
             QwenStub,
+            StubOutput,
         )
+
+        class FixedExecutor:
+            executor = "qwen"
+
+            def execute(self, _context):
+                return StubOutput(fixed_answer, 1, "local_low")
+
         bridge = OwnerRuntimeBridge(
             runtime_dir=runtime,
             endpoint="http://127.0.0.1:11434",
             timeout=1,
             keep_alive="2h",
-            executor=QwenStub(),
+            executor=(FixedExecutor() if fixed_answer is not None else QwenStub()),
         )
         result = bridge.process(request)
         if bridge.adapter.last_trace.get("model_requests") != 0:
