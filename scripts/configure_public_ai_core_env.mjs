@@ -4,7 +4,7 @@ import { chmod, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { isExecutedAsMain } from './esm-cli-entrypoint.mjs';
 
-const RUNTIME_SHA = 'd3a7d5dbe4af71a3ced2f03589a15cc9e7285f17';
+const RUNTIME_SHA = '37efd4d17280e4f2781819a98d013d8909d2f750';
 const CONTRACT_SHA = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
 
 function valuesFrom(source) {

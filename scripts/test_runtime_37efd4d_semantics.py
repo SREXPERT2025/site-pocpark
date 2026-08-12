@@ -23,7 +23,7 @@ from ai_core_owner_runtime_bridge import (  # noqa: E402
 )
 
 
-EXPECTED_RUNTIME = "d3a7d5dbe4af71a3ced2f03589a15cc9e7285f17"
+EXPECTED_RUNTIME = "37efd4d17280e4f2781819a98d013d8909d2f750"
 EXPECTED_CONTRACT = "6cd71a5596346925ecdd2ffeb9d45262d881ee93"
 EXPECTED_CANONICALIZATION = "CANONICAL_JSON_HASH_V1"
 ENGINEERING_MESSAGE = (
@@ -34,7 +34,7 @@ ENGINEERING_MESSAGE = (
     "распознавание госномеров, карты или билеты?"
 )
 FIXTURE = json.loads(
-    (ROOT / "scripts/fixtures/runtime_d3a7d5_semantic_regression_v1.json")
+    (ROOT / "scripts/fixtures/runtime_37efd4d_semantic_regression_v1.json")
     .read_text(encoding="utf-8")
 )
 SITE_SHA = subprocess.check_output(
@@ -45,9 +45,9 @@ SITE_SHA = subprocess.check_output(
 def request_for(runtime_sha256, message: str, suffix: str, history=None):
     payload = {
         "potential_project_id": None,
-        "conversation_thread_id": f"thread_d3a7d5_{suffix}",
-        "conversation_id": f"thread_d3a7d5_{suffix}",
-        "message_id": f"message_d3a7d5_{suffix}",
+        "conversation_thread_id": f"thread_37efd4d_{suffix}",
+        "conversation_id": f"thread_37efd4d_{suffix}",
+        "message_id": f"message_37efd4d_{suffix}",
         "parent_message_id": None,
         "timestamp": "2026-08-11T12:00:00Z",
         "channel": "website",
@@ -62,7 +62,7 @@ def request_for(runtime_sha256, message: str, suffix: str, history=None):
         "consent_safe_context_refs": [],
         "executor_policy": {
             "policy_id": "policy:public_qwen_v1",
-            "assignment_id": f"assignment:d3a7d5:{suffix}",
+            "assignment_id": f"assignment:37efd4d:{suffix}",
             "planned_executor": "qwen",
             "allowed_executors": ["qwen"],
             "max_model_fallbacks": 0,
@@ -76,15 +76,15 @@ def request_for(runtime_sha256, message: str, suffix: str, history=None):
     return {
         "contract_version": CONTRACT_VERSION,
         "canonicalization_version": CANONICALIZATION_VERSION,
-        "request_id": f"request_d3a7d5_{suffix}",
-        "idempotency_key": f"idem:d3a7d5:{suffix}",
+        "request_id": f"request_37efd4d_{suffix}",
+        "idempotency_key": f"idem:37efd4d:{suffix}",
         "request_payload_hash": runtime_sha256(payload),
         "site_release": SITE_SHA,
         "gateway_release": "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
         "sent_at": "2026-08-11T12:00:00Z",
         "trace_context": {
-            "trace_id": f"trace:d3a7d5:{suffix}",
-            "span_id": f"span:d3a7d5:{suffix}",
+            "trace_id": f"trace:37efd4d:{suffix}",
+            "span_id": f"span:37efd4d:{suffix}",
             "parent_span_id": None,
         },
         "dry_run": True,
@@ -96,10 +96,10 @@ def main() -> int:
     assert RUNTIME_SHA == EXPECTED_RUNTIME
     assert CONTRACT_SHA == EXPECTED_CONTRACT
     assert CANONICALIZATION_VERSION == EXPECTED_CANONICALIZATION
-    artifact = ROOT / "release/ai-core-runtime-d3a7d5" / (
+    artifact = ROOT / "release/ai-core-runtime-37efd4d" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
-    with tempfile.TemporaryDirectory(prefix="runtime-d3a7d5-site-integration-") as raw:
+    with tempfile.TemporaryDirectory(prefix="runtime-37efd4d-site-integration-") as raw:
         temp = Path(raw)
         with tarfile.open(artifact, "r:gz") as source:
             source.extractall(temp, filter="data")
@@ -145,14 +145,33 @@ def main() -> int:
             assert bridge.adapter.last_trace["model_requests"] == 0
             return executor, bridge, request, envelope["response"]
 
-        _, greeting_bridge, _, greeting = execute(
+        greeting_executor, greeting_bridge, _, greeting = execute(
             "Привет!", "Здравствуйте! Чем могу помочь?", "greeting",
         )
         assert greeting["success"] is True
+        assert greeting_executor.calls == 1
+        assert greeting["context_resolution"]["intent"] == "greeting"
+        assert greeting["context_resolution"]["command_requirements"][
+            "action_type"
+        ] == "conversational_courtesy"
         assert greeting["decision_package"]["decision_type"] == "not_required"
         assert greeting["component_versions"]["engineering_lab"] == "not_invoked"
-        assert greeting["evaluation_result"]["status"] == "pass"
+        greeting_policy = greeting_bridge.adapter.last_trace["evaluation_policy"]
+        assert greeting_policy["name"] == "courtesy"
+        assert greeting_policy["raw_reason_codes"] == []
+        assert greeting_policy["final_reason_codes"] == []
+        assert greeting_bridge.adapter.last_trace["raw_evaluation"][
+            "evaluation_status"
+        ] == "pass"
+        assert greeting["repair_result"]["applied"] is False
+        assert greeting["repair_result"]["method"] == "none"
+        assert greeting["evaluation_result"] == {
+            "evaluated_candidate": "final_visible_candidate",
+            "status": "pass",
+            "reason_codes": [],
+        }
         assert greeting["telemetry"]["publication"]["candidate_status"] == "allowed"
+        assert greeting["state_mutations"] == []
         assert greeting_bridge.adapter.last_trace["model_requests"] == 0
 
         _, _, _, clean_2_2 = execute("сколько будет 2+2= ?", "4", "clean_2_2")
@@ -222,17 +241,40 @@ def main() -> int:
         ]["projection_hash"] == expected["projection_sha256"]
         assert engineering_bridge.adapter.last_trace["model_requests"] == 0
 
+        _, repair_bridge, _, blocked_courtesy = execute(
+            "Привет!",
+            "Здравствуйте! Рекомендую распознавание госномеров как основной способ.",
+            "repair_telemetry",
+        )
+        assert blocked_courtesy["evaluation_result"]["status"] == "fail"
+        assert blocked_courtesy["telemetry"]["publication"][
+            "candidate_status"
+        ] == "blocked"
+        ordinary_repair = repair_bridge.adapter.last_trace[
+            "runtime_observability"
+        ]["repair"]
+        restricted_repair = repair_bridge.adapter.last_restricted_forensic_evidence[
+            "repair"
+        ]
+        for field in ("applied", "method", "reason_codes"):
+            assert ordinary_repair[field] == restricted_repair[field]
+
     print(json.dumps({
-        "schema": "ROSPARK_RUNTIME_D3A7D5_SITE_INTEGRATION_V1",
+        "schema": "ROSPARK_RUNTIME_37EFD4D_SITE_INTEGRATION_V1",
         "runtime_sha": EXPECTED_RUNTIME,
         "contract_sha": EXPECTED_CONTRACT,
         "canonicalization_version": EXPECTED_CANONICALIZATION,
         "greeting": "pass",
+        "greeting_profile": "courtesy",
+        "greeting_repair": "not_used",
+        "greeting_publication": "allowed",
+        "greeting_engineering_reason_codes": [],
         "clean_2_plus_2": "pass",
         "clean_2_plus_9": "pass",
         "instruction_leak": "blocked",
         "contaminated_history": "pass",
         "engineering": "pass",
+        "repair_telemetry_canonical_equivalent": True,
         "decision_package_sha": FIXTURE["engineering_identity"][
             "decision_package_sha256"
         ],

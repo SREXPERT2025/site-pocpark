@@ -1,5 +1,5 @@
 {
-  "fixture_id": "ROSPARK_RUNTIME_D3A7D5_SEMANTIC_REGRESSION_V1",
+  "fixture_id": "ROSPARK_RUNTIME_37EFD4D_SEMANTIC_REGRESSION_V1",
   "incidents": {
     "question_projection_leak": {
       "user_message": "сколько будет 2+2= ?",
