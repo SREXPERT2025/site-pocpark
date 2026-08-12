@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import AiTraceViewer from './AiTraceViewer';
 
 type SessionSummary = {
   id: string;
@@ -22,6 +23,7 @@ type SessionDetails = {
   sourcePage: string;
   createdAt: string;
   updatedAt: string;
+  traceStorageAvailable: boolean;
   turns: Array<{
     id: string;
     sourcePage: string;
@@ -33,6 +35,16 @@ type SessionDetails = {
     errorCode: string | null;
     elapsedMs: number | null;
     createdAt: string;
+    traceSummary: {
+      publicationStatus: 'published' | 'blocked' | 'fallback' | 'error';
+      executor: string | null;
+      evaluatorStatus: string | null;
+      hasWarning: boolean;
+      instructionLeakWarning: boolean;
+      firstFailureStage: string | null;
+      totalLatencyMs: number | null;
+      traceAvailable: boolean;
+    } | null;
   }>;
   testLeads: Array<{
     id: string;
@@ -70,6 +82,7 @@ export default function AiWidgetAdminDashboard({
   const [selected, setSelected] = useState<SessionDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [traceTurnId, setTraceTurnId] = useState<string | null>(null);
 
   const loadList = useCallback(async () => {
     setIsLoading(true);
@@ -272,6 +285,11 @@ export default function AiWidgetAdminDashboard({
               </div>
 
               <div className="mt-6 grid gap-4">
+                {!selected.traceStorageAvailable && role === 'director' ? (
+                  <p className="rounded-xl bg-amber-50 p-3 text-sm font-semibold text-amber-800">
+                    Trace временно недоступен; история диалога продолжает работать.
+                  </p>
+                ) : null}
                 {selected.turns.map((turn) => (
                   <article
                     key={turn.id}
@@ -294,6 +312,35 @@ export default function AiWidgetAdminDashboard({
                         || turn.errorCode
                         || 'Ответ не завершён'}
                     </div>
+                    {turn.traceSummary ? (
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 p-3">
+                        <p className={`text-xs font-bold ${
+                          turn.traceSummary.instructionLeakWarning
+                            ? 'text-red-700' : 'text-slate-600'
+                        }`}>
+                          AI Core · {turn.traceSummary.executor || 'до Runtime'} · {' '}
+                          {turn.traceSummary.totalLatencyMs !== null
+                            ? `${turn.traceSummary.totalLatencyMs} мс · ` : ''}
+                          {turn.traceSummary.publicationStatus.toUpperCase()}
+                          {turn.traceSummary.instructionLeakWarning
+                            ? ' · INSTRUCTION LEAK' : ''}
+                        </p>
+                        {role === 'director' ? (
+                          <button
+                            type="button"
+                            onClick={() => setTraceTurnId(turn.id)}
+                            className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-bold text-white"
+                          >
+                            {turn.traceSummary.traceAvailable
+                              ? 'Диагностика' : 'Trace недоступен'}
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : role === 'director' && turn.route?.includes('ai_core') ? (
+                      <p className="mt-3 text-xs font-semibold text-slate-500">
+                        Trace для этого исторического turn недоступен.
+                      </p>
+                    ) : null}
                   </article>
                 ))}
               </div>
@@ -346,6 +393,12 @@ export default function AiWidgetAdminDashboard({
           )}
         </section>
       </div>
+      {traceTurnId ? (
+        <AiTraceViewer
+          turnId={traceTurnId}
+          onClose={() => setTraceTurnId(null)}
+        />
+      ) : null}
     </main>
   );
 }

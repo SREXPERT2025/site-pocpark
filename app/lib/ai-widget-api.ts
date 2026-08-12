@@ -52,6 +52,7 @@ import {
   callPublicAiCoreRuntime,
   callOwnerCanaryRuntime,
   ownerCanaryIdempotencyKey,
+  observabilityTraceFromError,
   preGateTelemetryFromError,
   publicBlockedSafeForensicFromError,
   restrictedForensicFromError,
@@ -80,7 +81,10 @@ import {
   runOwnerAiCanaryMigrations,
   saveOwnerCanaryRuntimeResponse,
 } from './owner-ai-canary-state';
-import { requireOwnerCanarySiteRelease } from './site-release-provenance';
+import {
+  DEPLOYED_SITE_SHA,
+  requireOwnerCanarySiteRelease,
+} from './site-release-provenance';
 import {
   publicAiCoreEnabled,
   publicAiCoreFallbackReason,
@@ -88,6 +92,10 @@ import {
   requirePublicAiCoreReleasePins,
   selectAiCoreSiteAudience,
 } from './public-ai-core';
+import {
+  composeAiCoreTurnTrace,
+  tryRecordAiCoreTurnTrace,
+} from './ai-trace-core';
 import { LeadRegistryError } from './lead-registry-core';
 import {
   leadRegistryEnabled,
@@ -632,6 +640,55 @@ export async function handleAiWidgetChat(request: Request) {
     const aiCoreRequestId = ownerCanaryRequestId();
     let aiCoreMutationStarted = false;
     let preGateTelemetryRef: string | null = null;
+    let traceSiteRelease = DEPLOYED_SITE_SHA;
+    let traceGatewayRelease = aiCoreAudience === 'public_ai_core'
+      ? process.env.AI_CORE_PUBLIC_GATEWAY_SHA ?? ''
+      : process.env.AI_CORE_OWNER_CANARY_GATEWAY_SHA ?? '';
+    let traceHistory: Array<Record<string, unknown>> = [];
+    let traceParentMessageId: string | null = null;
+    let traceTimestamp = new Date().toISOString();
+    const recordFailedAiTrace = (
+      code: string,
+      error: unknown,
+      publicationStatus: 'blocked' | 'error' = 'error',
+    ) => {
+      try {
+        const runtimeTrace = observabilityTraceFromError(error);
+        const trace = composeAiCoreTurnTrace({
+          turnId: parsed.payload.turnId,
+          siteRequestId: requestId,
+          aiCoreRequestId,
+          conversationThreadId: ownerIdentity.conversationThreadId,
+          messageId: ownerIdentity.messageId,
+          parentMessageId: traceParentMessageId,
+          timestamp: traceTimestamp,
+          route: aiCoreAudience === 'public_ai_core'
+            ? 'public_ai_core' : 'owner_ai_core',
+          siteSha: traceSiteRelease,
+          gatewaySha: traceGatewayRelease,
+          sourcePage: parsed.payload.sourcePage,
+          pageContext: parsed.payload.pageContext,
+          currentMessage: lastUserMessage,
+          recentMessages: traceHistory,
+          runtimeTrace,
+          publicationStatus,
+          visibleAnswer: null,
+          visibleSource: null,
+          siteBlockingPredicate: code,
+          stateVersionAfter: null,
+          committedMutations: [],
+          mutationAcknowledgementCount: 0,
+          siteTotalLatencyMs: Date.now() - startedAt,
+          preRuntimeFailureStage: runtimeTrace ? null : 'site_pre_runtime_gate',
+        });
+        tryRecordAiCoreTurnTrace(getAiWidgetLogDatabase(), trace);
+      } catch (traceError) {
+        console.error(
+          'AI_TRACE_COMPOSE_FAILED',
+          traceError instanceof Error ? traceError.message : 'UNKNOWN',
+        );
+      }
+    };
     const ownerHeaders = {
       ...aiCoreBaseHeaders,
       'X-AI-Core-Request-Id': aiCoreRequestId,
@@ -650,6 +707,8 @@ export async function handleAiWidgetChat(request: Request) {
         || !/^[a-f0-9]{40}$/.test(gatewayRelease)) {
         throw new Error('AI_CORE_RELEASE_PIN_INVALID');
       }
+      traceSiteRelease = siteRelease;
+      traceGatewayRelease = gatewayRelease;
       const db = getAiWidgetLogDatabase();
       const state = ensureOwnerCanaryThread(db, {
         conversationThreadId: ownerIdentity.conversationThreadId,
@@ -659,6 +718,8 @@ export async function handleAiWidgetChat(request: Request) {
         db,
         ownerIdentity.conversationThreadId,
       );
+      traceHistory = history.map((item) => ({ ...item }));
+      traceParentMessageId = history.at(-1)?.message_id ?? null;
       const coreRequest = (aiCoreAudience === 'public_ai_core'
         ? buildPublicAiCoreRequest
         : buildOwnerCanaryCoreRequest)({
@@ -674,6 +735,7 @@ export async function handleAiWidgetChat(request: Request) {
         siteRelease,
         gatewayRelease,
       });
+      traceTimestamp = coreRequest.sent_at;
       const cached = getOwnerCanaryRuntimeResponse(db, {
         conversationThreadId: ownerIdentity.conversationThreadId,
         messageId: ownerIdentity.messageId,
@@ -820,6 +882,40 @@ export async function handleAiWidgetChat(request: Request) {
           visibleAnswer: answer,
         });
       })();
+      try {
+        const completedAt = new Date().toISOString();
+        const completedTrace = composeAiCoreTurnTrace({
+          turnId: parsed.payload.turnId,
+          siteRequestId: requestId,
+          aiCoreRequestId,
+          conversationThreadId: ownerIdentity.conversationThreadId,
+          messageId: ownerIdentity.messageId,
+          parentMessageId: traceParentMessageId,
+          timestamp: traceTimestamp,
+          route: responseRoute,
+          siteSha: traceSiteRelease,
+          gatewaySha: traceGatewayRelease,
+          sourcePage: parsed.payload.sourcePage,
+          pageContext: parsed.payload.pageContext,
+          currentMessage: lastUserMessage,
+          recentMessages: traceHistory,
+          runtimeTrace: envelope.observabilityTrace,
+          publicationStatus: 'published',
+          visibleAnswer: answer,
+          visibleSource: repair.applied ? 'repaired_answer' : 'raw_qwen',
+          publishedAt: completedAt,
+          stateVersionAfter: applied.state.stateVersion,
+          committedMutations: applied.accepted ? mutations : [],
+          mutationAcknowledgementCount: mutations.length,
+          siteTotalLatencyMs: Date.now() - startedAt,
+        });
+        tryRecordAiCoreTurnTrace(db, completedTrace);
+      } catch (traceError) {
+        console.error(
+          'AI_TRACE_COMPOSE_FAILED',
+          traceError instanceof Error ? traceError.message : 'UNKNOWN',
+        );
+      }
       return textResponse(answer, {
         route: responseRoute,
         requestId,
@@ -921,6 +1017,11 @@ export async function handleAiWidgetChat(request: Request) {
               ? error.message.replace(/[^A-Z0-9_]/gi, '_')
                 .toUpperCase().slice(0, 100)
               : 'PUBLIC_AI_CORE_ERROR';
+          recordFailedAiTrace(
+            code || 'PUBLIC_AI_CORE_ERROR',
+            error,
+            observabilityTraceFromError(error) ? 'blocked' : 'error',
+          );
           failLoggedTurn(code || 'PUBLIC_AI_CORE_ERROR', errorCorrelation);
           return jsonError(
             503,
@@ -938,6 +1039,11 @@ export async function handleAiWidgetChat(request: Request) {
             ? error.message.replace(/[^A-Z0-9_]/gi, '_')
               .toUpperCase().slice(0, 100)
             : 'OWNER_AI_CORE_ERROR';
+        recordFailedAiTrace(
+          code || 'OWNER_AI_CORE_ERROR',
+          error,
+          observabilityTraceFromError(error) ? 'blocked' : 'error',
+        );
         failLoggedTurn(code || 'OWNER_AI_CORE_ERROR', errorCorrelation);
         return jsonError(
           503,

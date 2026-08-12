@@ -23,7 +23,7 @@ from ai_core_owner_runtime_bridge import (  # noqa: E402
 )
 
 
-EXPECTED_RUNTIME = "37efd4d17280e4f2781819a98d013d8909d2f750"
+EXPECTED_RUNTIME = "b29fa052e278e04adefcc1e18788427ee83d5b8c"
 EXPECTED_CONTRACT = "6cd71a5596346925ecdd2ffeb9d45262d881ee93"
 EXPECTED_CANONICALIZATION = "CANONICAL_JSON_HASH_V1"
 ENGINEERING_MESSAGE = (
@@ -34,7 +34,7 @@ ENGINEERING_MESSAGE = (
     "распознавание госномеров, карты или билеты?"
 )
 FIXTURE = json.loads(
-    (ROOT / "scripts/fixtures/runtime_37efd4d_semantic_regression_v1.json")
+    (ROOT / "scripts/fixtures/runtime_b29fa052_semantic_regression_v1.json")
     .read_text(encoding="utf-8")
 )
 SITE_SHA = subprocess.check_output(
@@ -45,9 +45,9 @@ SITE_SHA = subprocess.check_output(
 def request_for(runtime_sha256, message: str, suffix: str, history=None):
     payload = {
         "potential_project_id": None,
-        "conversation_thread_id": f"thread_37efd4d_{suffix}",
-        "conversation_id": f"thread_37efd4d_{suffix}",
-        "message_id": f"message_37efd4d_{suffix}",
+        "conversation_thread_id": f"thread_b29fa052_{suffix}",
+        "conversation_id": f"thread_b29fa052_{suffix}",
+        "message_id": f"message_b29fa052_{suffix}",
         "parent_message_id": None,
         "timestamp": "2026-08-11T12:00:00Z",
         "channel": "website",
@@ -62,7 +62,7 @@ def request_for(runtime_sha256, message: str, suffix: str, history=None):
         "consent_safe_context_refs": [],
         "executor_policy": {
             "policy_id": "policy:public_qwen_v1",
-            "assignment_id": f"assignment:37efd4d:{suffix}",
+            "assignment_id": f"assignment:b29fa052:{suffix}",
             "planned_executor": "qwen",
             "allowed_executors": ["qwen"],
             "max_model_fallbacks": 0,
@@ -76,15 +76,15 @@ def request_for(runtime_sha256, message: str, suffix: str, history=None):
     return {
         "contract_version": CONTRACT_VERSION,
         "canonicalization_version": CANONICALIZATION_VERSION,
-        "request_id": f"request_37efd4d_{suffix}",
-        "idempotency_key": f"idem:37efd4d:{suffix}",
+        "request_id": f"request_b29fa052_{suffix}",
+        "idempotency_key": f"idem:b29fa052:{suffix}",
         "request_payload_hash": runtime_sha256(payload),
         "site_release": SITE_SHA,
         "gateway_release": "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
         "sent_at": "2026-08-11T12:00:00Z",
         "trace_context": {
-            "trace_id": f"trace:37efd4d:{suffix}",
-            "span_id": f"span:37efd4d:{suffix}",
+            "trace_id": f"trace:b29fa052:{suffix}",
+            "span_id": f"span:b29fa052:{suffix}",
             "parent_span_id": None,
         },
         "dry_run": True,
@@ -96,10 +96,10 @@ def main() -> int:
     assert RUNTIME_SHA == EXPECTED_RUNTIME
     assert CONTRACT_SHA == EXPECTED_CONTRACT
     assert CANONICALIZATION_VERSION == EXPECTED_CANONICALIZATION
-    artifact = ROOT / "release/ai-core-runtime-37efd4d" / (
+    artifact = ROOT / "release/ai-core-runtime-b29fa052" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
-    with tempfile.TemporaryDirectory(prefix="runtime-37efd4d-site-integration-") as raw:
+    with tempfile.TemporaryDirectory(prefix="runtime-b29fa052-site-integration-") as raw:
         temp = Path(raw)
         with tarfile.open(artifact, "r:gz") as source:
             source.extractall(temp, filter="data")
@@ -260,7 +260,7 @@ def main() -> int:
             assert ordinary_repair[field] == restricted_repair[field]
 
     print(json.dumps({
-        "schema": "ROSPARK_RUNTIME_37EFD4D_SITE_INTEGRATION_V1",
+        "schema": "ROSPARK_RUNTIME_B29FA052_SITE_INTEGRATION_V1",
         "runtime_sha": EXPECTED_RUNTIME,
         "contract_sha": EXPECTED_CONTRACT,
         "canonicalization_version": EXPECTED_CANONICALIZATION,

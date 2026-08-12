@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rospark.local/contracts/ai-trace-viewer/site-trace-v1.schema.json",
+  "title": "ROSPARK AI Trace Viewer Site trace V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "identity",
+    "routing",
+    "client_input",
+    "state",
+    "pipeline",
+    "publication",
+    "latency",
+    "diagnostics",
+    "trace_sha256"
+  ],
+  "properties": {
+    "schema_version": { "const": "AI_TRACE_VIEWER_V1" },
+    "identity": {
+      "type": "object",
+      "required": [
+        "turn_id", "site_request_id", "ai_core_request_id",
+        "conversation_thread_id", "message_id", "timestamp", "route",
+        "site_sha", "runtime_sha", "runtime_version", "contract_sha",
+        "canonicalization_version", "gateway_sha"
+      ]
+    },
+    "routing": { "type": "object" },
+    "client_input": { "type": "object" },
+    "state": { "type": "object" },
+    "pipeline": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": [
+          "name", "status", "summary", "input", "output",
+          "reason_codes", "latency_ms"
+        ],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "status": {
+            "enum": [
+              "pass", "warn", "blocked", "not_used", "error",
+              "not_reached"
+            ]
+          },
+          "summary": { "type": "string" },
+          "input": {},
+          "output": {},
+          "reason_codes": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "latency_ms": { "type": ["number", "null"], "minimum": 0 }
+        }
+      }
+    },
+    "publication": {
+      "type": "object",
+      "required": ["status", "visible_answer", "site_blocking_predicate"]
+    },
+    "latency": { "type": "object" },
+    "diagnostics": { "type": "object" },
+    "trace_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

@@ -12,6 +12,7 @@ export type LeadAdminPermission =
   | 'view'
   | 'process'
   | 'export'
+  | 'trace'
   | 'delete';
 
 export type LeadAdminSession = {
@@ -25,7 +26,7 @@ export const LEAD_ADMIN_ROLE_PERMISSIONS: Record<
   LeadAdminRole,
   readonly LeadAdminPermission[]
 > = {
-  director: ['view', 'process', 'export', 'delete'],
+  director: ['view', 'process', 'export', 'trace', 'delete'],
   sales_head: ['view', 'process', 'export'],
 };
 

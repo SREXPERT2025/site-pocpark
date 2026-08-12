@@ -11,6 +11,8 @@ import {
   aiWidgetLoggingEnabled,
   getAiWidgetLogDatabase,
 } from '@/app/lib/ai-widget-log-database';
+import { listAiTraceSummariesByTurnIds } from '@/app/lib/ai-trace-core';
+import { leadAdminRoleHasPermission } from '@/app/lib/lead-admin-auth-core';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -28,9 +30,28 @@ export async function GET(request: NextRequest) {
   const db = getAiWidgetLogDatabase();
   if (sessionId) {
     const session = getAiWidgetSession(db, sessionId);
+    let traceStorageAvailable = true;
+    let summaries = new Map();
+    if (session && leadAdminRoleHasPermission(auth.session.role, 'trace')) {
+      try {
+        summaries = listAiTraceSummariesByTurnIds(
+          db,
+          session.turns.map((turn) => turn.id),
+        );
+      } catch {
+        traceStorageAvailable = false;
+      }
+    }
     return session
       ? leadAdminJson({
-          session,
+          session: {
+            ...session,
+            traceStorageAvailable,
+            turns: session.turns.map((turn) => ({
+              ...turn,
+              traceSummary: summaries.get(turn.id) ?? null,
+            })),
+          },
           viewer: {
             displayName: auth.session.displayName,
             role: auth.session.role,

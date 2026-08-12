@@ -101,6 +101,7 @@ def main() -> int:
         )
         os.chmod(root / "AI_CORE_RUNTIME_RELEASE_MANIFEST.json", 0o600)
         temporary_tar = temp / "runtime.tar"
+
         def normalized(info: tarfile.TarInfo) -> tarfile.TarInfo:
             info.uid = 0
             info.gid = 0
@@ -108,17 +109,13 @@ def main() -> int:
             info.gname = "root"
             info.mtime = 0
             return info
+
         with tarfile.open(temporary_tar, "w", format=tarfile.PAX_FORMAT) as target:
-            target.add(
-                root,
-                arcname=RUNTIME_SHA,
-                recursive=True,
-                filter=normalized,
-            )
+            target.add(root, arcname=RUNTIME_SHA, recursive=True, filter=normalized)
         temporary_output = output.with_suffix(output.suffix + ".tmp")
         with temporary_tar.open("rb") as source, temporary_output.open("wb") as raw_target:
             with gzip.GzipFile(
-                filename="", mode="wb", fileobj=raw_target, mtime=0
+                filename="", mode="wb", fileobj=raw_target, mtime=0,
             ) as target:
                 shutil.copyfileobj(source, target)
         os.replace(temporary_output, output)

@@ -5,7 +5,7 @@ import {
 } from './canonical-json-hash-v1.ts';
 
 export const AI_CORE_RUNTIME_SHA =
-  '37efd4d17280e4f2781819a98d013d8909d2f750';
+  'b29fa052e278e04adefcc1e18788427ee83d5b8c';
 export const AI_CORE_CONTRACT_SHA =
   '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
 export const AI_CORE_CONTRACT_VERSION = '1.1';
@@ -15,6 +15,7 @@ export const OWNER_CANARY_BLOCKED_FORENSIC_VERSION =
   'OWNER_CANARY_BLOCKED_FORENSIC_V1';
 export const PUBLIC_BLOCKED_SAFE_FORENSIC_VERSION =
   'PUBLIC_BLOCKED_SAFE_FORENSIC_V1';
+export const AI_CORE_RUNTIME_TRACE_VERSION = 'AI_CORE_RUNTIME_TRACE_V1';
 export { CANONICALIZATION_VERSION, canonicalJson, sha256 };
 
 export const decisionPackageHash = sha256;
@@ -197,6 +198,19 @@ export type OwnerCanaryRuntimeEnvelope = Readonly<{
   response: Record<string, unknown>;
   preGateTelemetry: OwnerCanaryPreGateTelemetry;
   restrictedForensic: OwnerCanaryRestrictedForensicEvidence | null;
+  observabilityTrace: AiCoreRuntimeObservabilityTrace | null;
+}>;
+
+export type AiCoreRuntimeObservabilityTrace = Readonly<{
+  schema_version: typeof AI_CORE_RUNTIME_TRACE_VERSION;
+  identity: Readonly<Record<string, unknown>>;
+  routing: Readonly<Record<string, unknown>>;
+  state: Readonly<Record<string, unknown>>;
+  pipeline: readonly Readonly<Record<string, unknown>>[];
+  timeline: readonly Readonly<Record<string, unknown>>[];
+  diagnostics: Readonly<Record<string, unknown>>;
+  runtime_error: Readonly<Record<string, unknown>> | null;
+  trace_sha256: string;
 }>;
 
 export type OwnerCanaryRestrictedForensicEvidence = Readonly<{
@@ -319,17 +333,20 @@ export type PublicBlockedSafeForensicEvidence = Readonly<{
 class AiCoreAdapterBlockedError extends Error {
   readonly preGateTelemetry: OwnerCanaryPreGateTelemetry;
   readonly publicSafeForensic: PublicBlockedSafeForensicEvidence;
+  readonly observabilityTrace: AiCoreRuntimeObservabilityTrace | null;
 
   constructor(
     code: string,
     telemetry: OwnerCanaryPreGateTelemetry,
     publicSafeForensic: PublicBlockedSafeForensicEvidence,
     cause: unknown,
+    observabilityTrace: AiCoreRuntimeObservabilityTrace | null = null,
   ) {
     super(code, { cause });
     this.name = 'AiCoreAdapterBlockedError';
     this.preGateTelemetry = telemetry;
     this.publicSafeForensic = publicSafeForensic;
+    this.observabilityTrace = observabilityTrace;
   }
 }
 
@@ -337,17 +354,20 @@ export class AiCoreFinalGateBlockedError extends Error {
   readonly preGateTelemetry: OwnerCanaryPreGateTelemetry;
   readonly restrictedForensic: OwnerCanaryRestrictedForensicEvidence;
   readonly publicSafeForensic: PublicBlockedSafeForensicEvidence;
+  readonly observabilityTrace: AiCoreRuntimeObservabilityTrace | null;
 
   constructor(
     telemetry: OwnerCanaryPreGateTelemetry,
     restrictedForensic: OwnerCanaryRestrictedForensicEvidence,
     publicSafeForensic: PublicBlockedSafeForensicEvidence,
+    observabilityTrace: AiCoreRuntimeObservabilityTrace | null = null,
   ) {
     super('AI_CORE_FINAL_GATE_BLOCKED');
     this.name = 'AiCoreFinalGateBlockedError';
     this.preGateTelemetry = telemetry;
     this.restrictedForensic = restrictedForensic;
     this.publicSafeForensic = publicSafeForensic;
+    this.observabilityTrace = observabilityTrace;
   }
 }
 
@@ -371,11 +391,81 @@ export function publicBlockedSafeForensicFromError(error: unknown) {
     : null;
 }
 
+export function observabilityTraceFromError(error: unknown) {
+  return error instanceof AiCoreFinalGateBlockedError
+    || error instanceof AiCoreAdapterBlockedError
+    ? error.observabilityTrace
+    : null;
+}
+
 function record(value: unknown, code: string) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(code);
   }
   return value as Record<string, unknown>;
+}
+
+function validateObservabilityTrace(
+  value: unknown,
+): AiCoreRuntimeObservabilityTrace | null {
+  try {
+    const trace = record(value, 'INVALID_AI_CORE_OBSERVABILITY_TRACE');
+    if (trace.schema_version !== AI_CORE_RUNTIME_TRACE_VERSION
+      || !Array.isArray(trace.pipeline)
+      || !Array.isArray(trace.timeline)
+      || typeof trace.trace_sha256 !== 'string'
+      || !/^[a-f0-9]{64}$/.test(trace.trace_sha256)) {
+      return null;
+    }
+    const allowedStatuses = new Set([
+      'pass', 'warn', 'blocked', 'not_used', 'error', 'not_reached',
+    ]);
+    for (const rawStage of trace.pipeline) {
+      const stage = record(rawStage, 'INVALID_TRACE_STAGE');
+      if (typeof stage.name !== 'string'
+        || !allowedStatuses.has(String(stage.status))
+        || !Array.isArray(stage.reason_codes)
+        || (stage.latency_ms !== null
+          && typeof stage.latency_ms !== 'number')) {
+        return null;
+      }
+    }
+    const identity = record(
+      trace.identity,
+      'INVALID_AI_CORE_OBSERVABILITY_IDENTITY',
+    );
+    if (identity.runtime_sha !== AI_CORE_RUNTIME_SHA
+      || identity.contract_sha !== AI_CORE_CONTRACT_SHA
+      || identity.canonicalization_version !== CANONICALIZATION_VERSION) {
+      return null;
+    }
+    const withoutHash = { ...trace };
+    delete withoutHash.trace_sha256;
+    if (sha256(withoutHash) !== trace.trace_sha256) return null;
+    return Object.freeze({
+      ...trace,
+      identity: Object.freeze({ ...identity }),
+      routing: Object.freeze({ ...record(trace.routing, 'INVALID_TRACE_ROUTING') }),
+      state: Object.freeze({ ...record(trace.state, 'INVALID_TRACE_STATE') }),
+      pipeline: trace.pipeline.map((item) => Object.freeze({
+        ...record(item, 'INVALID_TRACE_STAGE'),
+      })),
+      timeline: trace.timeline.map((item) => Object.freeze({
+        ...record(item, 'INVALID_TRACE_TIMELINE'),
+      })),
+      diagnostics: Object.freeze({
+        ...record(trace.diagnostics, 'INVALID_TRACE_DIAGNOSTICS'),
+      }),
+      runtime_error: trace.runtime_error === null
+        ? null
+        : Object.freeze({
+          ...record(trace.runtime_error, 'INVALID_TRACE_RUNTIME_ERROR'),
+        }),
+    }) as unknown as AiCoreRuntimeObservabilityTrace;
+  } catch {
+    // Observability is deliberately fail-open relative to the AI response.
+    return null;
+  }
 }
 
 function telemetryString(value: unknown, code: string) {
@@ -948,6 +1038,9 @@ export function validateOwnerCanaryCoreResponse(
   if (envelope.model !== AI_CORE_OWNER_MODEL) {
     throw new Error('AI_CORE_MODEL_MISMATCH');
   }
+  const observabilityTrace = validateObservabilityTrace(
+    envelope.observability_trace,
+  );
   const response = record(envelope.response, 'INVALID_AI_CORE_RESPONSE_BODY');
   if (response.contract_version !== AI_CORE_CONTRACT_VERSION
     || response.canonicalization_version !== CANONICALIZATION_VERSION
@@ -1101,6 +1194,7 @@ export function validateOwnerCanaryCoreResponse(
           code,
         ),
         cause,
+        observabilityTrace,
       );
     }
     throw new AiCoreFinalGateBlockedError(
@@ -1112,6 +1206,7 @@ export function validateOwnerCanaryCoreResponse(
         preGateTelemetry,
         'AI_CORE_FINAL_GATE_BLOCKED',
       ),
+      observabilityTrace,
     );
   }
   if (envelope.restricted_forensic !== undefined
@@ -1130,6 +1225,7 @@ export function validateOwnerCanaryCoreResponse(
     response: Object.freeze({ ...response }),
     preGateTelemetry,
     restrictedForensic: null,
+    observabilityTrace,
   });
 }
 

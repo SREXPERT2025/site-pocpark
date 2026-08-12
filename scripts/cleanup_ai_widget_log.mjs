@@ -6,6 +6,10 @@ import {
   cleanupExpiredAiWidgetLogs,
   runAiWidgetLogMigrations,
 } from '../app/lib/ai-widget-log-core.ts';
+import {
+  cleanupExpiredAiTraces,
+  runAiTraceMigrations,
+} from '../app/lib/ai-trace-core.ts';
 
 if (!process.env.NODE_ENV) process.env.NODE_ENV = 'production';
 nextEnv.loadEnvConfig(
@@ -31,13 +35,17 @@ try {
   db.pragma('busy_timeout = 5000');
   db.pragma('synchronous = NORMAL');
   runAiWidgetLogMigrations(db);
+  runAiTraceMigrations(db);
   const result = cleanupExpiredAiWidgetLogs(db);
+  const traceResult = cleanupExpiredAiTraces(db);
   const quickCheck = db.pragma('quick_check', { simple: true });
   if (quickCheck !== 'ok') {
     throw new Error(`AI widget log quick_check failed: ${quickCheck}`);
   }
   process.stdout.write(`${JSON.stringify({
     ...result,
+    tracePayloads: traceResult.payloads,
+    traceMetadata: traceResult.metadata,
     quickCheck,
   })}\n`);
 } finally {

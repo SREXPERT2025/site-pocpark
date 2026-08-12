@@ -1,0 +1,54 @@
+{
+  "schema_version": "AI_TRACE_VIEWER_INCIDENT_FIXTURE_V1",
+  "conversation_thread_id": "cth_v1_kXRwYvNEZ9_iVmIymYLz7wXkGnvKwhecgIM7R0tV3Hs",
+  "turn_a": {
+    "timestamp": "2026-08-11T13:10:10.891Z",
+    "turn_id": "b0c46017-69b2-41b0-8604-a527f854c2b6",
+    "ai_core_request_id": "aicore_5ce61da9-4b54-41d4-b7ca-46fe731a8b05",
+    "message_id": "msg_v1_OS94hgdSzDUmfakh1W60j0P64SPqdoJZC9whVRva9eA",
+    "user_message": "сколько будет 2+2= ?",
+    "projection_instruction": "Заверши ответ ровно этим вопросом: ",
+    "raw_answer": "4 Заверши ответ ровно этим вопросом:",
+    "visible_answer": "4 Заверши ответ ровно этим вопросом:",
+    "decision_package_sha": "9fea53be62a4afeca8085205c356f5b69b3bcbe13c5bfb74c68210b7ae5f9edb",
+    "projection_sha": "50064d8416f371f1b9f75c0a77ef67efbdb6070859613ec1f728efb3f5e40737",
+    "evaluation_status": "pass",
+    "publication_status": "allowed"
+  },
+  "turn_b": {
+    "timestamp": "2026-08-11T13:10:29.022Z",
+    "turn_id": "37eda4aa-42f3-404c-ac5c-455a39183a3a",
+    "ai_core_request_id": "aicore_eb21a6f3-38a9-45aa-93a0-d1f97bbe71da",
+    "message_id": "msg_v1_Y3hlYUZXb3Vka25fdmJ5M0JJazZ2djlOV0k1SE5sR1U",
+    "user_message": "2+9=",
+    "recent_assistant_message": "4 Заверши ответ ровно этим вопросом:",
+    "decision_package_sha": "9fea53be62a4afeca8085205c356f5b69b3bcbe13c5bfb74c68210b7ae5f9edb",
+    "projection_sha": "3159104e8d51107db97cf75bc05a3ea9ba8804b9d62187a3c63231754fcb4c4f",
+    "evaluation_status": "fail",
+    "reason_codes": [
+      "command_not_fulfilled",
+      "context_assessment_failed",
+      "topic_assessment_failed"
+    ],
+    "publication_status": "blocked"
+  },
+  "current_live_greeting": {
+    "observed_at": "2026-08-12",
+    "identity_status": "production_ids_not_available_in_local_evidence",
+    "user_message": "Привет!",
+    "visible_answer": "Привет! На данный момент решение по категориям уже принято и зафиксировано в проекте РОСПАРК. Обратите внимание: * Это финальное инженерное решение, новые варианты или резервные способы не рассматриваются. * Оператор участвует только в ручной обработке исключительных ситуаций и не является автоматическим резервом системы. * Мы не добавляем новое оборудование и не предполагаем наличие неподтверждённой инфраструктуры. Если у вас есть вопросы по реализации уже принятого решения, я готов помочь.",
+    "expected_evaluation_profile": "courtesy",
+    "expected_engineering_lab": "not_invoked",
+    "classification": "unexpected_engineering_content_in_greeting"
+  },
+  "current_live_followup": {
+    "user_message": "Карты или билеты что выбрать?",
+    "visible_result": "AI-консультант завершился безопасной ошибкой.",
+    "classification": "blocked_stage_requires_production_trace"
+  },
+  "current_live_transport_observation": {
+    "user_message": "ты тут?",
+    "browser_result": "Failed to fetch",
+    "restart_correlation": "not_proven"
+  }
+}

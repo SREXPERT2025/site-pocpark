@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
+import copy
 import os
 import sys
 import time
@@ -12,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 
-RUNTIME_SHA = "37efd4d17280e4f2781819a98d013d8909d2f750"
+RUNTIME_SHA = "b29fa052e278e04adefcc1e18788427ee83d5b8c"
 CONTRACT_SHA = "6cd71a5596346925ecdd2ffeb9d45262d881ee93"
 CONTRACT_VERSION = "1.1"
 CANONICALIZATION_VERSION = "CANONICAL_JSON_HASH_V1"
@@ -170,16 +171,21 @@ class OwnerRuntimeBridge:
             forensic_module = importlib.import_module(
                 "sales_conversation_controller.site_contract_runtime_v1.restricted_forensic"
             )
+            trace_module = importlib.import_module(
+                "sales_conversation_controller.site_contract_runtime_v1.trace_observability"
+            )
         finally:
             if sys.path[0] == str(self.runtime_dir):
                 sys.path.pop(0)
         adapter_path = Path(adapter_module.__file__).resolve(strict=True)
         constants_path = Path(constants_module.__file__).resolve(strict=True)
         forensic_path = Path(forensic_module.__file__).resolve(strict=True)
+        trace_path = Path(trace_module.__file__).resolve(strict=True)
         if (
             self.runtime_dir not in adapter_path.parents
             or self.runtime_dir not in constants_path.parents
             or self.runtime_dir not in forensic_path.parents
+            or self.runtime_dir not in trace_path.parents
         ):
             raise ValueError("AI_CORE_RUNTIME_IMPORT_PATH_MISMATCH")
         if (
@@ -194,9 +200,11 @@ class OwnerRuntimeBridge:
             != CANONICALIZATION_VERSION
             or forensic_module.RESTRICTED_FORENSIC_SCHEMA_VERSION
             != "OWNER_CANARY_BLOCKED_FORENSIC_V1"
+            or trace_module.TRACE_SCHEMA_VERSION != "AI_CORE_RUNTIME_TRACE_V1"
         ):
             raise ValueError("AI_CORE_RUNTIME_CONTRACT_MISMATCH")
         self.bind_runtime_forensic = forensic_module.bind_runtime_release_identity
+        self.runtime_trace_schema_version = trace_module.TRACE_SCHEMA_VERSION
         self.adapter = adapter_module.OfflineRuntimeAdapterV1(
             qwen_executor=executor or QwenOwnerExecutor(
                 endpoint=endpoint,
@@ -209,6 +217,9 @@ class OwnerRuntimeBridge:
 
     def process(self, request: dict[str, Any]) -> dict[str, Any]:
         response = self.adapter.process(request)
+        observability_trace = self._bind_observability_trace(
+            self.adapter.last_observability_trace
+        )
         if not response.get("success"):
             return {
                 "runtime_sha": RUNTIME_SHA,
@@ -217,6 +228,7 @@ class OwnerRuntimeBridge:
                 "canonicalization_version": CANONICALIZATION_VERSION,
                 "model": MODEL,
                 "response": response,
+                "observability_trace": observability_trace,
             }
         self.responses[response["response_id"]] = response
         forensic = self.adapter.last_restricted_forensic_evidence
@@ -230,7 +242,25 @@ class OwnerRuntimeBridge:
             "model": MODEL,
             "response": response,
             "restricted_forensic": forensic,
+            "observability_trace": observability_trace,
         }
+
+    @staticmethod
+    def _bind_observability_trace(value: Any) -> dict[str, Any] | None:
+        if not isinstance(value, dict):
+            return None
+        trace = copy.deepcopy(value)
+        identity = trace.get("identity")
+        if not isinstance(identity, dict):
+            return None
+        identity["runtime_sha"] = RUNTIME_SHA
+        trace.pop("trace_sha256", None)
+        encoded = json.dumps(
+            trace, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":"), allow_nan=False,
+        ).encode("utf-8")
+        trace["trace_sha256"] = hashlib.sha256(encoded).hexdigest()
+        return trace
 
     def acknowledge(self, acknowledgement: dict[str, Any]) -> dict[str, Any]:
         validation = self.validator.validate(
