@@ -13,13 +13,13 @@ import tempfile
 from pathlib import Path
 
 
-RUNTIME_SHA = "b29fa052e278e04adefcc1e18788427ee83d5b8c"
+RUNTIME_SHA = "77e4c47863df219a4b86e682b84d75b29f57f4db"
 CONTRACT_SHA = "6cd71a5596346925ecdd2ffeb9d45262d881ee93"
 CONTRACT_VERSION = "1.1"
 CANONICALIZATION_VERSION = "CANONICAL_JSON_HASH_V1"
 RUNTIME_VERSION = "1.2.3"
 MODEL = "qwen3.6:27b"
-TREE_SHA = "34f4e4be74e2e39631aa6f731b7d9de2fef6390c"
+TREE_SHA = "1751889e7be97eac3ea623aa8bb50bae70620f93"
 PATHS = (
     "sales_conversation_controller",
     "generated/contracts/AI_CORE_SITE_CONTRACT_V1_1",

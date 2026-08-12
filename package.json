@@ -24,7 +24,7 @@
     "test:owner-ai-canary-origin-http": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_owner_canary_proxy_origin_http_harness.mjs",
     "test:canonical-json-hash-v1": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_canonical_json_hash_v1.mjs",
     "test:exact-runtime-pin": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_exact_runtime_pin_update.mjs",
-    "test:runtime-b29fa052": "python3 scripts/test_runtime_b29fa052_semantics.py",
+    "test:runtime-77e4c478": "python3 scripts/test_runtime_77e4c478_semantics.py",
     "test:owner-ai-canary-env": "node scripts/test_configure_owner_ai_canary_env.mjs",
     "test:esm-cli-entrypoint": "node scripts/test_esm_cli_entrypoint.mjs",
     "test:site-release-provenance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_site_release_provenance.mjs",

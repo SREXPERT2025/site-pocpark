@@ -23,7 +23,7 @@ from ai_core_owner_runtime_bridge import (  # noqa: E402
 )
 
 
-EXPECTED_RUNTIME = "b29fa052e278e04adefcc1e18788427ee83d5b8c"
+EXPECTED_RUNTIME = "77e4c47863df219a4b86e682b84d75b29f57f4db"
 EXPECTED_CONTRACT = "6cd71a5596346925ecdd2ffeb9d45262d881ee93"
 EXPECTED_CANONICALIZATION = "CANONICAL_JSON_HASH_V1"
 ENGINEERING_MESSAGE = (
@@ -34,7 +34,7 @@ ENGINEERING_MESSAGE = (
     "распознавание госномеров, карты или билеты?"
 )
 FIXTURE = json.loads(
-    (ROOT / "scripts/fixtures/runtime_b29fa052_semantic_regression_v1.json")
+    (ROOT / "scripts/fixtures/runtime_77e4c478_semantic_regression_v1.json")
     .read_text(encoding="utf-8")
 )
 SITE_SHA = subprocess.check_output(
@@ -45,9 +45,9 @@ SITE_SHA = subprocess.check_output(
 def request_for(runtime_sha256, message: str, suffix: str, history=None):
     payload = {
         "potential_project_id": None,
-        "conversation_thread_id": f"thread_b29fa052_{suffix}",
-        "conversation_id": f"thread_b29fa052_{suffix}",
-        "message_id": f"message_b29fa052_{suffix}",
+        "conversation_thread_id": f"thread_77e4c478_{suffix}",
+        "conversation_id": f"thread_77e4c478_{suffix}",
+        "message_id": f"message_77e4c478_{suffix}",
         "parent_message_id": None,
         "timestamp": "2026-08-11T12:00:00Z",
         "channel": "website",
@@ -62,7 +62,7 @@ def request_for(runtime_sha256, message: str, suffix: str, history=None):
         "consent_safe_context_refs": [],
         "executor_policy": {
             "policy_id": "policy:public_qwen_v1",
-            "assignment_id": f"assignment:b29fa052:{suffix}",
+            "assignment_id": f"assignment:77e4c478:{suffix}",
             "planned_executor": "qwen",
             "allowed_executors": ["qwen"],
             "max_model_fallbacks": 0,
@@ -76,15 +76,15 @@ def request_for(runtime_sha256, message: str, suffix: str, history=None):
     return {
         "contract_version": CONTRACT_VERSION,
         "canonicalization_version": CANONICALIZATION_VERSION,
-        "request_id": f"request_b29fa052_{suffix}",
-        "idempotency_key": f"idem:b29fa052:{suffix}",
+        "request_id": f"request_77e4c478_{suffix}",
+        "idempotency_key": f"idem:77e4c478:{suffix}",
         "request_payload_hash": runtime_sha256(payload),
         "site_release": SITE_SHA,
         "gateway_release": "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9",
         "sent_at": "2026-08-11T12:00:00Z",
         "trace_context": {
-            "trace_id": f"trace:b29fa052:{suffix}",
-            "span_id": f"span:b29fa052:{suffix}",
+            "trace_id": f"trace:77e4c478:{suffix}",
+            "span_id": f"span:77e4c478:{suffix}",
             "parent_span_id": None,
         },
         "dry_run": True,
@@ -96,10 +96,10 @@ def main() -> int:
     assert RUNTIME_SHA == EXPECTED_RUNTIME
     assert CONTRACT_SHA == EXPECTED_CONTRACT
     assert CANONICALIZATION_VERSION == EXPECTED_CANONICALIZATION
-    artifact = ROOT / "release/ai-core-runtime-b29fa052" / (
+    artifact = ROOT / "release/ai-core-runtime-77e4c478" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
-    with tempfile.TemporaryDirectory(prefix="runtime-b29fa052-site-integration-") as raw:
+    with tempfile.TemporaryDirectory(prefix="runtime-77e4c478-site-integration-") as raw:
         temp = Path(raw)
         with tarfile.open(artifact, "r:gz") as source:
             source.extractall(temp, filter="data")
@@ -173,6 +173,31 @@ def main() -> int:
         assert greeting["telemetry"]["publication"]["candidate_status"] == "allowed"
         assert greeting["state_mutations"] == []
         assert greeting_bridge.adapter.last_trace["model_requests"] == 0
+        greeting_prompt = greeting_bridge.adapter.last_trace[
+            "model_prompt_contract"
+        ]["serialized_prompt"]
+        assert "Текущая реплика: Привет!" in greeting_prompt
+        assert "уже принятое инженерное решение" not in greeting_prompt
+        assert "Оператор участвует только" not in greeting_prompt
+        assert "Решение по категориям:" not in greeting_prompt
+
+        bad_greeting_answer = FIXTURE["incidents"][
+            "bad_greeting_semantic_intrusion"
+        ]["captured_raw_answer"]
+        bad_greeting_executor, bad_greeting_bridge, _, bad_greeting = execute(
+            "Привет!", bad_greeting_answer, "bad_greeting_blocked",
+        )
+        assert bad_greeting_executor.calls == 1
+        assert bad_greeting["evaluation_result"]["status"] == "fail"
+        assert "unrequested_engineering_decision" in bad_greeting[
+            "evaluation_result"
+        ]["reason_codes"]
+        assert bad_greeting["telemetry"]["publication"][
+            "candidate_status"
+        ] == "blocked"
+        assert bad_greeting["repair_result"]["applied"] is False
+        assert bad_greeting["state_mutations"] == []
+        assert bad_greeting_bridge.adapter.last_trace["model_requests"] == 0
 
         _, _, _, clean_2_2 = execute("сколько будет 2+2= ?", "4", "clean_2_2")
         assert clean_2_2["answer"] == "4"
@@ -260,7 +285,7 @@ def main() -> int:
             assert ordinary_repair[field] == restricted_repair[field]
 
     print(json.dumps({
-        "schema": "ROSPARK_RUNTIME_B29FA052_SITE_INTEGRATION_V1",
+        "schema": "ROSPARK_RUNTIME_77E4C478_SITE_INTEGRATION_V1",
         "runtime_sha": EXPECTED_RUNTIME,
         "contract_sha": EXPECTED_CONTRACT,
         "canonicalization_version": EXPECTED_CANONICALIZATION,
@@ -269,6 +294,8 @@ def main() -> int:
         "greeting_repair": "not_used",
         "greeting_publication": "allowed",
         "greeting_engineering_reason_codes": [],
+        "bad_greeting_semantic_intrusion": "blocked",
+        "bad_greeting_blocking_reason": "unrequested_engineering_decision",
         "clean_2_plus_2": "pass",
         "clean_2_plus_9": "pass",
         "instruction_leak": "blocked",

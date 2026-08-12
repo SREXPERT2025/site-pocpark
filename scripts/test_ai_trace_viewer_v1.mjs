@@ -421,7 +421,7 @@ check('owner UI and JSON export are integrated under admin routes only', () => {
 });
 
 check('Runtime pin is exact additive descendant and Contract is unchanged', () => {
-  assert.equal(AI_CORE_RUNTIME_SHA, 'b29fa052e278e04adefcc1e18788427ee83d5b8c');
+  assert.equal(AI_CORE_RUNTIME_SHA, '77e4c47863df219a4b86e682b84d75b29f57f4db');
   assert.equal(AI_CORE_RUNTIME_VERSION, '1.2.3');
   assert.equal(AI_CORE_CONTRACT_SHA, '6cd71a5596346925ecdd2ffeb9d45262d881ee93');
   assert.equal(CANONICALIZATION_VERSION, 'CANONICAL_JSON_HASH_V1');
