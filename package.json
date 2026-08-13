@@ -38,6 +38,7 @@
     "test:public-ai-core-http": "node scripts/test_public_ai_core_http_harness.mjs",
     "test:ai-trace-viewer": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_trace_viewer_v1.mjs",
     "test:ai-core-contract-v1.2": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_core_contract_v1_2_site_compatibility.mjs",
+    "test:repair-integrity-wire-v1.2": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_repair_integrity_wire_v12x.mjs",
     "test:ai-widget-gateway": "python3 scripts/test_ai_widget_pilot_gateway.py",
     "test:ai-widget-env": "node scripts/test_configure_ai_widget_pilot_env.mjs",
     "test:ai-widget-production-env": "node scripts/test_configure_ai_widget_production_env.mjs",

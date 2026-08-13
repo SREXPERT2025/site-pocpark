@@ -478,9 +478,9 @@ check('owner UI and JSON export are integrated under admin routes only', () => {
 });
 
 check('Runtime and Contract v1.2 pins are exact', () => {
-  assert.equal(AI_CORE_RUNTIME_SHA, 'da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07');
+  assert.equal(AI_CORE_RUNTIME_SHA, '78db9e3c3363720fe680056873b41b332f319b96');
   assert.equal(AI_CORE_RUNTIME_VERSION, '1.3.0');
-  assert.equal(AI_CORE_CONTRACT_SHA, '42a4476d088540c63ffd7340195daba1a37e3b29');
+  assert.equal(AI_CORE_CONTRACT_SHA, '4d75773d60f3453279cbfcee1453f54b15b66567');
   assert.equal(CANONICALIZATION_VERSION, 'CANONICAL_JSON_HASH_V1');
 });
 

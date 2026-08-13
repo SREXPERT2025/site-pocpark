@@ -16,8 +16,8 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 
 const ROOT = process.cwd();
-const RUNTIME_SHA = 'da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07';
-const CONTRACT_SHA = '42a4476d088540c63ffd7340195daba1a37e3b29';
+const RUNTIME_SHA = '78db9e3c3363720fe680056873b41b332f319b96';
+const CONTRACT_SHA = '4d75773d60f3453279cbfcee1453f54b15b66567';
 const CANONICALIZATION_VERSION = 'CANONICAL_JSON_HASH_V1';
 const GATEWAY_SHA = 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9';
 const SECRET = 'deterministic-gateway-secret-at-least-32-bytes';
@@ -152,6 +152,7 @@ const gateway = https.createServer({
       const runtimeResponse = envelope.response;
       const repairCodes = ['operator_role_missing', 'required_content_missing'];
       runtimeResponse.repair_result.reason_codes = [...repairCodes].sort();
+      runtimeResponse.telemetry.repair.reason_codes = [...repairCodes].sort();
       runtimeResponse.evaluation_result.status = 'fail';
       runtimeResponse.evaluation_result.reason_codes = ['required_content_missing'];
       runtimeResponse.telemetry.evaluation.raw_status = 'review_required';

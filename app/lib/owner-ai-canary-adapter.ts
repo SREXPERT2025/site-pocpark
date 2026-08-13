@@ -10,7 +10,7 @@ import {
 } from './ai-core-execution-provenance-v1-2.ts';
 
 export const AI_CORE_RUNTIME_SHA =
-  'da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07';
+  '78db9e3c3363720fe680056873b41b332f319b96';
 export const AI_CORE_CONTRACT_SHA = AI_CORE_CONTRACT_V1_2_SHA;
 export const AI_CORE_CONTRACT_VERSION = AI_CORE_CONTRACT_V1_2_VERSION;
 export const AI_CORE_RUNTIME_VERSION = '1.3.0';
@@ -915,7 +915,9 @@ function validateRestrictedForensic(
     'AI_CORE_RESTRICTED_FORENSIC_REPAIR_INVALID',
   );
   if (canonicalJson(repairReasons) !== canonicalJson(telemetryRepairReasons)) {
-    throw new Error('AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH');
+    throw new Error(
+      'AI_CORE_RESTRICTED_FORENSIC_REPAIR_REASON_MISMATCH',
+    );
   }
   const evaluationForensic = record(
     evidence.evaluation,
@@ -1125,6 +1127,10 @@ export function validateOwnerCanaryCoreResponse(
   }
   const attempts = executorTrace.attempts as unknown[];
   const repair = record(response.repair_result, 'INVALID_AI_CORE_REPAIR');
+  exactKeys(repair, [
+    'applied', 'method', 'reason_codes', 'rewrite_ratio',
+    'decision_package_hash',
+  ], 'INVALID_AI_CORE_REPAIR');
   if (!Array.isArray(response.state_mutations)) {
     throw new Error('INVALID_AI_CORE_MUTATIONS');
   }
@@ -1162,6 +1168,48 @@ export function validateOwnerCanaryCoreResponse(
     telemetry.repair,
     'INVALID_AI_CORE_REPAIR_TELEMETRY',
   );
+  exactKeys(repairTelemetry, [
+    'applied', 'method', 'reason_codes', 'rewrite_ratio',
+  ], 'INVALID_AI_CORE_REPAIR_TELEMETRY');
+  if (typeof repair.applied !== 'boolean'
+    || typeof repairTelemetry.applied !== 'boolean'
+    || typeof repair.rewrite_ratio !== 'number'
+    || !Number.isFinite(repair.rewrite_ratio)
+    || repair.rewrite_ratio < 0
+    || repair.rewrite_ratio > 1
+    || typeof repairTelemetry.rewrite_ratio !== 'number'
+    || !Number.isFinite(repairTelemetry.rewrite_ratio)
+    || repairTelemetry.rewrite_ratio < 0
+    || repairTelemetry.rewrite_ratio > 1) {
+    throw new Error('INVALID_AI_CORE_REPAIR_TELEMETRY');
+  }
+  const repairResultMethod = telemetryEnum(
+    repair.method,
+    ['none', 'deterministic'],
+    'INVALID_AI_CORE_REPAIR_TELEMETRY',
+  );
+  const repairTelemetryMethod = telemetryEnum(
+    repairTelemetry.method,
+    ['none', 'deterministic'],
+    'INVALID_AI_CORE_REPAIR_TELEMETRY',
+  );
+  const repairResultReasonCodes = normalizeRepairReasonCodes(
+    repair.reason_codes,
+    'INVALID_AI_CORE_REPAIR_RESULT_REASON_CODES',
+  );
+  const repairTelemetryReasonCodes = normalizeRepairReasonCodes(
+    repairTelemetry.reason_codes,
+    'INVALID_AI_CORE_REPAIR_TELEMETRY_REASON_CODES',
+  );
+  if (repair.applied !== repairTelemetry.applied
+    || repairResultMethod !== repairTelemetryMethod
+    || repair.rewrite_ratio !== repairTelemetry.rewrite_ratio) {
+    throw new Error('AI_CORE_REPAIR_RESULT_TELEMETRY_MISMATCH');
+  }
+  if (canonicalJson(repairResultReasonCodes)
+    !== canonicalJson(repairTelemetryReasonCodes)) {
+    throw new Error('AI_CORE_REPAIR_RESULT_TELEMETRY_REASON_MISMATCH');
+  }
   const preGateTelemetry = Object.freeze({
     aiCoreRequestId: telemetryString(
       response.request_id,
@@ -1191,16 +1239,9 @@ export function validateOwnerCanaryCoreResponse(
       evaluation.reason_codes,
       'INVALID_AI_CORE_EVALUATION_REASON_CODES',
     ),
-    repairApplied: repair.applied === true,
-    repairStatus: telemetryEnum(
-      repair.method ?? repairTelemetry.method,
-      ['none', 'deterministic'],
-      'INVALID_AI_CORE_REPAIR_TELEMETRY',
-    ),
-    repairReasonCodes: telemetryReasonCodes(
-      repair.reason_codes ?? repairTelemetry.reason_codes ?? [],
-      'INVALID_AI_CORE_REPAIR_REASON_CODES',
-    ),
+    repairApplied: repair.applied,
+    repairStatus: repairResultMethod,
+    repairReasonCodes: repairResultReasonCodes,
     publicationCandidateStatus: telemetryEnum(
       publication.candidate_status,
       ['allowed', 'owner_review', 'blocked'],

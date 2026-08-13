@@ -1,5 +1,5 @@
 export const AI_CORE_CONTRACT_V1_2_SHA =
-  '42a4476d088540c63ffd7340195daba1a37e3b29';
+  '4d75773d60f3453279cbfcee1453f54b15b66567';
 export const AI_CORE_CONTRACT_V1_2_VERSION = '1.2';
 
 // Shared by the canary-ready Site adapter. Activation remains a separate,

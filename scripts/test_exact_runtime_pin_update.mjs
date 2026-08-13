@@ -8,9 +8,9 @@ import {
   validateOwnerCanaryCoreResponse,
 } from '../app/lib/owner-ai-canary-adapter.ts';
 
-const APPROVED_RUNTIME = 'da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07';
+const APPROVED_RUNTIME = '78db9e3c3363720fe680056873b41b332f319b96';
 const OLD_RUNTIME = '77e4c47863df219a4b86e682b84d75b29f57f4db';
-const CONTRACT = '42a4476d088540c63ffd7340195daba1a37e3b29';
+const CONTRACT = '4d75773d60f3453279cbfcee1453f54b15b66567';
 const CANONICALIZATION = 'CANONICAL_JSON_HASH_V1';
 
 assert.equal(AI_CORE_RUNTIME_SHA, APPROVED_RUNTIME);
@@ -105,6 +105,72 @@ assert.equal(
   'allowed',
 );
 
+const historicalThread = 'thread_historical_site_0001';
+const historicalMessageId = 'message_current_historical_0001';
+const historicalSourceMessageId = 'message_historical_0001';
+const historicalRequest = buildOwnerCanaryCoreRequest({
+  aiCoreRequestId: 'aicore_historical_site_0001',
+  conversationThreadId: historicalThread,
+  messageId: historicalMessageId,
+  parentMessageId: historicalSourceMessageId,
+  currentMessage: 'А если выбирать только карты или билеты?',
+  sourcePage: '/',
+  recentMessages: [{
+    message_id: historicalSourceMessageId,
+    role: 'user',
+    content: 'У нас бизнес-центр: 2 въезда и 2 выезда, около 800 автомобилей '
+      + 'в сутки. Есть сотрудники, арендаторы и гости. Оператор есть, нужен '
+      + 'быстрый автоматический проезд и автоматический резерв.',
+    created_at: '2026-08-13T11:59:00.000Z',
+  }],
+  state: {
+    conversationThreadId: historicalThread,
+    stateVersion: 0,
+    confirmedProjectFacts: [],
+    candidateFacts: [],
+    conflicts: [],
+    activeQuestion: null,
+    askedQuestions: [],
+    conversationPreferences: {},
+    lastMutationAcknowledgement: null,
+  },
+  siteRelease: '243b831ef8f15733dd60e27d63d57c71d2a4113e',
+  gatewayRelease: 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9',
+  sentAt: '2026-08-13T12:00:00.000Z',
+  dryRun: true,
+});
+const historicalRuntime = spawnSync(
+  'python3',
+  ['scripts/run_owner_ai_core_deterministic_contract_probe.py'],
+  { input: JSON.stringify(historicalRequest), encoding: 'utf8' },
+);
+assert.equal(historicalRuntime.status, 0, historicalRuntime.stderr);
+const historicalRawEnvelope = JSON.parse(historicalRuntime.stdout);
+const historicalEnvelope = validateOwnerCanaryCoreResponse(
+  historicalRawEnvelope,
+  historicalRequest,
+);
+assert.equal(
+  historicalEnvelope.response.telemetry.publication.candidate_status,
+  'allowed',
+);
+assert.equal(
+  historicalRawEnvelope.observability_trace.state
+    .request_local_effective.object_type,
+  'business_center',
+);
+assert.equal(
+  historicalRawEnvelope.observability_trace.state
+    .request_local_effective.daily_traffic,
+  800,
+);
+assert.ok(historicalEnvelope.response.state_mutations.every(
+  (mutation) => mutation.source_message_id === historicalMessageId,
+));
+assert.ok(historicalEnvelope.response.state_mutations.every(
+  (mutation) => mutation.source_message_id !== historicalSourceMessageId,
+));
+
 assert.throws(() => validateOwnerCanaryCoreResponse({
   ...envelope, runtime_sha: OLD_RUNTIME,
 }, request), /AI_CORE_RUNTIME_SHA_MISMATCH/);
@@ -125,10 +191,12 @@ console.log(JSON.stringify({
   contract_mismatch_rejection: 'pass',
   canonicalization_mismatch_rejection: 'pass',
   greeting_deterministic_fixture: 'pass',
+  historical_request_local_facts: 'pass',
+  historical_source_mutations: 0,
   model_route_fixture: 'covered_by_bridge_test',
   runtime_sha: APPROVED_RUNTIME,
   contract_sha: CONTRACT,
   canonicalization_version: CANONICALIZATION,
   model_requests: 0,
-  result: '7/7',
+  result: '8/8',
 }));

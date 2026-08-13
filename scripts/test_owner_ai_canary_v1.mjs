@@ -300,6 +300,7 @@ const runtimeResponse = {
   answer: 'Понял: два въезда.',
   repair_result: {
     applied: false, method: 'none', rewrite_ratio: 0,
+    reason_codes: [],
     decision_package_hash: sha256(decisionPackage),
   },
   evaluation_result: {
@@ -330,7 +331,9 @@ const runtimeResponse = {
       model_request_count: 1, deterministic_handler: null,
       fallback_used: false, cost_bucket: 'local_low',
     },
-    repair: { applied: false, method: 'none', rewrite_ratio: 0 },
+    repair: {
+      applied: false, method: 'none', reason_codes: [], rewrite_ratio: 0,
+    },
     evaluation: { raw_status: 'pass', final_status: 'pass' },
     publication: { candidate_status: 'allowed', published: false },
   },
@@ -483,9 +486,10 @@ assert.equal(blockedForensic.ai_core_request_id, coreRequest.request_id);
 assert.equal(blockedForensic.executor.raw_answer, runtimeResponse.answer);
 assert.equal(blockedForensic.publication.candidate_status, 'blocked');
 
-function blockedWithRepairCodes(telemetryCodes, forensicCodes) {
+function blockedWithRepairCodes(resultCodes, telemetryCodes, forensicCodes) {
   const candidate = structuredClone(blockedEnvelope);
-  candidate.response.repair_result.reason_codes = telemetryCodes;
+  candidate.response.repair_result.reason_codes = resultCodes;
+  candidate.response.telemetry.repair.reason_codes = telemetryCodes;
   const withoutHash = {
     ...candidate.restricted_forensic,
     repair: {
@@ -501,7 +505,7 @@ function blockedWithRepairCodes(telemetryCodes, forensicCodes) {
   return candidate;
 }
 
-// repair_reason_codes is an unordered unique semantic collection only.
+// repair_reason_codes is one canonical unordered unique semantic collection.
 assert.deepEqual(normalizeRepairReasonCodes(['alpha_code', 'beta_code']), [
   'alpha_code', 'beta_code',
 ]);
@@ -512,9 +516,11 @@ for (const candidate of [
   blockedWithRepairCodes(
     ['alpha_code', 'beta_code'],
     ['alpha_code', 'beta_code'],
+    ['alpha_code', 'beta_code'],
   ),
   blockedWithRepairCodes(
     ['alpha_code', 'beta_code'],
+    ['beta_code', 'alpha_code'],
     ['beta_code', 'alpha_code'],
   ),
 ]) {
@@ -523,17 +529,30 @@ for (const candidate of [
     /AI_CORE_FINAL_GATE_BLOCKED/,
   );
 }
-for (const [telemetryCodes, forensicCodes] of [
+for (const [resultCodes, telemetryCodes] of [
   [['alpha_code', 'beta_code'], ['alpha_code', 'gamma_code']],
   [['alpha_code', 'beta_code'], ['alpha_code']],
   [['alpha_code'], ['alpha_code', 'beta_code']],
 ]) {
   assert.throws(
     () => validateOwnerCanaryCoreResponse(
-      blockedWithRepairCodes(telemetryCodes, forensicCodes),
+      blockedWithRepairCodes(resultCodes, telemetryCodes, telemetryCodes),
       coreRequest,
     ),
-    /AI_CORE_RESTRICTED_FORENSIC_REPAIR_MISMATCH/,
+    /AI_CORE_REPAIR_RESULT_TELEMETRY_REASON_MISMATCH/,
+  );
+}
+for (const [wireCodes, forensicCodes] of [
+  [['alpha_code', 'beta_code'], ['alpha_code', 'gamma_code']],
+  [['alpha_code', 'beta_code'], ['alpha_code']],
+  [['alpha_code'], ['alpha_code', 'beta_code']],
+]) {
+  assert.throws(
+    () => validateOwnerCanaryCoreResponse(
+      blockedWithRepairCodes(wireCodes, wireCodes, forensicCodes),
+      coreRequest,
+    ),
+    /AI_CORE_RESTRICTED_FORENSIC_REPAIR_REASON_MISMATCH/,
   );
 }
 for (const malformed of [
@@ -543,7 +562,7 @@ for (const malformed of [
 ]) {
   assert.throws(
     () => validateOwnerCanaryCoreResponse(
-      blockedWithRepairCodes(['alpha_code'], malformed),
+      blockedWithRepairCodes(['alpha_code'], ['alpha_code'], malformed),
       coreRequest,
     ),
     /AI_CORE_RESTRICTED_FORENSIC_REPAIR_INVALID/,
