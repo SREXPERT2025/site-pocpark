@@ -30,6 +30,12 @@ ENGINEERING_MESSAGE = (
     "на случай, если основной идентификатор не сработает. Что лучше выбрать: "
     "распознавание госномеров, карты или билеты?"
 )
+PROJECT_FACT_MESSAGE = (
+    "У нас бизнес-центр: 2 въезда и 2 выезда, около 800 автомобилей в сутки. "
+    "Есть сотрудники, арендаторы и гости. Оператор есть, но хотим максимально "
+    "быстрый автоматический проезд и обязательно автоматический резервный способ "
+    "на случай, если основной идентификатор не сработает."
+)
 EXPECTED_DECISION_PACKAGE_SHA = (
     "d6f6f3505a689790916c262cb1618670b05777a4084c4fa7cb45c625759a08cd"
 )
@@ -89,7 +95,7 @@ def request_for(hash_value, suffix: str = "owner001"):
 
 
 def main() -> int:
-    artifact = ROOT / "release/ai-core-runtime-78db9e3c" / (
+    artifact = ROOT / "release/ai-core-runtime-3bf1facc" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="owner-core-test-") as raw:
@@ -106,6 +112,9 @@ def main() -> int:
         from sales_conversation_controller.site_contract_runtime_v1.executors import (  # noqa: E402
             QwenStub,
             StubOutput,
+        )
+        from sales_conversation_controller.site_contract_runtime_v1 import (  # noqa: E402
+            apply_mutation_ack_v11,
         )
         from sales_conversation_controller.site_contract_runtime_v1.canonical import (  # noqa: E402
             sha256 as runtime_sha256,
@@ -217,6 +226,101 @@ def main() -> int:
             "executor_received_knowledge_count"
         ] > 0
 
+        project_request = request_for(runtime_sha256, "project_fact_round_trip")
+        project_request["payload"]["current_message"] = PROJECT_FACT_MESSAGE
+        project_request["request_payload_hash"] = runtime_sha256(
+            project_request["payload"]
+        )
+        project_bridge = OwnerRuntimeBridge(
+            runtime_dir=runtime,
+            endpoint="http://127.0.0.1:11434",
+            timeout=1,
+            keep_alive="2h",
+            executor=QwenStub(),
+        )
+        project_envelope = project_bridge.process(project_request)
+        project_response = project_envelope["response"]
+        question_mutation = next(
+            item for item in project_response["state_mutations"]
+            if item["operation"] == "add_asked_question"
+        )
+        assert question_mutation["value"]["question_goal"] == (
+            "identify_current_system"
+        )
+        assert question_mutation["value"]["question_goal"] != (
+            question_mutation["value"]["question_text"]
+        )
+
+        follow_up_request = request_for(runtime_sha256, "project_follow_up")
+        follow_up_request["payload"]["current_message"] = (
+            "Что лучше выбрать: карты или билеты?"
+        )
+        follow_up_request["payload"]["parent_message_id"] = (
+            project_request["payload"]["message_id"]
+        )
+        follow_up_request["payload"]["recent_messages"] = [
+            {
+                "message_id": project_request["payload"]["message_id"],
+                "role": "user",
+                "content": PROJECT_FACT_MESSAGE,
+                "created_at": "2026-08-13T12:00:00Z",
+            },
+            {
+                "message_id": project_response["response_id"],
+                "role": "assistant",
+                "content": project_response["answer"],
+                "created_at": "2026-08-13T12:00:01Z",
+            },
+        ]
+        follow_up_request["request_payload_hash"] = runtime_sha256(
+            follow_up_request["payload"]
+        )
+        acknowledgement = {
+            "contract_version": project_response["contract_version"],
+            "canonicalization_version": project_response[
+                "canonicalization_version"
+            ],
+            "request_id": project_response["request_id"],
+            "response_id": project_response["response_id"],
+            "acknowledged_at": "2026-08-13T12:00:02Z",
+            "acknowledgements": [
+                {
+                    "mutation_id": item["mutation_id"],
+                    "status": "applied",
+                    "reason_code": "applied",
+                    "entity_version_before": 0,
+                    "entity_version_after": 1,
+                    "audit_ref": f"auditref:{index:032x}",
+                }
+                for index, item in enumerate(
+                    project_response["state_mutations"], start=1,
+                )
+            ],
+        }
+        round_trip_request = apply_mutation_ack_v11(
+            follow_up_request,
+            project_response,
+            acknowledgement,
+            publication_confirmed=True,
+        )["next_request"]
+        assert round_trip_request["payload"]["active_question"]["goal"] == (
+            "identify_current_system"
+        )
+        assert project_bridge.adapter.validator.validate(
+            "request-v1.schema.json", round_trip_request,
+        ).valid
+        follow_up_envelope = OwnerRuntimeBridge(
+            runtime_dir=runtime,
+            endpoint="http://127.0.0.1:11434",
+            timeout=1,
+            keep_alive="2h",
+            executor=QwenStub(),
+        ).process(round_trip_request)
+        assert follow_up_envelope["response"]["success"] is True
+        assert follow_up_envelope["response"]["evaluation_result"][
+            "status"
+        ] == "pass"
+
         class BlockingEngineeringExecutor:
             executor = "qwen"
 
@@ -295,7 +399,8 @@ def main() -> int:
 
     print(
         "ai core owner runtime bridge tests: ok; "
-        "live_engineering=pass; blocked_forensic=pass; "
+        "live_engineering=pass; t3_t4_state_round_trip=pass; "
+        "blocked_forensic=pass; "
         "idempotency=pass; model_requests=0"
     )
     return 0

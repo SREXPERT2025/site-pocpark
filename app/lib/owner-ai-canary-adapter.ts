@@ -10,7 +10,7 @@ import {
 } from './ai-core-execution-provenance-v1-2.ts';
 
 export const AI_CORE_RUNTIME_SHA =
-  '78db9e3c3363720fe680056873b41b332f319b96';
+  '3bf1facc9cc16672c1f1c01620c89f51eb39c28f';
 export const AI_CORE_CONTRACT_SHA = AI_CORE_CONTRACT_V1_2_SHA;
 export const AI_CORE_CONTRACT_VERSION = AI_CORE_CONTRACT_V1_2_VERSION;
 export const AI_CORE_RUNTIME_VERSION = '1.3.0';
@@ -370,6 +370,29 @@ class AiCoreAdapterBlockedError extends Error {
   }
 }
 
+type AiCoreRuntimeSafeFailure = Readonly<{
+  code: string;
+  category: string;
+  retryable: boolean;
+  safeMessageCode: string;
+  stage: string;
+}>;
+
+class AiCoreRuntimeSafeError extends Error {
+  readonly runtimeFailure: AiCoreRuntimeSafeFailure;
+  readonly observabilityTrace: AiCoreRuntimeObservabilityTrace | null;
+
+  constructor(
+    runtimeFailure: AiCoreRuntimeSafeFailure,
+    observabilityTrace: AiCoreRuntimeObservabilityTrace | null,
+  ) {
+    super(`AI_CORE_RUNTIME_${runtimeFailure.code}`);
+    this.name = 'AiCoreRuntimeSafeError';
+    this.runtimeFailure = runtimeFailure;
+    this.observabilityTrace = observabilityTrace;
+  }
+}
+
 export class AiCoreFinalGateBlockedError extends Error {
   readonly preGateTelemetry: OwnerCanaryPreGateTelemetry;
   readonly restrictedForensic: OwnerCanaryRestrictedForensicEvidence;
@@ -414,7 +437,14 @@ export function publicBlockedSafeForensicFromError(error: unknown) {
 export function observabilityTraceFromError(error: unknown) {
   return error instanceof AiCoreFinalGateBlockedError
     || error instanceof AiCoreAdapterBlockedError
+    || error instanceof AiCoreRuntimeSafeError
     ? error.observabilityTrace
+    : null;
+}
+
+export function runtimeSafeFailureFromError(error: unknown) {
+  return error instanceof AiCoreRuntimeSafeError
+    ? error.runtimeFailure
     : null;
 }
 
@@ -1073,8 +1103,54 @@ export function validateOwnerCanaryCoreResponse(
   );
   const response = record(envelope.response, 'INVALID_AI_CORE_RESPONSE_BODY');
   if (response.contract_version !== AI_CORE_CONTRACT_VERSION
-    || response.canonicalization_version !== CANONICALIZATION_VERSION
-    || response.success !== true) {
+    || response.canonicalization_version !== CANONICALIZATION_VERSION) {
+    throw new Error('AI_CORE_CONTRACT_RESPONSE_REJECTED');
+  }
+  if (response.success === false) {
+    exactKeys(response, [
+      'contract_version', 'canonicalization_version', 'success',
+      'request_id', 'error', 'trace_id',
+    ], 'AI_CORE_RUNTIME_SAFE_ERROR_SCHEMA_INVALID');
+    const runtimeError = record(
+      response.error,
+      'AI_CORE_RUNTIME_SAFE_ERROR_SCHEMA_INVALID',
+    );
+    exactKeys(runtimeError, [
+      'code', 'category', 'retryable', 'safe_message_code', 'stage',
+    ], 'AI_CORE_RUNTIME_SAFE_ERROR_SCHEMA_INVALID');
+    const code = telemetryEnum(runtimeError.code, [
+      'VALIDATION_ERROR', 'POLICY_REJECTED', 'EXECUTOR_TIMEOUT',
+      'EXECUTOR_UNAVAILABLE', 'IDEMPOTENCY_CONFLICT',
+      'UNKNOWN_COMPONENT_VERSION', 'INVALID_STATE_MUTATION',
+      'DECISION_PACKAGE_IMMUTABLE', 'FALLBACK_LIMIT_EXCEEDED',
+      'INTERNAL_ERROR', 'REVIEW_REQUIRED', 'NOT_EVALUABLE',
+    ], 'AI_CORE_RUNTIME_SAFE_ERROR_SCHEMA_INVALID');
+    const category = telemetryEnum(runtimeError.category, [
+      'validation', 'policy', 'executor', 'idempotency', 'state',
+      'internal', 'evaluation',
+    ], 'AI_CORE_RUNTIME_SAFE_ERROR_SCHEMA_INVALID');
+    const stage = telemetryEnum(runtimeError.stage, [
+      'transport', 'validation', 'context', 'controller', 'decision',
+      'executor', 'repair', 'evaluation', 'mutation',
+    ], 'AI_CORE_RUNTIME_SAFE_ERROR_SCHEMA_INVALID');
+    const safeMessageCode = telemetryString(
+      runtimeError.safe_message_code,
+      'AI_CORE_RUNTIME_SAFE_ERROR_SCHEMA_INVALID',
+    );
+    if (typeof runtimeError.retryable !== 'boolean'
+      || !/^[A-Z][A-Z0-9_]{2,80}$/.test(safeMessageCode)
+      || (request && response.request_id !== request.request_id)) {
+      throw new Error('AI_CORE_RUNTIME_SAFE_ERROR_SCHEMA_INVALID');
+    }
+    throw new AiCoreRuntimeSafeError(Object.freeze({
+      code,
+      category,
+      retryable: runtimeError.retryable,
+      safeMessageCode,
+      stage,
+    }), observabilityTrace);
+  }
+  if (response.success !== true) {
     throw new Error('AI_CORE_CONTRACT_RESPONSE_REJECTED');
   }
   if (request) {

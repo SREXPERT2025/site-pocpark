@@ -848,6 +848,31 @@ function validRuntimeMutation(value: OwnerCanaryRuntimeMutation) {
     || value.proposed_state_version !== value.expected_state_version + 1) {
     return 'schema_invalid' as const;
   }
+  if (value.operation === 'add_asked_question') {
+    const question = value.value;
+    if (!question || typeof question !== 'object'
+      || Array.isArray(question)) {
+      return 'schema_invalid' as const;
+    }
+    const fields = question as Record<string, unknown>;
+    const expectedFields = fields.expected_fields;
+    if (typeof fields.question_text !== 'string'
+      || fields.question_text.trim().length === 0
+      || fields.question_text.length > 1000
+      || typeof fields.question_goal !== 'string'
+      || !/^[a-z][a-z0-9_]{0,79}$/.test(fields.question_goal)
+      || !Array.isArray(expectedFields)
+      || expectedFields.length === 0
+      || expectedFields.length > 32
+      || !expectedFields.every((item) => (
+        typeof item === 'string'
+        && /^[a-z][a-z0-9_]{0,79}$/.test(item)
+      ))
+      || typeof fields.final_answer_hash !== 'string'
+      || !/^[a-f0-9]{64}$/.test(fields.final_answer_hash)) {
+      return 'schema_invalid' as const;
+    }
+  }
   stableJson(value);
   return null;
 }

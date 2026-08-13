@@ -16,7 +16,9 @@ import {
   canonicalJson,
   ownerCanaryRuntimeConfig,
   normalizeRepairReasonCodes,
+  observabilityTraceFromError,
   preGateTelemetryFromError,
+  runtimeSafeFailureFromError,
   restrictedForensicFromError,
   sha256,
   validateOwnerCanaryCoreResponse,
@@ -373,6 +375,51 @@ assert.throws(() => validateOwnerCanaryCoreResponse({
   ...envelope, contract_sha: '0'.repeat(40),
 }, coreRequest), /AI_CORE_CONTRACT_SHA_MISMATCH/);
 assert.throws(() => validateOwnerCanaryCoreResponse({
+  ...envelope,
+  response: {
+    contract_version: AI_CORE_CONTRACT_VERSION,
+    canonicalization_version: CANONICALIZATION_VERSION,
+    success: false,
+    request_id: coreRequest.request_id,
+    error: {
+      code: 'VALIDATION_ERROR',
+      category: 'validation',
+      retryable: false,
+      safe_message_code: 'VALIDATION_ERROR',
+      stage: 'validation',
+    },
+    trace_id: coreRequest.trace_context.trace_id,
+  },
+}, coreRequest), (error) => {
+  assert.equal(error.message, 'AI_CORE_RUNTIME_VALIDATION_ERROR');
+  assert.deepEqual(runtimeSafeFailureFromError(error), {
+    code: 'VALIDATION_ERROR',
+    category: 'validation',
+    retryable: false,
+    safeMessageCode: 'VALIDATION_ERROR',
+    stage: 'validation',
+  });
+  assert.equal(observabilityTraceFromError(error), null);
+  return true;
+});
+assert.throws(() => validateOwnerCanaryCoreResponse({
+  ...envelope,
+  response: {
+    contract_version: AI_CORE_CONTRACT_VERSION,
+    canonicalization_version: CANONICALIZATION_VERSION,
+    success: false,
+    request_id: coreRequest.request_id,
+    error: {
+      code: 'VALIDATION_ERROR',
+      category: 'validation',
+      retryable: false,
+      safe_message_code: 'invalid-safe-message',
+      stage: 'validation',
+    },
+    trace_id: coreRequest.trace_context.trace_id,
+  },
+}, coreRequest), /AI_CORE_RUNTIME_SAFE_ERROR_SCHEMA_INVALID/);
+assert.throws(() => validateOwnerCanaryCoreResponse({
   ...envelope, canonicalization_version: 'CANONICAL_JSON_HASH_V0',
 }, coreRequest), /AI_CORE_CANONICALIZATION_VERSION_UNSUPPORTED/);
 assert.throws(() => validateOwnerCanaryCoreResponse({
@@ -690,6 +737,74 @@ await acknowledgeOwnerCanaryMutations(rejected.acknowledgement, {
   env, fetchImpl: fakeFetch,
 });
 assert.equal(calls.filter((item) => item.url.endsWith('/ack')).length, 2);
+
+// Persisted active questions keep a machine goal; visible text is separate.
+const validQuestionThread = 'thread_question_goal_valid_0001';
+ensureOwnerCanaryThread(db, {
+  conversationThreadId: validQuestionThread,
+  siteSessionId: 'session_question_goal_valid_0001',
+  nowMs: nowMs + 2100,
+});
+const validQuestion = applyOwnerCanaryMutationBatch(db, {
+  conversationThreadId: validQuestionThread,
+  messageId: 'message_question_goal_valid_0001',
+  requestId: 'request_question_goal_valid_0001',
+  responseId: 'response_question_goal_valid_0001',
+  mutations: [{
+    mutation_id: 'mutation:question_goal_valid_0001',
+    source_message_id: 'message_question_goal_valid_0001',
+    target: 'thread_state',
+    operation: 'add_asked_question',
+    field: 'asked_questions',
+    expected_state_version: 0,
+    proposed_state_version: 1,
+    value: {
+      question_text: 'Парковочная система уже установлена или проектируется с нуля?',
+      question_goal: 'identify_current_system',
+      expected_fields: ['current_system'],
+      final_answer_hash: 'a'.repeat(64),
+    },
+  }],
+  nowMs: nowMs + 2200,
+});
+assert.equal(validQuestion.accepted, true);
+assert.equal(validQuestion.state.activeQuestion.goal, 'identify_current_system');
+
+const invalidQuestionThread = 'thread_question_goal_invalid_001';
+ensureOwnerCanaryThread(db, {
+  conversationThreadId: invalidQuestionThread,
+  siteSessionId: 'session_question_goal_invalid_001',
+  nowMs: nowMs + 2300,
+});
+const invalidQuestion = applyOwnerCanaryMutationBatch(db, {
+  conversationThreadId: invalidQuestionThread,
+  messageId: 'message_question_goal_invalid_001',
+  requestId: 'request_question_goal_invalid_001',
+  responseId: 'response_question_goal_invalid_001',
+  mutations: [{
+    mutation_id: 'mutation:question_goal_invalid_001',
+    source_message_id: 'message_question_goal_invalid_001',
+    target: 'thread_state',
+    operation: 'add_asked_question',
+    field: 'asked_questions',
+    expected_state_version: 0,
+    proposed_state_version: 1,
+    value: {
+      question_text: 'Парковочная система уже установлена или проектируется с нуля?',
+      question_goal: 'Парковочная система уже установлена или проектируется с нуля?',
+      expected_fields: ['current_system'],
+      final_answer_hash: 'b'.repeat(64),
+    },
+  }],
+  nowMs: nowMs + 2400,
+});
+assert.equal(invalidQuestion.accepted, false);
+assert.equal(
+  invalidQuestion.acknowledgement.acknowledgements[0].reason_code,
+  'schema_invalid',
+);
+assert.equal(invalidQuestion.state.stateVersion, 0);
+assert.equal(invalidQuestion.state.activeQuestion, null);
 
 saveOwnerCanaryRuntimeResponse(db, {
   conversationThreadId: first.conversationThreadId,
