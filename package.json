@@ -25,6 +25,7 @@
     "test:canonical-json-hash-v1": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_canonical_json_hash_v1.mjs",
     "test:exact-runtime-pin": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_exact_runtime_pin_update.mjs",
     "test:runtime-77e4c478": "python3 scripts/test_runtime_77e4c478_semantics.py",
+    "test:runtime-da7a8f3": "python3 scripts/test_ai_core_owner_runtime_bridge.py",
     "test:owner-ai-canary-env": "node scripts/test_configure_owner_ai_canary_env.mjs",
     "test:esm-cli-entrypoint": "node scripts/test_esm_cli_entrypoint.mjs",
     "test:site-release-provenance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_site_release_provenance.mjs",

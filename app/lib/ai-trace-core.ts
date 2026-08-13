@@ -311,6 +311,20 @@ export function composeAiCoreTurnTrace(input: {
         === 'POSSIBLE_INTERNAL_INSTRUCTION_LEAK'
     ));
   const executorStage = pipeline.find((stage) => stage.name === 'executor');
+  const executorOutput = executorStage?.output
+    && typeof executorStage.output === 'object'
+    && !Array.isArray(executorStage.output)
+    ? executorStage.output as Record<string, unknown> : {};
+  const executorTrace = executorOutput.executor_trace
+    && typeof executorOutput.executor_trace === 'object'
+    && !Array.isArray(executorOutput.executor_trace)
+    ? executorOutput.executor_trace as Record<string, unknown> : {};
+  const executionMode = runtimeRouting.execution_mode
+    ?? executorTrace.execution_mode ?? null;
+  const modelRequestCount = runtimeRouting.model_request_count
+    ?? executorTrace.model_request_count
+    ?? runtimeRouting.executor_request_count
+    ?? (typeof input.transportEvidence?.http_status === 'number' ? null : 0);
   const runtimeTotal = typeof diagnostics.runtime_total_ms === 'number'
     ? diagnostics.runtime_total_ms
     : typeof executorStage?.latency_ms === 'number'
@@ -339,11 +353,21 @@ export function composeAiCoreTurnTrace(input: {
     },
     routing: {
       route: input.route,
-      executor: runtimeRouting.executor
-        ?? (typeof input.transportEvidence?.http_status === 'number'
-          ? 'unobserved' : 'not_reached'),
+      execution_mode: executionMode,
+      executor: executionMode === 'deterministic'
+        ? null
+        : runtimeRouting.executor
+          ?? executorTrace.final_executor
+          ?? (typeof input.transportEvidence?.http_status === 'number'
+            ? 'unobserved' : 'not_reached'),
       executor_request_count: runtimeRouting.executor_request_count
         ?? (typeof input.transportEvidence?.http_status === 'number' ? null : 0),
+      model_request_count: modelRequestCount,
+      model_attempt_present: runtimeRouting.model_attempt_present
+        ?? (Array.isArray(executorTrace.attempts)
+          ? executorTrace.attempts.length > 0 : null),
+      deterministic_handler: runtimeRouting.deterministic_handler
+        ?? executorTrace.deterministic_handler ?? null,
       retries: runtimeRouting.retries ?? 0,
       fallbacks: runtimeRouting.fallbacks ?? 0,
     },

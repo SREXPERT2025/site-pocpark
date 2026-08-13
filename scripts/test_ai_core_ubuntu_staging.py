@@ -23,12 +23,12 @@ from ai_core_owner_runtime_bridge import (  # noqa: E402
 
 
 def request(runtime: Path) -> dict:
-    fixture = runtime / "generated/contracts/AI_CORE_SITE_CONTRACT_V1_1/fixtures/valid/request-qwen.json"
+    fixture = runtime / "generated/contracts/AI_CORE_SITE_CONTRACT_V1_2/fixtures/valid/request-qwen.json"
     return json.loads(fixture.read_text(encoding="utf-8"))
 
 
 def main() -> int:
-    artifact = ROOT / "release/ai-core-runtime-77e4c478" / (
+    artifact = ROOT / "release/ai-core-runtime-da7a8f3" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="ai-core-ubuntu-stage-") as raw:
@@ -67,7 +67,7 @@ def main() -> int:
             "trace_id": valid_request["trace_context"]["trace_id"],
         }
         bridge_path = runtime / "sales_conversation_controller/site_contract_runtime_v1/schema_validator.cjs"
-        contract_root = runtime / "generated/contracts/AI_CORE_SITE_CONTRACT_V1"
+        contract_root = runtime / "generated/contracts/AI_CORE_SITE_CONTRACT_V1_2"
         missing_env = dict(os.environ, NODE_PATH=str(temp / "missing-node-modules"))
         unavailable_validator = subprocess.run(
             ["node", str(bridge_path), str(contract_root), "error-envelope-v1.schema.json"],

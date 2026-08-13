@@ -8,9 +8,9 @@ import {
   validateOwnerCanaryCoreResponse,
 } from '../app/lib/owner-ai-canary-adapter.ts';
 
-const APPROVED_RUNTIME = '77e4c47863df219a4b86e682b84d75b29f57f4db';
-const OLD_RUNTIME = 'deec5a4ce86af17c952d7d21761050ba717b8994';
-const CONTRACT = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
+const APPROVED_RUNTIME = 'da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07';
+const OLD_RUNTIME = '77e4c47863df219a4b86e682b84d75b29f57f4db';
+const CONTRACT = '42a4476d088540c63ffd7340195daba1a37e3b29';
 const CANONICALIZATION = 'CANONICAL_JSON_HASH_V1';
 
 assert.equal(AI_CORE_RUNTIME_SHA, APPROVED_RUNTIME);
@@ -86,7 +86,15 @@ const greetingEnvelope = validateOwnerCanaryCoreResponse(
   greetingRequest,
 );
 assert.equal(greetingEnvelope.runtime_sha, APPROVED_RUNTIME);
-assert.equal(greetingEnvelope.response.decision_package.decision_type, 'not_required');
+assert.equal(
+  greetingEnvelope.response.decision_package.decision_type,
+  'not_required',
+);
+assert.equal(greetingEnvelope.response.executor_trace.execution_mode, 'deterministic');
+assert.deepEqual(greetingEnvelope.response.executor_trace.attempts, []);
+assert.equal(greetingEnvelope.response.executor_trace.final_executor, null);
+assert.equal(greetingEnvelope.response.executor_trace.model_request_count, 0);
+assert.equal(greetingEnvelope.response.executor_trace.deterministic_handler, 'courtesy');
 assert.equal(
   greetingEnvelope.response.component_versions.engineering_lab,
   'not_invoked',
@@ -117,9 +125,10 @@ console.log(JSON.stringify({
   contract_mismatch_rejection: 'pass',
   canonicalization_mismatch_rejection: 'pass',
   greeting_deterministic_fixture: 'pass',
+  model_route_fixture: 'covered_by_bridge_test',
   runtime_sha: APPROVED_RUNTIME,
   contract_sha: CONTRACT,
   canonicalization_version: CANONICALIZATION,
   model_requests: 0,
-  result: '6/6',
+  result: '7/7',
 }));

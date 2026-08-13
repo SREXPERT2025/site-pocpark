@@ -159,13 +159,26 @@ db.close();
 
 // Public non-pass responses are blocked by the public gate, without applying
 // the owner-only restricted-forensic equality contract.
+const blockedRequest = buildPublicAiCoreRequest({
+  aiCoreRequestId: 'aicore_publication_path_blocked_0001',
+  conversationThreadId: thread,
+  messageId: 'msg_v1_blocked_11111111111111',
+  currentMessage: [
+    'У нас бизнес-центр, два въезда и два выезда, около 800 автомобилей',
+    'в сутки, сотрудники, арендаторы и гости. Что выбрать: номера, карты',
+    'или билеты?',
+  ].join(' '),
+  sourcePage: '/', state,
+  siteRelease: 'a'.repeat(40), gatewayRelease: 'b'.repeat(40),
+  sentAt: '2026-08-12T12:00:02.000Z', dryRun: true,
+});
 const blockedProbe = spawnSync(
   'python3', [
     'scripts/run_owner_ai_core_deterministic_contract_probe.py',
     '--fixed-answer',
     'Оставьте телефон прямо сейчас? Сколько у вас въездов?',
   ],
-  { input: JSON.stringify(request), encoding: 'utf8' },
+  { input: JSON.stringify(blockedRequest), encoding: 'utf8' },
 );
 assert.equal(blockedProbe.status, 0, blockedProbe.stderr);
 const blockedBody = JSON.parse(blockedProbe.stdout);
@@ -176,7 +189,7 @@ assert.equal(blockedBody.response.telemetry.publication.candidate_status,
 assert.ok(blockedBody.observability_trace);
 let blockedError;
 try {
-  await callPublicAiCoreRuntime(request, {
+  await callPublicAiCoreRuntime(blockedRequest, {
     env,
     fetchImpl: async () => new Response(JSON.stringify(blockedBody), {
       status: 200, headers: { 'Content-Type': 'application/json' },
@@ -210,11 +223,13 @@ assert.equal(transportEvidenceFromError(blockedError).outcome,
 const preservedTrace = composeAiCoreTurnTrace({
   turnId: '33333333-3333-4333-8333-333333333333',
   siteRequestId: '44444444-4444-4444-8444-444444444444',
-  aiCoreRequestId: request.request_id,
-  conversationThreadId: thread, messageId: message,
-  timestamp: request.sent_at, route: 'public_ai_core',
+  aiCoreRequestId: blockedRequest.request_id,
+  conversationThreadId: thread,
+  messageId: blockedRequest.payload.message_id,
+  timestamp: blockedRequest.sent_at, route: 'public_ai_core',
   siteSha: 'a'.repeat(40), gatewaySha: 'b'.repeat(40),
-  sourcePage: '/', currentMessage: 'Сколько будет 2+2?', recentMessages: [],
+  sourcePage: '/', currentMessage: blockedRequest.payload.current_message,
+  recentMessages: [],
   runtimeTrace: blockedRuntimeTrace,
   transportEvidence: transportEvidenceFromError(blockedError),
   publicationStatus: 'blocked', siteBlockingPredicate: blockedError.message,

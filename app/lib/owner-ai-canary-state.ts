@@ -731,7 +731,7 @@ export type OwnerCanaryRuntimeMutation = {
 };
 
 export type OwnerCanaryMutationAcknowledgement = {
-  contract_version: '1.1';
+  contract_version: '1.2';
   canonicalization_version: typeof CANONICALIZATION_VERSION;
   request_id: string;
   response_id: string;
@@ -998,7 +998,7 @@ export function applyOwnerCanaryMutationBatch(
       ).slice(0, 32)}`,
     }));
     const acknowledgement: OwnerCanaryMutationAcknowledgement = {
-      contract_version: '1.1',
+      contract_version: '1.2',
       canonicalization_version: CANONICALIZATION_VERSION,
       request_id: input.requestId,
       response_id: input.responseId,

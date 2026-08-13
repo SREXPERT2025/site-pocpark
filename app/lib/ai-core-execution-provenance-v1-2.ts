@@ -2,8 +2,8 @@ export const AI_CORE_CONTRACT_V1_2_SHA =
   '42a4476d088540c63ffd7340195daba1a37e3b29';
 export const AI_CORE_CONTRACT_V1_2_VERSION = '1.2';
 
-// Prepared offline for the next Runtime/Site pin integration. The live adapter
-// remains on Contract v1.1 until that separately approved integration occurs.
+// Shared by the canary-ready Site adapter. Activation remains a separate,
+// owner-approved operation; this validator only enforces offline compatibility.
 
 export const AI_CORE_DETERMINISTIC_HANDLERS = Object.freeze([
   'courtesy',

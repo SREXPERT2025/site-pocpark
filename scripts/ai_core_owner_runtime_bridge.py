@@ -13,11 +13,12 @@ from pathlib import Path
 from typing import Any
 
 
-RUNTIME_SHA = "77e4c47863df219a4b86e682b84d75b29f57f4db"
-CONTRACT_SHA = "6cd71a5596346925ecdd2ffeb9d45262d881ee93"
-CONTRACT_VERSION = "1.1"
+RUNTIME_SHA = "da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07"
+CONTRACT_SHA = "42a4476d088540c63ffd7340195daba1a37e3b29"
+CONTRACT_TREE_SHA = "2be84934fdfb9c69a0167f6d7237a3704838eaf3"
+CONTRACT_VERSION = "1.2"
 CANONICALIZATION_VERSION = "CANONICAL_JSON_HASH_V1"
-RUNTIME_VERSION = "1.2.3"
+RUNTIME_VERSION = "1.3.0"
 MODEL = "qwen3.6:27b"
 MANIFEST_NAME = "AI_CORE_RUNTIME_RELEASE_MANIFEST.json"
 SITE_ROOT = Path(__file__).resolve().parents[1]
@@ -61,6 +62,7 @@ def verify_runtime_release(runtime_dir: Path) -> dict[str, Any]:
     if (
         manifest.get("runtime_sha") != RUNTIME_SHA
         or manifest.get("contract_sha") != CONTRACT_SHA
+        or manifest.get("contract_tree_sha") != CONTRACT_TREE_SHA
         or manifest.get("contract_version") != CONTRACT_VERSION
         or manifest.get("canonicalization_version")
         != CANONICALIZATION_VERSION
@@ -220,9 +222,15 @@ class OwnerRuntimeBridge:
         )
         self.validator = self.adapter.validator
         self.responses: dict[str, dict[str, Any]] = {}
+        self.envelopes: dict[str, dict[str, Any]] = {}
 
     def process(self, request: dict[str, Any]) -> dict[str, Any]:
         response = self.adapter.process(request)
+        response_id = response.get("response_id")
+        if response.get("success") and isinstance(response_id, str):
+            cached = self.envelopes.get(response_id)
+            if cached is not None:
+                return copy.deepcopy(cached)
         observability_trace = self._bind_observability_trace(
             self.adapter.last_observability_trace
         )
@@ -240,7 +248,7 @@ class OwnerRuntimeBridge:
         forensic = self.adapter.last_restricted_forensic_evidence
         if forensic is not None:
             forensic = self.bind_runtime_forensic(forensic, RUNTIME_SHA)
-        return {
+        envelope = {
             "runtime_sha": RUNTIME_SHA,
             "runtime_version": RUNTIME_VERSION,
             "contract_sha": CONTRACT_SHA,
@@ -250,6 +258,8 @@ class OwnerRuntimeBridge:
             "restricted_forensic": forensic,
             "observability_trace": observability_trace,
         }
+        self.envelopes[response["response_id"]] = copy.deepcopy(envelope)
+        return envelope
 
     def _bind_observability_trace(
         self, value: Any,
@@ -261,9 +271,74 @@ class OwnerRuntimeBridge:
         if not isinstance(identity, dict):
             return None
         identity["runtime_sha"] = RUNTIME_SHA
+        self._bind_execution_and_knowledge_evidence(trace)
         trace.pop("trace_sha256", None)
         trace["trace_sha256"] = self.runtime_trace_sha256(trace)
         return trace
+
+    def _bind_execution_and_knowledge_evidence(
+        self, trace: dict[str, Any],
+    ) -> None:
+        """Expose additive v1.2 evidence without changing Runtime semantics."""
+        runtime_trace = self.adapter.last_trace
+        if not isinstance(runtime_trace, dict):
+            return
+        executor = runtime_trace.get("executor_trace")
+        knowledge = runtime_trace.get("knowledge_retrieval")
+        routing = trace.get("routing")
+        stages = trace.get("pipeline")
+        if isinstance(executor, dict) and isinstance(routing, dict):
+            routing.update({
+                "execution_mode": executor.get("execution_mode"),
+                "model_request_count": executor.get("model_request_count"),
+                "deterministic_handler": executor.get("deterministic_handler"),
+                "model_attempt_present": bool(executor.get("attempts")),
+                "executor": executor.get("final_executor"),
+            })
+        if not isinstance(knowledge, dict) or not isinstance(stages, list):
+            return
+        for stage in stages:
+            if not isinstance(stage, dict) or stage.get("name") != "knowledge_sources":
+                continue
+            stage["status"] = (
+                "pass" if knowledge.get("attempted") else "not_used"
+            )
+            stage["summary"] = (
+                "Required knowledge path completed."
+                if knowledge.get("required") and knowledge.get("available")
+                else "Required knowledge is unavailable; executor must not run."
+                if knowledge.get("required")
+                else "No knowledge source was required."
+            )
+            stage["input"] = {
+                "required": bool(knowledge.get("required")),
+                "attempted": bool(knowledge.get("attempted")),
+            }
+            stage["output"] = {
+                "available": bool(knowledge.get("available")),
+                "retrieval_result_count": int(
+                    knowledge.get("retrieval_result_count") or 0
+                ),
+                "knowledge_projection_count": int(
+                    knowledge.get("knowledge_projection_count") or 0
+                ),
+                "executor_received_knowledge_count": int(
+                    knowledge.get("executor_received_knowledge_count") or 0
+                ),
+                "public_identity_received": bool(
+                    knowledge.get("public_identity_received")
+                ),
+                "trusted_user_fact_count": int(
+                    knowledge.get("trusted_user_fact_count") or 0
+                ),
+                "selected_knowledge_refs": copy.deepcopy(
+                    knowledge.get("selected_knowledge_refs") or []
+                ),
+                "reason_codes": copy.deepcopy(
+                    knowledge.get("reason_codes") or []
+                ),
+            }
+            break
 
     def acknowledge(self, acknowledgement: dict[str, Any]) -> dict[str, Any]:
         validation = self.validator.validate(

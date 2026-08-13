@@ -43,7 +43,7 @@ const STAGE_LABELS: Record<string, string> = {
   decision_package: 'Decision Package',
   knowledge_sources: 'Knowledge / Evidence',
   verbalization_projection: 'Verbalization Projection',
-  executor: 'Qwen / Codex',
+  executor: 'Исполнение / Qwen / Codex / deterministic',
   evaluator_raw: 'Evaluator Raw',
   repair: 'Repair',
   evaluator_final: 'Evaluator Final',

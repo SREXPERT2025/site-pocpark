@@ -256,6 +256,11 @@ const e2eEnvelope = validateOwnerCanaryCoreResponse(
   JSON.parse(e2e.stdout), utilityRequest,
 );
 assert.equal(e2eEnvelope.response.answer, '2+2 = 4.');
+assert.equal(e2eEnvelope.preGateTelemetry.executionMode, 'deterministic');
+assert.equal(e2eEnvelope.preGateTelemetry.executorRequestCount, 0);
+assert.equal(e2eEnvelope.preGateTelemetry.plannedExecutor, 'none');
+assert.equal(e2eEnvelope.preGateTelemetry.finalExecutor, 'none');
+assert.equal(e2eEnvelope.preGateTelemetry.deterministicHandler, 'utility');
 
 const decisionPackage = {
   schema_version: '1.2', decision_type: 'not_required', next_question: null,
@@ -276,6 +281,7 @@ const runtimeResponse = {
   decision_package: decisionPackage,
   decision_package_hash: sha256(decisionPackage),
   executor_trace: {
+    execution_mode: 'model',
     planned_executor: 'qwen',
     attempts: [{
       attempt_index: 1, executor: 'qwen',
@@ -286,6 +292,8 @@ const runtimeResponse = {
       decision_package_hash: sha256(decisionPackage), state_version: 0,
     }],
     final_executor: 'qwen', fallback_reason: 'none',
+    model_request_count: 1,
+    deterministic_handler: null,
     decision_package_hash: sha256(decisionPackage), state_version: 0,
   },
   raw_answer_reference: 'rawref:1234567890abcdef',
@@ -317,7 +325,9 @@ const runtimeResponse = {
     route: 'ai_core', component_versions: { context_integrity: '2.2' },
     latency: { total_ms: 11, executor_ms: 4 },
     executor: {
+      execution_mode: 'model',
       planned: 'qwen', final: 'qwen', attempt_count: 1,
+      model_request_count: 1, deterministic_handler: null,
       fallback_used: false, cost_bucket: 'local_low',
     },
     repair: { applied: false, method: 'none', rewrite_ratio: 0 },
@@ -347,6 +357,8 @@ assert.equal(
   runtimeResponse.decision_package_hash,
 );
 assert.equal(validatedEnvelope.preGateTelemetry.executorRequestCount, 1);
+assert.equal(validatedEnvelope.preGateTelemetry.executionMode, 'model');
+assert.equal(validatedEnvelope.preGateTelemetry.deterministicHandler, null);
 assert.throws(() => validateOwnerCanaryCoreResponse({
   ...envelope,
   runtime_sha: 'b9c58dbbd0cd28fcc0de9e2751b0ddd5a3a66763',
@@ -366,7 +378,7 @@ assert.throws(() => validateOwnerCanaryCoreResponse({
     ...runtimeResponse,
     executor_trace: { ...runtimeResponse.executor_trace, final_executor: 'codex' },
   },
-}, coreRequest), /EXECUTOR_POLICY_VIOLATION/);
+}, coreRequest), /MODEL_EXECUTION_INVALID|EXECUTOR_POLICY_VIOLATION/);
 
 const blockedEnvelope = structuredClone(envelope);
 blockedEnvelope.response.evaluation_result.status = 'fail';

@@ -13,8 +13,8 @@ import {
 const ROOT = process.cwd();
 const PUBLIC_ORIGIN = 'https://www.xn--80aukedde.xn--p1ai';
 const PUBLIC_HOST = 'www.xn--80aukedde.xn--p1ai';
-const RUNTIME_SHA = '77e4c47863df219a4b86e682b84d75b29f57f4db';
-const CONTRACT_SHA = '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
+const RUNTIME_SHA = 'da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07';
+const CONTRACT_SHA = '42a4476d088540c63ffd7340195daba1a37e3b29';
 const CREDENTIAL = 'owner-http-harness-credential-000000000001';
 const COOKIE_KEY = 'owner-http-harness-cookie-key-000000000001';
 const work = mkdtempSync(path.join(os.tmpdir(), 'owner-origin-http-'));

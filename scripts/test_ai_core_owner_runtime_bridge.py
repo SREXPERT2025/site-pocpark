@@ -89,7 +89,7 @@ def request_for(hash_value, suffix: str = "owner001"):
 
 
 def main() -> int:
-    artifact = ROOT / "release/ai-core-runtime-77e4c478" / (
+    artifact = ROOT / "release/ai-core-runtime-da7a8f3" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="owner-core-test-") as raw:
@@ -129,9 +129,15 @@ def main() -> int:
         )
         assert response["success"] is True
         assert response["answer"] == "2+2 = 4."
-        assert response["executor_trace"]["planned_executor"] == "qwen"
-        assert response["executor_trace"]["final_executor"] == "qwen"
-        assert len(response["executor_trace"]["attempts"]) == 1
+        assert response["executor_trace"]["execution_mode"] == "deterministic"
+        assert response["executor_trace"]["planned_executor"] is None
+        assert response["executor_trace"]["final_executor"] is None
+        assert response["executor_trace"]["attempts"] == []
+        assert response["executor_trace"]["model_request_count"] == 0
+        assert response["executor_trace"]["deterministic_handler"] == "utility"
+        assert observability_trace["routing"]["execution_mode"] == "deterministic"
+        assert observability_trace["routing"]["model_attempt_present"] is False
+        assert observability_trace["routing"]["model_request_count"] == 0
         assert response["telemetry"]["publication"]["candidate_status"] == "allowed"
         assert bridge.adapter.last_trace["model_requests"] == 0
         duplicate = bridge.process(request)
@@ -160,6 +166,14 @@ def main() -> int:
         engineering_envelope = engineering_bridge.process(engineering_request)
         engineering = engineering_envelope["response"]
         assert engineering["success"] is True
+        assert engineering["executor_trace"]["execution_mode"] == "model"
+        assert engineering["executor_trace"]["model_request_count"] == 1
+        assert engineering_envelope["observability_trace"]["routing"][
+            "execution_mode"
+        ] == "model"
+        assert engineering_envelope["observability_trace"]["routing"][
+            "model_attempt_present"
+        ] is True
         assert engineering["telemetry"]["publication"]["candidate_status"] == "allowed"
         assert engineering["decision_package_hash"] == EXPECTED_DECISION_PACKAGE_SHA
         assert (
@@ -179,6 +193,29 @@ def main() -> int:
         }
         assert engineering_envelope["restricted_forensic"] is None
         assert engineering_bridge.adapter.last_trace["model_requests"] == 0
+
+        knowledge_request = request_for(runtime_sha256, "knowledge_exact")
+        knowledge_request["payload"]["current_message"] = (
+            "Что ты знаешь о РОСПАРК?"
+        )
+        knowledge_request["request_payload_hash"] = runtime_sha256(
+            knowledge_request["payload"]
+        )
+        knowledge_envelope = engineering_bridge.process(knowledge_request)
+        knowledge_stage = next(
+            stage for stage in knowledge_envelope["observability_trace"]["pipeline"]
+            if stage["name"] == "knowledge_sources"
+        )
+        assert knowledge_envelope["response"]["success"] is True
+        assert knowledge_envelope["response"]["executor_trace"][
+            "execution_mode"
+        ] == "deterministic"
+        assert knowledge_stage["status"] == "pass"
+        assert knowledge_stage["input"]["required"] is True
+        assert knowledge_stage["output"]["retrieval_result_count"] > 0
+        assert knowledge_stage["output"][
+            "executor_received_knowledge_count"
+        ] > 0
 
         class BlockingEngineeringExecutor:
             executor = "qwen"
@@ -223,7 +260,7 @@ def main() -> int:
         assert blocked_candidate_status != "allowed"
         assert evidence["schema_version"] == "OWNER_CANARY_BLOCKED_FORENSIC_V1"
         assert evidence["runtime"]["sha"] == RUNTIME_SHA
-        assert evidence["runtime"]["version"] == "1.2.3"
+        assert evidence["runtime"]["version"] == "1.3.0"
         assert evidence["lab"]["decision_package_sha"] == EXPECTED_DECISION_PACKAGE_SHA
         assert evidence["projection"]["sha"] == EXPECTED_PROJECTION_SHA
         assert evidence["executor"]["request_count"] == 1

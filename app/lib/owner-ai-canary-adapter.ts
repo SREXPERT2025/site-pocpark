@@ -3,13 +3,17 @@ import {
   canonicalJson,
   sha256,
 } from './canonical-json-hash-v1.ts';
+import {
+  AI_CORE_CONTRACT_V1_2_SHA,
+  AI_CORE_CONTRACT_V1_2_VERSION,
+  validateAiCoreExecutionProvenanceV1_2,
+} from './ai-core-execution-provenance-v1-2.ts';
 
 export const AI_CORE_RUNTIME_SHA =
-  '77e4c47863df219a4b86e682b84d75b29f57f4db';
-export const AI_CORE_CONTRACT_SHA =
-  '6cd71a5596346925ecdd2ffeb9d45262d881ee93';
-export const AI_CORE_CONTRACT_VERSION = '1.1';
-export const AI_CORE_RUNTIME_VERSION = '1.2.3';
+  'da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07';
+export const AI_CORE_CONTRACT_SHA = AI_CORE_CONTRACT_V1_2_SHA;
+export const AI_CORE_CONTRACT_VERSION = AI_CORE_CONTRACT_V1_2_VERSION;
+export const AI_CORE_RUNTIME_VERSION = '1.3.0';
 export const AI_CORE_OWNER_MODEL = 'qwen3.6:27b';
 export const OWNER_CANARY_BLOCKED_FORENSIC_VERSION =
   'OWNER_CANARY_BLOCKED_FORENSIC_V1';
@@ -281,6 +285,8 @@ export type OwnerCanaryPreGateTelemetry = Readonly<{
   plannedExecutor: string;
   finalExecutor: string;
   executorRequestCount: number;
+  executionMode: 'model' | 'deterministic';
+  deterministicHandler: string | null;
   rawEvaluationStatus: string;
   finalEvaluationStatus: string;
   evaluationReasonCodes: readonly string[];
@@ -1081,16 +1087,6 @@ export function validateOwnerCanaryCoreResponse(
   }
   validateDecisionPackageHash(response);
   const executorTrace = record(response.executor_trace, 'INVALID_EXECUTOR_TRACE');
-  if (executorTrace.planned_executor !== 'qwen'
-    || executorTrace.final_executor !== 'qwen'
-    || executorTrace.fallback_reason !== 'none') {
-    throw new Error('AI_CORE_EXECUTOR_POLICY_VIOLATION');
-  }
-  const attempts = executorTrace.attempts;
-  if (!Array.isArray(attempts) || attempts.length !== 1
-    || record(attempts[0], 'INVALID_EXECUTOR_ATTEMPT').executor !== 'qwen') {
-    throw new Error('AI_CORE_EXECUTOR_ATTEMPTS_VIOLATION');
-  }
   const telemetry = record(response.telemetry, 'INVALID_AI_CORE_TELEMETRY');
   if (telemetry.canonicalization_version !== CANONICALIZATION_VERSION) {
     throw new Error('AI_CORE_TELEMETRY_CANONICALIZATION_MISMATCH');
@@ -1103,6 +1099,31 @@ export function validateOwnerCanaryCoreResponse(
     telemetry.publication,
     'INVALID_AI_CORE_PUBLICATION',
   );
+  const executionProvenance = validateAiCoreExecutionProvenanceV1_2({
+    contractSha: envelope.contract_sha,
+    contractVersion: response.contract_version,
+    decisionPackageHash: response.decision_package_hash,
+    stateVersionBefore: response.state_version_before,
+    executorTrace,
+    executorTelemetry: telemetry.executor,
+    evaluationResult: evaluation,
+    publicationTelemetry: publication,
+  });
+  if (request && executionProvenance.executionMode === 'model') {
+    const policy = record(
+      request.payload.executor_policy,
+      'AI_CORE_EXECUTOR_POLICY_VIOLATION',
+    );
+    const allowed = Array.isArray(policy.allowed_executors)
+      ? policy.allowed_executors : [];
+    if (!executionProvenance.plannedExecutor
+      || !executionProvenance.finalExecutor
+      || !allowed.includes(executionProvenance.plannedExecutor)
+      || !allowed.includes(executionProvenance.finalExecutor)) {
+      throw new Error('AI_CORE_EXECUTOR_POLICY_VIOLATION');
+    }
+  }
+  const attempts = executorTrace.attempts as unknown[];
   const repair = record(response.repair_result, 'INVALID_AI_CORE_REPAIR');
   if (!Array.isArray(response.state_mutations)) {
     throw new Error('INVALID_AI_CORE_MUTATIONS');
@@ -1151,15 +1172,11 @@ export function validateOwnerCanaryCoreResponse(
     canonicalizationVersion: CANONICALIZATION_VERSION,
     decisionPackageSha,
     projectionSourceSha,
-    plannedExecutor: telemetryString(
-      executorTrace.planned_executor,
-      'INVALID_EXECUTOR_TRACE',
-    ),
-    finalExecutor: telemetryString(
-      executorTrace.final_executor,
-      'INVALID_EXECUTOR_TRACE',
-    ),
-    executorRequestCount: attempts.length,
+    plannedExecutor: executionProvenance.plannedExecutor ?? 'none',
+    finalExecutor: executionProvenance.finalExecutor ?? 'none',
+    executorRequestCount: executionProvenance.modelRequestCount,
+    executionMode: executionProvenance.executionMode,
+    deterministicHandler: executionProvenance.deterministicHandler,
     rawEvaluationStatus: telemetryEnum(
       evaluationTelemetry.raw_status,
       ['pass', 'review_required', 'fail', 'not_evaluable'],

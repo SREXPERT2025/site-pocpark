@@ -57,7 +57,13 @@ function stage(name, status, input = null, output = null, reasonCodes = []) {
   };
 }
 
-function runtimeTrace({ blocked = false, leak = false, currentGreeting = false } = {}) {
+function runtimeTrace({
+  blocked = false,
+  leak = false,
+  currentGreeting = false,
+  deterministic = false,
+  knowledgeRequired = false,
+} = {}) {
   const visible = currentGreeting
     ? fixture.current_live_greeting.visible_answer
     : leak ? fixture.turn_a.visible_answer : 'Краткий ответ.';
@@ -83,8 +89,12 @@ function runtimeTrace({ blocked = false, leak = false, currentGreeting = false }
     },
     routing: {
       route: 'ai_core',
-      executor: 'qwen',
-      executor_request_count: 1,
+      execution_mode: deterministic ? 'deterministic' : 'model',
+      executor: deterministic ? null : 'qwen',
+      executor_request_count: deterministic ? 0 : 1,
+      model_request_count: deterministic ? 0 : 1,
+      model_attempt_present: !deterministic,
+      deterministic_handler: deterministic ? 'courtesy' : null,
       retries: 0,
       fallbacks: 0,
     },
@@ -114,7 +124,15 @@ function runtimeTrace({ blocked = false, leak = false, currentGreeting = false }
         decision_package: { decision_type: 'not_required' },
         sha256: fixture.turn_a.decision_package_sha,
       }),
-      stage('knowledge_sources', 'not_used', null, []),
+      stage('knowledge_sources', knowledgeRequired ? 'pass' : 'not_used', {
+        required: knowledgeRequired,
+        attempted: knowledgeRequired,
+      }, knowledgeRequired ? {
+        available: true,
+        retrieval_result_count: 1,
+        knowledge_projection_count: 1,
+        executor_received_knowledge_count: 1,
+      } : []),
       stage('verbalization_projection', 'pass', {}, {
         projection,
         sha256: fixture.turn_a.projection_sha,
@@ -124,7 +142,20 @@ function runtimeTrace({ blocked = false, leak = false, currentGreeting = false }
         decision_projection: projection,
       }, {
         raw_answer: visible,
-        executor_trace: { final_executor: 'qwen', attempts: [{ latency_ms: 17 }] },
+        executor_trace: deterministic ? {
+          execution_mode: 'deterministic',
+          planned_executor: null,
+          final_executor: null,
+          attempts: [],
+          model_request_count: 0,
+          deterministic_handler: 'courtesy',
+        } : {
+          execution_mode: 'model',
+          final_executor: 'qwen',
+          attempts: [{ latency_ms: 17 }],
+          model_request_count: 1,
+          deterministic_handler: null,
+        },
       }),
       stage('evaluator_raw', blocked ? 'blocked' : 'pass', {}, {
         status: evaluatorStatus,
@@ -182,6 +213,8 @@ function compose({
   preRuntime = false,
   recentMessages = [],
   currentGreeting = false,
+  deterministic = false,
+  knowledgeRequired = false,
 } = {}) {
   return composeAiCoreTurnTrace({
     turnId: turn.turn_id,
@@ -205,6 +238,8 @@ function compose({
       blocked,
       leak,
       currentGreeting,
+      deterministic,
+      knowledgeRequired,
     }),
     publicationStatus: preRuntime ? 'error' : blocked ? 'blocked' : 'published',
     visibleAnswer: blocked || preRuntime ? null
@@ -297,6 +332,28 @@ check('following fixture exposes contaminated assistant history exactly', () => 
     trace.client_input.recent_conversation_supplied_to_core[0].content,
     fixture.turn_a.visible_answer,
   );
+});
+
+check('deterministic trace exposes zero-attempt execution provenance', () => {
+  const trace = compose({ deterministic: true });
+  assert.equal(trace.routing.execution_mode, 'deterministic');
+  assert.equal(trace.routing.executor, null);
+  assert.equal(trace.routing.executor_request_count, 0);
+  assert.equal(trace.routing.model_request_count, 0);
+  assert.equal(trace.routing.model_attempt_present, false);
+  assert.equal(trace.routing.deterministic_handler, 'courtesy');
+  const executor = trace.pipeline.find((item) => item.name === 'executor');
+  assert.deepEqual(executor.output.executor_trace.attempts, []);
+});
+
+check('knowledge-required trace exposes retrieval and executor propagation', () => {
+  const trace = compose({ deterministic: true, knowledgeRequired: true });
+  const knowledge = trace.pipeline.find(
+    (item) => item.name === 'knowledge_sources',
+  );
+  assert.equal(knowledge.status, 'pass');
+  assert.equal(knowledge.input.required, true);
+  assert.equal(knowledge.output.executor_received_knowledge_count, 1);
 });
 
 check('sanitizer removes secrets and hidden-reasoning values', () => {
@@ -420,10 +477,10 @@ check('owner UI and JSON export are integrated under admin routes only', () => {
   assert.equal(fs.existsSync(path.join(ROOT, 'app/api/ai-widget/trace')), false);
 });
 
-check('Runtime pin is exact additive descendant and Contract is unchanged', () => {
-  assert.equal(AI_CORE_RUNTIME_SHA, '77e4c47863df219a4b86e682b84d75b29f57f4db');
-  assert.equal(AI_CORE_RUNTIME_VERSION, '1.2.3');
-  assert.equal(AI_CORE_CONTRACT_SHA, '6cd71a5596346925ecdd2ffeb9d45262d881ee93');
+check('Runtime and Contract v1.2 pins are exact', () => {
+  assert.equal(AI_CORE_RUNTIME_SHA, 'da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07');
+  assert.equal(AI_CORE_RUNTIME_VERSION, '1.3.0');
+  assert.equal(AI_CORE_CONTRACT_SHA, '42a4476d088540c63ffd7340195daba1a37e3b29');
   assert.equal(CANONICALIZATION_VERSION, 'CANONICAL_JSON_HASH_V1');
 });
 

@@ -112,13 +112,13 @@ assert.equal(publicResult.stdout.trim(), 'AI_CORE_PUBLIC_ENABLED=false');
 
 const configured = readFileSync(envPath, 'utf8');
 assert.match(configured,
-  /AI_CORE_OWNER_CANARY_RUNTIME_SHA=77e4c47863df219a4b86e682b84d75b29f57f4db/);
+  /AI_CORE_OWNER_CANARY_RUNTIME_SHA=da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07/);
 assert.match(configured,
-  /AI_CORE_OWNER_CANARY_CONTRACT_SHA=6cd71a5596346925ecdd2ffeb9d45262d881ee93/);
+  /AI_CORE_OWNER_CANARY_CONTRACT_SHA=42a4476d088540c63ffd7340195daba1a37e3b29/);
 assert.match(configured,
-  /AI_CORE_PUBLIC_RUNTIME_SHA=77e4c47863df219a4b86e682b84d75b29f57f4db/);
+  /AI_CORE_PUBLIC_RUNTIME_SHA=da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07/);
 assert.match(configured,
-  /AI_CORE_PUBLIC_CONTRACT_SHA=6cd71a5596346925ecdd2ffeb9d45262d881ee93/);
+  /AI_CORE_PUBLIC_CONTRACT_SHA=42a4476d088540c63ffd7340195daba1a37e3b29/);
 
 console.log(JSON.stringify({
   schema: 'ROSPARK_ESM_CLI_ENTRYPOINT_V3_2_TEST_V1',
@@ -131,8 +131,8 @@ console.log(JSON.stringify({
   relative_invocation: 'pass',
   percent_sensitive: 'pass',
   exact_staging_shape_configurator: 'pass',
-  runtime_sha: '77e4c47863df219a4b86e682b84d75b29f57f4db',
-  contract_sha: '6cd71a5596346925ecdd2ffeb9d45262d881ee93',
+  runtime_sha: 'da7a8f3fe3859fd46df1fb8d0387863ac0b8bb07',
+  contract_sha: '42a4476d088540c63ffd7340195daba1a37e3b29',
   canonicalization_version: 'CANONICAL_JSON_HASH_V1',
   model_requests: 0,
   production_changes: 0,

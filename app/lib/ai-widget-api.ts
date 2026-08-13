@@ -876,8 +876,8 @@ export async function handleAiWidgetChat(request: Request) {
             contractVersion: AI_CORE_CONTRACT_VERSION,
             runtimeSha: AI_CORE_RUNTIME_SHA,
             decisionPackageHash: String(response.decision_package_hash),
-            plannedExecutor: String(executorTrace.planned_executor),
-            finalExecutor: String(executorTrace.final_executor),
+            plannedExecutor: envelope.preGateTelemetry.plannedExecutor,
+            finalExecutor: envelope.preGateTelemetry.finalExecutor,
             evaluationStatus: String(evaluation.status),
             repairStatus: repair.applied ? 'applied' : 'not_applied',
             stateVersionBefore: Number(response.state_version_before),
@@ -932,7 +932,11 @@ export async function handleAiWidgetChat(request: Request) {
           transportEvidence: envelope.transportEvidence ?? null,
           publicationStatus: 'published',
           visibleAnswer: answer,
-          visibleSource: repair.applied ? 'repaired_answer' : 'raw_qwen',
+          visibleSource: repair.applied
+            ? 'repaired_answer'
+            : envelope.preGateTelemetry.executionMode === 'deterministic'
+              ? 'deterministic_handler'
+              : 'raw_model',
           publicationProvenance,
           publishedAt: completedAt,
           stateVersionAfter: applied.state.stateVersion,
