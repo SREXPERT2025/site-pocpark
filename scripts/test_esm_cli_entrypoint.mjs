@@ -112,11 +112,11 @@ assert.equal(publicResult.stdout.trim(), 'AI_CORE_PUBLIC_ENABLED=false');
 
 const configured = readFileSync(envPath, 'utf8');
 assert.match(configured,
-  /AI_CORE_OWNER_CANARY_RUNTIME_SHA=3bf1facc9cc16672c1f1c01620c89f51eb39c28f/);
+  /AI_CORE_OWNER_CANARY_RUNTIME_SHA=c78ae7288d9140d9da3fba39f46d2eac493b4a17/);
 assert.match(configured,
   /AI_CORE_OWNER_CANARY_CONTRACT_SHA=4d75773d60f3453279cbfcee1453f54b15b66567/);
 assert.match(configured,
-  /AI_CORE_PUBLIC_RUNTIME_SHA=3bf1facc9cc16672c1f1c01620c89f51eb39c28f/);
+  /AI_CORE_PUBLIC_RUNTIME_SHA=c78ae7288d9140d9da3fba39f46d2eac493b4a17/);
 assert.match(configured,
   /AI_CORE_PUBLIC_CONTRACT_SHA=4d75773d60f3453279cbfcee1453f54b15b66567/);
 
@@ -131,7 +131,7 @@ console.log(JSON.stringify({
   relative_invocation: 'pass',
   percent_sensitive: 'pass',
   exact_staging_shape_configurator: 'pass',
-  runtime_sha: '3bf1facc9cc16672c1f1c01620c89f51eb39c28f',
+  runtime_sha: 'c78ae7288d9140d9da3fba39f46d2eac493b4a17',
   contract_sha: '4d75773d60f3453279cbfcee1453f54b15b66567',
   canonicalization_version: 'CANONICAL_JSON_HASH_V1',
   model_requests: 0,

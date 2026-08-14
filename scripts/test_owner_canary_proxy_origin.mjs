@@ -218,7 +218,7 @@ check(
   'owner AI Core failure still has no silent legacy fallback',
 );
 check(
-  AI_CORE_RUNTIME_SHA === '3bf1facc9cc16672c1f1c01620c89f51eb39c28f',
+  AI_CORE_RUNTIME_SHA === 'c78ae7288d9140d9da3fba39f46d2eac493b4a17',
   'Runtime exact pin unchanged',
 );
 check(

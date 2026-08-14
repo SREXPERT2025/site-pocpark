@@ -95,7 +95,7 @@ def request_for(hash_value, suffix: str = "owner001"):
 
 
 def main() -> int:
-    artifact = ROOT / "release/ai-core-runtime-3bf1facc" / (
+    artifact = ROOT / "release/ai-core-runtime-c78ae728" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="owner-core-test-") as raw:
@@ -253,7 +253,7 @@ def main() -> int:
 
         follow_up_request = request_for(runtime_sha256, "project_follow_up")
         follow_up_request["payload"]["current_message"] = (
-            "Что лучше выбрать: карты или билеты?"
+            "С нуля. Что лучше выбрать: карты или билеты?"
         )
         follow_up_request["payload"]["parent_message_id"] = (
             project_request["payload"]["message_id"]
@@ -309,17 +309,122 @@ def main() -> int:
         assert project_bridge.adapter.validator.validate(
             "request-v1.schema.json", round_trip_request,
         ).valid
-        follow_up_envelope = OwnerRuntimeBridge(
+        follow_up_bridge = OwnerRuntimeBridge(
             runtime_dir=runtime,
             endpoint="http://127.0.0.1:11434",
             timeout=1,
             keep_alive="2h",
             executor=QwenStub(),
-        ).process(round_trip_request)
-        assert follow_up_envelope["response"]["success"] is True
-        assert follow_up_envelope["response"]["evaluation_result"][
-            "status"
-        ] == "pass"
+        )
+        follow_up_envelope = follow_up_bridge.process(round_trip_request)
+        follow_up_response = follow_up_envelope["response"]
+        assert follow_up_response["success"] is True
+        assert follow_up_response["evaluation_result"]["status"] == "pass"
+        follow_up_observation = follow_up_bridge.adapter.last_trace[
+            "ingestion_observability"
+        ]
+        assert follow_up_observation["turn_relation"] == "answer_plus_new_request"
+        assert follow_up_observation["extracted_current_turn_facts"][
+            "current_system"
+        ] == "new_build"
+        assert follow_up_observation["engineering_lab_input_facts"][
+            "existing_system"
+        ] == "new_build"
+        assert follow_up_observation["request_local_effective_facts"][
+            "daily_traffic"
+        ] == 800
+        assert "карт" in follow_up_response["answer"].casefold()
+        assert "билет" in follow_up_response["answer"].casefold()
+        assert "парковочная система уже установлена или проектируется с нуля" not in (
+            follow_up_response["answer"].casefold()
+        )
+        assert {
+            "set_confirmed_fact", "resolve_open_question",
+        }.issubset({
+            item["operation"] for item in follow_up_response["state_mutations"]
+        })
+        assert all(
+            item["source_message_id"]
+            == round_trip_request["payload"]["message_id"]
+            for item in follow_up_response["state_mutations"]
+        )
+
+        recall_seed = request_for(runtime_sha256, "project_object_recall")
+        recall_seed["payload"]["current_message"] = (
+            "Какие данные об объекте ты уже знаешь?"
+        )
+        recall_seed["payload"]["state_version"] = round_trip_request[
+            "payload"
+        ]["state_version"]
+        recall_seed["payload"]["confirmed_project_facts"] = copy.deepcopy(
+            round_trip_request["payload"]["confirmed_project_facts"]
+        )
+        recall_seed["payload"]["active_question"] = copy.deepcopy(
+            round_trip_request["payload"]["active_question"]
+        )
+        recall_seed["request_payload_hash"] = runtime_sha256(
+            recall_seed["payload"]
+        )
+        follow_up_acknowledgement = {
+            "contract_version": follow_up_response["contract_version"],
+            "canonicalization_version": follow_up_response[
+                "canonicalization_version"
+            ],
+            "request_id": follow_up_response["request_id"],
+            "response_id": follow_up_response["response_id"],
+            "acknowledged_at": "2026-08-13T12:00:04Z",
+            "acknowledgements": [
+                {
+                    "mutation_id": item["mutation_id"],
+                    "status": "applied",
+                    "reason_code": "applied",
+                    "entity_version_before": follow_up_response[
+                        "state_version_before"
+                    ],
+                    "entity_version_after": follow_up_response[
+                        "state_version_after"
+                    ],
+                    "audit_ref": f"auditref:{index + 100:032x}",
+                }
+                for index, item in enumerate(
+                    follow_up_response["state_mutations"], start=1,
+                )
+            ],
+        }
+        recall_request = apply_mutation_ack_v11(
+            recall_seed,
+            follow_up_response,
+            follow_up_acknowledgement,
+            publication_confirmed=True,
+        )["next_request"]
+        recall_bridge = OwnerRuntimeBridge(
+            runtime_dir=runtime,
+            endpoint="http://127.0.0.1:11434",
+            timeout=1,
+            keep_alive="2h",
+            executor=QwenStub(),
+        )
+        recall_envelope = recall_bridge.process(recall_request)
+        recall_response = recall_envelope["response"]
+        recall_observation = recall_bridge.adapter.last_trace[
+            "ingestion_observability"
+        ]
+        assert recall_response["success"] is True
+        assert recall_observation["semantic_route"] == "object_card_recall"
+        assert recall_observation["resolved_action"] == "recall_facts"
+        assert recall_response["executor_trace"]["execution_mode"] == (
+            "deterministic"
+        )
+        assert recall_response["executor_trace"]["attempts"] == []
+        assert recall_response["executor_trace"]["final_executor"] is None
+        assert recall_response["executor_trace"]["model_request_count"] == 0
+        assert recall_response["state_mutations"] == []
+        assert "бизнес-центр" in recall_response["answer"]
+        assert "800 автомобилей" in recall_response["answer"]
+        assert "проектируется с нуля" in recall_response["answer"]
+        assert recall_bridge.adapter.last_trace[
+            "engineering_decision_laboratory"
+        ] == "not_invoked"
 
         class BlockingEngineeringExecutor:
             executor = "qwen"
@@ -399,7 +504,7 @@ def main() -> int:
 
     print(
         "ai core owner runtime bridge tests: ok; "
-        "live_engineering=pass; t3_t4_state_round_trip=pass; "
+        "live_engineering=pass; t3_t4_t5_state_round_trip=pass; "
         "blocked_forensic=pass; "
         "idempotency=pass; model_requests=0"
     )
