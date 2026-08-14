@@ -10,12 +10,18 @@ import {
   sha256,
 } from '../app/lib/owner-ai-canary-adapter.ts';
 import {
+  OwnerCanaryRestrictedForensicError,
   OWNER_CANARY_RESTRICTED_FORENSIC_RETENTION_MS,
   cleanupExpiredOwnerCanaryRestrictedForensics,
   getOwnerCanaryRestrictedForensicByRequestId,
   recordOwnerCanaryRestrictedForensic,
   runOwnerCanaryRestrictedForensicMigrations,
 } from '../app/lib/owner-canary-restricted-forensic-core.ts';
+import {
+  aiCorePrimaryFailureDiagnostic,
+  aiCoreSecondaryFailureDiagnostic,
+} from '../app/lib/ai-core-failure-observability.ts';
+import { composeAiCoreTurnTrace } from '../app/lib/ai-trace-core.ts';
 import {
   beginAiWidgetTurn,
   failAiWidgetTurn,
@@ -39,10 +45,10 @@ const rawAnswer = 'Сырой ответ Qwen для закрытого owner fo
 const repairedAnswer = 'Исправленный ответ Qwen для закрытого owner forensic.';
 const fullUserText = 'Полный текст пользователя не должен попасть в Site B.';
 
-function evidenceWithHash(overrides = {}) {
+function evidenceWithHash(overrides = {}, aiCoreRequestId = ids.aiCore) {
   const evidence = {
     schema_version: OWNER_CANARY_BLOCKED_FORENSIC_VERSION,
-    ai_core_request_id: ids.aiCore,
+    ai_core_request_id: aiCoreRequestId,
     runtime: {
       sha: AI_CORE_RUNTIME_SHA,
       version: AI_CORE_RUNTIME_VERSION,
@@ -158,6 +164,151 @@ assert.throws(() => recordOwnerCanaryRestrictedForensic(db, {
   }),
   nowMs,
 }), /IDEMPOTENCY_CONFLICT/);
+
+const conflictingRequestId = 'aicore:owner-forensic-conflict-01';
+assert.throws(() => recordOwnerCanaryRestrictedForensic(db, {
+  turnId: ids.turn,
+  conversationThreadId: ids.conversation,
+  messageId: 'message:owner-forensic-conflict-1',
+  aiCoreRequestId: conflictingRequestId,
+  evidence: evidenceWithHash({}, conflictingRequestId),
+  nowMs,
+}), (error) => {
+  assert.ok(error instanceof OwnerCanaryRestrictedForensicError);
+  assert.equal(error.code, 'OWNER_RESTRICTED_FORENSIC_TURN_ID_CONFLICT');
+  assert.equal(error.stage, 'idempotency_lookup');
+  return true;
+});
+
+const invalidHashEvidence = {
+  ...evidence,
+  evidence_sha256: '0'.repeat(64),
+};
+const invalidHashDb = new Database(':memory:');
+runOwnerCanaryRestrictedForensicMigrations(invalidHashDb);
+assert.throws(() => recordOwnerCanaryRestrictedForensic(invalidHashDb, {
+  turnId: 'turn:owner-forensic-invalid-hash-1',
+  conversationThreadId: ids.conversation,
+  messageId: 'message:owner-forensic-invalid-hash-1',
+  aiCoreRequestId: ids.aiCore,
+  evidence: invalidHashEvidence,
+  nowMs,
+}), (error) => {
+  assert.ok(error instanceof OwnerCanaryRestrictedForensicError);
+  assert.equal(error.code, 'OWNER_RESTRICTED_FORENSIC_HASH_MISMATCH');
+  assert.equal(error.stage, 'evidence_validation');
+  return true;
+});
+
+const storageDb = new Database(':memory:');
+runOwnerCanaryRestrictedForensicMigrations(storageDb);
+storageDb.exec(`
+  CREATE TRIGGER owner_forensic_forced_storage_failure
+  BEFORE INSERT ON owner_canary_blocked_forensics
+  BEGIN
+    SELECT RAISE(ABORT, 'forced owner forensic storage failure');
+  END;
+`);
+let storageFailure;
+try {
+  recordOwnerCanaryRestrictedForensic(storageDb, {
+    turnId: 'turn:owner-forensic-storage-fail-1',
+    conversationThreadId: ids.conversation,
+    messageId: 'message:owner-forensic-storage-fail-1',
+    aiCoreRequestId: ids.aiCore,
+    evidence,
+    nowMs,
+  });
+} catch (error) {
+  storageFailure = error;
+}
+assert.ok(storageFailure instanceof OwnerCanaryRestrictedForensicError);
+assert.equal(
+  storageFailure.code,
+  'OWNER_RESTRICTED_FORENSIC_SQLITE_CONSTRAINT_TRIGGER',
+);
+assert.equal(storageFailure.stage, 'insert');
+assert.equal(storageFailure.storageCode, 'SQLITE_CONSTRAINT_TRIGGER');
+assert.match(storageFailure.storageMessage, /forced owner forensic storage failure/);
+
+const primaryFailure = aiCorePrimaryFailureDiagnostic({
+  error: new Error('AI_CORE_FINAL_GATE_BLOCKED'),
+  runtimeTrace: {
+    schema_version: 'AI_CORE_RUNTIME_TRACE_V1',
+    identity: {},
+    routing: {},
+    state: {},
+    pipeline: [{ name: 'repair', status: 'blocked' }],
+    timeline: [],
+    diagnostics: {},
+    runtime_error: {
+      code: 'repair_rewrite_ratio_exceeded',
+      stage: 'repair',
+    },
+    trace_sha256: 'a'.repeat(64),
+  },
+  transportEvidence: null,
+  fallbackCode: 'OWNER_AI_CORE_ERROR',
+});
+const secondaryFailure = aiCoreSecondaryFailureDiagnostic({
+  source: 'owner_restricted_forensic',
+  error: storageFailure,
+  fallbackStage: 'database_open_or_write',
+});
+assert.deepEqual(primaryFailure, {
+  error_code: 'AI_CORE_FINAL_GATE_BLOCKED',
+  stage: 'repair',
+  origin: 'runtime',
+  runtime_error_code: 'repair_rewrite_ratio_exceeded',
+});
+assert.equal(
+  secondaryFailure.error_code,
+  'OWNER_RESTRICTED_FORENSIC_SQLITE_CONSTRAINT_TRIGGER',
+);
+assert.equal(secondaryFailure.stage, 'insert');
+assert.equal(secondaryFailure.storage_code, 'SQLITE_CONSTRAINT_TRIGGER');
+
+const failedTrace = composeAiCoreTurnTrace({
+  turnId: ids.turn,
+  siteRequestId: ids.request,
+  aiCoreRequestId: ids.aiCore,
+  conversationThreadId: ids.conversation,
+  messageId: ids.message,
+  timestamp: new Date(nowMs).toISOString(),
+  route: 'owner_ai_core',
+  siteSha: '3'.repeat(40),
+  runtimeSha: AI_CORE_RUNTIME_SHA,
+  runtimeVersion: AI_CORE_RUNTIME_VERSION,
+  contractSha: AI_CORE_CONTRACT_SHA,
+  canonicalizationVersion: CANONICALIZATION_VERSION,
+  gatewaySha: '4'.repeat(40),
+  sourcePage: '/parkovka',
+  currentMessage: 'Диагностический запрос',
+  recentMessages: [],
+  runtimeTrace: null,
+  publicationStatus: 'blocked',
+  siteBlockingPredicate: primaryFailure.error_code,
+  failureDiagnostics: {
+    primary: primaryFailure,
+    secondary_integrity_failures: [secondaryFailure],
+  },
+});
+assert.equal(
+  failedTrace.diagnostics.failure_observability.primary.error_code,
+  'AI_CORE_FINAL_GATE_BLOCKED',
+);
+assert.equal(
+  failedTrace.diagnostics.failure_observability.primary.stage,
+  'repair',
+);
+assert.equal(
+  failedTrace.diagnostics.failure_observability
+    .secondary_integrity_failures[0].error_code,
+  'OWNER_RESTRICTED_FORENSIC_SQLITE_CONSTRAINT_TRIGGER',
+);
+const failedTraceWithoutHash = { ...failedTrace };
+delete failedTraceWithoutHash.trace_sha256;
+assert.equal(failedTrace.trace_sha256, sha256(failedTraceWithoutHash));
 const secretEvidence = evidenceWithHash({
   controller: {
     action: 'answer_with_recommendation',
@@ -248,7 +399,21 @@ const dbSource = readFileSync(
 );
 assert.match(apiSource, /recordOwnerCanaryRestrictedForensic/);
 assert.match(apiSource, /restrictedForensicFromError/);
-assert.match(apiSource, /OWNER_RESTRICTED_FORENSIC_WRITE_FAILED/);
+assert.match(apiSource, /secondary_integrity_failures/);
+assert.match(apiSource, /const code = primaryFailure\.error_code/);
+assert.doesNotMatch(apiSource, /OWNER_RESTRICTED_FORENSIC_WRITE_FAILED/);
+const forensicCoreSource = readFileSync(
+  new URL(
+    '../app/lib/owner-canary-restricted-forensic-core.ts',
+    import.meta.url,
+  ),
+  'utf8',
+);
+assert.doesNotMatch(forensicCoreSource, /INSERT OR IGNORE/);
+assert.doesNotMatch(
+  forensicCoreSource,
+  /OWNER_RESTRICTED_FORENSIC_WRITE_FAILED/,
+);
 assert.match(dbSource, /owner-forensics\.sqlite/);
 assert.match(dbSource, /mode: 0o700/);
 assert.match(dbSource, /chmodSync\(filePath, 0o600\)/);
@@ -259,5 +424,8 @@ console.log([
   'retention_days=7',
   'site_b_raw_content=0',
   'secrets=excluded',
+  'primary_error_and_stage=preserved',
+  'sqlite_cause=preserved',
+  'insert_or_ignore=0',
   'model_requests=0',
 ].join('; '));

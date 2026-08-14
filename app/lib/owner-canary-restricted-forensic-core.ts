@@ -10,6 +10,40 @@ export const OWNER_CANARY_RESTRICTED_FORENSIC_RETENTION_DAYS = 7;
 export const OWNER_CANARY_RESTRICTED_FORENSIC_RETENTION_MS =
   OWNER_CANARY_RESTRICTED_FORENSIC_RETENTION_DAYS * 24 * 60 * 60 * 1_000;
 
+export type OwnerCanaryRestrictedForensicFailureStage =
+  | 'input_validation'
+  | 'evidence_validation'
+  | 'retention_cleanup'
+  | 'idempotency_lookup'
+  | 'insert'
+  | 'post_write_readback'
+  | 'database_open'
+  | 'database_initialize';
+
+export class OwnerCanaryRestrictedForensicError extends Error {
+  readonly code: string;
+  readonly stage: OwnerCanaryRestrictedForensicFailureStage;
+  readonly storageCode: string | null;
+  readonly storageMessage: string | null;
+
+  constructor(input: {
+    code: string;
+    stage: OwnerCanaryRestrictedForensicFailureStage;
+    cause?: unknown;
+    storageCode?: string | null;
+    storageMessage?: string | null;
+  }) {
+    super(input.code, input.cause === undefined ? undefined : {
+      cause: input.cause,
+    });
+    this.name = 'OwnerCanaryRestrictedForensicError';
+    this.code = input.code;
+    this.stage = input.stage;
+    this.storageCode = input.storageCode ?? null;
+    this.storageMessage = input.storageMessage ?? null;
+  }
+}
+
 const SECRET_PATTERN =
   /(?:\bBearer\s+[A-Za-z0-9._~+/=-]+|\bsk-[A-Za-z0-9_-]{12,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|\b(?:password|secret|token)\s*=)/i;
 const FORBIDDEN_KEYS = new Set([
@@ -30,6 +64,56 @@ export type OwnerCanaryRestrictedForensicRow = Readonly<{
   createdAt: string;
   expiresAt: string;
 }>;
+
+function safeStorageCode(error: unknown) {
+  if (!error || typeof error !== 'object') return null;
+  const value = (error as { code?: unknown }).code;
+  return typeof value === 'string' && /^[A-Z][A-Z0-9_]{1,79}$/.test(value)
+    ? value
+    : null;
+}
+
+function safeStorageMessage(error: unknown, storageCode: string | null) {
+  if (!storageCode || !(error instanceof Error)) return null;
+  return error.message.replace(/\0/g, '').trim().slice(0, 500) || null;
+}
+
+function safeFailureCode(error: unknown, fallback: string) {
+  if (error instanceof OwnerCanaryRestrictedForensicError) {
+    return error.code;
+  }
+  if (error instanceof Error
+    && /^[A-Z][A-Z0-9_]{2,127}$/.test(error.message)) {
+    return error.message;
+  }
+  const storageCode = safeStorageCode(error);
+  return storageCode
+    ? `OWNER_RESTRICTED_FORENSIC_${storageCode}`
+    : fallback;
+}
+
+export function ownerCanaryRestrictedForensicError(
+  error: unknown,
+  stage: OwnerCanaryRestrictedForensicFailureStage,
+  fallback = 'OWNER_RESTRICTED_FORENSIC_STORAGE_ERROR',
+) {
+  if (error instanceof OwnerCanaryRestrictedForensicError) return error;
+  const storageCode = safeStorageCode(error);
+  return new OwnerCanaryRestrictedForensicError({
+    code: safeFailureCode(error, fallback),
+    stage,
+    cause: error,
+    storageCode,
+    storageMessage: safeStorageMessage(error, storageCode),
+  });
+}
+
+function forensicError(
+  code: string,
+  stage: OwnerCanaryRestrictedForensicFailureStage,
+) {
+  return new OwnerCanaryRestrictedForensicError({ code, stage });
+}
 
 function requiredIdentifier(value: string, field: string) {
   const normalized = value.replace(/\0/g, '').trim();
@@ -172,68 +256,75 @@ export function recordOwnerCanaryRestrictedForensic(
     nowMs?: number;
   },
 ) {
-  const turnId = requiredIdentifier(input.turnId, 'turn_id');
-  const conversationThreadId = requiredIdentifier(
-    input.conversationThreadId,
-    'conversation_thread_id',
-  );
-  const messageId = requiredIdentifier(input.messageId, 'message_id');
-  const aiCoreRequestId = requiredIdentifier(
-    input.aiCoreRequestId,
-    'ai_core_request_id',
-  );
-  if (input.evidence.ai_core_request_id !== aiCoreRequestId) {
-    throw new Error('OWNER_RESTRICTED_FORENSIC_CORRELATION_MISMATCH');
+  let turnId: string;
+  let conversationThreadId: string;
+  let messageId: string;
+  let aiCoreRequestId: string;
+  try {
+    turnId = requiredIdentifier(input.turnId, 'turn_id');
+    conversationThreadId = requiredIdentifier(
+      input.conversationThreadId,
+      'conversation_thread_id',
+    );
+    messageId = requiredIdentifier(input.messageId, 'message_id');
+    aiCoreRequestId = requiredIdentifier(
+      input.aiCoreRequestId,
+      'ai_core_request_id',
+    );
+  } catch (error) {
+    throw ownerCanaryRestrictedForensicError(
+      error,
+      'input_validation',
+      'OWNER_RESTRICTED_FORENSIC_INPUT_INVALID',
+    );
   }
-  const runtimeSha = requiredSha(
-    input.evidence.runtime.sha,
-    40,
-    'runtime_sha',
-  );
-  const contractSha = requiredSha(
-    input.evidence.runtime.contract_sha,
-    40,
-    'contract_sha',
-  );
-  const evidenceSha256 = requiredSha(
-    input.evidence.evidence_sha256,
-    64,
-    'evidence_sha256',
-  );
-  const encoded = evidenceJson(input.evidence);
+  if (input.evidence.ai_core_request_id !== aiCoreRequestId) {
+    throw forensicError(
+      'OWNER_RESTRICTED_FORENSIC_CORRELATION_MISMATCH',
+      'evidence_validation',
+    );
+  }
+  let runtimeSha: string;
+  let contractSha: string;
+  let evidenceSha256: string;
+  let encoded: string;
+  try {
+    runtimeSha = requiredSha(
+      input.evidence.runtime.sha,
+      40,
+      'runtime_sha',
+    );
+    contractSha = requiredSha(
+      input.evidence.runtime.contract_sha,
+      40,
+      'contract_sha',
+    );
+    evidenceSha256 = requiredSha(
+      input.evidence.evidence_sha256,
+      64,
+      'evidence_sha256',
+    );
+    encoded = evidenceJson(input.evidence);
+  } catch (error) {
+    throw ownerCanaryRestrictedForensicError(
+      error,
+      'evidence_validation',
+      'OWNER_RESTRICTED_FORENSIC_EVIDENCE_INVALID',
+    );
+  }
   const nowMs = input.nowMs ?? Date.now();
   const expiresAtMs = nowMs + OWNER_CANARY_RESTRICTED_FORENSIC_RETENTION_MS;
   const createdAt = new Date(nowMs).toISOString();
   const expiresAt = new Date(expiresAtMs).toISOString();
 
-  cleanupExpiredOwnerCanaryRestrictedForensics(db, nowMs);
-  const result = db.prepare(`
-    INSERT OR IGNORE INTO owner_canary_blocked_forensics (
-      ai_core_request_id, turn_id, conversation_thread_id, message_id,
-      schema_version, runtime_sha, contract_sha, evidence_sha256,
-      evidence_json, created_at, created_at_ms, expires_at, expires_at_ms
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    aiCoreRequestId,
-    turnId,
-    conversationThreadId,
-    messageId,
-    OWNER_CANARY_BLOCKED_FORENSIC_VERSION,
-    runtimeSha,
-    contractSha,
-    evidenceSha256,
-    encoded,
-    createdAt,
-    nowMs,
-    expiresAt,
-    expiresAtMs,
-  );
-  const existing = db.prepare(`
-    SELECT * FROM owner_canary_blocked_forensics
-    WHERE ai_core_request_id = ?
-  `).get(aiCoreRequestId) as Parameters<typeof rowToEvidence>[0] | undefined;
-  if (!existing) throw new Error('OWNER_RESTRICTED_FORENSIC_WRITE_FAILED');
-  if (result.changes === 0 && (
+  try {
+    cleanupExpiredOwnerCanaryRestrictedForensics(db, nowMs);
+  } catch (error) {
+    throw ownerCanaryRestrictedForensicError(error, 'retention_cleanup');
+  }
+
+  type StoredRow = Parameters<typeof rowToEvidence>[0];
+  const exactMatch = (existing: StoredRow) => !(
     existing.turn_id !== turnId
     || existing.conversation_thread_id !== conversationThreadId
     || existing.message_id !== messageId
@@ -241,10 +332,111 @@ export function recordOwnerCanaryRestrictedForensic(
     || existing.contract_sha !== contractSha
     || existing.evidence_sha256 !== evidenceSha256
     || existing.evidence_json !== encoded
-  )) {
-    throw new Error('OWNER_RESTRICTED_FORENSIC_IDEMPOTENCY_CONFLICT');
+  );
+  const lookupExisting = () => {
+    try {
+      const byRequest = db.prepare(`
+        SELECT * FROM owner_canary_blocked_forensics
+        WHERE ai_core_request_id = ?
+      `).get(aiCoreRequestId) as StoredRow | undefined;
+      if (byRequest) {
+        if (!exactMatch(byRequest)) {
+          throw forensicError(
+            'OWNER_RESTRICTED_FORENSIC_IDEMPOTENCY_CONFLICT',
+            'idempotency_lookup',
+          );
+        }
+        return byRequest;
+      }
+      const byTurn = db.prepare(`
+        SELECT * FROM owner_canary_blocked_forensics
+        WHERE turn_id = ?
+      `).get(turnId) as StoredRow | undefined;
+      if (byTurn) {
+        throw forensicError(
+          'OWNER_RESTRICTED_FORENSIC_TURN_ID_CONFLICT',
+          'idempotency_lookup',
+        );
+      }
+      const byHash = db.prepare(`
+        SELECT * FROM owner_canary_blocked_forensics
+        WHERE evidence_sha256 = ?
+      `).get(evidenceSha256) as StoredRow | undefined;
+      if (byHash) {
+        throw forensicError(
+          'OWNER_RESTRICTED_FORENSIC_EVIDENCE_SHA_CONFLICT',
+          'idempotency_lookup',
+        );
+      }
+      return null;
+    } catch (error) {
+      throw ownerCanaryRestrictedForensicError(
+        error,
+        'idempotency_lookup',
+      );
+    }
+  };
+
+  const beforeInsert = lookupExisting();
+  if (beforeInsert) {
+    return { ...rowToEvidence(beforeInsert), created: false };
   }
-  return { ...rowToEvidence(existing), created: result.changes === 1 };
+
+  try {
+    const result = db.prepare(`
+      INSERT INTO owner_canary_blocked_forensics (
+        ai_core_request_id, turn_id, conversation_thread_id, message_id,
+        schema_version, runtime_sha, contract_sha, evidence_sha256,
+        evidence_json, created_at, created_at_ms, expires_at, expires_at_ms
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      aiCoreRequestId,
+      turnId,
+      conversationThreadId,
+      messageId,
+      OWNER_CANARY_BLOCKED_FORENSIC_VERSION,
+      runtimeSha,
+      contractSha,
+      evidenceSha256,
+      encoded,
+      createdAt,
+      nowMs,
+      expiresAt,
+      expiresAtMs,
+    );
+    if (result.changes !== 1) {
+      throw forensicError(
+        'OWNER_RESTRICTED_FORENSIC_INSERT_NO_CHANGE',
+        'insert',
+      );
+    }
+  } catch (error) {
+    const storageCode = safeStorageCode(error);
+    if (storageCode?.startsWith('SQLITE_CONSTRAINT')) {
+      const racedExisting = lookupExisting();
+      if (racedExisting) {
+        return { ...rowToEvidence(racedExisting), created: false };
+      }
+    }
+    throw ownerCanaryRestrictedForensicError(error, 'insert');
+  }
+
+  let existing: StoredRow | undefined;
+  try {
+    existing = db.prepare(`
+      SELECT * FROM owner_canary_blocked_forensics
+      WHERE ai_core_request_id = ?
+    `).get(aiCoreRequestId) as StoredRow | undefined;
+  } catch (error) {
+    throw ownerCanaryRestrictedForensicError(error, 'post_write_readback');
+  }
+  if (!existing) {
+    throw forensicError(
+      'OWNER_RESTRICTED_FORENSIC_READBACK_MISSING',
+      'post_write_readback',
+    );
+  }
+  return { ...rowToEvidence(existing), created: true };
 }
 
 export function getOwnerCanaryRestrictedForensicByRequestId(

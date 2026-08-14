@@ -293,6 +293,7 @@ export function composeAiCoreTurnTrace(input: {
   mutationAcknowledgementCount?: number;
   siteTotalLatencyMs?: number | null;
   preRuntimeFailureStage?: string | null;
+  failureDiagnostics?: Readonly<Record<string, unknown>> | null;
 }) {
   const runtimeTrace = input.runtimeTrace ?? null;
   const pipeline = tracePipeline(runtimeTrace, input);
@@ -408,6 +409,9 @@ export function composeAiCoreTurnTrace(input: {
     },
     diagnostics: {
       ...diagnostics,
+      ...(input.failureDiagnostics ? {
+        failure_observability: input.failureDiagnostics,
+      } : {}),
       first_failure_stage: firstFailureStage,
       instruction_leak_warning: instructionLeakWarning,
       trace_capture_boundary: runtimeTrace

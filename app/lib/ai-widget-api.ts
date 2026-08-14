@@ -99,6 +99,10 @@ import {
   composeAiCoreTurnTrace,
   tryRecordAiCoreTurnTrace,
 } from './ai-trace-core';
+import {
+  aiCorePrimaryFailureDiagnostic,
+  aiCoreSecondaryFailureDiagnostic,
+} from './ai-core-failure-observability';
 import { LeadRegistryError } from './lead-registry-core';
 import {
   leadRegistryEnabled,
@@ -654,6 +658,7 @@ export async function handleAiWidgetChat(request: Request) {
       code: string,
       error: unknown,
       publicationStatus: 'blocked' | 'error' = 'error',
+      failureDiagnostics?: Readonly<Record<string, unknown>> | null,
     ) => {
       try {
         const runtimeTrace = observabilityTraceFromError(error);
@@ -684,6 +689,7 @@ export async function handleAiWidgetChat(request: Request) {
           mutationAcknowledgementCount: 0,
           siteTotalLatencyMs: Date.now() - startedAt,
           preRuntimeFailureStage: runtimeTrace ? null : 'site_pre_runtime_gate',
+          failureDiagnostics,
         });
         tryRecordAiCoreTurnTrace(getAiWidgetLogDatabase(), trace);
       } catch (traceError) {
@@ -965,8 +971,17 @@ export async function handleAiWidgetChat(request: Request) {
         },
       });
     } catch (error) {
-      let telemetryWriteFailed = false;
-      let restrictedForensicWriteFailed = false;
+      const runtimeTrace = observabilityTraceFromError(error);
+      const transportEvidence = transportEvidenceFromError(error);
+      const primaryFailure = aiCorePrimaryFailureDiagnostic({
+        error,
+        runtimeTrace,
+        transportEvidence,
+        fallbackCode: aiCoreAudience === 'public_ai_core'
+          ? 'PUBLIC_AI_CORE_ERROR'
+          : 'OWNER_AI_CORE_ERROR',
+      });
+      const ownerSecondaryFailures: Array<Readonly<Record<string, unknown>>> = [];
       let publicBlockedForensicWriteFailed = false;
       let publicBlockedForensicRef: string | null = null;
       if (aiCoreAudience === 'owner_canary' && !preGateTelemetryRef) {
@@ -983,8 +998,17 @@ export async function handleAiWidgetChat(request: Request) {
                 telemetry,
               },
             ).telemetryRef;
-          } catch {
-            telemetryWriteFailed = true;
+          } catch (telemetryError) {
+            const diagnostic = aiCoreSecondaryFailureDiagnostic({
+              source: 'owner_pre_gate_telemetry',
+              error: telemetryError,
+              fallbackStage: 'telemetry_write',
+            });
+            ownerSecondaryFailures.push(diagnostic);
+            console.error(
+              'OWNER_FORENSIC_PERSISTENCE_DIAGNOSTIC',
+              JSON.stringify({ primary: primaryFailure, secondary: diagnostic }),
+            );
           }
         }
         if (restrictedForensic) {
@@ -999,8 +1023,17 @@ export async function handleAiWidgetChat(request: Request) {
                 evidence: restrictedForensic,
               },
             );
-          } catch {
-            restrictedForensicWriteFailed = true;
+          } catch (forensicError) {
+            const diagnostic = aiCoreSecondaryFailureDiagnostic({
+              source: 'owner_restricted_forensic',
+              error: forensicError,
+              fallbackStage: 'database_open_or_write',
+            });
+            ownerSecondaryFailures.push(diagnostic);
+            console.error(
+              'OWNER_FORENSIC_PERSISTENCE_DIAGNOSTIC',
+              JSON.stringify({ primary: primaryFailure, secondary: diagnostic }),
+            );
           }
         }
       }
@@ -1066,18 +1099,16 @@ export async function handleAiWidgetChat(request: Request) {
           );
         }
       } else {
-        const code = restrictedForensicWriteFailed
-          ? 'OWNER_RESTRICTED_FORENSIC_WRITE_FAILED'
-          : telemetryWriteFailed
-            ? 'OWNER_PRE_GATE_TELEMETRY_WRITE_FAILED'
-          : error instanceof Error
-            ? error.message.replace(/[^A-Z0-9_]/gi, '_')
-              .toUpperCase().slice(0, 100)
-            : 'OWNER_AI_CORE_ERROR';
+        const code = primaryFailure.error_code;
+        const failureDiagnostics = {
+          primary: primaryFailure,
+          secondary_integrity_failures: ownerSecondaryFailures,
+        };
         recordFailedAiTrace(
           code || 'OWNER_AI_CORE_ERROR',
           error,
           observabilityTraceFromError(error) ? 'blocked' : 'error',
+          failureDiagnostics,
         );
         failLoggedTurn(code || 'OWNER_AI_CORE_ERROR', errorCorrelation);
         return jsonError(
