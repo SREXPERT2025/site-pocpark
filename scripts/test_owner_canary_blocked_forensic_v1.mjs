@@ -1,5 +1,12 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import Database from 'better-sqlite3';
 import {
   AI_CORE_CONTRACT_SHA,
@@ -14,6 +21,7 @@ import {
   OWNER_CANARY_RESTRICTED_FORENSIC_RETENTION_MS,
   cleanupExpiredOwnerCanaryRestrictedForensics,
   getOwnerCanaryRestrictedForensicByRequestId,
+  openOwnerCanaryRestrictedForensicDatabase,
   recordOwnerCanaryRestrictedForensic,
   runOwnerCanaryRestrictedForensicMigrations,
 } from '../app/lib/owner-canary-restricted-forensic-core.ts';
@@ -111,6 +119,59 @@ function evidenceWithHash(overrides = {}, aiCoreRequestId = ids.aiCore) {
     ...overrides,
   };
   return { ...evidence, evidence_sha256: sha256(evidence) };
+}
+
+const fileDatabaseDirectory = mkdtempSync(path.join(
+  tmpdir(),
+  'rospark-owner-forensic-db-',
+));
+const fileDatabasePath = path.join(fileDatabaseDirectory, 'forensics.sqlite');
+try {
+  let fileDatabase = openOwnerCanaryRestrictedForensicDatabase(
+    fileDatabasePath,
+  );
+  assert.equal(fileDatabase.pragma('journal_mode', { simple: true }), 'wal');
+  assert.equal(fileDatabase.pragma('busy_timeout', { simple: true }), 5000);
+  assert.equal(fileDatabase.pragma('synchronous', { simple: true }), 2);
+  assert.equal(statSync(fileDatabaseDirectory).mode & 0o777, 0o700);
+  assert.equal(statSync(fileDatabasePath).mode & 0o777, 0o600);
+  assert.equal(fileDatabase.prepare(`
+    SELECT COUNT(*) AS count
+    FROM sqlite_schema
+    WHERE type = 'table'
+      AND name = 'owner_canary_blocked_forensics'
+  `).get().count, 1);
+
+  assert.equal(recordOwnerCanaryRestrictedForensic(fileDatabase, {
+    turnId: ids.turn,
+    conversationThreadId: ids.conversation,
+    messageId: ids.message,
+    aiCoreRequestId: ids.aiCore,
+    evidence: evidenceWithHash(),
+    nowMs: 0,
+  }).created, true);
+  fileDatabase.close();
+
+  fileDatabase = openOwnerCanaryRestrictedForensicDatabase(fileDatabasePath);
+  assert.equal(fileDatabase.prepare(`
+    SELECT COUNT(*) AS count FROM owner_canary_blocked_forensics
+  `).get().count, 0);
+  assert.equal(recordOwnerCanaryRestrictedForensic(fileDatabase, {
+    turnId: ids.turn,
+    conversationThreadId: ids.conversation,
+    messageId: ids.message,
+    aiCoreRequestId: ids.aiCore,
+    evidence: evidenceWithHash(),
+    nowMs,
+  }).created, true);
+  assert.ok(getOwnerCanaryRestrictedForensicByRequestId(
+    fileDatabase,
+    ids.aiCore,
+    nowMs,
+  ));
+  fileDatabase.close();
+} finally {
+  rmSync(fileDatabaseDirectory, { recursive: true, force: true });
 }
 
 const db = new Database(':memory:');
@@ -415,8 +476,11 @@ assert.doesNotMatch(
   /OWNER_RESTRICTED_FORENSIC_WRITE_FAILED/,
 );
 assert.match(dbSource, /owner-forensics\.sqlite/);
-assert.match(dbSource, /mode: 0o700/);
-assert.match(dbSource, /chmodSync\(filePath, 0o600\)/);
+assert.match(dbSource, /openOwnerCanaryRestrictedForensicDatabase/);
+assert.match(forensicCoreSource, /mode: 0o700/);
+assert.match(forensicCoreSource, /chmodSync\(filePath, 0o600\)/);
+assert.match(forensicCoreSource, /busy_timeout = 5000/);
+assert.doesNotMatch(forensicCoreSource, /busy_timeout = 5_000/);
 
 console.log([
   'owner canary blocked forensic v1 tests: ok',
@@ -426,6 +490,11 @@ console.log([
   'secrets=excluded',
   'primary_error_and_stage=preserved',
   'sqlite_cause=preserved',
+  'file_database_open_write=pass',
+  'journal_mode=wal',
+  'busy_timeout_ms=5000',
+  'synchronous=full',
+  'migrations_cleanup=pass',
   'insert_or_ignore=0',
   'model_requests=0',
 ].join('; '));

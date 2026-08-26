@@ -1,4 +1,6 @@
-import type Database from 'better-sqlite3';
+import { chmodSync, existsSync, mkdirSync } from 'node:fs';
+import path from 'node:path';
+import Database from 'better-sqlite3';
 import {
   OWNER_CANARY_BLOCKED_FORENSIC_VERSION,
   canonicalJson,
@@ -106,6 +108,41 @@ export function ownerCanaryRestrictedForensicError(
     storageCode,
     storageMessage: safeStorageMessage(error, storageCode),
   });
+}
+
+export function openOwnerCanaryRestrictedForensicDatabase(
+  filePath: string,
+) {
+  const directory = path.dirname(filePath);
+  let db: Database.Database;
+  try {
+    mkdirSync(directory, { recursive: true, mode: 0o700 });
+    chmodSync(directory, 0o700);
+    db = new Database(filePath);
+    chmodSync(filePath, 0o600);
+  } catch (error) {
+    throw ownerCanaryRestrictedForensicError(error, 'database_open');
+  }
+  try {
+    db.pragma('journal_mode = WAL');
+    for (const sidecarPath of [`${filePath}-wal`, `${filePath}-shm`]) {
+      if (existsSync(/* turbopackIgnore: true */ sidecarPath)) {
+        chmodSync(sidecarPath, 0o600);
+      }
+    }
+    db.pragma('busy_timeout = 5000');
+    db.pragma('synchronous = FULL');
+    runOwnerCanaryRestrictedForensicMigrations(db);
+    cleanupExpiredOwnerCanaryRestrictedForensics(db);
+    return db;
+  } catch (error) {
+    try {
+      db.close();
+    } catch {
+      // Preserve the initialization failure as the primary storage cause.
+    }
+    throw ownerCanaryRestrictedForensicError(error, 'database_initialize');
+  }
 }
 
 function forensicError(

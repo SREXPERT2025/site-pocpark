@@ -1,12 +1,10 @@
 import 'server-only';
 
-import { chmodSync, existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
-import Database from 'better-sqlite3';
+import type Database from 'better-sqlite3';
 import {
-  cleanupExpiredOwnerCanaryRestrictedForensics,
   ownerCanaryRestrictedForensicError,
-  runOwnerCanaryRestrictedForensicMigrations,
+  openOwnerCanaryRestrictedForensicDatabase,
 } from './owner-canary-restricted-forensic-core.ts';
 
 export const PRODUCTION_OWNER_CANARY_RESTRICTED_FORENSIC_PATH =
@@ -42,35 +40,7 @@ export function getOwnerCanaryRestrictedForensicDatabase() {
     return global.__rosparkOwnerCanaryForensicDb;
   }
 
-  const directory = path.dirname(filePath);
-  let db: Database.Database;
-  try {
-    mkdirSync(directory, { recursive: true, mode: 0o700 });
-    chmodSync(directory, 0o700);
-    db = new Database(filePath);
-    chmodSync(filePath, 0o600);
-  } catch (error) {
-    throw ownerCanaryRestrictedForensicError(error, 'database_open');
-  }
-  try {
-    db.pragma('journal_mode = WAL');
-    for (const sidecarPath of [`${filePath}-wal`, `${filePath}-shm`]) {
-      if (existsSync(/* turbopackIgnore: true */ sidecarPath)) {
-        chmodSync(sidecarPath, 0o600);
-      }
-    }
-    db.pragma('busy_timeout = 5_000');
-    db.pragma('synchronous = FULL');
-    runOwnerCanaryRestrictedForensicMigrations(db);
-    cleanupExpiredOwnerCanaryRestrictedForensics(db);
-  } catch (error) {
-    try {
-      db.close();
-    } catch {
-      // Preserve the initialization failure as the primary storage cause.
-    }
-    throw ownerCanaryRestrictedForensicError(error, 'database_initialize');
-  }
+  const db = openOwnerCanaryRestrictedForensicDatabase(filePath);
 
   global.__rosparkOwnerCanaryForensicDb = db;
   global.__rosparkOwnerCanaryForensicDbPath = filePath;
