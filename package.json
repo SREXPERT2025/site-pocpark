@@ -28,6 +28,7 @@
     "test:runtime-da7a8f3": "python3 scripts/test_ai_core_owner_runtime_bridge.py",
     "test:runtime-c78ae728": "python3 scripts/test_ai_core_owner_runtime_bridge.py",
     "test:canary-assembly-c78ae728": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_c78ae728_canary_assembly.mjs",
+    "test:user-mutation-before-publication-gate": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_user_mutation_before_publication_gate.mjs",
     "test:owner-ai-canary-env": "node scripts/test_configure_owner_ai_canary_env.mjs",
     "test:esm-cli-entrypoint": "node scripts/test_esm_cli_entrypoint.mjs",
     "test:site-release-provenance": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_site_release_provenance.mjs",

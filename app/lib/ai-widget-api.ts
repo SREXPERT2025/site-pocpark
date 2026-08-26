@@ -58,6 +58,7 @@ import {
   publicBlockedSafeForensicFromError,
   restrictedForensicFromError,
   transportEvidenceFromError,
+  validatedBlockedMutationBatchFromError,
   validateOwnerCanaryCoreResponse,
 } from './owner-ai-canary-adapter';
 import { recordOwnerCanaryRestrictedForensic } from
@@ -654,6 +655,10 @@ export async function handleAiWidgetChat(request: Request) {
     let traceHistory: Array<Record<string, unknown>> = [];
     let traceParentMessageId: string | null = null;
     let traceTimestamp = new Date().toISOString();
+    let failedStateVersionAfter: number | null = null;
+    let failedCommittedMutations: readonly Readonly<Record<string, unknown>>[]
+      = [];
+    let failedMutationAcknowledgementCount = 0;
     const recordFailedAiTrace = (
       code: string,
       error: unknown,
@@ -684,9 +689,9 @@ export async function handleAiWidgetChat(request: Request) {
           visibleAnswer: null,
           visibleSource: null,
           siteBlockingPredicate: code,
-          stateVersionAfter: null,
-          committedMutations: [],
-          mutationAcknowledgementCount: 0,
+          stateVersionAfter: failedStateVersionAfter,
+          committedMutations: failedCommittedMutations,
+          mutationAcknowledgementCount: failedMutationAcknowledgementCount,
           siteTotalLatencyMs: Date.now() - startedAt,
           preRuntimeFailureStage: runtimeTrace ? null : 'site_pre_runtime_gate',
           failureDiagnostics,
@@ -982,6 +987,52 @@ export async function handleAiWidgetChat(request: Request) {
           : 'OWNER_AI_CORE_ERROR',
       });
       const ownerSecondaryFailures: Array<Readonly<Record<string, unknown>>> = [];
+      const blockedMutationBatch = validatedBlockedMutationBatchFromError(error);
+      if (blockedMutationBatch && blockedMutationBatch.mutations.length > 0) {
+        aiCoreMutationStarted = true;
+        try {
+          const mutations = blockedMutationBatch.mutations.map((mutation) =>
+            ({ ...mutation })) as Parameters<
+              typeof applyOwnerCanaryMutationBatch
+            >[1]['mutations'];
+          const applied = applyOwnerCanaryMutationBatch(
+            getAiWidgetLogDatabase(),
+            {
+              conversationThreadId: ownerIdentity.conversationThreadId,
+              messageId: ownerIdentity.messageId,
+              requestId: aiCoreRequestId,
+              responseId: blockedMutationBatch.responseId,
+              mutations,
+              publicationAllowed: false,
+            },
+          );
+          if (!applied.accepted) {
+            throw new Error('OWNER_CANARY_STATE_VERSION_CONFLICT');
+          }
+          failedStateVersionAfter = applied.state.stateVersion;
+          failedMutationAcknowledgementCount =
+            applied.acknowledgement.acknowledgements.length;
+          failedCommittedMutations = mutations.filter((_, index) =>
+            applied.acknowledgement.acknowledgements[index]?.status
+              === 'applied');
+          if (aiCoreAudience === 'public_ai_core') {
+            await acknowledgePublicAiCoreMutations(applied.acknowledgement);
+          } else {
+            await acknowledgeOwnerCanaryMutations(applied.acknowledgement);
+          }
+        } catch (mutationError) {
+          const diagnostic = aiCoreSecondaryFailureDiagnostic({
+            source: 'blocked_user_mutation_commit',
+            error: mutationError,
+            fallbackStage: 'mutation_acknowledgement',
+          });
+          ownerSecondaryFailures.push(diagnostic);
+          console.error(
+            'BLOCKED_USER_MUTATION_DIAGNOSTIC',
+            JSON.stringify({ primary: primaryFailure, secondary: diagnostic }),
+          );
+        }
+      }
       let publicBlockedForensicWriteFailed = false;
       let publicBlockedForensicRef: string | null = null;
       if (aiCoreAudience === 'owner_canary' && !preGateTelemetryRef) {

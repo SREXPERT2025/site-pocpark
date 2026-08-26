@@ -740,7 +740,8 @@ export type OwnerCanaryMutationAcknowledgement = {
     mutation_id: string;
     status: 'applied' | 'rejected';
     reason_code: 'applied' | 'version_conflict' | 'schema_invalid'
-      | 'decision_package_immutable';
+      | 'authority_denied' | 'decision_package_immutable'
+      | 'duplicate_mutation';
     entity_version_before: number;
     entity_version_after: number;
     audit_ref: string;
@@ -824,7 +825,16 @@ export function appendOwnerCanaryHistory(
   return { created: result.changes === 1 };
 }
 
-function validRuntimeMutation(value: OwnerCanaryRuntimeMutation) {
+type OwnerCanaryMutationRejectionReason = Exclude<
+  OwnerCanaryMutationAcknowledgement['acknowledgements'][number]['reason_code'],
+  'applied'
+>;
+
+function validRuntimeMutation(
+  value: OwnerCanaryRuntimeMutation,
+  currentMessageId: string,
+  activeQuestion: unknown | null,
+): OwnerCanaryMutationRejectionReason | null {
   validId(value.mutation_id, 'mutation_id');
   validId(value.source_message_id, 'source_message_id');
   if (value.target !== 'thread_state'
@@ -847,6 +857,57 @@ function validRuntimeMutation(value: OwnerCanaryRuntimeMutation) {
     || !Number.isInteger(value.proposed_state_version)
     || value.proposed_state_version !== value.expected_state_version + 1) {
     return 'schema_invalid' as const;
+  }
+  if (value.source_message_id !== currentMessageId) {
+    return 'authority_denied' as const;
+  }
+  if (!value.provenance || typeof value.provenance !== 'object'
+    || Array.isArray(value.provenance)) {
+    return 'schema_invalid' as const;
+  }
+  const provenance = value.provenance;
+  if (Object.keys(provenance).sort().join(',') !== [
+    'confirmation_status',
+    'source_ref',
+    'source_type',
+  ].join(',')) {
+    return 'schema_invalid' as const;
+  }
+  if (!['user_message', 'authorized_system_ref', 'intent_hint', 'derived_state']
+    .includes(String(provenance.source_type))
+    || !['confirmed', 'unconfirmed', 'not_applicable']
+      .includes(String(provenance.confirmation_status))
+    || typeof provenance.source_ref !== 'string'
+    || !/^[a-zA-Z0-9:_-]{1,160}$/.test(provenance.source_ref)) {
+    return 'schema_invalid' as const;
+  }
+  if (provenance.source_type === 'user_message'
+    && provenance.source_ref !== value.source_message_id) {
+    return 'authority_denied' as const;
+  }
+  if (value.operation === 'set_confirmed_fact'
+    && (!['user_message', 'authorized_system_ref']
+      .includes(String(provenance.source_type))
+      || provenance.confirmation_status !== 'confirmed')) {
+    return 'authority_denied' as const;
+  }
+  if (value.operation === 'resolve_open_question') {
+    const resolution = value.value;
+    if (value.field !== 'active_question'
+      || !resolution || typeof resolution !== 'object'
+      || Array.isArray(resolution)
+      || typeof (resolution as Record<string, unknown>).question_id !== 'string'
+      || !/^[a-zA-Z0-9:_-]{1,160}$/.test(String(
+        (resolution as Record<string, unknown>).question_id,
+      ))) {
+      return 'schema_invalid' as const;
+    }
+    if (!activeQuestion || typeof activeQuestion !== 'object'
+      || Array.isArray(activeQuestion)
+      || (activeQuestion as Record<string, unknown>).question_id
+        !== (resolution as Record<string, unknown>).question_id) {
+      return 'authority_denied' as const;
+    }
   }
   if (value.operation === 'add_asked_question') {
     const question = value.value;
@@ -877,6 +938,27 @@ function validRuntimeMutation(value: OwnerCanaryRuntimeMutation) {
   return null;
 }
 
+function publicationIndependentUserMutation(
+  mutation: OwnerCanaryRuntimeMutation,
+  currentMessageId: string,
+  activeQuestion: unknown | null,
+) {
+  const trustedUserProvenance = mutation.source_message_id === currentMessageId
+    && mutation.provenance.source_type === 'user_message'
+    && mutation.provenance.source_ref === currentMessageId
+    && mutation.provenance.confirmation_status === 'confirmed';
+  if (!trustedUserProvenance) return false;
+  if (mutation.operation === 'set_confirmed_fact') return true;
+  if (mutation.operation !== 'resolve_open_question'
+    || !activeQuestion || typeof activeQuestion !== 'object'
+    || Array.isArray(activeQuestion)
+    || !mutation.value || typeof mutation.value !== 'object'
+    || Array.isArray(mutation.value)) return false;
+  return (activeQuestion as Record<string, unknown>).question_id
+      === (mutation.value as Record<string, unknown>).question_id
+    && mutation.field === 'active_question';
+}
+
 export function applyOwnerCanaryMutationBatch(
   db: Database.Database,
   input: {
@@ -885,6 +967,7 @@ export function applyOwnerCanaryMutationBatch(
     requestId: string;
     responseId: string;
     mutations: OwnerCanaryRuntimeMutation[];
+    publicationAllowed?: boolean;
     nowMs?: number;
   },
 ): {
@@ -903,6 +986,7 @@ export function applyOwnerCanaryMutationBatch(
     throw new Error('TOO_MANY_MUTATIONS');
   }
   const nowMs = input.nowMs ?? Date.now();
+  const publicationAllowed = input.publicationAllowed ?? true;
   const acknowledgedAt = new Date(nowMs).toISOString();
   const proposalHash = hash({
     requestId: input.requestId,
@@ -940,21 +1024,49 @@ export function applyOwnerCanaryMutationBatch(
         accepted: prior.accepted === 1,
       };
     }
-    const invalid: 'schema_invalid' | 'decision_package_immutable' | null =
-      input.mutations.map(validRuntimeMutation)
-        .find((item) => item !== null) ?? null;
+    const invalidByMutation = input.mutations.map((mutation) =>
+      validRuntimeMutation(mutation, messageId, before.activeQuestion));
+    const duplicateIds = new Set<string>();
+    const ids = new Set<string>();
+    for (const mutation of input.mutations) {
+      if (ids.has(mutation.mutation_id)) duplicateIds.add(mutation.mutation_id);
+      ids.add(mutation.mutation_id);
+    }
+    const priorMutationIds = new Set<string>();
+    const priorAcknowledgements = db.prepare(`
+      SELECT acknowledgement_json
+      FROM owner_ai_canary_runtime_mutation_acks
+      WHERE conversation_thread_id = ?
+    `).all(threadId) as Array<{ acknowledgement_json: string }>;
+    for (const priorAcknowledgement of priorAcknowledgements) {
+      const parsed = parseJson<OwnerCanaryMutationAcknowledgement>(
+        priorAcknowledgement.acknowledgement_json,
+      );
+      for (const item of parsed.acknowledgements) {
+        priorMutationIds.add(item.mutation_id);
+      }
+    }
+    const invalid = invalidByMutation.find((item) => item !== null) ?? null;
     const versionsMatch = input.mutations.every(
       (item) => item.expected_state_version === before.stateVersion,
     );
     const proposedVersionsMatch = input.mutations.every(
       (item) => item.proposed_state_version === before.stateVersion + 1,
     );
-    const accepted = invalid === null && versionsMatch
-      && proposedVersionsMatch;
-    const reason: 'applied' | 'version_conflict' | 'schema_invalid'
-      | 'decision_package_immutable' = invalid
-      ?? (accepted ? 'applied' : 'version_conflict');
-    const nextVersion = accepted && input.mutations.length > 0
+    const batchValid = invalid === null && duplicateIds.size === 0
+      && versionsMatch && proposedVersionsMatch;
+    const mutationApplied = input.mutations.map((mutation, index) => (
+      batchValid
+      && !priorMutationIds.has(mutation.mutation_id)
+      && (publicationAllowed
+        || publicationIndependentUserMutation(
+          mutation,
+          messageId,
+          before.activeQuestion,
+        ))
+      && invalidByMutation[index] === null
+    ));
+    const nextVersion = mutationApplied.some(Boolean)
       ? before.stateVersion + 1
       : before.stateVersion;
 
@@ -969,7 +1081,8 @@ export function applyOwnerCanaryMutationBatch(
     const preferences = { ...before.conversationPreferences };
     let activeQuestion = before.activeQuestion;
 
-    if (accepted) for (const mutation of input.mutations) {
+    for (const [index, mutation] of input.mutations.entries()) {
+      if (!mutationApplied[index]) continue;
       if (mutation.operation === 'set_confirmed_fact') {
         facts.set(mutation.field, {
           fact_id: `fact_${hash(mutation.mutation_id).slice(0, 16)}`,
@@ -1012,16 +1125,31 @@ export function applyOwnerCanaryMutationBatch(
       }
     }
 
-    const acknowledgements = input.mutations.map((mutation) => ({
-      mutation_id: mutation.mutation_id,
-      status: accepted ? 'applied' as const : 'rejected' as const,
-      reason_code: accepted ? 'applied' as const : reason,
-      entity_version_before: before.stateVersion,
-      entity_version_after: nextVersion,
-      audit_ref: `auditref:${hash(
-        `${input.responseId}\0${mutation.mutation_id}`,
-      ).slice(0, 32)}`,
-    }));
+    const acknowledgements = input.mutations.map((mutation, index) => {
+      let reasonCode: OwnerCanaryMutationAcknowledgement[
+        'acknowledgements'
+      ][number]['reason_code'] = 'applied';
+      if (!mutationApplied[index]) {
+        reasonCode = duplicateIds.has(mutation.mutation_id)
+          || priorMutationIds.has(mutation.mutation_id)
+          ? 'duplicate_mutation'
+          : invalidByMutation[index]
+            ?? (!versionsMatch || !proposedVersionsMatch
+              ? 'version_conflict'
+              : 'authority_denied');
+      }
+      return {
+        mutation_id: mutation.mutation_id,
+        status: mutationApplied[index]
+          ? 'applied' as const : 'rejected' as const,
+        reason_code: reasonCode,
+        entity_version_before: before.stateVersion,
+        entity_version_after: nextVersion,
+        audit_ref: `auditref:${hash(
+          `${input.responseId}\0${mutation.mutation_id}`,
+        ).slice(0, 32)}`,
+      };
+    });
     const acknowledgement: OwnerCanaryMutationAcknowledgement = {
       contract_version: '1.2',
       canonicalization_version: CANONICALIZATION_VERSION,
@@ -1031,7 +1159,7 @@ export function applyOwnerCanaryMutationBatch(
       acknowledgements,
     };
 
-    if (accepted && input.mutations.length > 0) {
+    if (mutationApplied.some(Boolean)) {
       const update = db.prepare(`
         UPDATE owner_ai_canary_threads SET
           state_version = ?, confirmed_project_facts_json = ?,
@@ -1048,6 +1176,19 @@ export function applyOwnerCanaryMutationBatch(
         activeQuestion === null ? null : stableJson(activeQuestion),
         stableJson(asked),
         stableJson(preferences),
+        stableJson(acknowledgement),
+        acknowledgedAt,
+        nowMs,
+        threadId,
+        before.stateVersion,
+      );
+      if (update.changes !== 1) throw new Error('STATE_VERSION_RACE');
+    } else if (batchValid && input.mutations.length > 0) {
+      const update = db.prepare(`
+        UPDATE owner_ai_canary_threads SET
+          last_mutation_ack_json = ?, updated_at = ?, updated_at_ms = ?
+        WHERE conversation_thread_id = ? AND state_version = ?
+      `).run(
         stableJson(acknowledgement),
         acknowledgedAt,
         nowMs,
@@ -1073,14 +1214,14 @@ export function applyOwnerCanaryMutationBatch(
       messageId,
       proposalHash,
       stableJson(acknowledgement),
-      accepted || input.mutations.length === 0 ? 1 : 0,
+      batchValid || input.mutations.length === 0 ? 1 : 0,
       rowToState(afterRow).stateVersion,
       acknowledgedAt,
     );
     return {
       acknowledgement,
       state: rowToState(afterRow),
-      accepted: accepted || input.mutations.length === 0,
+      accepted: batchValid || input.mutations.length === 0,
     };
   })();
 }

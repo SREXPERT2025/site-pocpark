@@ -66,7 +66,8 @@ export function aiCorePrimaryFailureDiagnostic(input: {
 }
 
 export function aiCoreSecondaryFailureDiagnostic(input: {
-  source: 'owner_pre_gate_telemetry' | 'owner_restricted_forensic';
+  source: 'owner_pre_gate_telemetry' | 'owner_restricted_forensic'
+    | 'blocked_user_mutation_commit';
   error: unknown;
   fallbackStage: string;
 }) {
@@ -76,7 +77,9 @@ export function aiCoreSecondaryFailureDiagnostic(input: {
       ?? (input.error instanceof Error ? input.error.message : null),
     input.source === 'owner_restricted_forensic'
       ? 'OWNER_RESTRICTED_FORENSIC_STORAGE_ERROR'
-      : 'OWNER_PRE_GATE_TELEMETRY_STORAGE_ERROR',
+      : input.source === 'blocked_user_mutation_commit'
+        ? 'BLOCKED_USER_MUTATION_COMMIT_ERROR'
+        : 'OWNER_PRE_GATE_TELEMETRY_STORAGE_ERROR',
   );
   const storageCode = typeof failure?.storageCode === 'string'
     ? failure.storageCode.slice(0, 80)

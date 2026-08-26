@@ -350,23 +350,31 @@ export type PublicBlockedSafeForensicEvidence = Readonly<{
   latency_stages: Readonly<Record<string, number>>;
 }>;
 
+export type AiCoreValidatedBlockedMutationBatch = Readonly<{
+  responseId: string;
+  mutations: readonly Readonly<Record<string, unknown>>[];
+}>;
+
 class AiCoreAdapterBlockedError extends Error {
   readonly preGateTelemetry: OwnerCanaryPreGateTelemetry;
   readonly publicSafeForensic: PublicBlockedSafeForensicEvidence;
   readonly observabilityTrace: AiCoreRuntimeObservabilityTrace | null;
+  readonly validatedMutationBatch: AiCoreValidatedBlockedMutationBatch;
 
   constructor(
     code: string,
     telemetry: OwnerCanaryPreGateTelemetry,
     publicSafeForensic: PublicBlockedSafeForensicEvidence,
     cause: unknown,
-    observabilityTrace: AiCoreRuntimeObservabilityTrace | null = null,
+    observabilityTrace: AiCoreRuntimeObservabilityTrace | null,
+    validatedMutationBatch: AiCoreValidatedBlockedMutationBatch,
   ) {
     super(code, { cause });
     this.name = 'AiCoreAdapterBlockedError';
     this.preGateTelemetry = telemetry;
     this.publicSafeForensic = publicSafeForensic;
     this.observabilityTrace = observabilityTrace;
+    this.validatedMutationBatch = validatedMutationBatch;
   }
 }
 
@@ -398,12 +406,14 @@ export class AiCoreFinalGateBlockedError extends Error {
   readonly restrictedForensic: OwnerCanaryRestrictedForensicEvidence;
   readonly publicSafeForensic: PublicBlockedSafeForensicEvidence;
   readonly observabilityTrace: AiCoreRuntimeObservabilityTrace | null;
+  readonly validatedMutationBatch: AiCoreValidatedBlockedMutationBatch;
 
   constructor(
     telemetry: OwnerCanaryPreGateTelemetry,
     restrictedForensic: OwnerCanaryRestrictedForensicEvidence,
     publicSafeForensic: PublicBlockedSafeForensicEvidence,
-    observabilityTrace: AiCoreRuntimeObservabilityTrace | null = null,
+    observabilityTrace: AiCoreRuntimeObservabilityTrace | null,
+    validatedMutationBatch: AiCoreValidatedBlockedMutationBatch,
   ) {
     super('AI_CORE_FINAL_GATE_BLOCKED');
     this.name = 'AiCoreFinalGateBlockedError';
@@ -411,6 +421,7 @@ export class AiCoreFinalGateBlockedError extends Error {
     this.restrictedForensic = restrictedForensic;
     this.publicSafeForensic = publicSafeForensic;
     this.observabilityTrace = observabilityTrace;
+    this.validatedMutationBatch = validatedMutationBatch;
   }
 }
 
@@ -439,6 +450,13 @@ export function observabilityTraceFromError(error: unknown) {
     || error instanceof AiCoreAdapterBlockedError
     || error instanceof AiCoreRuntimeSafeError
     ? error.observabilityTrace
+    : null;
+}
+
+export function validatedBlockedMutationBatchFromError(error: unknown) {
+  return error instanceof AiCoreFinalGateBlockedError
+    || error instanceof AiCoreAdapterBlockedError
+    ? error.validatedMutationBatch
     : null;
 }
 
@@ -1326,6 +1344,14 @@ export function validateOwnerCanaryCoreResponse(
     stateMutationProposed: mutations.length > 0,
     latencyStages: telemetryLatencyStages(telemetry.latency),
   } satisfies OwnerCanaryPreGateTelemetry);
+  const validatedMutationBatch = Object.freeze({
+    responseId: telemetryString(
+      response.response_id,
+      'INVALID_AI_CORE_RESPONSE_ID',
+    ),
+    mutations: Object.freeze(mutations.map((mutation) =>
+      Object.freeze({ ...mutation }))),
+  } satisfies AiCoreValidatedBlockedMutationBatch);
   if (evaluation.status !== 'pass'
     || publication.candidate_status !== 'allowed'
     || publication.published !== false) {
@@ -1341,6 +1367,7 @@ export function validateOwnerCanaryCoreResponse(
         ),
         null,
         observabilityTrace,
+        validatedMutationBatch,
       );
     }
     let restrictedForensic: OwnerCanaryRestrictedForensicEvidence;
@@ -1365,6 +1392,7 @@ export function validateOwnerCanaryCoreResponse(
         ),
         cause,
         observabilityTrace,
+        validatedMutationBatch,
       );
     }
     throw new AiCoreFinalGateBlockedError(
@@ -1377,6 +1405,7 @@ export function validateOwnerCanaryCoreResponse(
         'AI_CORE_FINAL_GATE_BLOCKED',
       ),
       observabilityTrace,
+      validatedMutationBatch,
     );
   }
   if (envelope.restricted_forensic !== undefined

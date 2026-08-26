@@ -561,6 +561,7 @@ await withSite(true, async ({
   assert.equal(result.response.status, 503);
   assert.equal(counts.core, before.core + 1);
   assert.equal(counts.legacy, before.legacy);
+  assert.equal(counts.ack, before.ack + 1);
   const dialogDb = new Database(dbPath, { readonly: true });
   const terminal = dialogDb.prepare(`
     SELECT route, error_code, ai_core_request_id, runtime_telemetry_ref
@@ -574,6 +575,40 @@ await withSite(true, async ({
     readSiteLogs(),
   );
   assert.match(terminal.runtime_telemetry_ref, /^public-blocked:/);
+  const blockedState = dialogDb.prepare(`
+    SELECT state_version, confirmed_project_facts_json,
+      active_question_json, last_mutation_ack_json
+    FROM owner_ai_canary_threads
+  `).get();
+  const blockedFacts = JSON.parse(blockedState.confirmed_project_facts_json);
+  const blockedAcknowledgement = JSON.parse(
+    blockedState.last_mutation_ack_json,
+  );
+  assert.equal(blockedState.state_version, 1);
+  assert.ok(blockedFacts.length > 0);
+  assert.ok(blockedAcknowledgement.acknowledgements.some(
+    (item) => item.status === 'applied',
+  ));
+  assert.equal(blockedState.active_question_json, null);
+  const failedTrace = JSON.parse(dialogDb.prepare(`
+    SELECT trace_json FROM ai_core_turn_trace_payloads
+    WHERE turn_id = ?
+  `).get(result.turnId).trace_json);
+  assert.equal(failedTrace.publication.visible_answer, null);
+  assert.equal(
+    failedTrace.publication.site_blocking_predicate,
+    'AI_CORE_FINAL_GATE_BLOCKED',
+  );
+  assert.equal(
+    failedTrace.state.mutation_acknowledgement_count,
+    blockedAcknowledgement.acknowledgements.length,
+  );
+  assert.equal(
+    failedTrace.state.committed_mutations.length,
+    blockedAcknowledgement.acknowledgements.filter(
+      (item) => item.status === 'applied',
+    ).length,
+  );
   dialogDb.close();
   const forensicDb = new Database(forensicDbPath, { readonly: true });
   const forensic = forensicDb.prepare(`

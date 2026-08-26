@@ -20,6 +20,7 @@ import {
   preGateTelemetryFromError,
   runtimeSafeFailureFromError,
   restrictedForensicFromError,
+  validatedBlockedMutationBatchFromError,
   sha256,
   validateOwnerCanaryCoreResponse,
 } from '../app/lib/owner-ai-canary-adapter.ts';
@@ -532,6 +533,15 @@ assert.ok(blockedForensic);
 assert.equal(blockedForensic.ai_core_request_id, coreRequest.request_id);
 assert.equal(blockedForensic.executor.raw_answer, runtimeResponse.answer);
 assert.equal(blockedForensic.publication.candidate_status, 'blocked');
+const blockedMutationBatch = validatedBlockedMutationBatchFromError(
+  blockedError,
+);
+assert.ok(blockedMutationBatch);
+assert.equal(blockedMutationBatch.responseId, runtimeResponse.response_id);
+assert.deepEqual(
+  blockedMutationBatch.mutations.map((item) => item.mutation_id),
+  runtimeResponse.state_mutations.map((item) => item.mutation_id),
+);
 
 function blockedWithRepairCodes(resultCodes, telemetryCodes, forensicCodes) {
   const candidate = structuredClone(blockedEnvelope);
@@ -764,6 +774,12 @@ const validQuestion = applyOwnerCanaryMutationBatch(db, {
       expected_fields: ['current_system'],
       final_answer_hash: 'a'.repeat(64),
     },
+    provenance: {
+      source_type: 'derived_state',
+      source_ref: 'message_question_goal_valid_0001',
+      confirmation_status: 'not_applicable',
+    },
+    conflict_policy: 'reject_on_conflict',
   }],
   nowMs: nowMs + 2200,
 });
@@ -795,6 +811,12 @@ const invalidQuestion = applyOwnerCanaryMutationBatch(db, {
       expected_fields: ['current_system'],
       final_answer_hash: 'b'.repeat(64),
     },
+    provenance: {
+      source_type: 'derived_state',
+      source_ref: 'message_question_goal_invalid_001',
+      confirmation_status: 'not_applicable',
+    },
+    conflict_policy: 'reject_on_conflict',
   }],
   nowMs: nowMs + 2400,
 });
