@@ -28,10 +28,32 @@ import {
 import { leadAdminRoleHasPermission } from '../app/lib/lead-admin-auth-core.ts';
 
 const ROOT = process.cwd();
-const SITE_SHA = execFileSync('git', ['rev-parse', 'HEAD'], {
-  cwd: ROOT,
-  encoding: 'utf8',
-}).trim();
+
+function resolveSiteReleaseIdentity() {
+  const inferredMode = fs.existsSync(path.join(ROOT, '.git'))
+    ? 'dev_worktree'
+    : 'extracted_release';
+  const mode = process.env.ROSPARK_SITE_RELEASE_IDENTITY_MODE ?? inferredMode;
+
+  if (mode === 'dev_worktree') {
+    return execFileSync('git', ['rev-parse', 'HEAD'], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    }).trim();
+  }
+
+  assert.equal(mode, 'extracted_release');
+  const manifestPath = process.env.ROSPARK_SITE_RELEASE_MANIFEST;
+  assert.ok(manifestPath, 'ROSPARK_SITE_RELEASE_MANIFEST is required');
+  const manifest = JSON.parse(fs.readFileSync(path.resolve(manifestPath), 'utf8'));
+  assert.equal(manifest.schema, 'ROSPARK_AI_CORE_OWNER_CANARY_ASSEMBLY_V1');
+  assert.match(manifest.site_sha, /^[0-9a-f]{40}$/);
+  const siteArtifact = `site-${manifest.site_sha}.tar.gz`;
+  assert.match(manifest.artifacts?.[siteArtifact] ?? '', /^[0-9a-f]{64}$/);
+  return manifest.site_sha;
+}
+
+const SITE_SHA = resolveSiteReleaseIdentity();
 const GATEWAY_SHA = 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9';
 const fixture = JSON.parse(fs.readFileSync(path.join(
   ROOT,
