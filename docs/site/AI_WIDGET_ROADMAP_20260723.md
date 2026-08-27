@@ -1,8 +1,97 @@
 # РОСПАРК — план AI-виджета для сайта
 
 Дата фиксации: 2026-07-23
-Статус: направление R&D, публичный виджет не подключён.
+Статус: AI Core development frozen с 2026-08-27; Public AI Core выключен,
+обычные посетители остаются на legacy-маршруте.
 Связанный проект: `/Volumes/POCPARK_AI_DATA/POCPARK_AI`.
+
+## Freeze checkpoint — 2026-08-27
+
+Дальнейшая разработка текущей ветки AI Core остановлена решением владельца.
+Эта фиксация является инженерным checkpoint, а не release/stable-отметкой.
+Сборка не является release-ready, её Public AI Core rollout
+отменён/отложен.
+
+### Последняя экспериментальная связка
+
+- Site: `96d0de31af04f4f8e8f888c53e019a7572bbe3f8`;
+- Runtime: `32afc91b3358c115ae03fc3d20db96fef5e0fbfe`;
+- Contract: `4d75773d60f3453279cbfcee1453f54b15b66567`;
+- Gateway: `e0b4edd34d5fecaf8850e64aa03a33c2661b51f9`;
+- immutable package:
+  `PUBLIC_AI_CORE_CANARY_32AFC91B_96d0de3_20260827T152548Z.tar.gz`;
+- package SHA-256:
+  `c09ff937a6c56f999c6e073d295c586a266025aa7a977f879edfef6357030178`.
+
+Локальный package и rollback manifest сохранены в
+`/Volumes/POCPARK_AI_DATA/POCPARK_SITE_AI/generated/canary/`.
+
+### Production state на момент freeze
+
+- `AI_CORE_OWNER_CANARY_ENABLED=false`;
+- `AI_CORE_PUBLIC_ENABLED=false`;
+- normal visitors: `legacy`;
+- Public HTTPS: `200`;
+- readiness после выключения Owner Canary: `3/3`;
+- production deploy в рамках freeze: `0`;
+- live/model requests после остановки: `0`.
+
+Последнее подтверждённое выключение Owner Canary завершено
+`2026-08-27T16:38:53Z` со статусом `OWNER_CANARY_ROLLBACK=pass`.
+
+### Проверки и итог live smoke
+
+- stateful T1–T6 для immutable сборки: offline `6/6 PASS`;
+- Historical Regression Pack для immutable сборки: offline `10/10 PASS`;
+- Runtime matrix: offline `187/187 PASS`;
+- Historical Live Smoke: `FAIL`;
+- HR-01: `PASS`;
+- HR-02: основной input не запускался, потому что обязательный context setup
+  уже показал semantic failure;
+- остальные live Historical scenarios: не запускались по fail-fast policy;
+- exact failing trace SHA-256:
+  `bff994d74f76c534d73ab5ebb957d6e0d28960f4efd8699b604799bcb4123f68`.
+
+Offline PASS не отменяет последующий live FAIL и не даёт разрешения на
+публичный rollout.
+
+### Подтверждённые unresolved defects
+
+1. Context Integrity не извлёк из текущего сообщения
+   `current_system=new_build` и
+   `gate_requires_payment_confirmation=true`.
+2. Runtime Evaluator содержал внутренний `evaluation_status=fail`, но внешняя
+   оболочка вернула PASS и Runtime publication получила `allowed`.
+3. Candidate был фактически изменён примерно на `31.26%`, однако telemetry
+   сообщила `repair.applied=false`, `method=none`, а Site source был указан как
+   `raw_model`.
+4. В результате был опубликован неверный следующий вопрос по уже сообщённому
+   параметру объекта.
+
+### Rollback readiness
+
+- rollback Site: `0fcee4059625767541a8d07015d36547c6ec8507`;
+- rollback Runtime: `ecb7de690dd361de0ff03de9e0687cd16cf28ff9`;
+- Contract после rollback:
+  `4d75773d60f3453279cbfcee1453f54b15b66567`;
+- package содержит checksum-проверенные Site/Runtime rollback archives и
+  `ROLLBACK_PLAN.json`;
+- последний VPS backup:
+  `/root/rospark-backups/canary-32afc91b-vps-20260827T162747Z-1283637`;
+- flag-only stop:
+  `/root/rospark-owner-canary-32afc91b-auto-off.sh`;
+- full Site/Runtime rollback:
+  `/root/rospark-canary-32afc91b-full-rollback.sh`.
+
+### Freeze boundary
+
+- статус: `AI Core development frozen`;
+- никаких новых исправлений, Canary Assembly, live canary или Public AI Core
+  rollout в этой ветке;
+- никаких functional code changes ради freeze;
+- normal visitors остаются на `legacy`;
+- следующая работа выполняется как отдельный проект/ветка **Agent Pilot** и не
+  является продолжением текущей AI Core ветки.
 
 ## 1. Цель
 
