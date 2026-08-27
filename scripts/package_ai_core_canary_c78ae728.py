@@ -13,15 +13,18 @@ import tempfile
 from pathlib import Path
 
 
-BASE_SITE_SHA = "35b3cb2c0b2520807e433be827ae7fd92f212e75"
-RUNTIME_SHA = "651738a5db1a748fa252d5df4f6df3e843ef1f92"
-ROLLBACK_RUNTIME_SHA = "c78ae7288d9140d9da3fba39f46d2eac493b4a17"
+BASE_SITE_SHA = "83d874ed9a5586e6b5795094ba0bec22ef70cd34"
+RUNTIME_SHA = "5606a1fc4698666ba01e93d5ab25958f026833e8"
+ROLLBACK_RUNTIME_SHA = "651738a5db1a748fa252d5df4f6df3e843ef1f92"
 CONTRACT_SHA = "4d75773d60f3453279cbfcee1453f54b15b66567"
 CONTRACT_VERSION = "1.2"
 CANONICALIZATION_VERSION = "CANONICAL_JSON_HASH_V1"
 GATEWAY_SHA = "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9"
-RUNTIME_RELEASE_DIR = "release/ai-core-runtime-651738a"
-ROLLBACK_RELEASE_DIR = "release/ai-core-runtime-c78ae728"
+RUNTIME_RELEASE_DIR = "release/ai-core-runtime-5606a1fc"
+ROLLBACK_RELEASE_DIR = "release/ai-core-runtime-651738a"
+HISTORICAL_PACK_SHA256 = (
+    "5d9f90df6de6b0e57c1b28e2d934a5e73bac56ea54023e55bbc054d103c24f2b"
+)
 
 
 def run(*args: str, cwd: Path) -> str:
@@ -100,6 +103,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--site-repo", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument("--historical-pack", required=True, type=Path)
     args = parser.parse_args()
 
     repo = args.site_repo.expanduser().resolve(strict=True)
@@ -118,6 +122,9 @@ def main() -> int:
     rollback_runtime_source = release_artifact(
         repo, ROLLBACK_RELEASE_DIR, ROLLBACK_RUNTIME_SHA,
     )
+    historical_pack = args.historical_pack.expanduser().resolve(strict=True)
+    if sha256(historical_pack) != HISTORICAL_PACK_SHA256:
+        raise SystemExit("Historical Regression Pack mismatch")
 
     output_dir = args.output_dir.expanduser().resolve()
     output_dir.mkdir(parents=True, exist_ok=False)
@@ -125,12 +132,15 @@ def main() -> int:
     rollback_site_archive = output_dir / f"site-{BASE_SITE_SHA}.tar.gz"
     runtime_archive = output_dir / runtime_source.name
     rollback_runtime_archive = output_dir / rollback_runtime_source.name
+    packaged_historical = output_dir / historical_pack.name
     git_archive(repo, site_sha, site_archive)
     git_archive(repo, BASE_SITE_SHA, rollback_site_archive)
     shutil.copy2(runtime_source, runtime_archive)
     shutil.copy2(rollback_runtime_source, rollback_runtime_archive)
+    shutil.copy2(historical_pack, packaged_historical)
     os.chmod(runtime_archive, 0o600)
     os.chmod(rollback_runtime_archive, 0o600)
+    os.chmod(packaged_historical, 0o600)
 
     manifest = {
         "schema": "ROSPARK_AI_CORE_OWNER_CANARY_ASSEMBLY_V1",
@@ -151,7 +161,10 @@ def main() -> int:
         "live_model_requests_authorized": False,
         "deploy_authorized": False,
         "offline_acceptance": {
-            "stateful_t1_t5": "pass",
+            "stateful_t1_t6": "pass",
+            "historical_regression_pack": "10/10",
+            "historical_regression_pack_sha256": HISTORICAL_PACK_SHA256,
+            "runtime_matrix": "149/149",
             "forensic_primary_secondary": "pass",
             "trace_compatibility": "pass",
             "canonical_hash": "pass",
@@ -162,6 +175,7 @@ def main() -> int:
         "artifacts": {
             site_archive.name: sha256(site_archive),
             runtime_archive.name: sha256(runtime_archive),
+            packaged_historical.name: sha256(packaged_historical),
         },
     }
     rollback = {

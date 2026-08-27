@@ -23,7 +23,7 @@ def main() -> int:
             )
         fixed_answer = sys.argv[2]
     request = json.load(sys.stdin)
-    artifact = ROOT / "release/ai-core-runtime-651738a" / (
+    artifact = ROOT / "release/ai-core-runtime-5606a1fc" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="canonical-hash-v1-probe-") as raw:

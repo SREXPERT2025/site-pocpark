@@ -13,11 +13,11 @@ import {
   runOwnerAiCanaryMigrations,
 } from '../app/lib/owner-ai-canary-state.ts';
 
-const RUNTIME_SHA = '651738a5db1a748fa252d5df4f6df3e843ef1f92';
+const RUNTIME_SHA = '5606a1fc4698666ba01e93d5ab25958f026833e8';
 const CONTRACT_SHA = '4d75773d60f3453279cbfcee1453f54b15b66567';
 const GATEWAY_SHA = 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9';
-const SITE_BASE_SHA = '20eec1587ce56b9c549c29ae09763cf7aeb2d2dd';
-const THREAD_ID = 'thread_651738a_stateful_0001';
+const SITE_BASE_SHA = '83d874ed9a5586e6b5795094ba0bec22ef70cd34';
+const THREAD_ID = 'thread_5606a1fc_stateful_0001';
 
 assert.equal(AI_CORE_RUNTIME_SHA, RUNTIME_SHA);
 assert.equal(AI_CORE_CONTRACT_SHA, CONTRACT_SHA);
@@ -27,7 +27,7 @@ db.pragma('foreign_keys = ON');
 runOwnerAiCanaryMigrations(db);
 let state = ensureOwnerCanaryThread(db, {
   conversationThreadId: THREAD_ID,
-  siteSessionId: 'session_651738a_stateful_0001',
+  siteSessionId: 'session_5606a1fc_stateful_0001',
   nowMs: Date.UTC(2026, 7, 14, 10, 0, 0),
 });
 const history = [];
@@ -37,7 +37,7 @@ let duplicateMutations = 0;
 
 function nextId(prefix) {
   sequence += 1;
-  return `${prefix}_651738a_${String(sequence).padStart(8, '0')}`;
+  return `${prefix}_5606a1fc_${String(sequence).padStart(8, '0')}`;
 }
 
 function runTurn(message) {
@@ -69,6 +69,7 @@ function runTurn(message) {
   assert.equal(envelope.contract_sha, CONTRACT_SHA);
   assert.equal(rawEnvelope.observability_trace.identity.runtime_sha, RUNTIME_SHA);
   assert.equal(rawEnvelope.observability_trace.identity.contract_sha, CONTRACT_SHA);
+  assert.match(rawEnvelope.observability_trace.trace_sha256, /^[a-f0-9]{64}$/);
   assert.equal(
     envelope.response.telemetry.publication.candidate_status,
     'allowed',
@@ -222,6 +223,45 @@ assert.match(t5.envelope.response.answer, /бизнес-центр/);
 assert.match(t5.envelope.response.answer, /800 автомобилей/);
 assert.match(t5.envelope.response.answer, /проектируется с нуля/);
 
+const t6 = runTurn(
+  'Что будет происходить если клиент приехал, а номер не распознался? '
+    + 'Как он поймет что ему делать?',
+);
+assert.equal(
+  t6.envelope.response.context_resolution.command_requirements.semantic_route,
+  'identification_failure_fallback',
+);
+assert.equal(t6.envelope.response.executor_trace.execution_mode, 'model');
+assert.equal(t6.envelope.response.executor_trace.model_request_count, 1);
+assert.equal(t6.envelope.response.executor_trace.attempts.length, 1);
+assert.equal(t6.envelope.response.decision_package.decision_status,
+  'fallback_decision_pending');
+assert.notEqual(t6.envelope.response.decision_package.decision_type,
+  'not_required');
+assert.ok(t6.envelope.response.decision_package.missing_critical_facts.includes(
+  'fallback_reader_infrastructure',
+));
+assert.ok(Object.values(
+  t6.envelope.response.decision_package.recommended_architecture.segments,
+).every((segment) => segment.assisted_recovery?.usage === 'exception_only'));
+const t6Knowledge = t6.rawEnvelope.observability_trace.pipeline.find(
+  (item) => item.name === 'knowledge_sources',
+);
+assert.equal(t6Knowledge.status, 'pass');
+assert.equal(t6Knowledge.input.required, true);
+assert.equal(t6Knowledge.output.executor_received_knowledge_count, 1);
+const t6Lab = t6.rawEnvelope.observability_trace.pipeline.find(
+  (item) => item.name === 'engineering_lab',
+);
+assert.equal(t6Lab.status, 'pass');
+assert.equal(t6.envelope.response.evaluation_result.status, 'pass');
+assert.ok(t6.envelope.response.repair_result.applied === false
+  || t6.envelope.response.repair_result.rewrite_ratio <= 0.35);
+assert.doesNotMatch(t6.envelope.response.answer, /охранник|всегда дежурит/i);
+assert.match(t6.envelope.response.answer, /автоматическ/i);
+assert.match(t6.envelope.response.answer, /оператор/i);
+assert.match(t6.envelope.response.answer, /исключительн/i);
+
 assert.equal(duplicateExecutions, 0);
 assert.equal(duplicateMutations, 0);
 console.log(JSON.stringify({
@@ -236,8 +276,12 @@ console.log(JSON.stringify({
   t5: 'pass',
   t5_route: 'object_card_recall',
   t5_model_requests: 0,
+  t6: 'pass',
+  t6_route: 'identification_failure_fallback',
+  t6_decision_package: 'fallback_decision_pending',
+  t6_verified_knowledge_to_executor: true,
   duplicate_executions: duplicateExecutions,
   duplicate_mutations: duplicateMutations,
   real_model_requests: 0,
-  result: '5/5',
+  result: '6/6',
 }, null, 2));

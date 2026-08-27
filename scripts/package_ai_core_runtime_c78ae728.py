@@ -13,8 +13,8 @@ import tempfile
 from pathlib import Path
 
 
-RUNTIME_SHA = "651738a5db1a748fa252d5df4f6df3e843ef1f92"
-RUNTIME_TREE_SHA = "19931795da4759d7c38e99a958c3e6a5b2394fb1"
+RUNTIME_SHA = "5606a1fc4698666ba01e93d5ab25958f026833e8"
+RUNTIME_TREE_SHA = "719bc05d8430bcf37852ff40dd24ad6ba544810f"
 CONTRACT_SHA = "4d75773d60f3453279cbfcee1453f54b15b66567"
 CONTRACT_TREE_SHA = "fbe8672b1c2f8d2e7bd9fc4b6bb0d3e710f6ce94"
 CONTRACT_PATH = "generated/contracts/AI_CORE_SITE_CONTRACT_V1_2"
@@ -27,6 +27,11 @@ PATHS = (
     CONTRACT_PATH,
     "generated/contracts/OWNER_CANARY_BLOCKED_FORENSIC_V1",
     "generated/contracts/AI_TRACE_VIEWER_V1",
+    "tests/__init__.py",
+    "tests/fixtures/site_contract_runtime_v1_golden.json",
+    "tests/test_site_contract_runtime_v1.py",
+    "tests/test_runtime_semantic_pipeline_repair.py",
+    "tests/test_historical_regression_systemic_repair.py",
 )
 
 
@@ -71,7 +76,7 @@ def main() -> int:
 
     output = args.output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="rospark-ai-core-runtime-651738a-") as raw:
+    with tempfile.TemporaryDirectory(prefix="rospark-ai-core-runtime-5606a1fc-") as raw:
         temp = Path(raw)
         root = temp / RUNTIME_SHA
         root.mkdir(mode=0o700)
