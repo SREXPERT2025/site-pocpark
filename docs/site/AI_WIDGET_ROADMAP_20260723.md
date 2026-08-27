@@ -93,6 +93,40 @@ Offline PASS не отменяет последующий live FAIL и не да
 - следующая работа выполняется как отдельный проект/ветка **Agent Pilot** и не
   является продолжением текущей AI Core ветки.
 
+## ROSPARK Agent Pilot
+
+Статус: `architecture preparation`.
+
+Agent Pilot — отдельный будущий разговорный AI-менеджер для строго
+ограниченного реального трафика. Он не заменяет Legacy автоматически, не
+изменяет frozen AI Core и не наследует его Runtime/evaluator/repair backlog.
+
+Архитектурные решения и safety boundary зафиксированы отдельно:
+
+- `docs/architecture/AGENT_PILOT_ARCHITECTURE_BOUNDARY_V1.md`.
+
+Принятые границы текущего этапа:
+
+- Legacy остаётся production default;
+- Frozen AI Core остаётся историческим checkpoint с Public/Owner flags OFF;
+- Agent Pilot получает отдельный repository/worktree и отдельные contracts;
+- все capabilities используют explicit allow-list, `default=deny`;
+- знания доступны только read-only через versioned source registry;
+- raw conversation остаётся authoritative evidence, structured memory не
+  должна терять исходные пользовательские факты;
+- Orchestrator один принимает final decision, subagents только советуют;
+- hard safety gate проверяет schema, permissions, injection, secrets, timeout,
+  malformed output и duplicates, но не копирует старый repair loop;
+- любой Pilot failure изолируется и даёт один Legacy fallback;
+- traces не содержат private chain-of-thought;
+- live conversation export допускается только через отдельный privacy-reviewed
+  обезличивающий pipeline;
+- functional implementation, model choice, prompts, subagents, deploy и live
+  traffic не входят в текущий этап.
+
+Следующий шаг возможен только по отдельному owner approval: передать документ
+Agent Pilot implementer для scaffolding/contracts/offline tests в новой ветке.
+
 ## 1. Цель
 
 Создать на сайте короткий диалоговый виджет, который:
