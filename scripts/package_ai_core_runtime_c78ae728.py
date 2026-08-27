@@ -13,8 +13,8 @@ import tempfile
 from pathlib import Path
 
 
-RUNTIME_SHA = "5606a1fc4698666ba01e93d5ab25958f026833e8"
-RUNTIME_TREE_SHA = "719bc05d8430bcf37852ff40dd24ad6ba544810f"
+RUNTIME_SHA = "ecb7de690dd361de0ff03de9e0687cd16cf28ff9"
+RUNTIME_TREE_SHA = "8deb8589a256026539223eaded731358b89a41b6"
 CONTRACT_SHA = "4d75773d60f3453279cbfcee1453f54b15b66567"
 CONTRACT_TREE_SHA = "fbe8672b1c2f8d2e7bd9fc4b6bb0d3e710f6ce94"
 CONTRACT_PATH = "generated/contracts/AI_CORE_SITE_CONTRACT_V1_2"
@@ -29,9 +29,17 @@ PATHS = (
     "generated/contracts/AI_TRACE_VIEWER_V1",
     "tests/__init__.py",
     "tests/fixtures/site_contract_runtime_v1_golden.json",
+    "tests/fixtures/live_owner_canary_t4_20260827_raw.json",
+    "tests/fixtures/real_qwen_probe_a9066e_raw_001.json",
+    "tests/fixtures/real_qwen_reprobe_38a66115_raw_001.json",
+    "tests/fixtures/real_qwen_probe_6a937b7d_raw_001.json",
     "tests/test_site_contract_runtime_v1.py",
     "tests/test_runtime_semantic_pipeline_repair.py",
+    "tests/test_runtime_v112_verbalization_hardening.py",
+    "tests/test_runtime_v113_service_marker_hardening.py",
+    "tests/test_runtime_v114_evaluator_finalization.py",
     "tests/test_historical_regression_systemic_repair.py",
+    "tests/test_runtime_repair_orchestration.py",
 )
 
 
@@ -76,7 +84,7 @@ def main() -> int:
 
     output = args.output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="rospark-ai-core-runtime-5606a1fc-") as raw:
+    with tempfile.TemporaryDirectory(prefix="rospark-ai-core-runtime-ecb7de69-") as raw:
         temp = Path(raw)
         root = temp / RUNTIME_SHA
         root.mkdir(mode=0o700)

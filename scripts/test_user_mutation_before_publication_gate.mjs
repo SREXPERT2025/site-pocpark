@@ -15,8 +15,8 @@ import {
 } from '../app/lib/owner-ai-canary-state.ts';
 import { composeAiCoreTurnTrace } from '../app/lib/ai-trace-core.ts';
 
-const SITE_BASE_SHA = '83d874ed9a5586e6b5795094ba0bec22ef70cd34';
-const RUNTIME_SHA = '5606a1fc4698666ba01e93d5ab25958f026833e8';
+const SITE_BASE_SHA = 'bcd1f87bdde83aa9cc889036e58762dff8776276';
+const RUNTIME_SHA = 'ecb7de690dd361de0ff03de9e0687cd16cf28ff9';
 const CONTRACT_SHA = '4d75773d60f3453279cbfcee1453f54b15b66567';
 const GATEWAY_SHA = 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9';
 const THREAD_ID = 'thread_blocked_user_mutation_0001';

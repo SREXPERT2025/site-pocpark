@@ -28,7 +28,7 @@ def request(runtime: Path) -> dict:
 
 
 def main() -> int:
-    artifact = ROOT / "release/ai-core-runtime-5606a1fc" / (
+    artifact = ROOT / "release/ai-core-runtime-ecb7de69" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="ai-core-ubuntu-stage-") as raw:
