@@ -16,7 +16,7 @@ const base = [
 ].join('\n');
 const enabled = updateOwnerCanaryEnv(base, true);
 assert.match(enabled, /AI_CORE_OWNER_CANARY_ENABLED=true/);
-assert.match(enabled, /AI_CORE_OWNER_CANARY_RUNTIME_SHA=c78ae7288d9140d9da3fba39f46d2eac493b4a17/);
+assert.match(enabled, /AI_CORE_OWNER_CANARY_RUNTIME_SHA=651738a5db1a748fa252d5df4f6df3e843ef1f92/);
 assert.match(enabled, /AI_CORE_OWNER_CANARY_CONTRACT_SHA=4d75773d60f3453279cbfcee1453f54b15b66567/);
 assert.match(enabled, /OWNER_CANARY_PUBLIC_ORIGIN=https:\/\/www\.xn--80aukedde\.xn--p1ai/);
 assert.doesNotMatch(enabled, /AI_CORE_OWNER_CANARY_SITE_SHA=/);

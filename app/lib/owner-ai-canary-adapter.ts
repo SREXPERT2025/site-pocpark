@@ -10,11 +10,14 @@ import {
 } from './ai-core-execution-provenance-v1-2.ts';
 
 export const AI_CORE_RUNTIME_SHA =
-  'c78ae7288d9140d9da3fba39f46d2eac493b4a17';
+  '651738a5db1a748fa252d5df4f6df3e843ef1f92';
 export const AI_CORE_CONTRACT_SHA = AI_CORE_CONTRACT_V1_2_SHA;
 export const AI_CORE_CONTRACT_VERSION = AI_CORE_CONTRACT_V1_2_VERSION;
 export const AI_CORE_RUNTIME_VERSION = '1.3.0';
 export const AI_CORE_OWNER_MODEL = 'qwen3.6:27b';
+const CONSENT_SAFE_CONTEXT_REFS = Object.freeze([
+  'ctxref:knowledge:parking_access',
+] as const);
 export const OWNER_CANARY_BLOCKED_FORENSIC_VERSION =
   'OWNER_CANARY_BLOCKED_FORENSIC_V1';
 export const PUBLIC_BLOCKED_SAFE_FORENSIC_VERSION =
@@ -151,7 +154,9 @@ export function buildOwnerCanaryCoreRequest(input: {
     fact_conflicts: input.state.conflicts,
     intent_hints: buildIntentHints(input),
     active_question: input.state.activeQuestion,
-    consent_safe_context_refs: [],
+    // Immutable reference to verified corporate parking knowledge. It carries
+    // no visitor data and is the evidence context required by Contract V1.2.
+    consent_safe_context_refs: [...CONSENT_SAFE_CONTEXT_REFS],
     executor_policy: {
       policy_id: input.policyId ?? 'policy:owner_qwen_v1',
       assignment_id: `assignment:${sha256(input.conversationThreadId).slice(0, 32)}`,

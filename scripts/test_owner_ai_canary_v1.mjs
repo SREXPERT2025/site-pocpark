@@ -217,6 +217,9 @@ assert.equal(coreRequest.request_payload_hash, sha256(coreRequest.payload));
 assert.equal(coreRequest.payload.recent_messages.length, 2);
 assert.equal(coreRequest.payload.intent_hints[0].confirmation_status, 'unconfirmed');
 assert.equal(coreRequest.payload.intent_hints[1].confirmation_status, 'unconfirmed');
+assert.deepEqual(coreRequest.payload.consent_safe_context_refs, [
+  'ctxref:knowledge:parking_access',
+]);
 assert.equal(canonicalJson({ b: 1, a: 2 }), '{"a":2,"b":1}');
 const sameCoreRequest = buildOwnerCanaryCoreRequest({
   aiCoreRequestId: coreRequest.request_id,

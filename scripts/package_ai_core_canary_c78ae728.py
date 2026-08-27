@@ -13,15 +13,15 @@ import tempfile
 from pathlib import Path
 
 
-BASE_SITE_SHA = "3d0e86b3224f6f2647e906353396eac94c44150e"
-RUNTIME_SHA = "c78ae7288d9140d9da3fba39f46d2eac493b4a17"
-ROLLBACK_RUNTIME_SHA = "3bf1facc9cc16672c1f1c01620c89f51eb39c28f"
+BASE_SITE_SHA = "35b3cb2c0b2520807e433be827ae7fd92f212e75"
+RUNTIME_SHA = "651738a5db1a748fa252d5df4f6df3e843ef1f92"
+ROLLBACK_RUNTIME_SHA = "c78ae7288d9140d9da3fba39f46d2eac493b4a17"
 CONTRACT_SHA = "4d75773d60f3453279cbfcee1453f54b15b66567"
 CONTRACT_VERSION = "1.2"
 CANONICALIZATION_VERSION = "CANONICAL_JSON_HASH_V1"
 GATEWAY_SHA = "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9"
-RUNTIME_RELEASE_DIR = "release/ai-core-runtime-c78ae728"
-ROLLBACK_RELEASE_DIR = "release/ai-core-runtime-3bf1facc"
+RUNTIME_RELEASE_DIR = "release/ai-core-runtime-651738a"
+ROLLBACK_RELEASE_DIR = "release/ai-core-runtime-c78ae728"
 
 
 def run(*args: str, cwd: Path) -> str:

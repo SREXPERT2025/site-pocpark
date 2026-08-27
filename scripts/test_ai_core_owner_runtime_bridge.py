@@ -61,7 +61,7 @@ def request_for(hash_value, suffix: str = "owner001"):
         "fact_conflicts": [],
         "intent_hints": [],
         "active_question": None,
-        "consent_safe_context_refs": [],
+        "consent_safe_context_refs": ["ctxref:knowledge:parking_access"],
         "executor_policy": {
             "policy_id": "policy:owner_qwen_v1",
             "assignment_id": "assignment:owner_qwen_v1",
@@ -95,7 +95,7 @@ def request_for(hash_value, suffix: str = "owner001"):
 
 
 def main() -> int:
-    artifact = ROOT / "release/ai-core-runtime-c78ae728" / (
+    artifact = ROOT / "release/ai-core-runtime-651738a" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="owner-core-test-") as raw:
@@ -319,7 +319,9 @@ def main() -> int:
         follow_up_envelope = follow_up_bridge.process(round_trip_request)
         follow_up_response = follow_up_envelope["response"]
         assert follow_up_response["success"] is True
-        assert follow_up_response["evaluation_result"]["status"] == "pass"
+        assert follow_up_response["evaluation_result"]["status"] == "pass", (
+            follow_up_response
+        )
         follow_up_observation = follow_up_bridge.adapter.last_trace[
             "ingestion_observability"
         ]
@@ -329,7 +331,25 @@ def main() -> int:
         ] == "new_build"
         assert follow_up_observation["engineering_lab_input_facts"][
             "existing_system"
+        ] == "none"
+        assert follow_up_observation["engineering_lab_input_facts"][
+            "modernization_or_new_build"
         ] == "new_build"
+        assert follow_up_observation["engineering_dependency_semantics"] == {
+            "new_build_confirmed": True,
+            "existing_system_confirmed": False,
+        }
+        assert follow_up_observation["comparison_scope"] == ["card", "ticket"]
+        assert follow_up_response["decision_package"]["decision_status"] == (
+            "comparison_only"
+        )
+        assert follow_up_response["decision_package"]["comparison_scope"] == [
+            "card", "ticket",
+        ]
+        assert follow_up_response["decision_package"]["recommended_architecture"][
+            "components"
+        ] == []
+        assert follow_up_response["repair_result"]["applied"] is False
         assert follow_up_observation["request_local_effective_facts"][
             "daily_traffic"
         ] == 800

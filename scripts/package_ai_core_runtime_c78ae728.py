@@ -13,8 +13,8 @@ import tempfile
 from pathlib import Path
 
 
-RUNTIME_SHA = "c78ae7288d9140d9da3fba39f46d2eac493b4a17"
-RUNTIME_TREE_SHA = "afe9e8eeebf3980f38b81c5b2398f6b0239cfe37"
+RUNTIME_SHA = "651738a5db1a748fa252d5df4f6df3e843ef1f92"
+RUNTIME_TREE_SHA = "19931795da4759d7c38e99a958c3e6a5b2394fb1"
 CONTRACT_SHA = "4d75773d60f3453279cbfcee1453f54b15b66567"
 CONTRACT_TREE_SHA = "fbe8672b1c2f8d2e7bd9fc4b6bb0d3e710f6ce94"
 CONTRACT_PATH = "generated/contracts/AI_CORE_SITE_CONTRACT_V1_2"
@@ -71,7 +71,7 @@ def main() -> int:
 
     output = args.output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="rospark-ai-core-runtime-c78ae728-") as raw:
+    with tempfile.TemporaryDirectory(prefix="rospark-ai-core-runtime-651738a-") as raw:
         temp = Path(raw)
         root = temp / RUNTIME_SHA
         root.mkdir(mode=0o700)

@@ -15,8 +15,8 @@ import {
 } from '../app/lib/owner-ai-canary-state.ts';
 import { composeAiCoreTurnTrace } from '../app/lib/ai-trace-core.ts';
 
-const SITE_BASE_SHA = '975c3464967bf0538863b72bc525a608a5d7ddd9';
-const RUNTIME_SHA = 'c78ae7288d9140d9da3fba39f46d2eac493b4a17';
+const SITE_BASE_SHA = '20eec1587ce56b9c549c29ae09763cf7aeb2d2dd';
+const RUNTIME_SHA = '651738a5db1a748fa252d5df4f6df3e843ef1f92';
 const CONTRACT_SHA = '4d75773d60f3453279cbfcee1453f54b15b66567';
 const GATEWAY_SHA = 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9';
 const THREAD_ID = 'thread_blocked_user_mutation_0001';
@@ -250,9 +250,10 @@ assert.deepEqual(t5.envelope.response.executor_trace.attempts, []);
 assert.equal(t5.envelope.response.executor_trace.final_executor, null);
 assert.equal(t5.envelope.response.executor_trace.model_request_count, 0);
 assert.deepEqual(t5.envelope.response.state_mutations, []);
-assert.ok(['object_card_recall', 'general_information'].includes(
-  t5.envelope.response.context_resolution.intent,
-));
+assert.equal(
+  t5.envelope.response.context_resolution.command_requirements.semantic_route,
+  'object_card_recall',
+);
 assert.match(t5.envelope.response.answer, /бизнес-центр/);
 assert.match(t5.envelope.response.answer, /800 автомобилей/);
 assert.match(t5.envelope.response.answer, /проектируется с нуля/);
@@ -287,7 +288,8 @@ console.log(JSON.stringify({
   blocked_t4_terminal_predicate: terminalPredicate,
   acknowledgement_complete: true,
   t5_durable_facts_seen: state.confirmedProjectFacts.length,
-  t5_route: t5.envelope.response.context_resolution.intent,
+  t5_route: t5.envelope.response.context_resolution.command_requirements
+    .semantic_route,
   t5_model_requests: 0,
   duplicate_executions: 0,
   duplicate_mutations: 0,

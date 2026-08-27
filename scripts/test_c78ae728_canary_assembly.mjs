@@ -13,11 +13,11 @@ import {
   runOwnerAiCanaryMigrations,
 } from '../app/lib/owner-ai-canary-state.ts';
 
-const RUNTIME_SHA = 'c78ae7288d9140d9da3fba39f46d2eac493b4a17';
+const RUNTIME_SHA = '651738a5db1a748fa252d5df4f6df3e843ef1f92';
 const CONTRACT_SHA = '4d75773d60f3453279cbfcee1453f54b15b66567';
 const GATEWAY_SHA = 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9';
-const SITE_BASE_SHA = '3d0e86b3224f6f2647e906353396eac94c44150e';
-const THREAD_ID = 'thread_c78ae728_stateful_0001';
+const SITE_BASE_SHA = '20eec1587ce56b9c549c29ae09763cf7aeb2d2dd';
+const THREAD_ID = 'thread_651738a_stateful_0001';
 
 assert.equal(AI_CORE_RUNTIME_SHA, RUNTIME_SHA);
 assert.equal(AI_CORE_CONTRACT_SHA, CONTRACT_SHA);
@@ -27,7 +27,7 @@ db.pragma('foreign_keys = ON');
 runOwnerAiCanaryMigrations(db);
 let state = ensureOwnerCanaryThread(db, {
   conversationThreadId: THREAD_ID,
-  siteSessionId: 'session_c78ae728_stateful_0001',
+  siteSessionId: 'session_651738a_stateful_0001',
   nowMs: Date.UTC(2026, 7, 14, 10, 0, 0),
 });
 const history = [];
@@ -37,7 +37,7 @@ let duplicateMutations = 0;
 
 function nextId(prefix) {
   sequence += 1;
-  return `${prefix}_c78ae728_${String(sequence).padStart(8, '0')}`;
+  return `${prefix}_651738a_${String(sequence).padStart(8, '0')}`;
 }
 
 function runTurn(message) {
@@ -160,8 +160,38 @@ const t4 = runTurn('С нуля. Что лучше выбрать: карты и
 assert.equal(t4.envelope.response.executor_trace.execution_mode, 'model');
 assert.equal(t4.envelope.response.executor_trace.model_request_count, 1);
 assert.equal(t4.envelope.response.evaluation_result.status, 'pass');
+assert.equal(t4.envelope.response.repair_result.applied, false);
+assert.equal(t4.envelope.response.repair_result.rewrite_ratio, 0);
+assert.equal(
+  t4.envelope.response.decision_package.decision_status,
+  'comparison_only',
+);
+assert.deepEqual(t4.envelope.response.decision_package.comparison_scope, [
+  'card', 'ticket',
+]);
+assert.deepEqual(
+  t4.envelope.response.decision_package.recommended_architecture.components,
+  [],
+);
+assert.deepEqual(
+  t4.envelope.response.decision_package.recommended_architecture.segments,
+  {},
+);
+assert.equal(
+  t4.rawEnvelope.observability_trace.state.request_local_effective.current_system,
+  'new_build',
+);
+const t4Projection = t4.rawEnvelope.observability_trace.pipeline.find(
+  (item) => item.name === 'verbalization_projection',
+);
+assert.equal(t4Projection.status, 'pass');
+assert.equal(t4Projection.output.projection.decision_status, 'comparison_only');
+assert.deepEqual(t4Projection.output.projection.comparison_scope, [
+  'card', 'ticket',
+]);
 assert.match(t4.envelope.response.answer, /карт/i);
 assert.match(t4.envelope.response.answer, /билет/i);
+assert.doesNotMatch(t4.envelope.response.answer, /распознаван/i);
 assert.doesNotMatch(
   t4.envelope.response.answer,
   /парковочная система уже установлена или проектируется с нуля/i,
@@ -178,11 +208,16 @@ assert.ok(t4.envelope.response.state_mutations.every(
 ));
 
 const t5 = runTurn('Какие данные об объекте ты уже знаешь?');
+assert.equal(
+  t5.envelope.response.context_resolution.command_requirements.semantic_route,
+  'object_card_recall',
+);
 assert.equal(t5.envelope.response.executor_trace.execution_mode, 'deterministic');
 assert.deepEqual(t5.envelope.response.executor_trace.attempts, []);
 assert.equal(t5.envelope.response.executor_trace.final_executor, null);
 assert.equal(t5.envelope.response.executor_trace.model_request_count, 0);
 assert.deepEqual(t5.envelope.response.state_mutations, []);
+assert.equal(state.confirmedProjectFacts.length, 10);
 assert.match(t5.envelope.response.answer, /бизнес-центр/);
 assert.match(t5.envelope.response.answer, /800 автомобилей/);
 assert.match(t5.envelope.response.answer, /проектируется с нуля/);

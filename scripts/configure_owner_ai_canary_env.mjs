@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { isExecutedAsMain } from './esm-cli-entrypoint.mjs';
 
-const RUNTIME_SHA = 'c78ae7288d9140d9da3fba39f46d2eac493b4a17';
+const RUNTIME_SHA = '651738a5db1a748fa252d5df4f6df3e843ef1f92';
 const CONTRACT_SHA = '4d75773d60f3453279cbfcee1453f54b15b66567';
 const PUBLIC_ORIGIN = 'https://www.xn--80aukedde.xn--p1ai';
 const DEPRECATED_SITE_SHA_KEY = 'AI_CORE_OWNER_CANARY_SITE_SHA';
