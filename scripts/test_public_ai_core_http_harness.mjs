@@ -409,23 +409,22 @@ await withSite(false, async ({ port, readSiteLogs }) => {
 coreMode = 'success';
 await withSite(true, async ({ port, dbPath }) => {
   const before = { ...counts };
-  const rememberedFact = [
-    'Запомни: въезд стоит 200 рублей,',
-    'шлагбаум открывается только после подтверждения оплаты.',
+  const projectFactIntake = [
+    'У нас бизнес-центр: 2 въезда и 2 выезда, около 800 автомобилей в сутки.',
+    'Есть сотрудники, арендаторы и гости. Оператор есть, но хотим максимально',
+    'быстрый автоматический проезд и обязательно автоматический резервный',
+    'способ на случай, если основной идентификатор не сработает.',
   ].join(' ');
   const first = await chat(
     port,
     '33333333-3333-4333-8333-333333333333',
-    rememberedFact,
+    projectFactIntake,
   );
   assert.equal(first.response.status, 200);
   assert.equal(first.response.headers.get('x-ai-widget-route'), 'public_ai_core');
   assert.equal(first.response.headers.get('x-ai-core-actual-route'), 'ai_core');
-  assert.equal(
-    first.answer,
-    'Зафиксировал: стоимость въезда — 200 рублей; '
-      + 'шлагбаум открывается только после подтверждения оплаты.',
-  );
+  assert.match(first.answer, /Зафиксировал параметры объекта/);
+  assert.match(first.answer, /установлена|проектируется с нуля/);
   assert.equal(counts.core, before.core + 1);
   assert.equal(counts.ack, before.ack + 1);
   const duplicate = await fetch(`http://127.0.0.1:${port}/api/ai-widget/chat`, {
@@ -434,7 +433,7 @@ await withSite(true, async ({ port, dbPath }) => {
     body: JSON.stringify({
       sessionId: '33333333-3333-4333-8333-333333333333',
       turnId: first.turnId, sourcePage: '/',
-      messages: [{ role: 'user', content: rememberedFact }],
+      messages: [{ role: 'user', content: projectFactIntake }],
     }),
   });
   assert.equal(duplicate.status, 200);

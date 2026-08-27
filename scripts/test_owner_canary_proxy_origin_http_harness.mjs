@@ -149,7 +149,11 @@ function ok(value, message) {
 }
 
 try {
-  await waitForSite(port);
+  try {
+    await waitForSite(port);
+  } catch (error) {
+    throw new Error(`${error.message}\n${logs}`, { cause: error });
+  }
 
   const login = await request(port, {
     method: 'POST',
