@@ -10,7 +10,7 @@ import {
 } from './ai-core-execution-provenance-v1-2.ts';
 
 export const AI_CORE_RUNTIME_SHA =
-  'ecb7de690dd361de0ff03de9e0687cd16cf28ff9';
+  '32afc91b3358c115ae03fc3d20db96fef5e0fbfe';
 export const AI_CORE_CONTRACT_SHA = AI_CORE_CONTRACT_V1_2_SHA;
 export const AI_CORE_CONTRACT_VERSION = AI_CORE_CONTRACT_V1_2_VERSION;
 export const AI_CORE_RUNTIME_VERSION = '1.3.0';

@@ -13,8 +13,8 @@ import tempfile
 from pathlib import Path
 
 
-RUNTIME_SHA = "ecb7de690dd361de0ff03de9e0687cd16cf28ff9"
-RUNTIME_TREE_SHA = "8deb8589a256026539223eaded731358b89a41b6"
+RUNTIME_SHA = "32afc91b3358c115ae03fc3d20db96fef5e0fbfe"
+RUNTIME_TREE_SHA = "45c9e4bc18d400c73b7a1dfad2bda53259995b32"
 CONTRACT_SHA = "4d75773d60f3453279cbfcee1453f54b15b66567"
 CONTRACT_TREE_SHA = "fbe8672b1c2f8d2e7bd9fc4b6bb0d3e710f6ce94"
 CONTRACT_PATH = "generated/contracts/AI_CORE_SITE_CONTRACT_V1_2"
@@ -30,6 +30,7 @@ PATHS = (
     "tests/__init__.py",
     "tests/fixtures/site_contract_runtime_v1_golden.json",
     "tests/fixtures/live_owner_canary_t4_20260827_raw.json",
+    "tests/fixtures/live_historical_smoke_recommendation_20260827_raw.json",
     "tests/fixtures/real_qwen_probe_a9066e_raw_001.json",
     "tests/fixtures/real_qwen_reprobe_38a66115_raw_001.json",
     "tests/fixtures/real_qwen_probe_6a937b7d_raw_001.json",
@@ -40,6 +41,7 @@ PATHS = (
     "tests/test_runtime_v114_evaluator_finalization.py",
     "tests/test_historical_regression_systemic_repair.py",
     "tests/test_runtime_repair_orchestration.py",
+    "tests/test_recommendation_evaluator_repair.py",
 )
 
 
@@ -84,7 +86,7 @@ def main() -> int:
 
     output = args.output.expanduser().resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix="rospark-ai-core-runtime-ecb7de69-") as raw:
+    with tempfile.TemporaryDirectory(prefix="rospark-ai-core-runtime-32afc91b-") as raw:
         temp = Path(raw)
         root = temp / RUNTIME_SHA
         root.mkdir(mode=0o700)

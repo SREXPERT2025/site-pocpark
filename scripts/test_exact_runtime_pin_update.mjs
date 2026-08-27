@@ -8,7 +8,7 @@ import {
   validateOwnerCanaryCoreResponse,
 } from '../app/lib/owner-ai-canary-adapter.ts';
 
-const APPROVED_RUNTIME = 'ecb7de690dd361de0ff03de9e0687cd16cf28ff9';
+const APPROVED_RUNTIME = '32afc91b3358c115ae03fc3d20db96fef5e0fbfe';
 const OLD_RUNTIME = '78db9e3c3363720fe680056873b41b332f319b96';
 const CONTRACT = '4d75773d60f3453279cbfcee1453f54b15b66567';
 const CANONICALIZATION = 'CANONICAL_JSON_HASH_V1';

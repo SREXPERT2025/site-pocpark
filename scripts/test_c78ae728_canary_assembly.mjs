@@ -13,11 +13,11 @@ import {
   runOwnerAiCanaryMigrations,
 } from '../app/lib/owner-ai-canary-state.ts';
 
-const RUNTIME_SHA = 'ecb7de690dd361de0ff03de9e0687cd16cf28ff9';
+const RUNTIME_SHA = '32afc91b3358c115ae03fc3d20db96fef5e0fbfe';
 const CONTRACT_SHA = '4d75773d60f3453279cbfcee1453f54b15b66567';
 const GATEWAY_SHA = 'e0b4edd34d5fecaf8850e64aa03a33c2661b51f9';
-const SITE_BASE_SHA = 'bcd1f87bdde83aa9cc889036e58762dff8776276';
-const THREAD_ID = 'thread_ecb7de69_stateful_0001';
+const SITE_BASE_SHA = '0fcee4059625767541a8d07015d36547c6ec8507';
+const THREAD_ID = 'thread_32afc91b_stateful_0001';
 
 assert.equal(AI_CORE_RUNTIME_SHA, RUNTIME_SHA);
 assert.equal(AI_CORE_CONTRACT_SHA, CONTRACT_SHA);
@@ -27,7 +27,7 @@ db.pragma('foreign_keys = ON');
 runOwnerAiCanaryMigrations(db);
 let state = ensureOwnerCanaryThread(db, {
   conversationThreadId: THREAD_ID,
-  siteSessionId: 'session_ecb7de69_stateful_0001',
+  siteSessionId: 'session_32afc91b_stateful_0001',
   nowMs: Date.UTC(2026, 7, 14, 10, 0, 0),
 });
 const history = [];
@@ -37,7 +37,7 @@ let duplicateMutations = 0;
 
 function nextId(prefix) {
   sequence += 1;
-  return `${prefix}_ecb7de69_${String(sequence).padStart(8, '0')}`;
+  return `${prefix}_32afc91b_${String(sequence).padStart(8, '0')}`;
 }
 
 function runTurn(message) {

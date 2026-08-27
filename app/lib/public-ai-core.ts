@@ -1,7 +1,7 @@
 import { DEPLOYED_SITE_SHA } from './site-release-provenance.ts';
 
 export const PUBLIC_AI_CORE_RUNTIME_SHA =
-  'ecb7de690dd361de0ff03de9e0687cd16cf28ff9';
+  '32afc91b3358c115ae03fc3d20db96fef5e0fbfe';
 export const PUBLIC_AI_CORE_CONTRACT_SHA =
   '4d75773d60f3453279cbfcee1453f54b15b66567';
 export const PUBLIC_AI_CORE_GATEWAY_SHA =

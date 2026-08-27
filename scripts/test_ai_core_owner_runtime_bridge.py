@@ -95,7 +95,7 @@ def request_for(hash_value, suffix: str = "owner001"):
 
 
 def main() -> int:
-    artifact = ROOT / "release/ai-core-runtime-ecb7de69" / (
+    artifact = ROOT / "release/ai-core-runtime-32afc91b" / (
         f"ai-core-runtime-{RUNTIME_SHA}.tar.gz"
     )
     with tempfile.TemporaryDirectory(prefix="owner-core-test-") as raw:

@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 
 
-RUNTIME_SHA = "ecb7de690dd361de0ff03de9e0687cd16cf28ff9"
+RUNTIME_SHA = "32afc91b3358c115ae03fc3d20db96fef5e0fbfe"
 CONTRACT_SHA = "4d75773d60f3453279cbfcee1453f54b15b66567"
 CONTRACT_TREE_SHA = "fbe8672b1c2f8d2e7bd9fc4b6bb0d3e710f6ce94"
 CONTRACT_VERSION = "1.2"

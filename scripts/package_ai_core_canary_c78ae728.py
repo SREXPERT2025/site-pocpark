@@ -13,15 +13,15 @@ import tempfile
 from pathlib import Path
 
 
-BASE_SITE_SHA = "bcd1f87bdde83aa9cc889036e58762dff8776276"
-RUNTIME_SHA = "ecb7de690dd361de0ff03de9e0687cd16cf28ff9"
-ROLLBACK_RUNTIME_SHA = "5606a1fc4698666ba01e93d5ab25958f026833e8"
+BASE_SITE_SHA = "0fcee4059625767541a8d07015d36547c6ec8507"
+RUNTIME_SHA = "32afc91b3358c115ae03fc3d20db96fef5e0fbfe"
+ROLLBACK_RUNTIME_SHA = "ecb7de690dd361de0ff03de9e0687cd16cf28ff9"
 CONTRACT_SHA = "4d75773d60f3453279cbfcee1453f54b15b66567"
 CONTRACT_VERSION = "1.2"
 CANONICALIZATION_VERSION = "CANONICAL_JSON_HASH_V1"
 GATEWAY_SHA = "e0b4edd34d5fecaf8850e64aa03a33c2661b51f9"
-RUNTIME_RELEASE_DIR = "release/ai-core-runtime-ecb7de69"
-ROLLBACK_RELEASE_DIR = "release/ai-core-runtime-5606a1fc"
+RUNTIME_RELEASE_DIR = "release/ai-core-runtime-32afc91b"
+ROLLBACK_RELEASE_DIR = "release/ai-core-runtime-ecb7de69"
 HISTORICAL_PACK_SHA256 = (
     "5d9f90df6de6b0e57c1b28e2d934a5e73bac56ea54023e55bbc054d103c24f2b"
 )
@@ -163,12 +163,13 @@ def main() -> int:
         "offline_acceptance": {
             "stateful_t1_t6": "pass",
             "captured_live_t4_replay": "pass",
+            "captured_live_recommendation_replay": "pass",
             "raw_evaluator": "pass",
             "repair": "not_used",
             "final_evaluator": "pass",
             "historical_regression_pack": "10/10",
             "historical_regression_pack_sha256": HISTORICAL_PACK_SHA256,
-            "runtime_matrix": "185/185",
+            "runtime_matrix": "187/187",
             "forensic_primary_secondary": "pass",
             "trace_compatibility": "pass",
             "canonical_hash": "pass",
