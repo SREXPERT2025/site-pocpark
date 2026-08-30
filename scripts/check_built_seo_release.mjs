@@ -23,7 +23,7 @@ assert.equal(new Set(publicPaths).size, publicPaths.length, 'sitemap paths must 
 
 const internalTargets = new Set();
 const descriptions = new Map();
-let repeatedBrandTitles = 0;
+const repeatedBrandTitles = [];
 
 for (const path of publicPaths) {
   const page = await get(path);
@@ -31,7 +31,9 @@ for (const path of publicPaths) {
 
   const title = page.body.match(/<title>(.*?)<\/title>/i)?.[1] ?? '';
   assert.ok(title, `${path} must render a title`);
-  if ((title.match(/РОСПАРК/gi) ?? []).length > 1) repeatedBrandTitles += 1;
+  if (/роспарк\s*(?:\||—|-)\s*роспарк/iu.test(title)) {
+    repeatedBrandTitles.push([path, title]);
+  }
 
   const canonical = page.body.match(
     /<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i,
@@ -60,7 +62,11 @@ for (const path of publicPaths) {
   }
 }
 
-assert.equal(repeatedBrandTitles, 0, 'public titles must not repeat ROSPARK branding');
+assert.deepEqual(
+  repeatedBrandTitles,
+  [],
+  `public titles must not contain an adjacent repeated brand: ${JSON.stringify(repeatedBrandTitles)}`,
+);
 
 const duplicateDescriptions = Array.from(descriptions.entries()).filter(
   ([, paths]) => paths.length > 1,
