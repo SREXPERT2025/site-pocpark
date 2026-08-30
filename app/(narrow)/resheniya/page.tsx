@@ -208,9 +208,9 @@ function SolutionGrid({
             <Link
               key={item.href}
               href={item.href}
-              className="group flex min-h-[190px] flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+              className="group flex min-h-[190px] min-w-0 flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
             >
-              <h3 className="text-xl font-bold text-slate-950 group-hover:text-blue-700">
+              <h3 className="break-words text-lg font-bold leading-snug text-slate-950 group-hover:text-blue-700">
                 {item.title}
               </h3>
               <p className="mt-4 flex-1 text-base leading-7 text-slate-600">

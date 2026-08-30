@@ -5,6 +5,9 @@ const read = (path) => readFileSync(path, 'utf8');
 
 const solutions = read('app/(narrow)/resheniya/page.tsx');
 const equipment = read('app/(narrow)/oborudovanie/page.tsx');
+const landingEntryBanner = read(
+  'app/components/landing/LandingEntryBanner.tsx',
+);
 const barriers = read('content/oborudovanie/shlagbaumy.md');
 const recognitionArticle = read(
   'content/stati/raspoznavanie-nomerov-dlya-parkovki.md',
@@ -24,6 +27,15 @@ for (const expected of [
   assert.ok(solutions.includes(expected), `solutions hub must include ${expected}`);
 }
 
+assert.ok(
+  solutions.includes('min-h-[190px] min-w-0 flex-col'),
+  'solution cards must be allowed to shrink inside the responsive grid',
+);
+assert.ok(
+  solutions.includes('break-words text-lg font-bold leading-snug'),
+  'solution card headings must wrap at the compact card-heading size',
+);
+
 for (const expected of [
   'Оборудование или готовый сценарий парковки',
   'href="/oborudovanie/shlagbaumy"',
@@ -32,6 +44,17 @@ for (const expected of [
 ]) {
   assert.ok(equipment.includes(expected), `equipment hub must include ${expected}`);
 }
+
+assert.ok(
+  landingEntryBanner.includes('min-w-0 max-w-3xl'),
+  'landing entry copy must be allowed to shrink on narrow screens',
+);
+assert.ok(
+  landingEntryBanner.includes(
+    'max-w-full break-words text-[clamp(1.75rem,7vw,2.25rem)]',
+  ),
+  'landing entry heading must use a bounded mobile size and safe wrapping',
+);
 
 assert.match(
   barriers,
