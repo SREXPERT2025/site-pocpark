@@ -25,7 +25,7 @@ for (const expected of [
 }
 
 for (const expected of [
-  'Выберите отдельное оборудование или связанный сценарий парковки',
+  'Оборудование или готовый сценарий парковки',
   'href="/oborudovanie/shlagbaumy"',
   'href="/stati/iz-chego-sostoit-parkovochnaya-sistema"',
   'href="/parkovka-pod-klyuch"',

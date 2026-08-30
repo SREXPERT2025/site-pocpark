@@ -88,7 +88,7 @@ export default async function Page() {
             Следующий шаг
           </p>
           <h2 className="mt-2 text-2xl font-bold text-slate-950 md:text-3xl">
-            Выберите отдельное оборудование или связанный сценарий парковки
+            Оборудование или готовый сценарий парковки
           </h2>
           <p className="mt-4 leading-7 text-slate-600">
             Для замены одного узла можно перейти к нужной категории. Если требуется
