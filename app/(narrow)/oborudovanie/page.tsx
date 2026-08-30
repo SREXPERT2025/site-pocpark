@@ -81,6 +81,42 @@ export default async function Page() {
         description="Расскажите, как должен работать объект. Мы поможем подобрать только те элементы системы, которые нужны для вашего сценария."
       />
       <EquipmentCatalogClient items={items} />
+
+      <section className="mt-14 rounded-2xl border border-slate-200 bg-slate-50 p-6 md:p-8">
+        <div className="max-w-3xl">
+          <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
+            Следующий шаг
+          </p>
+          <h2 className="mt-2 text-2xl font-bold text-slate-950 md:text-3xl">
+            Выберите отдельное оборудование или связанный сценарий парковки
+          </h2>
+          <p className="mt-4 leading-7 text-slate-600">
+            Для замены одного узла можно перейти к нужной категории. Если требуется
+            связать въезд, идентификацию, оплату и выезд, сначала зафиксируйте сценарий
+            объекта — так состав оборудования не будет избыточным или неполным.
+          </p>
+        </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <Link
+            href="/oborudovanie/shlagbaumy"
+            className="rounded-xl border border-slate-200 bg-white p-5 font-semibold text-slate-900 transition hover:border-blue-300 hover:text-blue-700"
+          >
+            Подобрать шлагбаум для парковки
+          </Link>
+          <Link
+            href="/stati/iz-chego-sostoit-parkovochnaya-sistema"
+            className="rounded-xl border border-slate-200 bg-white p-5 font-semibold text-slate-900 transition hover:border-blue-300 hover:text-blue-700"
+          >
+            Разобраться в составе системы
+          </Link>
+          <Link
+            href="/parkovka-pod-klyuch"
+            className="rounded-xl border border-blue-200 bg-blue-50 p-5 font-semibold text-blue-800 transition hover:border-blue-400 hover:bg-blue-100"
+          >
+            Собрать парковку под задачу
+          </Link>
+        </div>
+      </section>
     </section>
   );
 }

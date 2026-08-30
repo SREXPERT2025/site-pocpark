@@ -11,7 +11,7 @@ import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
 
 export const metadata: Metadata = {
-  "title": "Автоматизация парковки для застройщиков и жилых комплексов | РОСПАРК",
+  "title": "Автоматизация парковки для застройщиков и жилых комплексов",
   "description": "Разделение потоков резидентов, гостей и подрядчиков, контроль доступа и событий, минимум ручных конфликтов. Внедрение поэтапно и без перегруза интерфейса.",
   "keywords": [
     "автоматизация парковки",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 };
 
 export default function ZastroyschikiPage() {
-  const heroTitle = "Автоматизация парковки для застройщиков и жилых комплексов | РОСПАРК";
+  const heroTitle = "Автоматизация парковки для застройщиков и жилых комплексов";
   const heroDescription = "Разделение потоков резидентов, гостей и подрядчиков, контроль доступа и событий, минимум ручных конфликтов. Внедрение поэтапно и без перегруза интерфейса.";
 
   const extended = getExtendedContentBySlug('resheniya', 'zastroyschiki');

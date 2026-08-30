@@ -16,7 +16,7 @@ import BreadcrumbJsonLd from '@/app/components/content/BreadcrumbJsonLd';
 import CompactInfographic from '@/app/components/content/CompactInfographic';
 import { canonicalUrl } from '@/app/config/site-url';
 
-const title = 'О компании РОСПАРК';
+const title = 'О компании';
 const description =
   'РОСПАРК — парковочные системы для коммерческих и жилых объектов. Юридическая информация, офис продаж, контакты и направления работы.';
 

@@ -13,7 +13,7 @@ import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
 
 export const metadata: Metadata = {
-  "title": "Автоматизация парковки для бизнес-центров | РОСПАРК",
+  "title": "Автоматизация парковки для бизнес-центров",
   "description": "Доступ для арендаторов и гостей, правила по организациям, журналы событий и контроль исключений. РОСПАРК помогает держать порядок без ручного хаоса.",
   "keywords": [
     "автоматизация парковки",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
 };
 
 export default function BiznesCentresPage() {
-  const heroTitle = "Автоматизация парковки для бизнес-центров | РОСПАРК";
+  const heroTitle = "Автоматизация парковки для бизнес-центров";
   const heroDescription = "Доступ для арендаторов и гостей, правила по организациям, журналы событий и контроль исключений. РОСПАРК помогает держать порядок без ручного хаоса.";
 
   const extended = getExtendedContentBySlug('resheniya', 'biznes-centry');

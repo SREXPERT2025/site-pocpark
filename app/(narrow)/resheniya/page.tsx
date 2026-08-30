@@ -97,6 +97,39 @@ const ecosystemLinks: SolutionCard[] = [
   },
 ];
 
+const systemComponents: SolutionCard[] = [
+  {
+    title: 'Въезд и выезд',
+    description: 'Шлагбаумы, стойки и правила открытия проезда для разных групп пользователей.',
+    href: '/oborudovanie',
+  },
+  {
+    title: 'Идентификация автомобиля',
+    description: 'Госномер, карта, билет или другой подтверждённый идентификатор в сценарии объекта.',
+    href: '/vozmozhnosti/raspoznavanie-nomerov',
+  },
+  {
+    title: 'Доступ и гостевые правила',
+    description: 'Постоянные, арендные и гостевые клиенты с отдельными правами и ограничениями.',
+    href: '/vozmozhnosti',
+  },
+  {
+    title: 'Оплата парковки',
+    description: 'Тарифы и способы оплаты связываются с конкретным визитом и правилом выезда.',
+    href: '/vozmozhnosti/onlain-oplata',
+  },
+  {
+    title: 'Контроль и отчётность',
+    description: 'Журнал событий, роли сотрудников и данные для разбора штатных и спорных ситуаций.',
+    href: '/stati/otchetnost-vladelca-parkovki',
+  },
+  {
+    title: 'Проектирование и запуск',
+    description: 'Состав и бюджет определяются после фиксации потоков, инфраструктуры и интеграций.',
+    href: '/resheniya/stoimost-avtomatizacii-parkovki',
+  },
+];
+
 export const metadata: Metadata = {
   title: 'Автоматизированные парковочные системы для разных объектов',
   description:
@@ -284,6 +317,14 @@ export default function SolutionsPage() {
           />
         </div>
       </section>
+
+      <SolutionGrid
+        id="system-components"
+        eyebrow="Состав системы"
+        title="Что входит в автоматизированную парковочную систему"
+        description="Это не один шлагбаум или терминал, а связанный сценарий: система распознаёт событие, проверяет право доступа или оплату, управляет проездом и сохраняет результат для контроля."
+        items={systemComponents}
+      />
 
       <LandingChoiceSection />
 

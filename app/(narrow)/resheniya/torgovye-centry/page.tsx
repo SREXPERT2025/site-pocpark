@@ -12,7 +12,7 @@ import { canonicalUrl } from '@/app/config/site-url';
 import { getExtendedContentBySlug } from '@/lib/content-parser';
 
 export const metadata: Metadata = {
-  "title": "Автоматизация парковки для торговых центров | РОСПАРК",
+  "title": "Автоматизация парковки для торговых центров",
   "description": "Скорость проезда в часы пик, прозрачная выручка, удобство для покупателей. РОСПАРК объединяет въезд/выезд, тарифы и оплату в управляемую систему.",
   "keywords": [
     "автоматизация парковки",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 };
 
 export default function TorgovyeCentresPage() {
-  const heroTitle = "Автоматизация парковки для торговых центров | РОСПАРК";
+  const heroTitle = "Автоматизация парковки для торговых центров";
   const heroDescription = "Управление въездом, оплатой и доступом на парковке торгового центра. РОСПАРК объединяет въезд, выезд, тарифы, оплату и отчётность в единую парковочную систему.";
 
   const extended = getExtendedContentBySlug('resheniya', 'torgovye-centry');

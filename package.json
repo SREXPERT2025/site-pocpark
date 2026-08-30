@@ -63,6 +63,8 @@
     "test:geo-content": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_geo_content_package.mjs",
     "test:seo-content-priority": "node scripts/test_seo_content_priority.mjs",
     "test:technical-seo-delivery": "node scripts/test_technical_seo_delivery.mjs",
+    "test:seo-recovery-v1": "node scripts/test_seo_recovery_v1.mjs",
+    "test:built-seo-release": "node scripts/check_built_seo_release.mjs",
     "test:home-hero-media": "node scripts/test_home_hero_media.mjs",
     "test:mail-transport-security": "node scripts/test_mail_transport_security.mjs",
     "lead-admin:hash-password": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/hash_lead_admin_password.mjs",

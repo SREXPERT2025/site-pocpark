@@ -8,7 +8,7 @@ import SolutionVisual from '@/app/components/content/SolutionVisual';
 import LeadForm from '@/app/components/forms/LeadForm';
 import { canonicalUrl } from '@/app/config/site-url';
 
-const heroTitle = 'Автоматизация парковки и проездов для складских комплексов | РОСПАРК';
+const heroTitle = 'Автоматизация парковки и проездов для складских комплексов';
 const heroDescription =
   'РОСПАРК помогает управлять въездом, выездом, КПП, пропусками и доступом транспорта на складских и логистических объектах.';
 
