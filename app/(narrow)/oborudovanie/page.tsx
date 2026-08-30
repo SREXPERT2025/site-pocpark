@@ -87,7 +87,7 @@ export default async function Page() {
           <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
             Следующий шаг
           </p>
-          <h2 className="mt-2 text-2xl font-bold text-slate-950 md:text-3xl">
+          <h2 className="mt-2 text-[28px] font-bold leading-tight text-slate-950 md:text-3xl">
             Оборудование или готовый сценарий парковки
           </h2>
           <p className="mt-4 leading-7 text-slate-600">
