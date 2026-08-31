@@ -75,9 +75,9 @@ export function Puzzle2AiPromo() {
             <Sparkles size={17} aria-hidden="true" />
             НЕ УВЕРЕНЫ, ЧТО ВЫБРАТЬ?
           </span>
-          <h2 id="puzzle2-ai-title">Спросите AI-консультанта РОСПАРК</h2>
+          <h2 id="puzzle2-ai-title">Спросите онлайн-консультанта РОСПАРК</h2>
           <p>
-            Опишите объект или проблему своими словами. AI-консультант объяснит
+            Опишите объект или проблему своими словами. Консультант объяснит
             варианты въезда, доступа и оплаты и поможет понять, какие функции
             могут понадобиться вашей парковке.
           </p>
@@ -86,7 +86,7 @@ export function Puzzle2AiPromo() {
             className="puzzle2-ai-button"
             onClick={() => openConsultant()}
           >
-            Задать вопрос AI-консультанту
+            Задать вопрос по парковке
             <ArrowUpRight size={20} aria-hidden="true" />
           </button>
           <div className="puzzle2-ai-questions" aria-label="Быстрые вопросы">
@@ -101,7 +101,7 @@ export function Puzzle2AiPromo() {
 
         <div className="puzzle2-ai-preview" aria-hidden="true">
           <div className="puzzle2-ai-preview-head">
-            <span><MessageCircle size={17} /> AI-консультант РОСПАРК</span>
+            <span><MessageCircle size={17} /> Онлайн-консультант РОСПАРК</span>
             <i>онлайн</i>
           </div>
           <div className="puzzle2-ai-bubble is-question">

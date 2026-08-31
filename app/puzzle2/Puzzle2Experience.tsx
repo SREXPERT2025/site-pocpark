@@ -75,7 +75,9 @@ export function Puzzle2Experience({
     setError('');
     dispatchLeadFormEvent('form_submit', eventParams);
     if (runtimeMode === 'preview') {
-      setCompleted(true);
+      setError(
+        'Отправка формы сейчас недоступна. Позвоните нам по +7 (499) 321-20-40.',
+      );
       return;
     }
 
@@ -136,9 +138,7 @@ export function Puzzle2Experience({
           <span aria-hidden="true">✓</span>
           <h3>Заявка подготовлена</h3>
           <p>
-            {runtimeMode === 'preview'
-              ? 'На тестовом стенде данные не отправлялись и не сохранялись.'
-              : 'Заявка отправлена. Менеджер свяжется с вами, чтобы уточнить задачу.'}
+            Заявка отправлена. Менеджер свяжется с вами, чтобы уточнить задачу.
           </p>
           <button type="button" onClick={() => setCompleted(false)}>
             Вернуться к форме
@@ -193,11 +193,6 @@ export function Puzzle2Experience({
             {isSubmitting ? 'Отправляем…' : 'Отправить заявку'}{' '}
             <span aria-hidden="true">→</span>
           </button>
-          {runtimeMode === 'preview' ? (
-            <small className="form-wide">
-              Тестовый режим: данные не отправляются и не сохраняются.
-            </small>
-          ) : null}
         </form>
       )}
     </section>

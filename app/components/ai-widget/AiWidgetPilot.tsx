@@ -3,17 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  AlertCircle,
   CheckCircle2,
   ClipboardList,
   MessageCircle,
   RotateCcw,
   Send,
-  Sparkles,
   Square,
   X,
 } from 'lucide-react';
 import {
   FormEvent,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -27,6 +28,12 @@ import {
   aiWidgetPageContextFromAttribution,
 } from '@/app/lib/ai-widget-pilot';
 import { aiWidgetMessageParts } from '@/app/lib/ai-widget-links';
+import {
+  AI_WIDGET_ATTENTION_DELAY_MS,
+  AI_WIDGET_ATTENTION_PULSE_MS,
+  AI_WIDGET_ATTENTION_SESSION_KEY,
+  aiWidgetWaitingStageFor,
+} from './ai-widget-ux';
 
 type UiMessage = {
   id: string;
@@ -59,20 +66,19 @@ const emptyLeadDraft: LeadDraft = {
   taskDescription: '',
 };
 
-function greetingFor(runtimeMode: 'preview' | 'production'): UiMessage {
+function greetingFor(): UiMessage {
   return {
     id: 'greeting',
     role: 'assistant',
-    content: runtimeMode === 'production'
-      ? 'Здравствуйте! Я AI-консультант РОСПАРК. Помогу разобраться в возможностях парковочной системы и подобрать подходящий сценарий для вашего объекта.'
-      : 'Здравствуйте! Я тестовый AI-консультант РОСПАРК. Помогу разобраться в возможностях парковочной системы. Не вводите реальные персональные данные.',
+    content: 'Здравствуйте! Помогу разобраться с автоматизацией парковки: доступом, шлагбаумами, оплатой, оборудованием или модернизацией существующей системы. Опишите вашу задачу своими словами.',
   };
 }
 
 const quickQuestions = [
-  'Для каких объектов подходит система?',
-  'Как работает гостевой доступ?',
-  'От чего зависит стоимость проекта?',
+  'Подобрать систему для моего объекта',
+  'Нужен шлагбаум — с чего начать?',
+  'Как организовать доступ сотрудников и гостей?',
+  'Хочу модернизировать существующую парковку',
 ] as const;
 
 type AiWidgetOpenDetail = {
@@ -178,30 +184,28 @@ function MessageText({ content }: { content: string }) {
 export default function AiWidgetPilot() {
   const pathname = usePathname();
   const [isEnabled, setIsEnabled] = useState(false);
-  const [runtimeMode, setRuntimeMode] = useState<
-    'preview' | 'production'
-  >('preview');
   const [handoffMode, setHandoffMode] = useState<
     'off' | 'test' | 'live'
   >('off');
   const [loggingEnabled, setLoggingEnabled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [showInvite, setShowInvite] = useState(true);
+  const [showInvite, setShowInvite] = useState(false);
+  const [launcherAttentionActive, setLauncherAttentionActive] = useState(false);
   const [isFooterVisible, setIsFooterVisible] = useState(false);
   const [messages, setMessages] = useState<UiMessage[]>([
-    greetingFor('preview'),
+    greetingFor(),
   ]);
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [waitingElapsedSeconds, setWaitingElapsedSeconds] = useState(0);
   const [error, setError] = useState('');
-  const [ownerCanaryMarker, setOwnerCanaryMarker] = useState('');
+  const [failedMessage, setFailedMessage] = useState<UiMessage | null>(null);
   const [leadStep, setLeadStep] = useState<LeadStep>('idle');
   const [leadDraft, setLeadDraft] = useState<LeadDraft>(emptyLeadDraft);
   const [leadConsent, setLeadConsent] = useState(false);
   const [showLeadOffer, setShowLeadOffer] = useState(false);
   const [leadResult, setLeadResult] = useState<{
     publicId: string;
-    maxPreview?: string;
   } | null>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -215,8 +219,25 @@ export default function AiWidgetPilot() {
   const promoEngagedChatTrackedRef = useRef(false);
   const userMessageCountRef = useRef(0);
   const pendingPromptRef = useRef('');
+  const launcherInteractedRef = useRef(false);
+  const attentionStopRef = useRef<number | null>(null);
 
   const isHidden = pathname.startsWith('/admin') || pathname === '/v4-1';
+
+  const rememberLauncherInteraction = useCallback(() => {
+    launcherInteractedRef.current = true;
+    setShowInvite(false);
+    setLauncherAttentionActive(false);
+    if (attentionStopRef.current !== null) {
+      window.clearTimeout(attentionStopRef.current);
+      attentionStopRef.current = null;
+    }
+    try {
+      window.sessionStorage.setItem(AI_WIDGET_ATTENTION_SESSION_KEY, '1');
+    } catch {
+      // Browser storage may be unavailable; the current page still stays quiet.
+    }
+  }, []);
 
   useEffect(() => {
     if (isHidden) return;
@@ -242,10 +263,6 @@ export default function AiWidgetPilot() {
       ))
       .then((result) => {
         setIsEnabled(result.enabled === true);
-        const nextRuntimeMode = result.runtimeMode === 'production'
-          ? 'production'
-          : 'preview';
-        setRuntimeMode(nextRuntimeMode);
         setHandoffMode(
           result.handoffMode === 'test' || result.handoffMode === 'live'
             ? result.handoffMode
@@ -254,7 +271,7 @@ export default function AiWidgetPilot() {
         setLoggingEnabled(result.loggingEnabled === true);
         setMessages((current) => (
           current.length === 1 && current[0]?.id === 'greeting'
-            ? [greetingFor(nextRuntimeMode)]
+            ? [greetingFor()]
             : current
         ));
       })
@@ -282,14 +299,51 @@ export default function AiWidgetPilot() {
   }, [isHidden]);
 
   useEffect(() => {
+    if (isHidden || !isEnabled || isOpen) return;
+
+    let alreadySeen = false;
+    try {
+      alreadySeen = window.sessionStorage.getItem(
+        AI_WIDGET_ATTENTION_SESSION_KEY,
+      ) === '1';
+    } catch {
+      // A one-page cue still works when session storage is unavailable.
+    }
+    if (alreadySeen || launcherInteractedRef.current) return;
+
+    const attentionTimer = window.setTimeout(() => {
+      if (launcherInteractedRef.current) return;
+      try {
+        window.sessionStorage.setItem(AI_WIDGET_ATTENTION_SESSION_KEY, '1');
+      } catch {
+        // Do not block the customer-facing launcher on storage restrictions.
+      }
+      setShowInvite(true);
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      setLauncherAttentionActive(true);
+      attentionStopRef.current = window.setTimeout(() => {
+        setLauncherAttentionActive(false);
+        attentionStopRef.current = null;
+      }, AI_WIDGET_ATTENTION_PULSE_MS);
+    }, AI_WIDGET_ATTENTION_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(attentionTimer);
+      if (attentionStopRef.current !== null) {
+        window.clearTimeout(attentionStopRef.current);
+        attentionStopRef.current = null;
+      }
+    };
+  }, [isEnabled, isHidden, isOpen]);
+
+  useEffect(() => {
     if (!isOpen) return;
     if (pendingPromptRef.current) {
       setDraft(pendingPromptRef.current);
       pendingPromptRef.current = '';
-      window.requestAnimationFrame(() => inputRef.current?.focus());
-    } else {
-      closeRef.current?.focus();
     }
+    window.requestAnimationFrame(() => inputRef.current?.focus());
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsOpen(false);
@@ -316,7 +370,7 @@ export default function AiWidgetPilot() {
       if (attribution) {
         dispatchAiPromoEvent('ai_chat_open', attribution);
       }
-      setShowInvite(false);
+      rememberLauncherInteraction();
       setIsOpen(true);
     };
     window.addEventListener('rospark:open-ai-widget', openFromPage);
@@ -324,11 +378,24 @@ export default function AiWidgetPilot() {
       'rospark:open-ai-widget',
       openFromPage,
     );
-  }, [isEnabled, isHidden, pathname]);
+  }, [isEnabled, isHidden, pathname, rememberLauncherInteraction]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages, isSending]);
+
+  useEffect(() => {
+    if (!isSending) {
+      setWaitingElapsedSeconds(0);
+      return;
+    }
+    const startedAt = Date.now();
+    setWaitingElapsedSeconds(0);
+    const interval = window.setInterval(() => {
+      setWaitingElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => window.clearInterval(interval);
+  }, [isSending]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
@@ -366,7 +433,7 @@ export default function AiWidgetPilot() {
     const attribution = launcherAttribution(pathname, sessionId());
     promoAttributionRef.current = attribution;
     dispatchAiPromoEvent('ai_chat_open', attribution);
-    setShowInvite(false);
+    rememberLauncherInteraction();
     setIsOpen(true);
   };
 
@@ -383,9 +450,10 @@ export default function AiWidgetPilot() {
       nextSessionId,
     );
     sessionIdRef.current = nextSessionId;
-    setMessages([greetingFor(runtimeMode)]);
+    setMessages([greetingFor()]);
     setDraft('');
     setError('');
+    setFailedMessage(null);
     setIsSending(false);
     promoAttributionRef.current = null;
     promoFirstMessageTrackedRef.current = false;
@@ -435,9 +503,7 @@ export default function AiWidgetPilot() {
     setLeadStep('name');
     appendLeadExchange(
       null,
-      runtimeMode === 'production'
-        ? 'Хорошо, оформим обращение. Как к вам обращаться?'
-        : 'Начинаем тестовую заявку. Используйте только вымышленные данные. Как к вам обращаться?',
+      'Хорошо, оформим обращение. Как к вам обращаться?',
     );
   };
 
@@ -446,9 +512,7 @@ export default function AiWidgetPilot() {
     if (!content) return;
     if (leadStep === 'name') {
       if (content.length < 2) {
-        setError(runtimeMode === 'production'
-          ? 'Укажите имя не короче двух символов.'
-          : 'Укажите тестовое имя не короче двух символов.');
+        setError('Укажите имя не короче двух символов.');
         return;
       }
       setLeadDraft((current) => ({ ...current, name: content }));
@@ -457,17 +521,13 @@ export default function AiWidgetPilot() {
       setError('');
       appendLeadExchange(
         content,
-        runtimeMode === 'production'
-          ? 'Укажите номер телефона для связи.'
-          : 'Укажите тестовый телефон. Реальные данные на стенде не вводите.',
+        'Укажите номер телефона для связи.',
       );
       return;
     }
     if (leadStep === 'contact') {
       if (content.length < 3) {
-        setError(runtimeMode === 'production'
-          ? 'Укажите номер телефона.'
-          : 'Укажите тестовый контакт.');
+        setError('Укажите номер телефона.');
         return;
       }
       setLeadDraft((current) => ({ ...current, contact: content }));
@@ -482,9 +542,7 @@ export default function AiWidgetPilot() {
     }
     if (leadStep === 'object') {
       if (content.length < 3) {
-        setError(runtimeMode === 'production'
-          ? 'Кратко опишите объект.'
-          : 'Кратко опишите тестовый объект.');
+        setError('Кратко опишите объект.');
         return;
       }
       setLeadDraft((current) => ({
@@ -514,9 +572,7 @@ export default function AiWidgetPilot() {
       setError('');
       appendLeadExchange(
         content,
-        runtimeMode === 'production'
-          ? 'Заявка подготовлена. Проверьте данные и подтвердите согласие на их обработку.'
-          : 'Тестовая карточка подготовлена. Проверьте данные и подтвердите, что они вымышленные.',
+        'Заявка подготовлена. Проверьте данные и подтвердите согласие на их обработку.',
       );
     }
   };
@@ -555,7 +611,6 @@ export default function AiWidgetPilot() {
       }
       setLeadResult({
         publicId: result.publicId,
-        maxPreview: result.maxPreview || undefined,
       });
       setLeadStep('submitted');
       if (promoAttributionRef.current) {
@@ -569,17 +624,11 @@ export default function AiWidgetPilot() {
       }
       appendLeadExchange(
         null,
-        runtimeMode === 'production'
-          ? `Заявка ${result.publicId} принята. Специалист РОСПАРК свяжется с вами по указанному номеру.`
-          : `Тестовая заявка ${result.publicId} сохранена в журнале. На Mac Studio она не отправлялась в MAX и не попала в рабочий реестр.`,
+        `Обращение ${result.publicId} принято.`,
       );
-    } catch (caught) {
+    } catch {
       setLeadStep('review');
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : 'Не удалось сохранить заявку.',
-      );
+      setError('Не удалось отправить заявку. Проверьте данные и попробуйте ещё раз.');
     }
   };
 
@@ -644,6 +693,7 @@ export default function AiWidgetPilot() {
     ]);
     setDraft('');
     setError('');
+    setFailedMessage(null);
     setIsSending(true);
     const controller = new AbortController();
     abortRef.current = controller;
@@ -667,9 +717,6 @@ export default function AiWidgetPilot() {
         }),
         signal: controller.signal,
       });
-      setOwnerCanaryMarker(
-        response.headers.get('x-ai-core-owner-marker') || '',
-      );
       if (!response.ok || !response.body) {
         const body = await response.json().catch(() => null);
         throw new Error(body?.message || 'Не удалось получить ответ.');
@@ -691,6 +738,7 @@ export default function AiWidgetPilot() {
         )));
       }
       if (!answer.trim()) throw new Error('Получен пустой ответ.');
+      setFailedMessage(null);
       if (
         (leadIntent === 'test' || leadIntent === 'live')
         && handoffMode !== 'off'
@@ -698,18 +746,15 @@ export default function AiWidgetPilot() {
       ) {
         setShowLeadOffer(true);
       }
-    } catch (caught) {
+    } catch {
       if (controller.signal.aborted) {
         setMessages((current) => current.filter((message) => (
           message.id !== assistantId || message.content.trim()
         )));
       } else {
         setMessages((current) => current.filter((message) => message.id !== assistantId));
-        setError(
-          caught instanceof Error
-            ? caught.message
-            : 'AI-консультант временно недоступен.',
-        );
+        setFailedMessage(userMessage);
+        setError('Ответ не загрузился. Верните вопрос в поле и попробуйте отправить его ещё раз.');
       }
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
@@ -735,45 +780,54 @@ export default function AiWidgetPilot() {
     void sendMessage(draft);
   };
 
+  const restoreFailedQuestion = () => {
+    if (!failedMessage) return;
+    setMessages((current) => current.filter((message) => (
+      message.id !== failedMessage.id
+    )));
+    setDraft(failedMessage.content);
+    setFailedMessage(null);
+    setError('');
+    window.requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
   const inputPlaceholder = leadStep === 'name'
-    ? runtimeMode === 'production'
-      ? 'Введите имя…'
-      : 'Введите тестовое имя…'
+    ? 'Введите имя…'
     : leadStep === 'contact'
-      ? runtimeMode === 'production'
-        ? 'Введите телефон…'
-        : 'Введите тестовый контакт…'
+      ? 'Введите телефон…'
       : leadStep === 'object'
         ? 'Опишите объект…'
         : leadStep === 'task'
           ? 'Опишите задачу…'
-          : 'Напишите вопрос…';
+          : 'Например: торговый центр, один въезд, один выезд, 350 машин…';
   const inputDisabled = (
     isSending
     || leadStep === 'review'
     || leadStep === 'submitting'
     || leadStep === 'submitted'
   );
+  const waitingStage = aiWidgetWaitingStageFor(waitingElapsedSeconds);
 
   return (
     <>
       {!isOpen && (
-        <div className="fixed bottom-5 right-4 z-40 flex max-w-[calc(100vw-2rem)] items-end gap-3 sm:bottom-6 sm:right-6">
+        <div
+          className="fixed right-4 z-40 flex max-w-[calc(100vw-2rem)] flex-col items-end gap-2 sm:right-6"
+          style={{ bottom: 'max(1rem, env(safe-area-inset-bottom))' }}
+        >
           {showInvite && !isFooterVisible && (
-            <div className="relative max-w-64 rounded-2xl border border-blue-100 bg-white p-4 pr-9 text-sm leading-5 text-slate-700 shadow-xl">
+            <div className="relative w-[min(17rem,calc(100vw-2rem))] rounded-2xl border border-blue-100 bg-white p-4 pr-12 text-sm leading-5 text-slate-700 shadow-xl">
               <button
                 type="button"
-                onClick={() => setShowInvite(false)}
-                className="absolute right-2 top-2 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                onClick={rememberLauncherInteraction}
+                className="absolute right-1 top-1 inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                 aria-label="Скрыть приглашение"
               >
-                <X size={15} aria-hidden="true" />
+                <X size={18} aria-hidden="true" />
               </button>
-              <p className="font-semibold text-slate-950">Есть вопрос о парковке?</p>
+              <p className="font-bold text-slate-950">Поможем разобраться с парковкой</p>
               <p className="mt-1">
-                {runtimeMode === 'production'
-                  ? 'Спросите AI-консультанта РОСПАРК.'
-                  : 'Спросите тестового AI-консультанта.'}
+                Опишите задачу — консультант подскажет подходящий вариант.
               </p>
             </div>
           )}
@@ -781,12 +835,27 @@ export default function AiWidgetPilot() {
             ref={launcherRef}
             type="button"
             onClick={openWidget}
-            className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-blue-700 text-white shadow-xl transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
-            aria-label="Открыть AI-консультанта"
+            className={`group inline-flex min-h-16 max-w-[calc(100vw-2rem)] transform-gpu items-center gap-3 rounded-2xl bg-blue-700 px-3 py-2 text-left text-white shadow-xl transition duration-500 hover:-translate-y-0.5 hover:bg-blue-800 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 motion-reduce:transform-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${launcherAttentionActive ? 'scale-[1.025] shadow-2xl' : 'scale-100'}`}
+            data-attention-cue={launcherAttentionActive ? 'active' : 'idle'}
+            aria-label="Открыть онлайн-консультанта РОСПАРК"
             aria-expanded="false"
             aria-controls="rospark-ai-widget-panel"
           >
-            <MessageCircle size={25} aria-hidden="true" />
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15">
+              <MessageCircle size={24} aria-hidden="true" />
+            </span>
+            <span className="min-w-0 pr-1">
+              <span className="block text-sm font-bold leading-5">
+                Задать вопрос по парковке
+              </span>
+              <span className="mt-0.5 flex items-center gap-1.5 text-xs leading-4 text-blue-100">
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full bg-emerald-300 shadow-[0_0_0_3px_rgba(52,211,153,0.16)]"
+                  aria-hidden="true"
+                />
+                <span>Онлайн-консультант РОСПАРК</span>
+              </span>
+            </span>
           </button>
         </div>
       )}
@@ -797,34 +866,31 @@ export default function AiWidgetPilot() {
           role="dialog"
           aria-modal="false"
           aria-labelledby="rospark-ai-widget-title"
-          className="fixed inset-x-3 bottom-3 top-[122px] z-[1200] flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:inset-auto sm:bottom-5 sm:right-5 sm:h-[min(720px,calc(100vh-7rem))] sm:w-[410px]"
+          className="fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom))] top-[max(0.5rem,env(safe-area-inset-top))] z-[1200] flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:inset-auto sm:bottom-5 sm:right-5 sm:top-auto sm:h-[min(760px,calc(100dvh-3rem))] sm:w-[430px]"
         >
           <header className="flex shrink-0 items-start justify-between gap-4 bg-slate-950 px-5 py-4 text-white">
             <div className="flex min-w-0 items-start gap-3">
-              <span className="mt-0.5 inline-flex rounded-xl bg-blue-600 p-2">
-                <Sparkles size={19} aria-hidden="true" />
+              <span className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-600">
+                <MessageCircle size={21} aria-hidden="true" />
               </span>
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-300">
-                  {runtimeMode === 'production'
-                    ? 'Онлайн-консультация'
-                    : 'Закрытый тест'}
+                <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-200">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" aria-hidden="true" />
+                  Онлайн
                 </p>
                 <h2 id="rospark-ai-widget-title" className="mt-1 text-base font-bold">
-                  AI-консультант РОСПАРК
+                  Онлайн-консультант РОСПАРК
                 </h2>
-                {ownerCanaryMarker ? (
-                  <p className="mt-1 text-xs font-semibold text-amber-300">
-                    {ownerCanaryMarker}
-                  </p>
-                ) : null}
+                <p className="mt-0.5 text-xs leading-4 text-slate-300">
+                  Вопросы по парковке и оборудованию
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={clearChat}
-                className="rounded-lg p-2 text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                 aria-label="Очистить диалог"
               >
                 <RotateCcw size={18} aria-hidden="true" />
@@ -833,15 +899,19 @@ export default function AiWidgetPilot() {
                 ref={closeRef}
                 type="button"
                 onClick={closeWidget}
-                className="rounded-lg p-2 text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
-                aria-label="Свернуть AI-консультанта"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-xl text-slate-300 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                aria-label="Свернуть онлайн-консультанта"
               >
                 <X size={19} aria-hidden="true" />
               </button>
             </div>
           </header>
 
-          <div className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-4 py-5" aria-live="polite">
+          <div
+            className="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-3 py-4 sm:px-4 sm:py-5"
+            aria-live="polite"
+            aria-busy={isSending}
+          >
             <div className="space-y-3">
               {messages.map((message) => (
                 <div
@@ -849,7 +919,7 @@ export default function AiWidgetPilot() {
                   className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-[88%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6 ${
+                    className={`max-w-[92%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-[15px] leading-6 ${
                       message.role === 'user'
                         ? 'rounded-br-md bg-blue-700 text-white'
                         : 'rounded-bl-md border border-slate-200 bg-white text-slate-800'
@@ -858,32 +928,44 @@ export default function AiWidgetPilot() {
                     {message.content ? (
                       <MessageText content={message.content} />
                     ) : (
-                      <span
-                        className="inline-flex items-center gap-2"
+                      <div
+                        className="w-[min(18rem,72vw)]"
                         role="status"
-                        aria-label="AI-консультант готовит ответ"
+                        aria-label={waitingStage.title}
                       >
-                        <span className="text-xs font-semibold text-slate-600">
-                          Готовлю ответ
+                        <span className="flex items-center gap-2 font-semibold text-slate-800">
+                          <span>{waitingStage.title}</span>
+                          <span className="inline-flex items-center gap-1" aria-hidden="true">
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-600 [animation-delay:-300ms] motion-reduce:animate-none" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-600 [animation-delay:-150ms] motion-reduce:animate-none" />
+                            <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-600 motion-reduce:animate-none" />
+                          </span>
                         </span>
-                        <span className="inline-flex items-center gap-1" aria-hidden="true">
-                          <span className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-300ms] motion-reduce:animate-none" />
-                          <span className="h-2 w-2 animate-bounce rounded-full bg-blue-600 [animation-delay:-150ms] motion-reduce:animate-none" />
-                          <span className="h-2 w-2 animate-bounce rounded-full bg-blue-600 motion-reduce:animate-none" />
+                        <span className="mt-1 block text-xs leading-5 text-slate-600">
+                          {waitingStage.detail}
                         </span>
-                      </span>
+                        <span className="mt-3 block h-1.5 overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
+                          <span
+                            className={`block h-full rounded-full bg-blue-600 transition-[width] duration-700 motion-reduce:transition-none ${waitingStage.isLongWait ? 'animate-pulse motion-reduce:animate-none' : ''}`}
+                            style={{ width: `${waitingStage.progressPercent}%` }}
+                          />
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
               ))}
               {messages.length === 1 && (
                 <div className="grid gap-2 pt-2">
+                  <p className="px-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                    Можно начать с готового вопроса
+                  </p>
                   {quickQuestions.map((question) => (
                     <button
                       key={question}
                       type="button"
                       onClick={() => sendQuickQuestion(question)}
-                      className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-left text-xs font-semibold leading-5 text-blue-900 transition hover:border-blue-300 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                      className="min-h-11 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-left text-sm font-semibold leading-5 text-blue-950 transition hover:border-blue-400 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                     >
                       {question}
                     </button>
@@ -893,9 +975,7 @@ export default function AiWidgetPilot() {
               {showLeadOffer && leadStep === 'idle' ? (
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3">
                   <p className="text-xs leading-5 text-blue-950">
-                    {runtimeMode === 'production'
-                      ? 'Передать задачу специалисту РОСПАРК?'
-                      : 'Хотите проверить, как AI-виджет собирает обращение для отдела продаж?'}
+                    Передать задачу специалисту РОСПАРК?
                   </p>
                   <button
                     type="button"
@@ -903,18 +983,14 @@ export default function AiWidgetPilot() {
                     className="mt-2 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
                   >
                     <ClipboardList size={15} aria-hidden="true" />
-                    {runtimeMode === 'production'
-                      ? 'Оставить заявку'
-                      : 'Оформить тестовую заявку'}
+                    Оставить заявку
                   </button>
                 </div>
               ) : null}
               {leadStep === 'review' || leadStep === 'submitting' ? (
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-slate-800">
                   <p className="font-bold text-slate-950">
-                    {runtimeMode === 'production'
-                      ? 'Проверьте заявку'
-                      : 'ТЕСТ — проверьте карточку'}
+                    Проверьте заявку
                   </p>
                   <dl className="mt-3 grid gap-2">
                     <div>
@@ -945,21 +1021,15 @@ export default function AiWidgetPilot() {
                       disabled={leadStep === 'submitting'}
                     />
                     <span>
-                      {runtimeMode === 'production' ? (
-                        <>
-                          Даю{' '}
-                          <Link
-                            href="/soglasie-na-obrabotku-personalnyh-dannyh"
-                            target="_blank"
-                            className="font-semibold text-blue-800 underline"
-                          >
-                            согласие на обработку персональных данных
-                          </Link>
-                          {' '}для обработки обращения и связи со мной.
-                        </>
-                      ) : (
-                        'Подтверждаю, что указаны только вымышленные тестовые данные.'
-                      )}
+                      Даю{' '}
+                      <Link
+                        href="/soglasie-na-obrabotku-personalnyh-dannyh"
+                        target="_blank"
+                        className="font-semibold text-blue-800 underline"
+                      >
+                        согласие на обработку персональных данных
+                      </Link>
+                      {' '}для обработки обращения и связи со мной.
                     </span>
                   </label>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -974,9 +1044,7 @@ export default function AiWidgetPilot() {
                     >
                       {leadStep === 'submitting'
                         ? 'Отправляю…'
-                        : runtimeMode === 'production'
-                          ? 'Отправить заявку'
-                          : 'Создать тестовую заявку'}
+                        : 'Отправить заявку'}
                     </button>
                     <button
                       type="button"
@@ -993,20 +1061,8 @@ export default function AiWidgetPilot() {
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs leading-5 text-slate-800">
                   <p className="flex items-center gap-2 font-bold text-emerald-900">
                     <CheckCircle2 size={17} aria-hidden="true" />
-                    {runtimeMode === 'production'
-                      ? `${leadResult.publicId} принята`
-                      : `${leadResult.publicId} сохранена`}
+                    {`Обращение ${leadResult.publicId} принято`}
                   </p>
-                  {leadResult.maxPreview ? (
-                    <details className="mt-3">
-                      <summary className="cursor-pointer font-semibold text-blue-800">
-                        Показать будущий текст для MAX
-                      </summary>
-                      <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-white p-3 font-sans text-[11px] leading-5">
-                        {leadResult.maxPreview}
-                      </pre>
-                    </details>
-                  ) : null}
                   <button
                     type="button"
                     onClick={resetLeadFlow}
@@ -1020,12 +1076,29 @@ export default function AiWidgetPilot() {
             </div>
           </div>
 
-          <footer className="shrink-0 border-t border-slate-200 bg-white p-4">
+          <footer className="shrink-0 border-t border-slate-200 bg-white px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:p-4">
             {error && (
-              <p className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-xs leading-5 text-red-700" role="alert">
-                {error}
-              </p>
+              <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm leading-5 text-red-800" role="alert">
+                <p className="flex items-start gap-2">
+                  <AlertCircle className="mt-0.5 shrink-0" size={18} aria-hidden="true" />
+                  <span>{error}</span>
+                </p>
+                {failedMessage ? (
+                  <button
+                    type="button"
+                    onClick={restoreFailedQuestion}
+                    className="mt-2 min-h-11 rounded-xl border border-red-300 bg-white px-3 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+                  >
+                    Вернуть вопрос в поле
+                  </button>
+                ) : null}
+              </div>
             )}
+            {isSending ? (
+              <p className="mb-2 text-xs leading-5 text-slate-600" role="status">
+                Вопрос отправлен. Повторно нажимать не нужно.
+              </p>
+            ) : null}
             <form onSubmit={onSubmit} className="flex items-end gap-2">
               <label htmlFor="rospark-ai-widget-message" className="sr-only">
                 Ваш вопрос
@@ -1042,16 +1115,16 @@ export default function AiWidgetPilot() {
                   }
                 }}
                 maxLength={AI_WIDGET_MAX_MESSAGE_LENGTH}
-                rows={1}
+                rows={2}
                 placeholder={inputPlaceholder}
-                className="max-h-28 min-h-11 flex-1 resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-sm text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="max-h-32 min-h-16 flex-1 resize-none rounded-xl border border-slate-300 px-3 py-2.5 text-base text-slate-950 outline-none transition [scrollbar-width:none] placeholder:text-slate-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 [&::-webkit-scrollbar]:hidden"
                 disabled={inputDisabled}
               />
               {isSending ? (
                 <button
                   type="button"
                   onClick={() => abortRef.current?.abort()}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-slate-800 text-white transition hover:bg-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-600"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-slate-800 text-white transition hover:bg-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-600"
                   aria-label="Остановить ответ"
                 >
                   <Square size={17} aria-hidden="true" />
@@ -1060,28 +1133,22 @@ export default function AiWidgetPilot() {
                 <button
                   type="submit"
                   disabled={!draft.trim() || inputDisabled}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-blue-700 text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+                  className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-700 text-white transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
                   aria-label="Отправить вопрос"
                 >
                   <Send size={18} aria-hidden="true" />
                 </button>
               )}
             </form>
-            <p className="mt-2 text-center text-[10px] leading-4 text-slate-500">
-              {runtimeMode === 'production' ? (
-                <>
-                  Сообщения обрабатываются для подготовки ответа.{' '}
-                  <Link
-                    href="/privacy"
-                    target="_blank"
-                    className="underline"
-                  >
-                    Политика обработки данных
-                  </Link>
-                </>
-              ) : (
-                'Тестовый режим · диалог хранится до 7 дней · не вводите реальные персональные данные.'
-              )}
+            <p className="mt-2 text-center text-xs leading-4 text-slate-600">
+              Сообщения обрабатываются для подготовки ответа.{' '}
+              <Link
+                href="/privacy"
+                target="_blank"
+                className="underline"
+              >
+                Политика обработки данных
+              </Link>
             </p>
           </footer>
         </section>
