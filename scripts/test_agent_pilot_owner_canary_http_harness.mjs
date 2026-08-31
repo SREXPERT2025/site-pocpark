@@ -14,6 +14,7 @@ import path from 'node:path';
 import {
   AGENT_PILOT_RUNTIME_SHA,
 } from '../app/lib/agent-pilot-owner-canary.ts';
+import { mapSiteIdentity } from '../app/lib/owner-ai-canary-core.ts';
 
 const ROOT = process.cwd();
 const ORIGIN = 'https://www.xn--80aukedde.xn--p1ai';
@@ -64,6 +65,7 @@ function close(server) {
 let pilotMode = 'success';
 let pilotDelayMs = 0;
 const counts = { pilot: 0, legacy: 0 };
+const pilotPayloads = [];
 const pilot = https.createServer(tls, (request, response) => {
   assert.equal(request.headers.authorization, `Bearer ${PILOT_SECRET}`);
   counts.pilot += 1;
@@ -72,6 +74,7 @@ const pilot = https.createServer(tls, (request, response) => {
   request.on('data', (chunk) => { raw += chunk; });
   request.on('end', () => {
     const payload = JSON.parse(raw);
+    pilotPayloads.push(payload);
     if (pilotMode === 'timeout') return;
     const reply = () => {
       if (response.destroyed) return;
@@ -355,11 +358,24 @@ try {
 
     pilotMode = 'success';
     pilotDelayMs = 0;
-    const owner = await chat(port, cookie);
+    const ownerBody = chatBody({ message: 'Owner stable turn' });
+    const ownerIdentity = mapSiteIdentity({
+      sessionId: ownerBody.sessionId,
+      turnId: ownerBody.turnId,
+      env: { AI_CORE_IDENTITY_HMAC_KEY: IDENTITY_KEY },
+    });
+    const ownerPayloadCount = pilotPayloads.length;
+    const owner = await chat(port, cookie, ownerBody);
     assert.equal(owner.status, 200);
     assert.equal(owner.raw, 'Agent Pilot owner answer.');
     assert.equal(owner.headers['x-ai-widget-route'], 'owner_agent_pilot');
     assert.equal(owner.headers['x-agent-pilot-runtime-sha'], AGENT_PILOT_RUNTIME_SHA);
+    assert.equal(pilotPayloads.length, ownerPayloadCount + 1);
+    assert.equal(
+      pilotPayloads.at(-1).turn_id,
+      ownerIdentity.messageId,
+      'Site forwards the deterministic identity derived from the original browser turn',
+    );
     console.log('PASS owner Agent Pilot route');
 
     pilotMode = 'success';
@@ -387,7 +403,13 @@ try {
     console.log('PASS progress heartbeat stream');
 
     const duplicateBody = chatBody({ message: 'Один pending turn' });
+    const duplicateIdentity = mapSiteIdentity({
+      sessionId: duplicateBody.sessionId,
+      turnId: duplicateBody.turnId,
+      env: { AI_CORE_IDENTITY_HMAC_KEY: IDENTITY_KEY },
+    });
     const beforeDuplicate = { ...counts };
+    const duplicatePayloadCount = pilotPayloads.length;
     const primary = streamSiteRequest(port, {
       path: '/api/ai-widget/chat',
       headers: { Cookie: cookie },
@@ -404,6 +426,12 @@ try {
       beforeDuplicate.pilot + 1,
       'one pending turn invokes Pilot exactly once',
     );
+    assert.equal(pilotPayloads.length, duplicatePayloadCount + 1);
+    assert.equal(
+      pilotPayloads[duplicatePayloadCount].turn_id,
+      duplicateIdentity.messageId,
+      'retry keeps the same Site-to-Bridge-to-Runtime turn_id',
+    );
     const duplicateRecovered = await waitForOwnerTurn(
       port,
       cookie,
@@ -414,7 +442,13 @@ try {
     console.log('PASS duplicate pending protection');
 
     const disconnectBody = chatBody({ message: 'Обрыв клиента' });
+    const disconnectIdentity = mapSiteIdentity({
+      sessionId: disconnectBody.sessionId,
+      turnId: disconnectBody.turnId,
+      env: { AI_CORE_IDENTITY_HMAC_KEY: IDENTITY_KEY },
+    });
     const beforeDisconnect = { ...counts };
+    const disconnectPayloadCount = pilotPayloads.length;
     const disconnected = await streamSiteRequest(port, {
       path: '/api/ai-widget/chat',
       headers: { Cookie: cookie },
@@ -432,6 +466,12 @@ try {
       counts.pilot,
       beforeDisconnect.pilot + 1,
       'client disconnect does not duplicate Pilot execution',
+    );
+    assert.equal(pilotPayloads.length, disconnectPayloadCount + 1);
+    assert.equal(
+      pilotPayloads[disconnectPayloadCount].turn_id,
+      disconnectIdentity.messageId,
+      'reconnect recovery preserves the original Runtime turn_id',
     );
     console.log('PASS client disconnect durable recovery');
 

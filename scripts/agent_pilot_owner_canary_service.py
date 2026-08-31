@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 
-EXPECTED_RUNTIME_SHA = "abb48a11b4437be55deb5c99a4af2421f1bfa997"
+EXPECTED_RUNTIME_SHA = "0a908f1ea239004ee8756506d6ca666c6e2eefba"
 SERVICE_VERSION = "AGENT_PILOT_OWNER_CANARY_BRIDGE_V1"
 MAX_BODY_BYTES = 65_536
 IDENTIFIER = re.compile(r"^[a-zA-Z0-9_-]{3,80}$")
@@ -180,7 +180,11 @@ class PilotRuntime:
 
             try:
                 session = self.pilot.new_session(conversation_id)
-                result = self.pilot.process_turn(session, message.strip())
+                result = self.pilot.process_turn(
+                    session,
+                    message.strip(),
+                    turn_id=turn_id,
+                )
                 calls = self.transport.calls[initial_call:]
                 role_calls = [
                     {

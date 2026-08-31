@@ -129,13 +129,15 @@ class ServiceContractTest(unittest.TestCase):
 
             class Pilot:
                 builder = Builder()
+                received_turn_ids = []
 
                 @staticmethod
                 def new_session(_conversation_id):
                     return object()
 
                 @staticmethod
-                def process_turn(_session, _message):
+                def process_turn(_session, _message, *, turn_id):
+                    Pilot.received_turn_ids.append(turn_id)
                     state_path.write_text('{"version": 8}', encoding="utf-8")
                     return SimpleNamespace(
                         latency_ms=1, critic_used=True,
@@ -160,6 +162,61 @@ class ServiceContractTest(unittest.TestCase):
             self.assertEqual(status, 503)
             self.assertEqual(body["code"], "AGENT_PILOT_INTERNAL_FALLBACK")
             self.assertEqual(state_path.read_text(encoding="utf-8"), '{"version": 7}')
+            self.assertEqual(Pilot.received_turn_ids, ["turn_rollback_0001"])
+
+    def test_bridge_forwards_exact_stable_turn_id_to_runtime(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            class Builder:
+                last_provenance = None
+
+                @staticmethod
+                def source_metadata(_source_id):
+                    return None
+
+            class Pilot:
+                builder = Builder()
+                received_turn_ids = []
+
+                @staticmethod
+                def new_session(_conversation_id):
+                    return object()
+
+                @staticmethod
+                def process_turn(_session, _message, *, turn_id):
+                    Pilot.received_turn_ids.append(turn_id)
+                    return SimpleNamespace(
+                        latency_ms=1,
+                        critic_used=True,
+                        reconsideration_used=False,
+                        fallback=False,
+                        answer="stable answer",
+                        safety_findings=(),
+                        metadata_defects=(),
+                    )
+
+            runtime = MODULE.PilotRuntime.__new__(MODULE.PilotRuntime)
+            runtime.expected_sha = MODULE.EXPECTED_RUNTIME_SHA
+            runtime.state_dir = Path(temporary) / "state"
+            runtime.state_dir.mkdir()
+            runtime.trace_path = Path(temporary) / "trace.jsonl"
+            runtime.transport = SimpleNamespace(calls=[])
+            runtime.pilot = Pilot()
+            runtime.lock = threading.Lock()
+            payload = {
+                "conversation_id": "conversation_stable_turn_0001",
+                "turn_id": "msg_v1_stable_turn_0001",
+                "message": "test",
+                "expected_runtime_sha": MODULE.EXPECTED_RUNTIME_SHA,
+            }
+
+            status, body = runtime.process(payload, "request_stable_turn_0001")
+
+            self.assertEqual(status, 200)
+            self.assertEqual(body["answer"], "stable answer")
+            self.assertEqual(
+                Pilot.received_turn_ids,
+                ["msg_v1_stable_turn_0001"],
+            )
 
 
 if __name__ == "__main__":
