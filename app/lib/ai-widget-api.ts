@@ -481,6 +481,27 @@ export async function handleAiWidgetChat(request: Request) {
       });
       recordServerEvent('turn_accepted');
       if (
+        existing.status === 'pending'
+        && existing.requestId !== requestId
+      ) {
+        return NextResponse.json(
+          {
+            success: true,
+            status: 'pending',
+            turnId: existing.id,
+          },
+          {
+            status: 202,
+            headers: {
+              'Cache-Control': 'no-store',
+              'Retry-After': '2',
+              'X-AI-Widget-Request-Id': existing.requestId,
+              'X-Content-Type-Options': 'nosniff',
+            },
+          },
+        );
+      }
+      if (
         existing.status === 'answered'
         && existing.assistantContent
       ) {

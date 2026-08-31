@@ -42,6 +42,22 @@ type UiMessage = {
   modelVisible?: boolean;
 };
 
+type ChatResult = {
+  answer: string;
+  leadIntent: string | null;
+  pending: boolean;
+};
+
+type ProgressFrame = {
+  type?: unknown;
+  answer?: unknown;
+  leadIntent?: unknown;
+  message?: unknown;
+};
+
+const OWNER_RECOVERY_POLL_MS = 2_000;
+const OWNER_RECOVERY_DEADLINE_MS = 330_000;
+
 type LeadStep =
   | 'idle'
   | 'name'
@@ -179,6 +195,142 @@ function MessageText({ content }: { content: string }) {
       })}
     </>
   );
+}
+
+function updateAssistantMessage(
+  setter: React.Dispatch<React.SetStateAction<UiMessage[]>>,
+  assistantId: string,
+  answer: string,
+) {
+  setter((current) => current.map((message) => (
+    message.id === assistantId
+      ? { ...message, content: answer }
+      : message
+  )));
+}
+
+async function readChatResult(
+  response: Response,
+  onAnswer: (answer: string) => void,
+): Promise<ChatResult> {
+  if (!response.ok || !response.body) {
+    const body = await response.json().catch(() => null) as {
+      message?: unknown;
+    } | null;
+    throw new Error(
+      typeof body?.message === 'string'
+        ? body.message
+        : 'Не удалось получить ответ.',
+    );
+  }
+  const streamed = response.headers.get('content-type')
+    ?.toLowerCase()
+    .includes('application/x-ndjson') === true;
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  if (!streamed) {
+    let answer = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      answer += decoder.decode(value, { stream: true });
+      onAnswer(answer);
+    }
+    return {
+      answer: answer.trim(),
+      leadIntent: response.headers.get('x-ai-widget-lead-intent'),
+      pending: false,
+    };
+  }
+
+  let buffer = '';
+  let result: ChatResult = { answer: '', leadIntent: null, pending: false };
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+    const lines = buffer.split('\n');
+    buffer = done ? '' : lines.pop() ?? '';
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const frame = JSON.parse(line) as ProgressFrame;
+      if (frame.type === 'processing') continue;
+      if (frame.type === 'pending') {
+        result = { ...result, pending: true };
+        continue;
+      }
+      if (frame.type === 'error') {
+        throw new Error(
+          typeof frame.message === 'string'
+            ? frame.message
+            : 'Не удалось получить ответ.',
+        );
+      }
+      if (frame.type === 'answer' && typeof frame.answer === 'string') {
+        result = {
+          answer: frame.answer.trim(),
+          leadIntent: typeof frame.leadIntent === 'string'
+            ? frame.leadIntent
+            : null,
+          pending: false,
+        };
+        onAnswer(result.answer);
+      }
+    }
+    if (done) break;
+  }
+  return result;
+}
+
+function recoveryDelay(signal: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      signal.removeEventListener('abort', abort);
+      resolve();
+    }, OWNER_RECOVERY_POLL_MS);
+    const abort = () => {
+      window.clearTimeout(timeout);
+      reject(new DOMException('Aborted', 'AbortError'));
+    };
+    signal.addEventListener('abort', abort, { once: true });
+  });
+}
+
+async function recoverOwnerTurn(
+  sessionId: string,
+  turnId: string,
+  signal: AbortSignal,
+) {
+  const deadline = Date.now() + OWNER_RECOVERY_DEADLINE_MS;
+  while (Date.now() < deadline) {
+    if (signal.aborted) throw new DOMException('Aborted', 'AbortError');
+    const response = await fetch('/api/ai-widget/owner-canary/turn', {
+      method: 'POST',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, turnId }),
+      signal,
+    });
+    if (!response.ok) return null;
+    const result = await response.json().catch(() => null) as {
+      status?: unknown;
+      answer?: unknown;
+      message?: unknown;
+    } | null;
+    if (result?.status === 'answered' && typeof result.answer === 'string') {
+      return result.answer.trim();
+    }
+    if (result?.status === 'error') {
+      throw new Error(
+        typeof result.message === 'string'
+          ? result.message
+          : 'Не удалось получить ответ.',
+      );
+    }
+    if (result?.status !== 'pending') return null;
+    await recoveryDelay(signal);
+  }
+  return null;
 }
 
 export default function AiWidgetPilot() {
@@ -697,6 +849,7 @@ export default function AiWidgetPilot() {
     setIsSending(true);
     const controller = new AbortController();
     abortRef.current = controller;
+    const currentSessionId = sessionId();
     const pageContext = aiWidgetPageContextFromAttribution(
       promoAttributionRef.current,
     );
@@ -704,9 +857,12 @@ export default function AiWidgetPilot() {
     try {
       const response = await fetch('/api/ai-widget/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          Accept: 'application/x-ndjson',
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          sessionId: sessionId(),
+          sessionId: currentSessionId,
           turnId: userMessage.id,
           sourcePage: pathname,
           ...(pageContext ? { pageContext } : {}),
@@ -717,30 +873,24 @@ export default function AiWidgetPilot() {
         }),
         signal: controller.signal,
       });
-      if (!response.ok || !response.body) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.message || 'Не удалось получить ответ.');
-      }
-      const leadIntent = response.headers.get(
-        'x-ai-widget-lead-intent',
-      );
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let answer = '';
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        answer += decoder.decode(value, { stream: true });
-        setMessages((current) => current.map((message) => (
-          message.id === assistantId
-            ? { ...message, content: answer }
-            : message
-        )));
+      const result = await readChatResult(response, (answer) => {
+        updateAssistantMessage(setMessages, assistantId, answer);
+      });
+      let answer = result.answer;
+      if (result.pending) {
+        answer = await recoverOwnerTurn(
+          currentSessionId,
+          userMessage.id,
+          controller.signal,
+        ) ?? '';
+        if (answer) {
+          updateAssistantMessage(setMessages, assistantId, answer);
+        }
       }
       if (!answer.trim()) throw new Error('Получен пустой ответ.');
       setFailedMessage(null);
       if (
-        (leadIntent === 'test' || leadIntent === 'live')
+        (result.leadIntent === 'test' || result.leadIntent === 'live')
         && handoffMode !== 'off'
         && loggingEnabled
       ) {
@@ -752,9 +902,27 @@ export default function AiWidgetPilot() {
           message.id !== assistantId || message.content.trim()
         )));
       } else {
-        setMessages((current) => current.filter((message) => message.id !== assistantId));
-        setFailedMessage(userMessage);
-        setError('Ответ не загрузился. Верните вопрос в поле и попробуйте отправить его ещё раз.');
+        try {
+          const recovered = await recoverOwnerTurn(
+            currentSessionId,
+            userMessage.id,
+            controller.signal,
+          );
+          if (recovered) {
+            updateAssistantMessage(setMessages, assistantId, recovered);
+            setFailedMessage(null);
+          } else {
+            throw new Error('TURN_NOT_RECOVERED');
+          }
+        } catch {
+          setMessages((current) => current.filter((message) => (
+            message.id !== assistantId || message.content.trim()
+          )));
+          if (!controller.signal.aborted) {
+            setFailedMessage(userMessage);
+            setError('Ответ не загрузился. Верните вопрос в поле и попробуйте отправить его ещё раз.');
+          }
+        }
       }
     } finally {
       if (abortRef.current === controller) abortRef.current = null;

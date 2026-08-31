@@ -222,6 +222,12 @@ check('duplicate-send guard preserved', () => {
 check('existing chat transport preserved', () => {
   assert.match(component, /fetch\('\/api\/ai-widget\/chat'/);
 });
+check('long answer progress stream and durable recovery', () => {
+  assert.match(component, /Accept: 'application\/x-ndjson'/);
+  assert.match(component, /frame\.type === 'processing'/);
+  assert.match(component, /\/api\/ai-widget\/owner-canary\/turn/);
+  assert.match(component, /OWNER_RECOVERY_DEADLINE_MS = 330_000/);
+});
 check('recoverable error UI', () => {
   assert.match(component, /Вернуть вопрос в поле/);
   assert.match(component, /setFailedMessage\(userMessage\)/);

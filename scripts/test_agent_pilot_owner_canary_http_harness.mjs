@@ -55,10 +55,14 @@ function listen(server) {
 }
 
 function close(server) {
-  return new Promise((resolve) => server.close(resolve));
+  return new Promise((resolve) => {
+    server.close(resolve);
+    server.closeAllConnections?.();
+  });
 }
 
 let pilotMode = 'success';
+let pilotDelayMs = 0;
 const counts = { pilot: 0, legacy: 0 };
 const pilot = https.createServer(tls, (request, response) => {
   assert.equal(request.headers.authorization, `Bearer ${PILOT_SECRET}`);
@@ -68,26 +72,32 @@ const pilot = https.createServer(tls, (request, response) => {
   request.on('data', (chunk) => { raw += chunk; });
   request.on('end', () => {
     const payload = JSON.parse(raw);
-    if (pilotMode === 'error') {
-      response.writeHead(503, { 'Content-Type': 'application/json' });
-      response.end(JSON.stringify({ success: false, code: 'RUNTIME_UNAVAILABLE' }));
-      return;
-    }
-    response.writeHead(200, { 'Content-Type': 'application/json' });
-    response.end(JSON.stringify({
-      success: true,
-      fallback: false,
-      answer: 'Agent Pilot owner answer.',
-      runtime_sha: pilotMode === 'mismatch'
-        ? '0'.repeat(40)
-        : payload.expected_runtime_sha,
-      latency_ms: 1200,
-      role_calls: [{ role: 'orchestrator', latency_ms: 1000 }],
-      critic_used: true,
-      reconsideration_used: false,
-      selected_evidence: [{ source_id: 'approved-source' }],
-      trace_id: `apt_${randomUUID().replaceAll('-', '')}`,
-    }));
+    if (pilotMode === 'timeout') return;
+    const reply = () => {
+      if (response.destroyed) return;
+      if (pilotMode === 'error') {
+        response.writeHead(503, { 'Content-Type': 'application/json' });
+        response.end(JSON.stringify({ success: false, code: 'RUNTIME_UNAVAILABLE' }));
+        return;
+      }
+      response.writeHead(200, { 'Content-Type': 'application/json' });
+      response.end(JSON.stringify({
+        success: true,
+        fallback: false,
+        answer: 'Agent Pilot owner answer.',
+        runtime_sha: pilotMode === 'mismatch'
+          ? '0'.repeat(40)
+          : payload.expected_runtime_sha,
+        latency_ms: pilotDelayMs,
+        role_calls: [{ role: 'orchestrator', latency_ms: pilotDelayMs }],
+        critic_used: true,
+        reconsideration_used: false,
+        selected_evidence: [{ source_id: 'approved-source' }],
+        trace_id: `apt_${randomUUID().replaceAll('-', '')}`,
+      }));
+    };
+    if (pilotDelayMs > 0) setTimeout(reply, pilotDelayMs);
+    else reply();
   });
 });
 const legacy = https.createServer(tls, (request, response) => {
@@ -135,6 +145,60 @@ function siteRequest(port, input = {}) {
   });
 }
 
+function streamSiteRequest(port, input = {}, disconnectAfterFirstFrame = false) {
+  const body = JSON.stringify(input.body);
+  const headers = {
+    Host: HOST,
+    Origin: ORIGIN,
+    'X-Forwarded-Proto': 'https',
+    Accept: 'application/x-ndjson',
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(body),
+    ...input.headers,
+  };
+  const startedAt = Date.now();
+  return new Promise((resolve, reject) => {
+    const request = http.request({
+      host: '127.0.0.1', port,
+      method: 'POST', path: input.path, headers,
+    }, (response) => {
+      let raw = '';
+      let firstFrameMs = null;
+      response.setEncoding('utf8');
+      response.on('data', (chunk) => {
+        if (firstFrameMs === null) firstFrameMs = Date.now() - startedAt;
+        raw += chunk;
+        if (disconnectAfterFirstFrame) {
+          response.destroy();
+          resolve({
+            disconnected: true,
+            firstFrameMs,
+            raw,
+            status: response.statusCode,
+            headers: response.headers,
+          });
+        }
+      });
+      response.on('end', () => resolve({
+        disconnected: false,
+        firstFrameMs,
+        elapsedMs: Date.now() - startedAt,
+        raw,
+        status: response.statusCode,
+        headers: response.headers,
+      }));
+      response.on('error', (error) => {
+        if (!disconnectAfterFirstFrame) reject(error);
+      });
+    });
+    request.once('error', (error) => {
+      if (!disconnectAfterFirstFrame) reject(error);
+    });
+    request.write(body);
+    request.end();
+  });
+}
+
 async function waitForSite(port, childLogs) {
   const deadline = Date.now() + 60_000;
   while (Date.now() < deadline) {
@@ -160,23 +224,50 @@ async function stop(child) {
 }
 
 let turn = 0;
-async function chat(port, cookie) {
+function chatBody(input = {}) {
   turn += 1;
+  return {
+    sessionId: input.sessionId ?? randomUUID(),
+    turnId: input.turnId ?? randomUUID(),
+    sourcePage: '/',
+    messages: [{ role: 'user', content: input.message ?? `Тест ${turn}` }],
+  };
+}
+
+async function chat(port, cookie, body = chatBody()) {
   return siteRequest(port, {
     method: 'POST',
     path: '/api/ai-widget/chat',
     headers: cookie ? { Cookie: cookie } : {},
-    body: {
-      sessionId: randomUUID(),
-      turnId: randomUUID(),
-      sourcePage: '/',
-      messages: [{ role: 'user', content: `Тест ${turn}` }],
-    },
+    body,
   });
+}
+
+async function ownerTurn(port, cookie, body) {
+  return siteRequest(port, {
+    method: 'POST',
+    path: '/api/ai-widget/owner-canary/turn',
+    headers: { Cookie: cookie },
+    body: { sessionId: body.sessionId, turnId: body.turnId },
+  });
+}
+
+async function waitForOwnerTurn(port, cookie, body) {
+  const deadline = Date.now() + 10_000;
+  while (Date.now() < deadline) {
+    const result = await ownerTurn(port, cookie, body);
+    if (result.status === 200) {
+      const parsed = JSON.parse(result.raw);
+      if (parsed.status !== 'pending') return { result, parsed };
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error('OWNER_TURN_RECOVERY_TIMEOUT');
 }
 
 async function withSite(enabled, callback) {
   const port = await freePort();
+  console.log(`HARNESS site start enabled=${enabled} port=${port}`);
   const dbPath = path.join(work, `dialogs-${enabled}-${port}.sqlite`);
   const child = spawn(
     process.execPath,
@@ -212,15 +303,23 @@ async function withSite(enabled, callback) {
         AGENT_PILOT_OWNER_CANARY_SECRET: PILOT_SECRET,
         AGENT_PILOT_OWNER_CANARY_RUNTIME_SHA: AGENT_PILOT_RUNTIME_SHA,
         AGENT_PILOT_OWNER_CANARY_TIMEOUT_MS: '5000',
+        AI_WIDGET_RESPONSE_HEARTBEAT_MS: '1000',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     },
   );
   let logs = '';
-  child.stdout.on('data', (chunk) => { logs += chunk; });
-  child.stderr.on('data', (chunk) => { logs += chunk; });
+  child.stdout.on('data', (chunk) => {
+    logs += chunk;
+    process.stdout.write(chunk);
+  });
+  child.stderr.on('data', (chunk) => {
+    logs += chunk;
+    process.stderr.write(chunk);
+  });
   try {
     await waitForSite(port, () => logs);
+    console.log(`HARNESS site ready enabled=${enabled}`);
     await callback(port);
   } finally {
     await stop(child);
@@ -230,6 +329,7 @@ async function withSite(enabled, callback) {
 const pilotPort = await listen(pilot);
 const legacyPort = await listen(legacy);
 assert.ok(pilotPort > 0 && legacyPort > 0);
+console.log(`HARNESS upstreams ready pilot=${pilotPort} legacy=${legacyPort}`);
 try {
   await withSite(true, async (port) => {
     const visitorBefore = { ...counts };
@@ -254,14 +354,113 @@ try {
     assert.equal(statusBody.runtimeSha, AGENT_PILOT_RUNTIME_SHA);
 
     pilotMode = 'success';
+    pilotDelayMs = 0;
     const owner = await chat(port, cookie);
     assert.equal(owner.status, 200);
     assert.equal(owner.raw, 'Agent Pilot owner answer.');
     assert.equal(owner.headers['x-ai-widget-route'], 'owner_agent_pilot');
     assert.equal(owner.headers['x-agent-pilot-runtime-sha'], AGENT_PILOT_RUNTIME_SHA);
+    console.log('PASS owner Agent Pilot route');
+
+    pilotMode = 'success';
+    pilotDelayMs = 1_500;
+    const delayedBody = chatBody({ message: 'Долгий штатный ответ' });
+    const delayed = await streamSiteRequest(port, {
+      path: '/api/ai-widget/chat',
+      headers: { Cookie: cookie },
+      body: delayedBody,
+    });
+    assert.equal(delayed.status, 200);
+    assert.ok(delayed.firstFrameMs < 750, 'processing frame is immediate');
+    assert.ok(delayed.elapsedMs >= 1_400, 'stream remains open for Pilot');
+    assert.equal(
+      delayed.headers['x-accel-buffering'],
+      'no',
+      'reverse proxy buffering is disabled for progress frames',
+    );
+    assert.ok(
+      delayed.raw.match(/"type":"processing"/g)?.length >= 2,
+      'heartbeat arrives while Pilot is still processing',
+    );
+    assert.match(delayed.raw, /"type":"answer"/);
+    assert.match(delayed.raw, /Agent Pilot owner answer\./);
+    console.log('PASS progress heartbeat stream');
+
+    const duplicateBody = chatBody({ message: 'Один pending turn' });
+    const beforeDuplicate = { ...counts };
+    const primary = streamSiteRequest(port, {
+      path: '/api/ai-widget/chat',
+      headers: { Cookie: cookie },
+      body: duplicateBody,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    const duplicate = await chat(port, cookie, duplicateBody);
+    assert.equal(duplicate.status, 202);
+    assert.equal(JSON.parse(duplicate.raw).status, 'pending');
+    const primaryResult = await primary;
+    assert.match(primaryResult.raw, /"type":"answer"/);
+    assert.equal(
+      counts.pilot,
+      beforeDuplicate.pilot + 1,
+      'one pending turn invokes Pilot exactly once',
+    );
+    const duplicateRecovered = await waitForOwnerTurn(
+      port,
+      cookie,
+      duplicateBody,
+    );
+    assert.equal(duplicateRecovered.parsed.status, 'answered');
+    assert.equal(duplicateRecovered.parsed.answer, 'Agent Pilot owner answer.');
+    console.log('PASS duplicate pending protection');
+
+    const disconnectBody = chatBody({ message: 'Обрыв клиента' });
+    const beforeDisconnect = { ...counts };
+    const disconnected = await streamSiteRequest(port, {
+      path: '/api/ai-widget/chat',
+      headers: { Cookie: cookie },
+      body: disconnectBody,
+    }, true);
+    assert.equal(disconnected.disconnected, true);
+    assert.match(disconnected.raw, /"type":"processing"/);
+    const recoveredAfterDisconnect = await waitForOwnerTurn(
+      port,
+      cookie,
+      disconnectBody,
+    );
+    assert.equal(recoveredAfterDisconnect.parsed.status, 'answered');
+    assert.equal(
+      counts.pilot,
+      beforeDisconnect.pilot + 1,
+      'client disconnect does not duplicate Pilot execution',
+    );
+    console.log('PASS client disconnect durable recovery');
+
+    pilotMode = 'timeout';
+    pilotDelayMs = 0;
+    const timeoutBody = chatBody({ message: 'Pilot timeout fallback' });
+    const timeout = await streamSiteRequest(port, {
+      path: '/api/ai-widget/chat',
+      headers: { Cookie: cookie },
+      body: timeoutBody,
+    });
+    assert.equal(timeout.status, 200);
+    assert.ok(timeout.elapsedMs >= 4_900);
+    assert.match(timeout.raw, /"type":"processing"/);
+    assert.match(timeout.raw, /"type":"answer"/);
+    assert.match(timeout.raw, new RegExp(LEGACY_ANSWER));
+    assert.match(timeout.raw, /"fallback":true/);
+    const timeoutRecovered = await waitForOwnerTurn(
+      port,
+      cookie,
+      timeoutBody,
+    );
+    assert.equal(timeoutRecovered.parsed.status, 'answered');
+    assert.equal(timeoutRecovered.parsed.route, 'legacy_qwen');
+    console.log('PASS timeout exact Legacy fallback');
 
     for (const mode of ['error', 'mismatch']) {
       pilotMode = mode;
+      pilotDelayMs = 0;
       const before = { ...counts };
       const result = await chat(port, cookie);
       assert.equal(result.status, 200);

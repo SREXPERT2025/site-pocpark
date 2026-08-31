@@ -22,6 +22,7 @@
     "test:agent-pilot-owner-canary": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_agent_pilot_owner_canary.mjs",
     "test:agent-pilot-owner-service": "AGENT_PILOT_TEST_RELEASE_ROOT=/Volumes/POCPARK_AI_DATA/POCPARK_SITE_AI/worktrees/POCPARK_AGENT_PILOT python3 scripts/test_agent_pilot_owner_canary_service.py",
     "test:agent-pilot-owner-http": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_agent_pilot_owner_canary_http_harness.mjs",
+    "test:ai-widget-response-recovery": "npm run test:agent-pilot-owner-http",
     "test:owner-ai-canary-forensic": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_owner_canary_blocked_forensic_v1.mjs",
     "test:public-blocked-safe-forensic": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_public_blocked_safe_forensic_v1.mjs",
     "test:owner-ai-canary-origin": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_owner_canary_proxy_origin.mjs",
