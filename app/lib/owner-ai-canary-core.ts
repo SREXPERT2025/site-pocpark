@@ -47,6 +47,13 @@ export function ownerAiCanaryEnabled(
   return env.AI_CORE_OWNER_CANARY_ENABLED === 'true';
 }
 
+export function ownerCanaryAuthEnabled(
+  env: NodeJS.ProcessEnv = process.env,
+) {
+  return ownerAiCanaryEnabled(env)
+    || env.AGENT_PILOT_OWNER_CANARY_ENABLED === 'true';
+}
+
 export function issueOwnerCanarySession(input: {
   credential: string;
   env?: NodeJS.ProcessEnv;
@@ -229,7 +236,7 @@ export function selectOwnerCanaryAudience(input: {
   session: OwnerSessionPayload | null;
 } {
   const env = input.env ?? process.env;
-  if (!ownerAiCanaryEnabled(env)) {
+  if (!ownerCanaryAuthEnabled(env)) {
     return { audience: 'legacy', session: null };
   }
   const session = verifyOwnerCanarySession({

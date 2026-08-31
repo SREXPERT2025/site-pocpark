@@ -36,9 +36,16 @@ import {
   mapSiteIdentity,
   OWNER_AI_CANARY_COOKIE,
   OWNER_AI_CANARY_MARKER,
-  ownerAiCanaryEnabled,
+  ownerCanaryAuthEnabled,
   selectOwnerCanaryAudience,
 } from './owner-ai-canary-core';
+import {
+  AGENT_PILOT_OWNER_MARKER,
+  AGENT_PILOT_RUNTIME_SHA,
+  AgentPilotOwnerError,
+  agentPilotOwnerCanaryEnabled,
+  callAgentPilotOwnerCanary,
+} from './agent-pilot-owner-canary';
 import {
   AI_CORE_CONTRACT_SHA,
   AI_CORE_CONTRACT_VERSION,
@@ -347,7 +354,7 @@ export async function handleAiWidgetChat(request: Request) {
   const lastUserMessage = parsed.payload.messages.at(-1)?.content ?? '';
   let ownerAudience: 'legacy' | 'owner_canary' = 'legacy';
   let ownerIdentity: ReturnType<typeof mapSiteIdentity> | null = null;
-  if (ownerAiCanaryEnabled()) {
+  if (ownerCanaryAuthEnabled()) {
     const token = cookieValue(
       request.headers.get('cookie'),
       OWNER_AI_CANARY_COOKIE,
@@ -373,9 +380,25 @@ export async function handleAiWidgetChat(request: Request) {
       }
     }
   }
+  let agentPilotSelected = (
+    ownerAudience === 'owner_canary'
+    && agentPilotOwnerCanaryEnabled()
+  );
+  let agentPilotFallbackReason: string | null = null;
+  if (agentPilotSelected) {
+    try {
+      ownerIdentity = mapSiteIdentity({
+        sessionId: parsed.payload.sessionId,
+        turnId: parsed.payload.turnId,
+      });
+    } catch {
+      agentPilotSelected = false;
+      agentPilotFallbackReason = 'AGENT_PILOT_IDENTITY_UNAVAILABLE';
+    }
+  }
   const aiCoreAudience = selectAiCoreSiteAudience({
     publicEnabled: publicAiCoreEnabled(),
-    ownerAudience,
+    ownerAudience: agentPilotSelected ? 'legacy' : ownerAudience,
   });
   if (aiCoreAudience !== 'legacy') {
     try {
@@ -409,7 +432,7 @@ export async function handleAiWidgetChat(request: Request) {
       );
     }
   }
-  const aiCoreBaseHeaders = ownerIdentity ? {
+  const aiCoreBaseHeaders = ownerIdentity && aiCoreAudience !== 'legacy' ? {
     'X-AI-Widget-Audience': aiCoreAudience,
     'X-AI-Core-Contract-Version': AI_CORE_CONTRACT_VERSION,
     'X-AI-Core-Contract-SHA': AI_CORE_CONTRACT_SHA,
@@ -633,7 +656,12 @@ export async function handleAiWidgetChat(request: Request) {
         actualRoute: 'fallback',
         fallbackReason: `${publicFallbackContext.reason}_${failureCode}`,
       })
-      : undefined;
+      : agentPilotFallbackReason
+        ? {
+          'X-Agent-Pilot-Fallback': 'true',
+          'X-Agent-Pilot-Fallback-Reason': agentPilotFallbackReason,
+        }
+        : undefined;
     recordPublicFallback('fallback', failureCode);
     return textResponse(PRODUCTION_FALLBACK_ANSWER, {
       route: 'fallback',
@@ -643,6 +671,41 @@ export async function handleAiWidgetChat(request: Request) {
       extraHeaders: publicHeaders,
     });
   };
+
+  if (agentPilotSelected && ownerIdentity) {
+    try {
+      const pilot = await callAgentPilotOwnerCanary({
+        conversationId: ownerIdentity.conversationThreadId,
+        turnId: ownerIdentity.messageId,
+        message: lastUserMessage,
+        requestId,
+      });
+      if (!completeLoggedAnswer(pilot.answer, 'owner_agent_pilot')) {
+        return jsonError(
+          503,
+          'LOG_UNAVAILABLE',
+          'Журнал диалога временно недоступен.',
+        );
+      }
+      return textResponse(pilot.answer, {
+        route: 'owner_agent_pilot',
+        requestId,
+        handoffMode,
+        extraHeaders: {
+          'X-AI-Widget-Audience': 'owner_canary',
+          'X-Agent-Pilot-Runtime-SHA': pilot.runtimeSha,
+          'X-Agent-Pilot-Trace-Id': pilot.traceId,
+          'X-Agent-Pilot-Owner-Marker':
+            `${AGENT_PILOT_OWNER_MARKER} · Runtime ${AGENT_PILOT_RUNTIME_SHA.slice(0, 7)}`,
+        },
+      });
+    } catch (error) {
+      agentPilotFallbackReason = error instanceof AgentPilotOwnerError
+        ? error.reasonCode
+        : 'AGENT_PILOT_UNAVAILABLE';
+      agentPilotSelected = false;
+    }
+  }
 
   if (aiCoreAudience !== 'legacy' && ownerIdentity) {
     const aiCoreRequestId = ownerCanaryRequestId();
@@ -1228,7 +1291,13 @@ export async function handleAiWidgetChat(request: Request) {
         actualRoute: 'legacy',
         fallbackReason: publicFallbackContext.reason,
       })
-      : undefined;
+      : agentPilotFallbackReason
+        ? {
+          'X-Agent-Pilot-Fallback': 'true',
+          'X-Agent-Pilot-Fallback-Reason': agentPilotFallbackReason,
+          'X-Agent-Pilot-Actual-Route': 'legacy',
+        }
+        : undefined;
     recordPublicFallback('legacy');
     return textResponse(answer, {
       route,

@@ -2,9 +2,14 @@ import {
   cookieValue,
   OWNER_AI_CANARY_COOKIE,
   OWNER_AI_CANARY_MARKER,
-  ownerAiCanaryEnabled,
+  ownerCanaryAuthEnabled,
   selectOwnerCanaryAudience,
 } from '@/app/lib/owner-ai-canary-core';
+import {
+  AGENT_PILOT_OWNER_MARKER,
+  AGENT_PILOT_RUNTIME_SHA,
+  agentPilotOwnerCanaryEnabled,
+} from '@/app/lib/agent-pilot-owner-canary';
 import {
   AI_CORE_CONTRACT_SHA,
   AI_CORE_RUNTIME_SHA,
@@ -40,7 +45,7 @@ export async function GET(request: Request) {
   });
   if (!originDecision.allowed) {
     return response({
-      enabled: ownerAiCanaryEnabled(),
+      enabled: ownerCanaryAuthEnabled(),
       audience: 'legacy',
       route: 'legacy',
       code: originDecision.reason,
@@ -50,7 +55,7 @@ export async function GET(request: Request) {
   const provenance = evaluateSiteReleaseProvenance();
   if (!provenance.ready) {
     return response({
-      enabled: ownerAiCanaryEnabled(),
+      enabled: ownerCanaryAuthEnabled(),
       ready: false,
       audience: 'legacy',
       route: 'legacy',
@@ -59,7 +64,7 @@ export async function GET(request: Request) {
     }, 503);
   }
 
-  if (!ownerAiCanaryEnabled()) {
+  if (!ownerCanaryAuthEnabled()) {
     return response({
       enabled: false,
       ready: true,
@@ -99,6 +104,18 @@ export async function GET(request: Request) {
         siteSha: provenance.reportedSiteSha,
         code: 'OWNER_AUTH_DENIED',
       }, 401);
+    }
+    if (agentPilotOwnerCanaryEnabled()) {
+      return response({
+        enabled: true,
+        ready: true,
+        audience: 'owner_canary',
+        route: 'agent_pilot',
+        siteSha: provenance.reportedSiteSha,
+        runtimeSha: AGENT_PILOT_RUNTIME_SHA,
+        marker:
+          `${AGENT_PILOT_OWNER_MARKER} · Runtime ${AGENT_PILOT_RUNTIME_SHA.slice(0, 7)}`,
+      });
     }
     return response({
       enabled: true,
