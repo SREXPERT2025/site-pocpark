@@ -11,6 +11,7 @@ import urllib.error
 import urllib.request
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from types import SimpleNamespace
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -110,6 +111,55 @@ class ServiceContractTest(unittest.TestCase):
         MODULE.verify_release(release, MODULE.EXPECTED_RUNTIME_SHA)
         with self.assertRaisesRegex(RuntimeError, "EXPECTED_SHA_INVALID"):
             MODULE.verify_release(release, "0" * 40)
+
+    def test_internal_fallback_rolls_back_unpublished_pilot_state(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            state_dir = Path(temporary) / "state"
+            state_dir.mkdir()
+            conversation_id = "conversation_rollback_0001"
+            state_path = state_dir / f"{conversation_id}.json"
+            state_path.write_text('{"version": 7}', encoding="utf-8")
+
+            class Builder:
+                last_provenance = None
+
+                @staticmethod
+                def source_metadata(_source_id):
+                    return None
+
+            class Pilot:
+                builder = Builder()
+
+                @staticmethod
+                def new_session(_conversation_id):
+                    return object()
+
+                @staticmethod
+                def process_turn(_session, _message):
+                    state_path.write_text('{"version": 8}', encoding="utf-8")
+                    return SimpleNamespace(
+                        latency_ms=1, critic_used=True,
+                        reconsideration_used=False, fallback=True,
+                        answer="internal fallback", safety_findings=(),
+                        metadata_defects=(),
+                    )
+
+            runtime = MODULE.PilotRuntime.__new__(MODULE.PilotRuntime)
+            runtime.expected_sha = MODULE.EXPECTED_RUNTIME_SHA
+            runtime.state_dir = state_dir
+            runtime.trace_path = Path(temporary) / "trace.jsonl"
+            runtime.transport = SimpleNamespace(calls=[])
+            runtime.pilot = Pilot()
+            runtime.lock = threading.Lock()
+            status, body = runtime.process({
+                "conversation_id": conversation_id,
+                "turn_id": "turn_rollback_0001",
+                "message": "test",
+                "expected_runtime_sha": MODULE.EXPECTED_RUNTIME_SHA,
+            }, "request_rollback_0001")
+            self.assertEqual(status, 503)
+            self.assertEqual(body["code"], "AGENT_PILOT_INTERNAL_FALLBACK")
+            self.assertEqual(state_path.read_text(encoding="utf-8"), '{"version": 7}')
 
 
 if __name__ == "__main__":

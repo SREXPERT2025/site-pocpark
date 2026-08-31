@@ -65,19 +65,23 @@ def verify_release(runtime_root: Path, expected_sha: str) -> None:
         raise RuntimeError("AGENT_PILOT_RELEASE_INCOMPLETE")
 
 
-def _safe_selected_evidence(provenance: Any) -> list[dict[str, Any]]:
+def _safe_selected_evidence(builder: Any, provenance: Any) -> list[dict[str, Any]]:
     if provenance is None:
         return []
     result: list[dict[str, Any]] = []
     for raw in getattr(provenance, "selected_chunks", ())[:12]:
         item = dict(raw)
+        source_id = str(item.get("source_id") or "")[:160]
+        metadata = builder.source_metadata(source_id) or {}
         excerpt = str(item.get("excerpt") or item.get("text") or "")[:800]
         result.append({
             "knowledge_id": str(item.get("knowledge_id") or "")[:160],
-            "source_id": str(item.get("source_id") or "")[:160],
-            "authority_class": str(item.get("authority_class") or "")[:80],
-            "approval_status": str(item.get("approval_status") or "")[:40],
-            "customer_facing": item.get("customer_facing") is True,
+            "source_id": source_id,
+            "authority_class": str(
+                metadata.get("authority_class") or item.get("authority_class") or ""
+            )[:80],
+            "approval_status": str(metadata.get("approval_status") or "")[:40],
+            "customer_facing": metadata.get("customer_facing") is True,
             "excerpt": excerpt,
         })
     return result
@@ -103,6 +107,7 @@ class PilotRuntime:
         state_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
         trace_path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         self.trace_path = trace_path
+        self.state_dir = state_dir
         timeout = float(os.environ.get("AGENT_PILOT_CODEX_TIMEOUT_SECONDS", "90"))
         self.transport = transport_module.CodexExecTransport(timeout_seconds=timeout)
         self.transport.ensure_available()
@@ -161,6 +166,18 @@ class PilotRuntime:
             started = time.monotonic()
             initial_call = len(self.transport.calls)
             trace_id = f"apt_{uuid.uuid4().hex}"
+            state_path = self.state_dir / f"{conversation_id}.json"
+            previous_state = state_path.read_bytes() if state_path.is_file() else None
+
+            def restore_unpublished_state() -> None:
+                if previous_state is None:
+                    state_path.unlink(missing_ok=True)
+                    return
+                temporary = state_path.with_suffix(".rollback.tmp")
+                temporary.write_bytes(previous_state)
+                os.chmod(temporary, 0o600)
+                temporary.replace(state_path)
+
             try:
                 session = self.pilot.new_session(conversation_id)
                 result = self.pilot.process_turn(session, message.strip())
@@ -176,6 +193,7 @@ class PilotRuntime:
                     for call in calls
                 ]
                 selected_evidence = _safe_selected_evidence(
+                    self.pilot.builder,
                     self.pilot.builder.last_provenance
                 )
                 trace = {
@@ -199,6 +217,7 @@ class PilotRuntime:
                 }
                 self._append_trace(trace)
                 if result.fallback:
+                    restore_unpublished_state()
                     return HTTPStatus.SERVICE_UNAVAILABLE, {
                         "success": False,
                         "code": "AGENT_PILOT_INTERNAL_FALLBACK",
@@ -218,6 +237,7 @@ class PilotRuntime:
                     "trace_id": trace_id,
                 }
             except Exception as error:  # fail closed at the bridge boundary
+                restore_unpublished_state()
                 self._append_trace({
                     "schema": "AGENT_PILOT_OWNER_CANARY_TURN_V1",
                     "trace_id": trace_id,
