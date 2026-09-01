@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://rospark.example/contracts/agent-pilot-trace-viewer-v1/site-trace-v1.schema.json",
+  "title": "ROSPARK Agent Pilot Admin Turn Trace V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "identity",
+    "routing",
+    "client_input",
+    "state",
+    "pipeline",
+    "knowledge",
+    "validation",
+    "publication",
+    "latency",
+    "diagnostics",
+    "trace_sha256"
+  ],
+  "properties": {
+    "schema_version": { "const": "AGENT_PILOT_TRACE_VIEWER_V1" },
+    "identity": {
+      "type": "object",
+      "required": [
+        "turn_id",
+        "site_request_id",
+        "trace_id",
+        "conversation_thread_id",
+        "message_id",
+        "timestamp",
+        "route",
+        "site_sha",
+        "runtime_sha",
+        "bridge_version"
+      ],
+      "properties": {
+        "turn_id": { "type": "string", "minLength": 8 },
+        "site_request_id": { "type": "string", "minLength": 8 },
+        "trace_id": { "type": "string", "minLength": 8 },
+        "conversation_thread_id": { "type": "string", "minLength": 8 },
+        "message_id": { "type": "string", "minLength": 8 },
+        "timestamp": { "type": "string" },
+        "route": { "const": "owner_agent_pilot" },
+        "site_sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "runtime_sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+        "bridge_version": { "type": "string", "minLength": 3 }
+      }
+    },
+    "routing": { "type": "object" },
+    "client_input": { "type": "object" },
+    "state": { "type": "object" },
+    "pipeline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "status", "summary", "reason_codes", "latency_ms"],
+        "properties": {
+          "name": { "type": "string" },
+          "status": {
+            "enum": ["pass", "warn", "blocked", "not_used", "error", "not_reached"]
+          },
+          "summary": { "type": "string" },
+          "input": {},
+          "output": {},
+          "reason_codes": { "type": "array", "items": { "type": "string" } },
+          "latency_ms": { "type": ["integer", "null"], "minimum": 0 }
+        }
+      }
+    },
+    "knowledge": { "type": "array", "items": { "type": "object" } },
+    "validation": { "type": "object" },
+    "publication": { "type": "object" },
+    "latency": { "type": "object" },
+    "diagnostics": { "type": "object" },
+    "trace_sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+  }
+}

@@ -8,11 +8,14 @@ import {
   AI_TRACE_FULL_RETENTION_MS,
   AI_TRACE_METADATA_RETENTION_MS,
   AI_TRACE_SCHEMA_VERSION,
+  AGENT_PILOT_TRACE_SCHEMA_VERSION,
   addAiTraceAnnotation,
   cleanupExpiredAiTraces,
+  composeAgentPilotTurnTrace,
   composeAiCoreTurnTrace,
   getAiCoreTurnTrace,
   listAiTraceSummariesByTurnIds,
+  recordAgentPilotTurnTrace,
   recordAiCoreTurnTrace,
   sanitizeAiTraceValue,
   tryRecordAiCoreTurnTrace,
@@ -25,6 +28,7 @@ import {
   CANONICALIZATION_VERSION,
   sha256,
 } from '../app/lib/owner-ai-canary-adapter.ts';
+import { AGENT_PILOT_RUNTIME_SHA } from '../app/lib/agent-pilot-owner-canary.ts';
 import { leadAdminRoleHasPermission } from '../app/lib/lead-admin-auth-core.ts';
 
 const ROOT = process.cwd();
@@ -280,6 +284,81 @@ function compose({
   });
 }
 
+function composeAgentPilot({ reconsideration = false, slow = false } = {}) {
+  const roleCalls = [
+    { sequence: 1, role: 'context', latency_ms: slow ? 19_000 : 19, model: 'codex', reasoning_effort: 'low', status: 'pass', used_downstream: true },
+    { sequence: 2, role: 'orchestrator', latency_ms: slow ? 31_000 : 31, model: 'codex', reasoning_effort: 'medium', status: 'pass', used_downstream: true },
+    { sequence: 3, role: 'critic', latency_ms: slow ? 23_000 : 23, model: 'codex', reasoning_effort: 'medium', status: 'pass', used_downstream: true },
+    ...(reconsideration ? [
+      { sequence: 4, role: 'orchestrator', latency_ms: slow ? 21_000 : 21, model: 'codex', reasoning_effort: 'medium', status: 'pass', used_downstream: true },
+    ] : []),
+  ];
+  const runtimeMs = roleCalls.reduce((sum, item) => sum + item.latency_ms, 0)
+    + (slow ? 8_000 : 8);
+  return composeAgentPilotTurnTrace({
+    turnId: 'turn_agent_pilot_trace_0001',
+    siteRequestId: 'request_agent_pilot_trace_0001',
+    traceId: 'apt_agent_pilot_trace_0001',
+    conversationThreadId: 'conversation_agent_pilot_trace_0001',
+    messageId: 'message_agent_pilot_trace_0001',
+    timestamp: '2026-09-01T12:00:00.000Z',
+    siteSha: SITE_SHA,
+    runtimeSha: AGENT_PILOT_RUNTIME_SHA,
+    bridgeVersion: 'AGENT_PILOT_OWNER_CANARY_BRIDGE_V1',
+    sourcePage: '/',
+    currentMessage: 'Какая длина стрелы предусмотрена для шлагбаума FSP?',
+    bridgeTrace: {
+      latency_ms: runtimeMs,
+      bridge_wall_ms: runtimeMs + 5,
+      role_calls: roleCalls,
+      codex_calls: roleCalls.length,
+      transport_calls_this_request: roleCalls.length,
+      critic_used: true,
+      reconsideration_used: reconsideration,
+      duplicate_execution_prevented: false,
+      durable_result_reused: false,
+      selected_evidence: [{
+        knowledge_id: 'barrier-fsp-03-05',
+        source_id: 'fsp-approved-catalog',
+        authority_class: 'manufacturer_documentation',
+        approval_status: 'approved',
+        customer_facing: true,
+        evidence_role: 'factual',
+        excerpt: 'Для FSP / 03-05 предусмотрена стрела длиной 3 м.',
+        used_in_final: true,
+        authorization: 'pass',
+      }],
+      object_card_before: {
+        version: 1,
+        confirmed_facts: [],
+        inferred_facts: [],
+        open_questions: [],
+      },
+      object_card_after: {
+        version: 2,
+        confirmed_facts: [{
+          field: 'barrier_model',
+          raw_value: 'FSP',
+          normalized_value: 'fsp',
+        }],
+        inferred_facts: [],
+        open_questions: [],
+      },
+      critic_findings: reconsideration
+        ? { status: 'reconsider', unsupported_claims: ['claim_extra'] }
+        : { status: 'pass', unsupported_claims: [] },
+      claim_plan: [{ claim_id: 'claim_fsp', evidence_ids: ['barrier-fsp-03-05'] }],
+      answer_obligations: [],
+      safety_findings: [],
+      metadata_defects: [],
+    },
+    publicationStatus: 'published',
+    visibleAnswer: 'Для шлагбаума FSP / 03-05 предусмотрена стрела длиной 3 м.',
+    siteTotalLatencyMs: runtimeMs + 12,
+    publishedAt: '2026-09-01T12:01:35.000Z',
+  });
+}
+
 check('successful turn trace has every P0 stage and exact identity', () => {
   const trace = compose();
   assert.equal(trace.schema_version, AI_TRACE_SCHEMA_VERSION);
@@ -481,6 +560,59 @@ check('summary lookup exposes metadata without raw payload coupling', () => {
   db.close();
 });
 
+check('Agent Pilot trace stores FSP evidence, latency and confirmed Object Card changes', () => {
+  const db = new Database(':memory:');
+  const trace = composeAgentPilot({ slow: true });
+  const schema = JSON.parse(fs.readFileSync(path.join(
+    ROOT,
+    'generated/contracts/AGENT_PILOT_TRACE_VIEWER_V1/site-trace-v1.schema.json',
+  ), 'utf8'));
+  const validate = new Ajv({ allErrors: true, schemaId: 'auto' }).compile(schema);
+  assert.equal(validate(trace), true, JSON.stringify(validate.errors));
+  assert.equal(trace.schema_version, AGENT_PILOT_TRACE_SCHEMA_VERSION);
+  assert.equal(trace.identity.runtime_sha, AGENT_PILOT_RUNTIME_SHA);
+  assert.equal(trace.identity.route, 'owner_agent_pilot');
+  assert.equal(trace.knowledge[0].authorization, 'pass');
+  assert.equal(trace.knowledge[0].used_in_final, true);
+  assert.equal(trace.state.changes.confirmed_direct.added[0].field, 'barrier_model');
+  assert.equal(trace.latency.slowest_role, 'orchestrator');
+  assert.equal(recordAgentPilotTurnTrace(db, trace, 1_800_000_000_000).created, true);
+  const saved = getAiCoreTurnTrace(db, trace.identity.turn_id, 1_800_000_000_001);
+  assert.equal(saved.summary.traceSource, 'agent_pilot');
+  assert.equal(saved.summary.route, 'owner_agent_pilot');
+  assert.equal(saved.trace.trace_sha256, trace.trace_sha256);
+  db.close();
+});
+
+check('Agent Pilot reconsideration and write-once integrity remain visible', () => {
+  const db = new Database(':memory:');
+  const trace = composeAgentPilot({ reconsideration: true });
+  recordAgentPilotTurnTrace(db, trace, 1_800_000_000_000);
+  assert.equal(trace.routing.reconsideration_used, true);
+  assert.equal(trace.pipeline.find((stage) => stage.name === 'agent_reconsideration').status, 'pass');
+  const changed = {
+    ...trace,
+    publication: { ...trace.publication, visible_answer: 'changed' },
+  };
+  const unhashed = { ...changed };
+  delete unhashed.trace_sha256;
+  changed.trace_sha256 = sha256(unhashed);
+  assert.throws(
+    () => recordAgentPilotTurnTrace(db, changed, 1_800_000_000_002),
+    /AGENT_PILOT_TRACE_WRITE_ONCE_CONFLICT/,
+  );
+  db.close();
+});
+
+check('Agent Pilot trace sanitization removes secrets and private reasoning', () => {
+  const trace = composeAgentPilot();
+  const encoded = JSON.stringify(trace);
+  assert.equal(encoded.includes('"chain_of_thought":'), false);
+  assert.equal(encoded.includes('Bearer '), false);
+  assert.equal(trace.diagnostics.chain_of_thought_captured, false);
+  assert.equal(trace.diagnostics.secrets_captured, false);
+});
+
 check('owner UI and JSON export are integrated under admin routes only', () => {
   const dashboard = fs.readFileSync(
     path.join(ROOT, 'app/admin/ai-widget/AiWidgetAdminDashboard.tsx'), 'utf8',
@@ -494,7 +626,11 @@ check('owner UI and JSON export are integrated under admin routes only', () => {
   assert(dashboard.includes('Диагностика'));
   assert(dashboard.includes('Trace временно недоступен'));
   assert(viewer.includes('AI_TRACE_VIEWER_V1'));
-  assert(viewer.includes('Экспорт trace JSON'));
+  assert(viewer.includes('AGENT_PILOT_TRACE_VIEWER_V1'));
+  assert(viewer.includes('Скопировать JSON'));
+  assert(viewer.includes('Скачать JSON'));
+  assert(viewer.includes('Object Card · до → после'));
+  assert(viewer.includes('Где ушло время'));
   assert(fs.existsSync(exportRoute));
   assert.equal(fs.existsSync(path.join(ROOT, 'app/api/ai-widget/trace')), false);
 });

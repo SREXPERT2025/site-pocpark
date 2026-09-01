@@ -59,11 +59,20 @@ const successful = await callAgentPilotOwnerCanary({
       reconsideration_used: false,
       selected_evidence: [{ source_id: 'barrier-models' }],
       trace_id: 'apt_12345678901234567890',
+      bridge_version: 'AGENT_PILOT_OWNER_CANARY_BRIDGE_V1',
+      trace: {
+        trace_id: 'apt_12345678901234567890',
+        turn_id: 'msg_v1_12345678901234567890',
+        runtime_sha: AGENT_PILOT_RUNTIME_SHA,
+        role_calls: [{ role: 'orchestrator', latency_ms: 1000 }],
+        selected_evidence: [{ source_id: 'barrier-models' }],
+      },
     });
   },
 });
 assert.equal(successful.runtimeSha, AGENT_PILOT_RUNTIME_SHA);
 assert.equal(successful.answer, 'Для FSP предусмотрена стрела 3 м.');
+assert.equal(successful.trace.turn_id, 'msg_v1_12345678901234567890');
 assert.equal(requestedAuthorization, `Bearer ${secret}`);
 assert.equal(
   requestedUrl,

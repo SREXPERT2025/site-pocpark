@@ -36,6 +36,9 @@ type SessionDetails = {
     elapsedMs: number | null;
     createdAt: string;
     traceSummary: {
+      traceSource: 'ai_core' | 'agent_pilot';
+      route: 'owner_ai_core' | 'public_ai_core' | 'owner_agent_pilot';
+      requestId: string;
       publicationStatus: 'published' | 'blocked' | 'fallback' | 'error';
       executor: string | null;
       evaluatorStatus: string | null;
@@ -318,7 +321,9 @@ export default function AiWidgetAdminDashboard({
                           turn.traceSummary.instructionLeakWarning
                             ? 'text-red-700' : 'text-slate-600'
                         }`}>
-                          AI Core · {turn.traceSummary.executor || 'до Runtime'} · {' '}
+                          {turn.traceSummary.traceSource === 'agent_pilot'
+                            ? 'Agent Pilot' : 'AI Core'} · {' '}
+                          {turn.traceSummary.executor || 'до Runtime'} · {' '}
                           {turn.traceSummary.totalLatencyMs !== null
                             ? `${turn.traceSummary.totalLatencyMs} мс · ` : ''}
                           {turn.traceSummary.publicationStatus.toUpperCase()}
@@ -328,17 +333,26 @@ export default function AiWidgetAdminDashboard({
                         {role === 'director' ? (
                           <button
                             type="button"
+                            aria-label="Диагностика trace конкретного хода"
                             onClick={() => setTraceTurnId(turn.id)}
                             className="rounded-lg bg-slate-950 px-3 py-2 text-xs font-bold text-white"
                           >
                             {turn.traceSummary.traceAvailable
-                              ? 'Диагностика' : 'Trace недоступен'}
+                              ? 'Trace / Подробнее' : 'Trace недоступен'}
                           </button>
                         ) : null}
                       </div>
-                    ) : role === 'director' && turn.route?.includes('ai_core') ? (
+                    ) : role === 'director' && (
+                      turn.route?.includes('ai_core')
+                      || turn.route === 'owner_agent_pilot'
+                      || Boolean(turn.route)
+                    ) ? (
                       <p className="mt-3 text-xs font-semibold text-slate-500">
-                        Trace для этого исторического turn недоступен.
+                        {turn.route === 'owner_agent_pilot'
+                          ? 'Agent Pilot trace для этого исторического turn недоступен.'
+                          : turn.route?.includes('ai_core')
+                            ? 'Trace для этого исторического turn недоступен.'
+                            : 'Legacy trace недоступен; Agent Pilot trace к этому ходу не применим.'}
                       </p>
                     ) : null}
                   </article>

@@ -14,17 +14,33 @@ export type AgentPilotOwnerResponse = {
   reconsiderationUsed: boolean;
   selectedEvidence: readonly Readonly<Record<string, unknown>>[];
   traceId: string;
+  bridgeVersion: string;
+  trace: Readonly<Record<string, unknown>>;
 };
 
 export class AgentPilotOwnerError extends Error {
   readonly reasonCode: string;
+  readonly traceId: string | null;
+  readonly runtimeSha: string | null;
+  readonly bridgeVersion: string | null;
+  readonly trace: Readonly<Record<string, unknown>> | null;
 
   constructor(
     reasonCode: string,
     message = reasonCode,
+    evidence: {
+      traceId?: string | null;
+      runtimeSha?: string | null;
+      bridgeVersion?: string | null;
+      trace?: Readonly<Record<string, unknown>> | null;
+    } = {},
   ) {
     super(message);
     this.reasonCode = reasonCode;
+    this.traceId = evidence.traceId ?? null;
+    this.runtimeSha = evidence.runtimeSha ?? null;
+    this.bridgeVersion = evidence.bridgeVersion ?? null;
+    this.trace = evidence.trace ?? null;
   }
 }
 
@@ -82,6 +98,13 @@ function cleanObjects(value: unknown, maximum: number) {
   return objects.length === value.length ? objects : null;
 }
 
+function cleanTrace(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const encoded = JSON.stringify(value);
+  if (Buffer.byteLength(encoded, 'utf8') > 512 * 1_024) return null;
+  return value as Record<string, unknown>;
+}
+
 export async function callAgentPilotOwnerCanary(input: {
   conversationId: string;
   turnId: string;
@@ -124,21 +147,34 @@ export async function callAgentPilotOwnerCanary(input: {
         : 'AGENT_PILOT_UNAVAILABLE',
     );
   }
+  const body = await response.json().catch(() => null) as
+    Record<string, unknown> | null;
   if (!response.ok) {
+    const errorRuntimeSha = cleanString(body?.runtime_sha, 40);
+    const errorTraceId = cleanString(body?.trace_id, 128);
+    const errorBridgeVersion = cleanString(body?.bridge_version, 128);
+    const errorTrace = cleanTrace(body?.trace);
     throw new AgentPilotOwnerError(
       response.status === 409
         ? 'AGENT_PILOT_RUNTIME_MISMATCH'
         : 'AGENT_PILOT_UPSTREAM_ERROR',
+      undefined,
+      {
+        traceId: errorTraceId,
+        runtimeSha: errorRuntimeSha,
+        bridgeVersion: errorBridgeVersion,
+        trace: errorTrace,
+      },
     );
   }
-  const body = await response.json().catch(() => null) as
-    Record<string, unknown> | null;
   const answer = cleanString(body?.answer, 12_000);
   const runtimeSha = cleanString(body?.runtime_sha, 40);
   const traceId = cleanString(body?.trace_id, 128);
+  const bridgeVersion = cleanString(body?.bridge_version, 128);
   const latencyMs = body?.latency_ms;
   const roleCalls = cleanObjects(body?.role_calls, 8);
   const selectedEvidence = cleanObjects(body?.selected_evidence, 12);
+  const trace = cleanTrace(body?.trace);
   if (
     body?.success !== true
     || body?.fallback !== false
@@ -146,10 +182,15 @@ export async function callAgentPilotOwnerCanary(input: {
     || runtimeSha !== config.runtimeSha
     || runtimeSha !== AGENT_PILOT_RUNTIME_SHA
     || !traceId
+    || !bridgeVersion
     || !Number.isInteger(latencyMs)
     || (latencyMs as number) < 0
     || !roleCalls
     || !selectedEvidence
+    || !trace
+    || trace.trace_id !== traceId
+    || trace.turn_id !== input.turnId
+    || trace.runtime_sha !== runtimeSha
     || typeof body?.critic_used !== 'boolean'
     || typeof body?.reconsideration_used !== 'boolean'
   ) {
@@ -168,5 +209,7 @@ export async function callAgentPilotOwnerCanary(input: {
     reconsiderationUsed: body.reconsideration_used,
     selectedEvidence,
     traceId,
+    bridgeVersion,
+    trace,
   };
 }

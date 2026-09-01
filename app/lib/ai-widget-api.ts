@@ -104,7 +104,9 @@ import {
   selectAiCoreSiteAudience,
 } from './public-ai-core';
 import {
+  composeAgentPilotTurnTrace,
   composeAiCoreTurnTrace,
+  tryRecordAgentPilotTurnTrace,
   tryRecordAiCoreTurnTrace,
 } from './ai-trace-core';
 import {
@@ -385,6 +387,12 @@ export async function handleAiWidgetChat(request: Request) {
     && agentPilotOwnerCanaryEnabled()
   );
   let agentPilotFallbackReason: string | null = null;
+  let agentPilotFailureTrace: {
+    traceId: string;
+    runtimeSha: string;
+    bridgeVersion: string;
+    trace: Readonly<Record<string, unknown>>;
+  } | null = null;
   if (agentPilotSelected) {
     try {
       ownerIdentity = mapSiteIdentity({
@@ -634,6 +642,67 @@ export async function handleAiWidgetChat(request: Request) {
     }
   };
 
+  const deferAgentPilotTrace = (input: {
+    traceId: string;
+    runtimeSha: string;
+    bridgeVersion: string;
+    bridgeTrace: Readonly<Record<string, unknown>>;
+    publicationStatus: 'published' | 'fallback' | 'error';
+    visibleAnswer?: string | null;
+    fallbackReason?: string | null;
+    publishedAt?: string | null;
+  }) => {
+    if (!ownerIdentity) return;
+    const traceInput = {
+      turnId: parsed.payload.turnId,
+      siteRequestId: requestId,
+      traceId: input.traceId,
+      conversationThreadId: ownerIdentity.conversationThreadId,
+      messageId: ownerIdentity.messageId,
+      timestamp: new Date(startedAt).toISOString(),
+      siteSha: DEPLOYED_SITE_SHA,
+      runtimeSha: input.runtimeSha,
+      bridgeVersion: input.bridgeVersion,
+      sourcePage: parsed.payload.sourcePage,
+      currentMessage: lastUserMessage,
+      bridgeTrace: input.bridgeTrace,
+      publicationStatus: input.publicationStatus,
+      visibleAnswer: input.visibleAnswer ?? null,
+      fallbackReason: input.fallbackReason ?? null,
+      siteTotalLatencyMs: Date.now() - startedAt,
+      publishedAt: input.publishedAt ?? null,
+    } as const;
+    setImmediate(() => {
+      try {
+        const pilotTrace = composeAgentPilotTurnTrace(traceInput);
+        tryRecordAgentPilotTurnTrace(
+          getAiWidgetLogDatabase(),
+          pilotTrace,
+        );
+      } catch (error) {
+        console.error(
+          'AGENT_PILOT_TRACE_CAPTURE_FAILED',
+          error instanceof Error ? error.message : 'UNKNOWN',
+        );
+      }
+    });
+  };
+
+  const deferAgentPilotFallback = (visibleAnswer: string) => {
+    if (!agentPilotFallbackReason || !agentPilotFailureTrace) return;
+    deferAgentPilotTrace({
+      traceId: agentPilotFailureTrace.traceId,
+      runtimeSha: agentPilotFailureTrace.runtimeSha,
+      bridgeVersion: agentPilotFailureTrace.bridgeVersion,
+      bridgeTrace: agentPilotFailureTrace.trace,
+      publicationStatus: 'fallback',
+      visibleAnswer,
+      fallbackReason: agentPilotFallbackReason,
+      publishedAt: new Date().toISOString(),
+    });
+    agentPilotFailureTrace = null;
+  };
+
   let publicFallbackContext: {
     reason: string;
     aiCoreRequestId: string;
@@ -672,6 +741,7 @@ export async function handleAiWidgetChat(request: Request) {
         'Журнал диалога временно недоступен.',
       );
     }
+    deferAgentPilotFallback(PRODUCTION_FALLBACK_ANSWER);
     const publicHeaders = publicFallbackContext
       ? publicAiCoreRouteHeaders({
         actualRoute: 'fallback',
@@ -708,6 +778,16 @@ export async function handleAiWidgetChat(request: Request) {
           'Журнал диалога временно недоступен.',
         );
       }
+      const publishedAt = new Date().toISOString();
+      deferAgentPilotTrace({
+        traceId: pilot.traceId,
+        runtimeSha: pilot.runtimeSha,
+        bridgeVersion: pilot.bridgeVersion,
+        bridgeTrace: pilot.trace,
+        publicationStatus: 'published',
+        visibleAnswer: pilot.answer,
+        publishedAt,
+      });
       return textResponse(pilot.answer, {
         route: 'owner_agent_pilot',
         requestId,
@@ -724,6 +804,36 @@ export async function handleAiWidgetChat(request: Request) {
       agentPilotFallbackReason = error instanceof AgentPilotOwnerError
         ? error.reasonCode
         : 'AGENT_PILOT_UNAVAILABLE';
+      if (
+        error instanceof AgentPilotOwnerError
+        && error.traceId
+        && error.runtimeSha === AGENT_PILOT_RUNTIME_SHA
+        && error.bridgeVersion
+        && error.trace
+      ) {
+        agentPilotFailureTrace = {
+          traceId: error.traceId,
+          runtimeSha: error.runtimeSha,
+          bridgeVersion: error.bridgeVersion,
+          trace: error.trace,
+        };
+      }
+      agentPilotFailureTrace ??= {
+        traceId: `site_${requestId.replaceAll('-', '')}`,
+        runtimeSha: AGENT_PILOT_RUNTIME_SHA,
+        bridgeVersion: 'SITE_ONLY_AGENT_PILOT_FAILURE_V1',
+        trace: {
+          trace_id: `site_${requestId.replaceAll('-', '')}`,
+          turn_id: ownerIdentity.messageId,
+          runtime_sha: AGENT_PILOT_RUNTIME_SHA,
+          role_calls: [],
+          selected_evidence: [],
+          critic_used: false,
+          reconsideration_used: false,
+          fallback: true,
+          site_failure_reason: agentPilotFallbackReason,
+        },
+      };
       agentPilotSelected = false;
     }
   }
@@ -1307,6 +1417,7 @@ export async function handleAiWidgetChat(request: Request) {
         'Журнал диалога временно недоступен.',
       );
     }
+    deferAgentPilotFallback(answer);
     const publicHeaders = publicFallbackContext
       ? publicAiCoreRouteHeaders({
         actualRoute: 'legacy',

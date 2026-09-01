@@ -65,9 +65,31 @@ def verify_release(runtime_root: Path, expected_sha: str) -> None:
         raise RuntimeError("AGENT_PILOT_RELEASE_INCOMPLETE")
 
 
-def _safe_selected_evidence(builder: Any, provenance: Any) -> list[dict[str, Any]]:
+def _safe_owner_card(session: Any) -> dict[str, Any]:
+    owner_card = getattr(session, "owner_card", None)
+    if not callable(owner_card):
+        return {
+            "confirmed_facts": [],
+            "inferred_facts": [],
+            "open_questions": [],
+        }
+    value = owner_card()
+    return value if isinstance(value, dict) else {}
+
+
+def _safe_selected_evidence(
+    builder: Any,
+    provenance: Any,
+    claim_plan: Any = (),
+) -> list[dict[str, Any]]:
     if provenance is None:
         return []
+    used_ids = {
+        str(evidence_id)
+        for claim in (claim_plan or ())
+        if isinstance(claim, dict)
+        for evidence_id in (claim.get("evidence_ids") or ())
+    }
     result: list[dict[str, Any]] = []
     for raw in getattr(provenance, "selected_chunks", ())[:12]:
         item = dict(raw)
@@ -82,7 +104,15 @@ def _safe_selected_evidence(builder: Any, provenance: Any) -> list[dict[str, Any
             )[:80],
             "approval_status": str(metadata.get("approval_status") or "")[:40],
             "customer_facing": metadata.get("customer_facing") is True,
+            "evidence_role": str(metadata.get("evidence_role") or "")[:40],
             "excerpt": excerpt,
+            "used_in_final": str(item.get("knowledge_id") or "") in used_ids,
+            "authorization": (
+                "pass"
+                if metadata.get("approval_status") == "approved"
+                and metadata.get("customer_facing") is True
+                else "fail"
+            ),
         })
     return result
 
@@ -180,25 +210,42 @@ class PilotRuntime:
 
             try:
                 session = self.pilot.new_session(conversation_id)
+                object_card_before = _safe_owner_card(session)
+                completed_turn_result = getattr(session, "completed_turn_result", None)
+                durable_result_reused = bool(
+                    callable(completed_turn_result)
+                    and completed_turn_result(turn_id, message.strip()) is not None
+                )
                 result = self.pilot.process_turn(
                     session,
                     message.strip(),
                     turn_id=turn_id,
                 )
+                object_card_after = _safe_owner_card(session)
                 calls = self.transport.calls[initial_call:]
+                result_roles = set(getattr(result, "roles", ()) or ())
                 role_calls = [
                     {
+                        "sequence": index + 1,
                         "role": call.role,
                         "latency_ms": call.latency_ms,
                         "model": call.model,
                         "reasoning_effort": call.reasoning_effort,
                         "capability_escalations": call.capability_escalations,
+                        "status": "pass",
+                        "used_downstream": (
+                            call.role in result_roles
+                            or call.role == "orchestrator"
+                            or (call.role == "critic" and result.critic_used)
+                        ),
                     }
-                    for call in calls
+                    for index, call in enumerate(calls)
                 ]
+                claim_plan = list(getattr(result, "claim_plan", ()) or ())
                 selected_evidence = _safe_selected_evidence(
                     self.pilot.builder,
-                    self.pilot.builder.last_provenance
+                    self.pilot.builder.last_provenance,
+                    claim_plan,
                 )
                 trace = {
                     "schema": "AGENT_PILOT_OWNER_CANARY_TURN_V1",
@@ -211,10 +258,22 @@ class PilotRuntime:
                     "latency_ms": result.latency_ms,
                     "bridge_wall_ms": round((time.monotonic() - started) * 1000),
                     "role_calls": role_calls,
+                    "codex_calls": int(getattr(result, "codex_calls", len(calls))),
+                    "transport_calls_this_request": len(calls),
+                    "duplicate_execution_prevented": durable_result_reused,
+                    "durable_result_reused": durable_result_reused,
                     "critic_used": result.critic_used,
                     "reconsideration_used": result.reconsideration_used,
                     "fallback": result.fallback,
                     "selected_evidence": selected_evidence,
+                    "object_card_before": object_card_before,
+                    "object_card_after": object_card_after,
+                    "critic_findings": getattr(result, "critic_findings", None),
+                    "claim_plan": claim_plan,
+                    "answer_obligations": list(
+                        getattr(result, "answer_obligations", ()) or ()
+                    ),
+                    "slowest_role": getattr(result, "slowest_role", None),
                     "final_answer": result.answer,
                     "safety_findings": list(result.safety_findings),
                     "metadata_defects": list(result.metadata_defects),
@@ -227,6 +286,8 @@ class PilotRuntime:
                         "code": "AGENT_PILOT_INTERNAL_FALLBACK",
                         "runtime_sha": self.expected_sha,
                         "trace_id": trace_id,
+                        "bridge_version": SERVICE_VERSION,
+                        "trace": trace,
                     }
                 return HTTPStatus.OK, {
                     "success": True,
@@ -239,10 +300,12 @@ class PilotRuntime:
                     "reconsideration_used": result.reconsideration_used,
                     "selected_evidence": selected_evidence,
                     "trace_id": trace_id,
+                    "bridge_version": SERVICE_VERSION,
+                    "trace": trace,
                 }
             except Exception as error:  # fail closed at the bridge boundary
                 restore_unpublished_state()
-                self._append_trace({
+                error_trace = {
                     "schema": "AGENT_PILOT_OWNER_CANARY_TURN_V1",
                     "trace_id": trace_id,
                     "request_id": request_id,
@@ -252,12 +315,23 @@ class PilotRuntime:
                     "recorded_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                     "fallback": True,
                     "error_class": type(error).__name__,
-                })
+                    "role_calls": [],
+                    "selected_evidence": [],
+                    "object_card_before": {},
+                    "object_card_after": {},
+                    "critic_used": False,
+                    "reconsideration_used": False,
+                    "safety_findings": [],
+                    "metadata_defects": [],
+                }
+                self._append_trace(error_trace)
                 return HTTPStatus.SERVICE_UNAVAILABLE, {
                     "success": False,
                     "code": "AGENT_PILOT_RUNTIME_ERROR",
                     "runtime_sha": self.expected_sha,
                     "trace_id": trace_id,
+                    "bridge_version": SERVICE_VERSION,
+                    "trace": error_trace,
                 }
 
 

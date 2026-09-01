@@ -11,6 +11,7 @@ import https from 'node:https';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import Database from 'better-sqlite3';
 import {
   AGENT_PILOT_RUNTIME_SHA,
 } from '../app/lib/agent-pilot-owner-canary.ts';
@@ -83,20 +84,65 @@ const pilot = https.createServer(tls, (request, response) => {
         response.end(JSON.stringify({ success: false, code: 'RUNTIME_UNAVAILABLE' }));
         return;
       }
+      const traceId = `apt_${randomUUID().replaceAll('-', '')}`;
+      const roleCalls = [{
+        sequence: 1,
+        role: 'orchestrator',
+        latency_ms: pilotDelayMs,
+        model: 'codex',
+        reasoning_effort: 'medium',
+        status: 'pass',
+        used_downstream: true,
+      }];
+      const selectedEvidence = [{
+        knowledge_id: 'approved-knowledge',
+        source_id: 'approved-source',
+        authority_class: 'official',
+        approval_status: 'approved',
+        customer_facing: true,
+        evidence_role: 'factual',
+        excerpt: 'Approved fixture excerpt.',
+        used_in_final: true,
+        authorization: 'pass',
+      }];
+      const runtimeSha = pilotMode === 'mismatch'
+        ? '0'.repeat(40)
+        : payload.expected_runtime_sha;
       response.writeHead(200, { 'Content-Type': 'application/json' });
       response.end(JSON.stringify({
         success: true,
         fallback: false,
         answer: 'Agent Pilot owner answer.',
-        runtime_sha: pilotMode === 'mismatch'
-          ? '0'.repeat(40)
-          : payload.expected_runtime_sha,
+        runtime_sha: runtimeSha,
         latency_ms: pilotDelayMs,
-        role_calls: [{ role: 'orchestrator', latency_ms: pilotDelayMs }],
+        role_calls: roleCalls,
         critic_used: true,
         reconsideration_used: false,
-        selected_evidence: [{ source_id: 'approved-source' }],
-        trace_id: `apt_${randomUUID().replaceAll('-', '')}`,
+        selected_evidence: selectedEvidence,
+        trace_id: traceId,
+        bridge_version: 'AGENT_PILOT_OWNER_CANARY_BRIDGE_V1',
+        trace: {
+          trace_id: traceId,
+          turn_id: payload.turn_id,
+          runtime_sha: runtimeSha,
+          latency_ms: pilotDelayMs,
+          bridge_wall_ms: pilotDelayMs,
+          role_calls: roleCalls,
+          selected_evidence: selectedEvidence,
+          critic_used: true,
+          reconsideration_used: false,
+          codex_calls: 1,
+          transport_calls_this_request: 1,
+          duplicate_execution_prevented: false,
+          durable_result_reused: false,
+          object_card_before: { confirmed_facts: [], inferred_facts: [], open_questions: [] },
+          object_card_after: { confirmed_facts: [], inferred_facts: [], open_questions: [] },
+          critic_findings: { status: 'pass' },
+          claim_plan: [],
+          answer_obligations: [],
+          safety_findings: [],
+          metadata_defects: [],
+        },
       }));
     };
     if (pilotDelayMs > 0) setTimeout(reply, pilotDelayMs);
@@ -323,7 +369,7 @@ async function withSite(enabled, callback) {
   try {
     await waitForSite(port, () => logs);
     console.log(`HARNESS site ready enabled=${enabled}`);
-    await callback(port);
+    await callback(port, dbPath);
   } finally {
     await stop(child);
   }
@@ -334,7 +380,7 @@ const legacyPort = await listen(legacy);
 assert.ok(pilotPort > 0 && legacyPort > 0);
 console.log(`HARNESS upstreams ready pilot=${pilotPort} legacy=${legacyPort}`);
 try {
-  await withSite(true, async (port) => {
+  await withSite(true, async (port, dbPath) => {
     const visitorBefore = { ...counts };
     const visitor = await chat(port, null);
     assert.equal(visitor.status, 200);
@@ -376,6 +422,20 @@ try {
       ownerIdentity.messageId,
       'Site forwards the deterministic identity derived from the original browser turn',
     );
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const traceDb = new Database(dbPath, { readonly: true });
+    const persistedTrace = traceDb.prepare(`
+      SELECT metadata.trace_id, metadata.runtime_sha, payload.trace_json
+      FROM agent_pilot_turn_trace_metadata AS metadata
+      JOIN agent_pilot_turn_trace_payloads AS payload USING (turn_id)
+      WHERE metadata.turn_id = ?
+    `).get(ownerBody.turnId);
+    traceDb.close();
+    assert.ok(persistedTrace, 'Agent Pilot trace is persisted in the existing widget DB');
+    const parsedTrace = JSON.parse(persistedTrace.trace_json);
+    assert.equal(parsedTrace.identity.runtime_sha, AGENT_PILOT_RUNTIME_SHA);
+    assert.equal(parsedTrace.knowledge[0].authorization, 'pass');
+    assert.equal(parsedTrace.diagnostics.secrets_captured, false);
     console.log('PASS owner Agent Pilot route');
 
     pilotMode = 'success';
