@@ -146,11 +146,11 @@ function FactColumn({
 
 function TraceSection({ title, value }: { title: string; value: unknown }) {
   return (
-    <div>
+    <div className="min-w-0 max-w-full">
       <p className="text-[11px] font-black uppercase tracking-wide text-slate-500">
         {title}
       </p>
-      <pre className="mt-2 max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-950 p-3 text-xs leading-5 text-slate-100">
+      <pre className="mt-2 max-h-96 min-w-0 max-w-full overflow-auto whitespace-pre-wrap break-all rounded-xl bg-slate-950 p-3 text-xs leading-5 text-slate-100">
         {json(value)}
       </pre>
     </div>
@@ -257,8 +257,8 @@ export default function AiTraceViewer({
   };
 
   return (
-    <aside className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 p-3 sm:p-6">
-      <div className="ml-auto min-h-full w-full max-w-5xl rounded-3xl bg-white shadow-2xl">
+    <aside className="fixed inset-0 z-50 max-w-full overflow-x-hidden overflow-y-auto bg-slate-950/70 p-3 sm:p-6">
+      <div className="ml-auto min-h-full min-w-0 w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl">
         <header className="sticky top-0 z-10 rounded-t-3xl bg-slate-950 px-5 py-5 text-white">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -278,7 +278,7 @@ export default function AiTraceViewer({
           </div>
         </header>
 
-        <div className="grid gap-5 p-5">
+        <div className="grid min-w-0 gap-5 p-5">
           {loading ? <p className="text-sm text-slate-500">Загрузка trace…</p> : null}
           {error ? (
             <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>
@@ -466,7 +466,7 @@ export default function AiTraceViewer({
                 </>
               ) : null}
 
-              <section className="grid gap-3 rounded-2xl border border-slate-200 p-4 md:grid-cols-2">
+              <section className="grid min-w-0 gap-3 rounded-2xl border border-slate-200 p-4 md:grid-cols-2">
                 <TraceSection title="Identity / release" value={trace.identity} />
                 <TraceSection title="Routing / execution" value={trace.routing} />
                 <TraceSection title="Publication" value={trace.publication} />
@@ -498,7 +498,7 @@ export default function AiTraceViewer({
                       {index > 0 ? (
                         <div className="ml-6 h-4 border-l-2 border-slate-300" aria-hidden="true" />
                       ) : null}
-                      <details className={`rounded-2xl border p-4 ${STATUS_STYLES[stage.status]}`}>
+                      <details className={`min-w-0 overflow-hidden rounded-2xl border p-4 ${STATUS_STYLES[stage.status]}`}>
                         <summary className="cursor-pointer list-none">
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
@@ -531,7 +531,7 @@ export default function AiTraceViewer({
                 </div>
               </section>
 
-              <section className="grid gap-4 rounded-2xl border border-slate-200 p-4 md:grid-cols-2">
+              <section className="grid min-w-0 gap-4 rounded-2xl border border-slate-200 p-4 md:grid-cols-2">
                 <TraceSection title="Client input / supplied history" value={trace.client_input} />
                 <TraceSection title="Memory / state / mutations" value={trace.state} />
                 <TraceSection title="First appearance / diagnostics" value={trace.diagnostics} />
