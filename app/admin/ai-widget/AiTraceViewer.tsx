@@ -260,18 +260,18 @@ export default function AiTraceViewer({
     <aside className="fixed inset-0 z-50 max-w-full overflow-x-hidden overflow-y-auto bg-slate-950/70 p-3 sm:p-6">
       <div className="ml-auto min-h-full min-w-0 w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl">
         <header className="sticky top-0 z-10 rounded-t-3xl bg-slate-950 px-5 py-5 text-white">
-          <div className="flex items-start justify-between gap-4">
-            <div>
+          <div className="flex items-start justify-between gap-3 sm:gap-4">
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-300">
                 {isAgentPilot ? 'AGENT PILOT TRACE VIEWER V1' : 'AI_TRACE_VIEWER_V1'}
               </p>
-              <h2 className="mt-1 text-2xl font-black">Диагностика ответа</h2>
+              <h2 className="mt-1 break-words text-xl font-black sm:text-2xl">Диагностика ответа</h2>
               <p className="mt-1 break-all text-xs text-slate-400">Turn {turnId}</p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-slate-700 px-3 py-2 text-sm font-bold"
+              className="shrink-0 rounded-xl border border-slate-700 px-3 py-2 text-sm font-bold"
             >
               Закрыть
             </button>
