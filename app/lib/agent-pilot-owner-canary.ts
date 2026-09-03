@@ -1,5 +1,5 @@
 export const AGENT_PILOT_RUNTIME_SHA =
-  '8bbd90a860893fb229466040f57b258a7c82b07e';
+  'c41935fbb29fba6c1d4f97b61723a682d89c6361';
 export const AGENT_PILOT_OWNER_MARKER = 'Agent Pilot Owner Canary';
 
 const DEFAULT_TIMEOUT_MS = 180_000;

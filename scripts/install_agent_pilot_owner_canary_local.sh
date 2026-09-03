@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 
-RUNTIME_SHA="8bbd90a860893fb229466040f57b258a7c82b07e"
+RUNTIME_SHA="c41935fbb29fba6c1d4f97b61723a682d89c6361"
 LABEL="ai.pocpark.agent-pilot-owner-canary"
 SCRIPT_DIR="${0:A:h}"
 SITE_ROOT="${SCRIPT_DIR:h}"
