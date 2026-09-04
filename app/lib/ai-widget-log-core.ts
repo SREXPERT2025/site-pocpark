@@ -436,6 +436,35 @@ export function runAiWidgetLogMigrations(db: Database.Database) {
       `).run(new Date().toISOString());
     })();
   }
+
+  if (!applied.has(5)) {
+    db.transaction(() => {
+      db.exec(`
+        CREATE TABLE ai_widget_legacy_memory (
+          session_id TEXT PRIMARY KEY,
+          version TEXT NOT NULL,
+          snapshot_json TEXT NOT NULL,
+          source_turn_count INTEGER NOT NULL
+            CHECK (source_turn_count >= 0),
+          transcript_sha256 TEXT NOT NULL
+            CHECK (length(transcript_sha256) = 64),
+          updated_at TEXT NOT NULL,
+          updated_at_ms INTEGER NOT NULL,
+          expires_at_ms INTEGER NOT NULL,
+          FOREIGN KEY (session_id)
+            REFERENCES ai_widget_sessions(id) ON DELETE CASCADE
+        );
+
+        CREATE INDEX idx_ai_widget_legacy_memory_expiry
+          ON ai_widget_legacy_memory(expires_at_ms);
+      `);
+      db.prepare(`
+        INSERT INTO ai_widget_log_migrations (
+          version, name, applied_at
+        ) VALUES (5, 'legacy_conversation_memory_v1', ?)
+      `).run(new Date().toISOString());
+    })();
+  }
 }
 
 function touchSession(
@@ -1107,6 +1136,10 @@ export function cleanupExpiredAiWidgetLogs(
   nowMs = Date.now(),
 ) {
   return db.transaction(() => {
+    const expiredLegacyMemory = db.prepare(`
+      DELETE FROM ai_widget_legacy_memory
+      WHERE expires_at_ms <= ?
+    `).run(nowMs).changes;
     const expiredTurns = db.prepare(`
       DELETE FROM ai_widget_turns
       WHERE expires_at_ms <= ?
@@ -1149,6 +1182,7 @@ export function cleanupExpiredAiWidgetLogs(
       expiredTurns,
       expiredTestLeads,
       expiredProductionLeads,
+      expiredLegacyMemory,
       expiredSessions,
     };
   })();

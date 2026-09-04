@@ -17,6 +17,7 @@
     "test:ai-widget-pilot": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_widget_pilot.mjs",
     "test:ai-widget-ux-v1": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_widget_ux_v1.mjs",
     "test:ai-widget-log": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_widget_log.mjs",
+    "test:legacy-conversation-memory": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_legacy_conversation_memory_v1.mjs",
     "test:ai-widget-server-events": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_ai_widget_server_events.mjs",
     "test:owner-ai-canary": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_owner_ai_canary_v1.mjs",
     "test:agent-pilot-owner-canary": "node --experimental-specifier-resolution=node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/test_agent_pilot_owner_canary.mjs",

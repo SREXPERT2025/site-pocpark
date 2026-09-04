@@ -22,6 +22,10 @@ import {
   registerAiWidgetTestLead,
 } from './ai-widget-log-core';
 import {
+  LEGACY_CONVERSATION_MEMORY_VERSION,
+  prepareLegacyConversationContext,
+} from './ai-widget-legacy-memory-core';
+import {
   aiWidgetLoggingEnabled,
   aiWidgetServerEventsEnabled,
   getAiWidgetLogDatabase,
@@ -1378,6 +1382,54 @@ export async function handleAiWidgetChat(request: Request) {
     );
   }
 
+  let legacyGatewayPayload: Record<string, unknown> = parsed.payload;
+  let legacyMemoryHeaders: Record<string, string> = {};
+  if (loggingStarted) {
+    try {
+      const db = getAiWidgetLogDatabase();
+      const session = getAiWidgetSession(db, parsed.payload.sessionId);
+      if (!session) throw new Error('LEGACY_SESSION_NOT_FOUND');
+      const context = prepareLegacyConversationContext(
+        db,
+        parsed.payload.sessionId,
+        session.turns,
+        session.expiresAtMs,
+        Date.now(),
+        parsed.payload.turnId,
+      );
+      if (
+        context.recentMessages.length < 1
+        || context.recentMessages.at(-1)?.role !== 'user'
+        || context.recentMessages.at(-1)?.content !== lastUserMessage
+      ) {
+        throw new Error('LEGACY_RECENT_CONTEXT_INVALID');
+      }
+      legacyGatewayPayload = {
+        ...parsed.payload,
+        messages: context.recentMessages,
+        legacyMemory: context.gatewayMemory,
+        legacyTranscript: {
+          version: LEGACY_CONVERSATION_MEMORY_VERSION,
+          sourceTurnCount: context.memory.sourceTurnCount,
+          sha256: context.memory.transcriptSha256,
+        },
+      };
+      legacyMemoryHeaders = {
+        'X-AI-Widget-Legacy-Memory': LEGACY_CONVERSATION_MEMORY_VERSION,
+        'X-AI-Widget-Legacy-Memory-Turns': String(
+          context.memory.sourceTurnCount,
+        ),
+      };
+    } catch {
+      failLoggedTurn('LEGACY_MEMORY_UNAVAILABLE');
+      return jsonError(
+        503,
+        'LEGACY_MEMORY_UNAVAILABLE',
+        'История диалога временно недоступна. Попробуйте ещё раз.',
+      );
+    }
+  }
+
   try {
     const upstream = await fetch(`${gateway.url}/v1/chat`, {
       method: 'POST',
@@ -1387,7 +1439,7 @@ export async function handleAiWidgetChat(request: Request) {
         'X-Request-Id': requestId,
         'X-AI-Widget-Turn-Persisted': loggingStarted ? 'true' : 'false',
       },
-      body: JSON.stringify(parsed.payload),
+      body: JSON.stringify(legacyGatewayPayload),
       cache: 'no-store',
       signal: AbortSignal.timeout(90_000),
     });
@@ -1436,7 +1488,10 @@ export async function handleAiWidgetChat(request: Request) {
       requestId,
       handoffMode,
       templateId,
-      extraHeaders: publicHeaders,
+      extraHeaders: {
+        ...legacyMemoryHeaders,
+        ...(publicHeaders ?? {}),
+      },
     });
   } catch {
     return fallback('GATEWAY_TIMEOUT') ?? jsonError(

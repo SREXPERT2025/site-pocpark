@@ -13,6 +13,32 @@ import run_ai_widget_pilot_gateway as gateway
 
 
 class GatewayContractTests(unittest.TestCase):
+    @staticmethod
+    def legacy_memory() -> dict[str, object]:
+        turn_id = "11111111-aaaa-4111-8111-111111111111"
+        return {
+            "version": gateway.LEGACY_MEMORY_VERSION,
+            "confirmedFacts": {
+                "object_type": "бизнес-центр",
+                "parking_capacity": 450,
+            },
+            "factProvenance": {
+                "object_type": turn_id,
+                "parking_capacity": turn_id,
+            },
+            "activeRequirements": [{
+                "category": "identification",
+                "text": "Основной въезд по госномеру.",
+                "sourceTurnId": turn_id,
+            }],
+            "objections": [],
+            "alreadyAskedQuestions": [{
+                "text": "Где должна происходить оплата?",
+                "sourceTurnId": turn_id,
+            }],
+            "salesStage": "requirements_collected",
+        }
+
     def test_secret_and_authorization(self) -> None:
         secret = gateway.require_secret("x" * 32)
         self.assertTrue(gateway.authorized(f"Bearer {secret}", secret))
@@ -55,6 +81,39 @@ class GatewayContractTests(unittest.TestCase):
             identified["turnId"],
             "11111111-aaaa-4111-8111-111111111111",
         )
+        identified_with_memory = gateway.validate_request(
+            {
+                "sourcePage": "/demo",
+                "sessionId": "c846e840-abcc-40b4-bd26-c0fdec276da9",
+                "turnId": "22222222-aaaa-4222-8222-222222222222",
+                "messages": [{"role": "user", "content": "Что вы знаете?"}],
+                "legacyMemory": self.legacy_memory(),
+                "legacyTranscript": {
+                    "version": gateway.LEGACY_MEMORY_VERSION,
+                    "sourceTurnCount": 30,
+                    "sha256": "a" * 64,
+                },
+            }
+        )
+        self.assertEqual(
+            identified_with_memory["legacyMemory"]["confirmedFacts"]
+            ["parking_capacity"],
+            450,
+        )
+        self.assertEqual(
+            identified_with_memory["legacyTranscript"]["sourceTurnCount"],
+            30,
+        )
+        invalid_memory = self.legacy_memory()
+        invalid_memory["confirmedFacts"] = {"parking_capacity": 450}
+        with self.assertRaises(ValueError):
+            gateway.validate_request(
+                {
+                    "sourcePage": "/demo",
+                    "messages": [{"role": "user", "content": "Вопрос"}],
+                    "legacyMemory": invalid_memory,
+                }
+            )
         parsed_with_context = gateway.validate_request(
             {
                 "sourcePage": "/parkovka-pod-klyuch",
@@ -373,6 +432,44 @@ class DeterministicEngineTests(unittest.TestCase):
         self.assertEqual(identified.route, baseline.route)
         self.assertEqual(identified.template_id, template_id)
         self.assertEqual(identified.answer, baseline.answer)
+
+    def test_model_prompt_receives_confirmed_rolling_memory(self) -> None:
+        captured: list[list[dict[str, str]]] = []
+        original = self.production_engine._ollama_answer
+        self.production_engine._ollama_answer = lambda messages: (
+            captured.append(messages)
+            or gateway.ModelAnswer("Подтверждённый ответ.", {})
+        )
+        try:
+            memory = GatewayContractTests.legacy_memory()
+            result = self.production_engine.answer(
+                {
+                    "sourcePage": "/",
+                    "sessionId": "c846e840-abcc-40b4-bd26-c0fdec276da9",
+                    "turnId": "22222222-aaaa-4222-8222-222222222222",
+                    "messages": [
+                        {"role": "user", "content": "Какие данные уже известны?"},
+                    ],
+                    "legacyMemory": memory,
+                    "legacyTranscript": {
+                        "version": gateway.LEGACY_MEMORY_VERSION,
+                        "sourceTurnCount": 30,
+                        "sha256": "a" * 64,
+                    },
+                }
+            )
+        finally:
+            self.production_engine._ollama_answer = original
+        self.assertEqual(result.route, "qwen36")
+        self.assertEqual(len(captured), 1)
+        prompt = captured[0][-1]["content"]
+        self.assertIn("ROSPARK_LEGACY_CONVERSATION_MEMORY_V1", prompt)
+        self.assertIn('"parking_capacity":450', prompt)
+        self.assertIn("Не переспрашивай уже известный факт", prompt)
+        self.assertEqual(
+            result.route_telemetry["legacy_transcript_turn_count"],
+            30,
+        )
 
     def test_price_boundary_without_model_call(self) -> None:
         result = self.engine.answer(

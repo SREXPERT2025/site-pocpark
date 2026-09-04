@@ -34,6 +34,11 @@ import {
   AI_WIDGET_ATTENTION_SESSION_KEY,
   aiWidgetWaitingStageFor,
 } from './ai-widget-ux';
+import {
+  clearAiWidgetBrowserHistory,
+  readAiWidgetBrowserHistory,
+  writeAiWidgetBrowserHistory,
+} from './ai-widget-conversation-storage';
 
 type UiMessage = {
   id: string;
@@ -347,6 +352,7 @@ export default function AiWidgetPilot() {
   const [messages, setMessages] = useState<UiMessage[]>([
     greetingFor(),
   ]);
+  const [browserHistoryReady, setBrowserHistoryReady] = useState(false);
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [waitingElapsedSeconds, setWaitingElapsedSeconds] = useState(0);
@@ -375,6 +381,45 @@ export default function AiWidgetPilot() {
   const attentionStopRef = useRef<number | null>(null);
 
   const isHidden = pathname.startsWith('/admin') || pathname === '/v4-1';
+
+  useEffect(() => {
+    try {
+      const storedSessionId = window.sessionStorage.getItem(
+        'rospark_ai_widget_session_id',
+      );
+      const currentSessionId = (
+        storedSessionId
+        && /^[a-z0-9][a-z0-9._:-]{15,127}$/i.test(storedSessionId)
+      )
+        ? storedSessionId
+        : crypto.randomUUID();
+      window.sessionStorage.setItem(
+        'rospark_ai_widget_session_id',
+        currentSessionId,
+      );
+      sessionIdRef.current = currentSessionId;
+      const restored = readAiWidgetBrowserHistory(
+        window.sessionStorage,
+        currentSessionId,
+      );
+      if (restored.length) setMessages(restored);
+    } finally {
+      setBrowserHistoryReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!browserHistoryReady || !sessionIdRef.current) return;
+    try {
+      writeAiWidgetBrowserHistory(
+        window.sessionStorage,
+        sessionIdRef.current,
+        messages,
+      );
+    } catch {
+      // The durable server transcript remains authoritative when storage is off.
+    }
+  }, [browserHistoryReady, messages]);
 
   const rememberLauncherInteraction = useCallback(() => {
     launcherInteractedRef.current = true;
@@ -596,7 +641,12 @@ export default function AiWidgetPilot() {
 
   const clearChat = () => {
     abortRef.current?.abort();
+    const previousSessionId = sessionId();
     const nextSessionId = crypto.randomUUID();
+    clearAiWidgetBrowserHistory(
+      window.sessionStorage,
+      previousSessionId,
+    );
     window.sessionStorage.setItem(
       'rospark_ai_widget_session_id',
       nextSessionId,
